@@ -2537,7 +2537,10 @@ namespace openpeer
               goto cancel;
             }
 
-            if (IICESocketSession::ICESocketSessionState_Nominated != mAudioRTPSocketSession->getState()) {
+            IICESocketSession::ICESocketSessionStates state = mAudioRTPSocketSession->getState();
+
+            if ((IICESocketSession::ICESocketSessionState_Nominated != state) &&
+                (IICESocketSession::ICESocketSessionState_Complete != state)) {
               ZS_LOG_DEBUG(log("waiting on audio RTP socket to be nominated...") + ", socket session ID=" + string(mAudioRTPSocketSession->getID()))
               return;
             }
@@ -2548,8 +2551,12 @@ namespace openpeer
               ZS_LOG_WARNING(Detail, log("video RTP socket session is unexpectedly gone"))
               goto cancel;
             }
+
+            IICESocketSession::ICESocketSessionStates state = mVideoRTPSocketSession->getState();
+
             if (mVideoRTPSocketSession) {
-              if (IICESocketSession::ICESocketSessionState_Nominated != mVideoRTPSocketSession->getState()) {
+              if ((IICESocketSession::ICESocketSessionState_Nominated != state) &&
+                  (IICESocketSession::ICESocketSessionState_Complete != state)) {
                 ZS_LOG_DEBUG(log("waiting on video RTP socket to be nominated...") + ", socket session ID=" + string(mVideoRTPSocketSession->getID()))
                 return;
               }
