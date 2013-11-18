@@ -304,15 +304,17 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
 					../../..,
-					../../../libs,
-					../../../libs/zsLib,
-					../../../libs/curl/include,
-					../../../libs/boost/ios/framework/boost.framework/Headers,
-					../../../libs/webrtc,
-					../../../libs/webrtc/webrtc,
-					../../../libs/webrtc/webrtc/voice_engine/include,
-					../../../libs/webrtc/webrtc/video_engine/include,
-					../../../libs/webrtc/webrtc/modules/video_capture/include,
+					"../../../../op-stack-cpp",
+					"../../../../ortc-lib/libs",
+					"../../../../ortc-lib/libs/op-services-cpp",
+					"../../../../ortc-lib/libs/zsLib",
+					"../../../../ortc-lib/libs/curl/include",
+					"../../../../ortc-lib/libs/boost/ios/framework/boost.framework/Headers",
+					"../../../../ortc-lib/libs/webrtc",
+					"../../../../ortc-lib/libs/webrtc/webrtc",
+					"../../../../ortc-lib/libs/webrtc/webrtc/voice_engine/include",
+					"../../../../ortc-lib/libs/webrtc/webrtc/video_engine/include",
+					"../../../../ortc-lib/libs/webrtc/webrtc/modules/video_capture/include",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
 				ONLY_ACTIVE_ARCH = YES;
@@ -346,15 +348,17 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
 					../../..,
-					../../../libs,
-					../../../libs/zsLib,
-					../../../libs/curl/include,
-					../../../libs/boost/ios/framework/boost.framework/Headers,
-					../../../libs/webrtc,
-					../../../libs/webrtc/webrtc,
-					../../../libs/webrtc/webrtc/voice_engine/include,
-					../../../libs/webrtc/webrtc/video_engine/include,
-					../../../libs/webrtc/webrtc/modules/video_capture/include,
+					"../../../../op-stack-cpp",
+					"../../../../ortc-lib/libs",
+					"../../../../ortc-lib/libs/op-services-cpp",
+					"../../../../ortc-lib/libs/zsLib",
+					"../../../../ortc-lib/libs/curl/include",
+					"../../../../ortc-lib/libs/boost/ios/framework/boost.framework/Headers",
+					"../../../../ortc-lib/libs/webrtc",
+					"../../../../ortc-lib/libs/webrtc/webrtc",
+					"../../../../ortc-lib/libs/webrtc/webrtc/voice_engine/include",
+					"../../../../ortc-lib/libs/webrtc/webrtc/video_engine/include",
+					"../../../../ortc-lib/libs/webrtc/webrtc/modules/video_capture/include",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
 				SDKROOT = iphoneos;

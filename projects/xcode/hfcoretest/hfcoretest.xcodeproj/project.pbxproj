@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		002F74D31839C2B500581FA7 /* libgenperf_libs.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 002F74C61839C2B400581FA7 /* libgenperf_libs.a */; };
 		0063CF5616CAF01A00E6DB4D /* boost_replacement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063CDB816CAF01900E6DB4D /* boost_replacement.cpp */; };
 		0063CF5716CAF01A00E6DB4D /* desktop_FakeGUI.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063CDBB16CAF01900E6DB4D /* desktop_FakeGUI.cpp */; };
 		0063CF5816CAF01A00E6DB4D /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063CDBD16CAF01900E6DB4D /* main.cpp */; };
@@ -180,6 +181,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		002F74C61839C2B400581FA7 /* libgenperf_libs.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libgenperf_libs.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		0063CD6D16CAEFE400E6DB4D /* hfcoreTest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = hfcoreTest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0063CDB816CAF01900E6DB4D /* boost_replacement.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = boost_replacement.cpp; sourceTree = "<group>"; };
 		0063CDB916CAF01900E6DB4D /* boost_replacement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = boost_replacement.h; sourceTree = "<group>"; };
@@ -189,11 +191,11 @@
 		0063CDBD16CAF01900E6DB4D /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		0063D03316CAF1C200E6DB4D /* libcurl.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcurl.dylib; path = usr/lib/libcurl.dylib; sourceTree = SDKROOT; };
 		0063D03516CAF1D000E6DB4D /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
-		0063D34016CB293C00E6DB4D /* zsLib.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = zsLib.xcodeproj; path = ../../../libs/zsLib/projects/xcode/zsLib/zsLib.xcodeproj; sourceTree = "<group>"; };
-		0063D34616CB294B00E6DB4D /* udns.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = udns.xcodeproj; path = ../../../libs/udns/projects/xcode/udns/udns.xcodeproj; sourceTree = SOURCE_ROOT; };
-		0063D34C16CB296000E6DB4D /* cryptopp.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = cryptopp.xcodeproj; path = ../../../libs/cryptopp/projects/xcode/cryptopp/cryptopp.xcodeproj; sourceTree = SOURCE_ROOT; };
-		0063D35216CB296600E6DB4D /* hfservices.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = hfservices.xcodeproj; path = ../hfservices/hfservices.xcodeproj; sourceTree = "<group>"; };
-		0063D35816CB296D00E6DB4D /* hfstack.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = hfstack.xcodeproj; path = ../hfstack/hfstack.xcodeproj; sourceTree = "<group>"; };
+		0063D34016CB293C00E6DB4D /* zsLib.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = zsLib.xcodeproj; path = "../../../../ortc-lib/libs/zsLib/projects/xcode/zsLib/zsLib.xcodeproj"; sourceTree = "<group>"; };
+		0063D34616CB294B00E6DB4D /* udns.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = udns.xcodeproj; path = "../../../../ortc-lib/libs/udns/projects/xcode/udns/udns.xcodeproj"; sourceTree = SOURCE_ROOT; };
+		0063D34C16CB296000E6DB4D /* cryptopp.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = cryptopp.xcodeproj; path = "../../../../ortc-lib/libs/cryptopp/projects/xcode/cryptopp/cryptopp.xcodeproj"; sourceTree = SOURCE_ROOT; };
+		0063D35216CB296600E6DB4D /* hfservices.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = hfservices.xcodeproj; path = "../../../../ortc-lib/libs/op-services-cpp/projects/xcode/hfservices/hfservices.xcodeproj"; sourceTree = "<group>"; };
+		0063D35816CB296D00E6DB4D /* hfstack.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = hfstack.xcodeproj; path = "../../../../op-stack-cpp/projects/xcode/hfstack/hfstack.xcodeproj"; sourceTree = "<group>"; };
 		0063D35E16CB297600E6DB4D /* hfcore.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = hfcore.xcodeproj; path = ../hfcore/hfcore.xcodeproj; sourceTree = "<group>"; };
 		0063D5B716CB328900E6DB4D /* QTKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QTKit.framework; path = System/Library/Frameworks/QTKit.framework; sourceTree = SDKROOT; };
 		0063D5B916CB329000E6DB4D /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
@@ -201,8 +203,8 @@
 		0063D5BD16CB32A500E6DB4D /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		0063D5BF16CB32AD00E6DB4D /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
 		0063D5C116CB32B500E6DB4D /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
-		00C82C261832025C005B87E0 /* boost.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = boost.framework; path = ../../../libs/boost/osx/framework/boost.framework; sourceTree = "<group>"; };
-		E210821A17A7466D001D1608 /* webrtc_osx.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = webrtc_osx.xcodeproj; path = ../../../libs/webrtc/webrtc_osx.xcodeproj; sourceTree = "<group>"; };
+		00C82C261832025C005B87E0 /* boost.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = boost.framework; path = "../../../../ortc-lib/libs/boost/osx/framework/boost.framework"; sourceTree = "<group>"; };
+		E210821A17A7466D001D1608 /* webrtc_osx.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = webrtc_osx.xcodeproj; path = "../../../../ortc-lib/libs/webrtc/webrtc_osx.xcodeproj"; sourceTree = "<group>"; };
 		E210969316D4CECA002147D1 /* TestMediaEngine.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TestMediaEngine.cpp; sourceTree = "<group>"; };
 		E210969416D4CECA002147D1 /* TestMediaEngine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TestMediaEngine.h; sourceTree = "<group>"; };
 		E278378117A7E00E00E2CB11 /* libaudio_coding_module.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libaudio_coding_module.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -250,7 +252,7 @@
 		E27837AB17A7E01000E2CB11 /* libwebrtc_video_coding.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libwebrtc_video_coding.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E27837AC17A7E01000E2CB11 /* libwebrtc_vp8.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libwebrtc_vp8.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E27837AD17A7E01000E2CB11 /* libyuv.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libyuv.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E27837E617A7E12D00E2CB11 /* libjpeg_turbo.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libjpeg_turbo.a; path = "../../../../../../../Library/Developer/Xcode/DerivedData/hfcore-efvuvlsqecevfyaljqgxyxvjyvts/Build/Products/Debug/libjpeg_turbo.a"; sourceTree = SOURCE_ROOT; };
+		E27837E617A7E12D00E2CB11 /* libjpeg_turbo.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libjpeg_turbo.a; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -258,6 +260,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				002F74D31839C2B500581FA7 /* libgenperf_libs.a in Frameworks */,
 				E27837E717A7E12D00E2CB11 /* libjpeg_turbo.a in Frameworks */,
 				E27837AE17A7E01000E2CB11 /* libaudio_coding_module.a in Frameworks */,
 				E27837AF17A7E01000E2CB11 /* libaudio_conference_mixer.a in Frameworks */,
@@ -304,14 +307,6 @@
 				E27837D817A7E01000E2CB11 /* libwebrtc_video_coding.a in Frameworks */,
 				E27837D917A7E01000E2CB11 /* libwebrtc_vp8.a in Frameworks */,
 				E27837DA17A7E01000E2CB11 /* libyuv.a in Frameworks */,
-				00C82C271832025D005B87E0 /* boost.framework in Frameworks */,
-				0063D5C216CB32B500E6DB4D /* OpenGL.framework in Frameworks */,
-				0063D5C016CB32AE00E6DB4D /* CoreVideo.framework in Frameworks */,
-				0063D5BE16CB32A500E6DB4D /* AudioToolbox.framework in Frameworks */,
-				0063D5BC16CB329E00E6DB4D /* CoreAudio.framework in Frameworks */,
-				0063D5BA16CB329000E6DB4D /* AppKit.framework in Frameworks */,
-				0063D5B816CB328A00E6DB4D /* QTKit.framework in Frameworks */,
-				0063D03616CAF1D000E6DB4D /* CoreFoundation.framework in Frameworks */,
 				0063D37516CB2BB600E6DB4D /* libhfcore.a in Frameworks */,
 				0063D37416CB2B3400E6DB4D /* libhfstack.a in Frameworks */,
 				0063D37316CB2B2E00E6DB4D /* libhfservices.a in Frameworks */,
@@ -319,6 +314,14 @@
 				00C5B0DD177CA2DC00D6F8AC /* libudns.a in Frameworks */,
 				0063D37016CB2B1D00E6DB4D /* libzsLib.a in Frameworks */,
 				0063D03416CAF1C200E6DB4D /* libcurl.dylib in Frameworks */,
+				0063D5BE16CB32A500E6DB4D /* AudioToolbox.framework in Frameworks */,
+				0063D5BA16CB329000E6DB4D /* AppKit.framework in Frameworks */,
+				00C82C271832025D005B87E0 /* boost.framework in Frameworks */,
+				0063D5BC16CB329E00E6DB4D /* CoreAudio.framework in Frameworks */,
+				0063D03616CAF1D000E6DB4D /* CoreFoundation.framework in Frameworks */,
+				0063D5C016CB32AE00E6DB4D /* CoreVideo.framework in Frameworks */,
+				0063D5C216CB32B500E6DB4D /* OpenGL.framework in Frameworks */,
+				0063D5B816CB328A00E6DB4D /* QTKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -401,8 +404,8 @@
 		0063CFFF16CAF11B00E6DB4D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				00C82C261832025C005B87E0 /* boost.framework */,
 				0063D03316CAF1C200E6DB4D /* libcurl.dylib */,
+				00C82C261832025C005B87E0 /* boost.framework */,
 				0063D5C116CB32B500E6DB4D /* OpenGL.framework */,
 				0063D5BF16CB32AD00E6DB4D /* CoreVideo.framework */,
 				0063D5BD16CB32A500E6DB4D /* AudioToolbox.framework */,
@@ -465,6 +468,7 @@
 		00EC4727177D46AA00D68AF7 /* WebRTC Libraries */ = {
 			isa = PBXGroup;
 			children = (
+				002F74C61839C2B400581FA7 /* libgenperf_libs.a */,
 				E27837E617A7E12D00E2CB11 /* libjpeg_turbo.a */,
 				E278378117A7E00E00E2CB11 /* libaudio_coding_module.a */,
 				E278378217A7E00E00E2CB11 /* libaudio_conference_mixer.a */,
@@ -716,7 +720,7 @@
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				FRAMEWORK_SEARCH_PATHS = ../../../libs/boost/osx/framework;
+				FRAMEWORK_SEARCH_PATHS = "../../../../ortc-lib/libs/boost/osx/framework";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
@@ -732,23 +736,25 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
 					../../..,
-					../../../libs,
-					../../../libs/zsLib,
-					../../../libs/boost/osx/framework/boost.framework/Headers,
-					"../../../hookflash-libs/webRTC",
-					"../../../hookflash-libs/webRTC/webrtc/modules/video_render/main/source/iPhone",
-					"../../../hookflash-libs/webRTC/webrtc/video_engine/main/interface",
-					"../../../hookflash-libs/webRTC/webrtc/modules/video_coding/codecs/interface/",
-					"../../../hookflash-libs/webRTC/webrtc/common_video/interface/",
-					"../../../hookflash-libs/webRTC/webrtc/system_wrappers/interface",
-					"../../../hookflash-libs/webRTC/webrtc/modules/video_render/main/interface",
-					"../../../hookflash-libs/webRTC/webrtc/modules/interface",
-					"../../../hookflash-libs/webRTC/webrtc/modules/video_capture/include",
-					"../../../hookflash-libs/webRTC/webrtc/common_video/vplib/main/interface",
-					"../../../hookflash-libs/webRTC/webrtc/voice_engine/include",
-					"../../../hookflash-libs/webRTC/webrtc",
-					"../../../hookflash-libs/webRTC/webrtc/video_engine/include",
-					"../../../hookflash-libs/webRTC/webrtc/video_engine/main/interface",
+					"../../../../op-stack-cpp",
+					"../../../../ortc-lib/libs",
+					"../../../../ortc-lib/libs/zsLib",
+					"../../../../ortc-lib/libs/op-services-cpp",
+					"../../../../ortc-lib/libs/boost/osx/framework/boost.framework/Headers",
+					"../../../../ortc-lib/libs/webRTC",
+					"../../../../ortc-lib/libs/webRTC/webrtc/modules/video_render/main/source/iPhone",
+					"../../../../ortc-lib/libs/webRTC/webrtc/video_engine/main/interface",
+					"../../../../ortc-lib/libs/webRTC/webrtc/modules/video_coding/codecs/interface/",
+					"../../../../ortc-lib/libs/webRTC/webrtc/common_video/interface/",
+					"../../../../ortc-lib/libs/webRTC/webrtc/system_wrappers/interface",
+					"../../../../ortc-lib/libs/webRTC/webrtc/modules/video_render/main/interface",
+					"../../../../ortc-lib/libs/webRTC/webrtc/modules/interface",
+					"../../../../ortc-lib/libs/webRTC/webrtc/modules/video_capture/include",
+					"../../../../ortc-lib/libs/webRTC/webrtc/common_video/vplib/main/interface",
+					"../../../../ortc-lib/libs/webRTC/webrtc/voice_engine/include",
+					"../../../../ortc-lib/libs/webRTC/webrtc",
+					"../../../../ortc-lib/libs/webRTC/webrtc/video_engine/include",
+					"../../../../ortc-lib/libs/webRTC/webrtc/video_engine/main/interface",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.8;
 				ONLY_ACTIVE_ARCH = YES;
@@ -771,7 +777,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				FRAMEWORK_SEARCH_PATHS = ../../../libs/boost/osx/framework;
+				FRAMEWORK_SEARCH_PATHS = "../../../../ortc-lib/libs/boost/osx/framework";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -784,23 +790,25 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
 					../../..,
-					../../../libs,
-					../../../libs/zsLib,
-					../../../libs/boost/osx/framework/boost.framework/Headers,
-					"../../../hookflash-libs/webRTC",
-					"../../../hookflash-libs/webRTC/webrtc/modules/video_render/main/source/iPhone",
-					"../../../hookflash-libs/webRTC/webrtc/video_engine/main/interface",
-					"../../../hookflash-libs/webRTC/webrtc/modules/video_coding/codecs/interface/",
-					"../../../hookflash-libs/webRTC/webrtc/common_video/interface/",
-					"../../../hookflash-libs/webRTC/webrtc/system_wrappers/interface",
-					"../../../hookflash-libs/webRTC/webrtc/modules/video_render/main/interface",
-					"../../../hookflash-libs/webRTC/webrtc/modules/interface",
-					"../../../hookflash-libs/webRTC/webrtc/modules/video_capture/include",
-					"../../../hookflash-libs/webRTC/webrtc/common_video/vplib/main/interface",
-					"../../../hookflash-libs/webRTC/webrtc/voice_engine/include",
-					"../../../hookflash-libs/webRTC/webrtc",
-					"../../../hookflash-libs/webRTC/webrtc/video_engine/include",
-					"../../../hookflash-libs/webRTC/webrtc/video_engine/main/interface",
+					"../../../../op-stack-cpp",
+					"../../../../ortc-lib/libs",
+					"../../../../ortc-lib/libs/zsLib",
+					"../../../../ortc-lib/libs/op-services-cpp",
+					"../../../../ortc-lib/libs/boost/osx/framework/boost.framework/Headers",
+					"../../../../ortc-lib/libs/webRTC",
+					"../../../../ortc-lib/libs/webRTC/webrtc/modules/video_render/main/source/iPhone",
+					"../../../../ortc-lib/libs/webRTC/webrtc/video_engine/main/interface",
+					"../../../../ortc-lib/libs/webRTC/webrtc/modules/video_coding/codecs/interface/",
+					"../../../../ortc-lib/libs/webRTC/webrtc/common_video/interface/",
+					"../../../../ortc-lib/libs/webRTC/webrtc/system_wrappers/interface",
+					"../../../../ortc-lib/libs/webRTC/webrtc/modules/video_render/main/interface",
+					"../../../../ortc-lib/libs/webRTC/webrtc/modules/interface",
+					"../../../../ortc-lib/libs/webRTC/webrtc/modules/video_capture/include",
+					"../../../../ortc-lib/libs/webRTC/webrtc/common_video/vplib/main/interface",
+					"../../../../ortc-lib/libs/webRTC/webrtc/voice_engine/include",
+					"../../../../ortc-lib/libs/webRTC/webrtc",
+					"../../../../ortc-lib/libs/webRTC/webrtc/video_engine/include",
+					"../../../../ortc-lib/libs/webRTC/webrtc/video_engine/main/interface",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.8;
 				SDKROOT = macosx;
@@ -813,12 +821,18 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					/Volumes/Hookflash/Repos/ios/opios/libs/op/libs/boost/osx/framework,
+					"/Volumes/Hookflash/Repos/ios/t/opios/libs/op/libs/ortc-lib/libs/boost/osx/framework",
 				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"DEBUG=1",
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(USER_LIBRARY_DIR)/Developer/Xcode/DerivedData/hfcore-cbdogecqbtidpievqsyxwfplppcr/Build/Products/Debug-iphoneos",
+					"$(USER_LIBRARY_DIR)/Developer/Xcode/DerivedData/hfcore-cbdogecqbtidpievqsyxwfplppcr/Build/Products/Debug",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -829,12 +843,18 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					/Volumes/Hookflash/Repos/ios/opios/libs/op/libs/boost/osx/framework,
+					"/Volumes/Hookflash/Repos/ios/t/opios/libs/op/libs/ortc-lib/libs/boost/osx/framework",
 				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"NDEBUG=1",
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(USER_LIBRARY_DIR)/Developer/Xcode/DerivedData/hfcore-cbdogecqbtidpievqsyxwfplppcr/Build/Products/Debug-iphoneos",
+					"$(USER_LIBRARY_DIR)/Developer/Xcode/DerivedData/hfcore-cbdogecqbtidpievqsyxwfplppcr/Build/Products/Debug",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
