@@ -2540,7 +2540,7 @@ namespace openpeer
             IICESocketSession::ICESocketSessionStates state = mAudioRTPSocketSession->getState();
 
             if ((IICESocketSession::ICESocketSessionState_Nominated != state) &&
-                (IICESocketSession::ICESocketSessionState_Complete != state)) {
+                (IICESocketSession::ICESocketSessionState_Completed != state)) {
               ZS_LOG_DEBUG(log("waiting on audio RTP socket to be nominated...") + ", socket session ID=" + string(mAudioRTPSocketSession->getID()))
               return;
             }
@@ -2556,7 +2556,7 @@ namespace openpeer
 
             if (mVideoRTPSocketSession) {
               if ((IICESocketSession::ICESocketSessionState_Nominated != state) &&
-                  (IICESocketSession::ICESocketSessionState_Complete != state)) {
+                  (IICESocketSession::ICESocketSessionState_Completed != state)) {
                 ZS_LOG_DEBUG(log("waiting on video RTP socket to be nominated...") + ", socket session ID=" + string(mVideoRTPSocketSession->getID()))
                 return;
               }
