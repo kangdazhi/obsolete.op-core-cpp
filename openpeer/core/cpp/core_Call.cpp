@@ -2338,7 +2338,7 @@ namespace openpeer
 
           IICESocketSessionPtr &session = findSession(inSession, found, &type, &wasRTP);
           if (!found) {
-            ZS_LOG_WARNING(Detail, log("ignoring ICE socket session state change on obsolete session") + string(inSession->getID()))
+            ZS_LOG_WARNING(Detail, log("ignoring ICE socket session state change on obsolete session") + ", session ID=" + string(inSession->getID()))
             return;
           }
 
