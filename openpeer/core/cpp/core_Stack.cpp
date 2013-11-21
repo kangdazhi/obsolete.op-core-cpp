@@ -496,6 +496,14 @@ namespace openpeer
         ZS_THROW_INVALID_ARGUMENT_IF(!applicationIDSharedSecret)
         ZS_THROW_INVALID_ARGUMENT_IF(Time() == expires)
 
+        String fakeDomain = String(applicationID) + ".com";
+
+        if (!services::IHelper::isValidDomain(fakeDomain)) {
+          // if you are hitting this it's because your app ID value was set wrong
+          ZS_LOG_WARNING(Basic, String("core::Stack [] Illegal application ID value") + ", application ID=" + applicationID)
+          ZS_THROW_INVALID_ARGUMENT("core::Stack [] Illegal application ID value")
+        }
+
         String appID(applicationID);
         String random = services::IHelper::randomString(20);
         String time = services::IHelper::timeToString(expires);
