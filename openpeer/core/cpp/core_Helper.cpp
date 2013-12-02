@@ -32,6 +32,8 @@
 #include <openpeer/core/internal/core_Helper.h>
 #include <openpeer/stack/IPeerFilePublic.h>
 
+#include <openpeer/services/IHelper.h>
+
 #include <zsLib/XML.h>
 
 namespace openpeer { namespace core { ZS_DECLARE_SUBSYSTEM(openpeer_core) } }
@@ -42,6 +44,8 @@ namespace openpeer
   {
     namespace internal
     {
+      typedef services::IHelper OPIHelper;
+
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -51,39 +55,15 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      String Helper::getDebugValue(const char *name, const String &value, bool &firstTime)
-      {
-        if (value.isEmpty()) return String();
-        if (firstTime) {
-          firstTime = false;
-          return String(name) + "=" + value;
-        }
-        return String(", ") + name + "=" + value;
-      }
-
-      //-----------------------------------------------------------------------
       ElementPtr Helper::createElement(const String &elementStr)
       {
-        if (!elementStr) return ElementPtr();
-
-        DocumentPtr doc = Document::createFromParsedJSON(elementStr);
-
-        ElementPtr childEl = doc->getFirstChildElement();
-        if (!childEl) return ElementPtr();
-
-        childEl->orphan();
-        return childEl;
+        return OPIHelper::toJSON(elementStr);
       }
 
       //-----------------------------------------------------------------------
       String Helper::convertToString(const ElementPtr &element)
       {
-        if (!element) return String();
-
-        GeneratorPtr generator = Generator::createJSONGenerator();
-        boost::shared_array<char> output = generator->write(element);
-
-        return output.get();
+        return OPIHelper::toString(element);
       }
 
       //-----------------------------------------------------------------------

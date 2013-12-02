@@ -36,7 +36,10 @@
 
 #include <openpeer/stack/ILocation.h>
 
+#include <openpeer/services/IHelper.h>
+
 #include <zsLib/Log.h>
+#include <zsLib/XML.h>
 #include <zsLib/Stringize.h>
 #include <zsLib/helpers.h>
 
@@ -48,6 +51,8 @@ namespace openpeer
   {
     namespace internal
     {
+      using services::IHelper;
+
       using stack::IPublicationFetcher;
 
       //-----------------------------------------------------------------------
@@ -86,10 +91,10 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      String IConversationThreadDocumentFetcher::toDebugString(IConversationThreadDocumentFetcherPtr fetcher, bool includeCommaPrefix)
+      ElementPtr IConversationThreadDocumentFetcher::toDebug(IConversationThreadDocumentFetcherPtr fetcher)
       {
-        if (!fetcher) return includeCommaPrefix ? ", conversation thread fetcher=(null" : "conversation thread fetcher=(null)";
-        return ConversationThreadDocumentFetcher::convert(fetcher)->getDebugValueString(includeCommaPrefix);
+        if (!fetcher) return ElementPtr();
+        return ConversationThreadDocumentFetcher::convert(fetcher)->toDebug();
       }
 
       //-----------------------------------------------------------------------
@@ -146,10 +151,10 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      String ConversationThreadDocumentFetcher::toDebugString(ConversationThreadDocumentFetcherPtr fetcher, bool includeCommaPrefix)
+      ElementPtr ConversationThreadDocumentFetcher::toDebug(ConversationThreadDocumentFetcherPtr fetcher)
       {
-        if (!fetcher) return includeCommaPrefix ? ", conversation thread fetcher=(null" : "conversation thread fetcher=(null)";
-        return fetcher->getDebugValueString(includeCommaPrefix);
+        if (!fetcher) return ElementPtr();
+        return fetcher->toDebug();
       }
 
       //-----------------------------------------------------------------------
@@ -189,7 +194,7 @@ namespace openpeer
 
           IPublicationMetaDataPtr &pending = (*current).second;
           if (isSamePublication(pending, metaData)) {
-            ZS_LOG_DEBUG(log("publication removed because publication is updated again") + IPublicationMetaData::toDebugString(pending))
+            ZS_LOG_DEBUG(log("publication removed because publication is updated again") + IPublicationMetaData::toDebug(pending))
             mPendingPublications.erase(current); // no need to fetch this publication since a new one is replacing it now
           }
         }
@@ -209,7 +214,7 @@ namespace openpeer
 
         if (mFetcher) {
           if (isSamePublication(mFetcher->getPublicationMetaData(), metaData)) {
-            ZS_LOG_DEBUG(log("publication removed because publication is gone") + IPublicationFetcher::toDebugString(mFetcher))
+            ZS_LOG_DEBUG(log("publication removed because publication is gone") + IPublicationFetcher::toDebug(mFetcher))
 
             mFetcherPeerLocation.reset();
 
@@ -226,7 +231,7 @@ namespace openpeer
 
           IPublicationMetaDataPtr &pending = (*current).second;
           if (isSamePublication(pending, metaData)) {
-            ZS_LOG_DEBUG(log("publication removed because publication is gone") + IPublicationMetaData::toDebugString(pending))
+            ZS_LOG_DEBUG(log("publication removed because publication is gone") + IPublicationMetaData::toDebug(pending))
             mPendingPublications.erase(current); // no need to fetch this publication since a new one is replacing it now
           }
         }
@@ -250,7 +255,7 @@ namespace openpeer
 
         if (mFetcher) {
           if (isFromPeer(mFetcher->getPublicationMetaData(), peerLocation)) {
-            ZS_LOG_DEBUG(log("publication removed because peer is gone") + IPublicationFetcher::toDebugString(mFetcher))
+            ZS_LOG_DEBUG(log("publication removed because peer is gone") + IPublicationFetcher::toDebug(mFetcher))
             removeFetcher = true;
           }
         }
@@ -263,7 +268,7 @@ namespace openpeer
           ILocationPtr &pendingPeerLocation = (*current).first;
           IPublicationMetaDataPtr &pending = (*current).second;
           if (isFromPeer(pending, peerLocation)) {
-            ZS_LOG_DEBUG(log("publication removed because peer is gone") + IPublicationMetaData::toDebugString(pending))
+            ZS_LOG_DEBUG(log("publication removed because peer is gone") + IPublicationMetaData::toDebug(pending))
             if ((mFetcher) &&
                 (!alreadyNotifiedAboutDocument)) {
               if (isSamePublication(mFetcher->getPublicationMetaData(), pending)) {
@@ -280,7 +285,7 @@ namespace openpeer
 
         if (removeFetcher) {
           if (!alreadyNotifiedAboutDocument) {
-            ZS_LOG_DEBUG(log("notifying publication removed because peer is gone") + IPublicationFetcher::toDebugString(mFetcher))
+            ZS_LOG_DEBUG(log("notifying publication removed because peer is gone") + IPublicationFetcher::toDebug(mFetcher))
             try {
               mDelegate->onConversationThreadDocumentFetcherPublicationGone(mThisWeak.lock(), mFetcherPeerLocation, mFetcher->getPublicationMetaData());
             } catch(IConversationThreadDocumentFetcherDelegateProxy::Exceptions::DelegateGone &) {
@@ -311,7 +316,7 @@ namespace openpeer
         if (isShutdown()) return;
 
         if (fetcher != mFetcher) {
-          ZS_LOG_WARNING(Detail, log("publication fetched on obsolete fetcher") + IPublicationFetcher::toDebugString(fetcher))
+          ZS_LOG_WARNING(Detail, log("publication fetched on obsolete fetcher") + IPublicationFetcher::toDebug(fetcher))
           return;
         }
 
@@ -322,7 +327,7 @@ namespace openpeer
           } catch(IConversationThreadDocumentFetcherDelegateProxy::Exceptions::DelegateGone &) {
           }
         } else {
-          ZS_LOG_DEBUG(log("publication removed because peer is gone") + IPublicationFetcher::toDebugString(mFetcher))
+          ZS_LOG_DEBUG(log("publication removed because peer is gone") + IPublicationFetcher::toDebug(mFetcher))
         }
 
         mFetcherPeerLocation.reset();
@@ -347,20 +352,26 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      String ConversationThreadDocumentFetcher::log(const char *message) const
+      Log::Params ConversationThreadDocumentFetcher::log(const char *message) const
       {
-        return String("ConversationThreadDocumentFetcher [") + string(mID) + "] " + message;
+        ElementPtr objectEl = Element::create("core::ConversationThreadDocumentFetcher");
+        IHelper::debugAppend(objectEl, "id", mID);
+        return Log::Params(message, objectEl);
       }
 
       //-----------------------------------------------------------------------
-      String ConversationThreadDocumentFetcher::getDebugValueString(bool includeCommaPrefix) const
+      ElementPtr ConversationThreadDocumentFetcher::toDebug() const
       {
         AutoRecursiveLock lock(getLock());
-        bool firstTime = !includeCommaPrefix;
-        return Helper::getDebugValue("conversation thread document fetcher id", string(mID), firstTime) +
-               ILocation::toDebugString(mFetcherPeerLocation) +
-               IPublicationFetcher::toDebugString(mFetcher) +
-               Helper::getDebugValue("pending publications", mPendingPublications.size() > 0 ? string(mPendingPublications.size()) : String(), firstTime);
+
+        ElementPtr resultEl = Element::create("core::ConversationThreadDocumentFetcher");
+
+        IHelper::debugAppend(resultEl, "id", mID);
+        IHelper::debugAppend(resultEl, ILocation::toDebug(mFetcherPeerLocation));
+        IHelper::debugAppend(resultEl, IPublicationFetcher::toDebug(mFetcher));
+        IHelper::debugAppend(resultEl, "pending publications", mPendingPublications.size());
+
+        return resultEl;
       }
 
       //-----------------------------------------------------------------------
@@ -421,9 +432,9 @@ namespace openpeer
         mFetcherPeerLocation = peerLocation;
         mFetcher = mRepository->fetch(mThisWeak.lock(), metaData);
         if (mFetcher) {
-          ZS_LOG_DEBUG(log("fetching next publication") + IPublicationFetcher::toDebugString(mFetcher))
+          ZS_LOG_DEBUG(log("fetching next publication") + IPublicationFetcher::toDebug(mFetcher))
         } else{
-          ZS_LOG_ERROR(Detail, log("fetching next publication failed to return fetcher") + getDebugValueString())
+          ZS_LOG_ERROR(Detail, log("fetching next publication failed to return fetcher") + toDebug())
           notifyPublicationGone(peerLocation, metaData);
         }
       }

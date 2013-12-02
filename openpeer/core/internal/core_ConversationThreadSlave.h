@@ -128,7 +128,7 @@ namespace openpeer
       public:
         ~ConversationThreadSlave();
 
-        static String toDebugString(ConversationThreadSlavePtr thread, bool includeCommaPrefix = true);
+        static ElementPtr toDebug(ConversationThreadSlavePtr thread);
 
       protected:
         //---------------------------------------------------------------------
@@ -263,8 +263,9 @@ namespace openpeer
         bool isShuttingDown() const {return ConversationThreadSlaveState_ShuttingDown == mCurrentState;}
         virtual bool isShutdown() const {AutoRecursiveLock lock(getLock()); return ConversationThreadSlaveState_Shutdown == mCurrentState;}
 
-        String log(const char *message) const;
-        virtual String getDebugValueString(bool includeCommaPrefix = true) const;
+        Log::Params log(const char *message) const;
+
+        virtual ElementPtr toDebug() const;
 
         RecursiveLock &getLock() const;
 

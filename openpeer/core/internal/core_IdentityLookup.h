@@ -127,7 +127,7 @@ namespace openpeer
         #pragma mark IdentityLookup => IIdentityLookup
         #pragma mark
 
-        static String toDebugString(IIdentityLookupPtr identity, bool includeCommaPrefix = true);
+        static ElementPtr toDebug(IIdentityLookupPtr identity);
 
         static IdentityLookupPtr create(
                                         IAccountPtr account,
@@ -195,8 +195,10 @@ namespace openpeer
         #pragma mark IdentityLookup => (internal)
         #pragma mark
 
-        String log(const char *message) const;
-        virtual String getDebugValueString(bool includeCommaPrefix = true) const;
+        Log::Params log(const char *message) const;
+        Log::Params debug(const char *message) const;
+
+        virtual ElementPtr toDebug() const;
 
         RecursiveLock &getLock() const;
 

@@ -37,8 +37,10 @@
 #include <openpeer/core/internal/core_Helper.h>
 
 #include <openpeer/stack/IHelper.h>
+#include <openpeer/services/IHelper.h>
 
 #include <zsLib/helpers.h>
+#include <zsLib/XML.h>
 
 #define OPENPEER_CALL_CLEANUP_TIMEOUT_IN_SECONDS (60*2)
 
@@ -60,6 +62,8 @@ namespace openpeer
   {
     namespace internal
     {
+      using services::IHelper;
+
       using zsLib::ITimerDelegateProxy;
 
       using stack::CandidateList;
@@ -247,10 +251,10 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      String Call::toDebugString(ICallPtr call, bool includeCommaPrefix)
+      ElementPtr Call::toDebug(ICallPtr call)
       {
-        if (!call) return includeCommaPrefix ? String(", call=(null)") : String("call=(null)");
-        return Call::convert(call)->getDebugValueString(true, false, includeCommaPrefix);
+        if (!call) return ElementPtr();
+        return Call::convert(call)->toDebug(true, false);
       }
 
       //-----------------------------------------------------------------------
@@ -277,7 +281,7 @@ namespace openpeer
         pThis->mCallee = Contact::convert(toContact);
         pThis->mIncomingCall = false;
         pThis->mPlaceCall = true;
-        ZS_LOG_DEBUG(pThis->log("call being placed") + IContact::toDebugString(pThis->mCallee))
+        ZS_LOG_DEBUG(pThis->log("call being placed") + IContact::toDebug(pThis->mCallee))
         pThis->init();
         if ((!pThis->mCaller) ||
             (!pThis->mCallee)) {
@@ -413,7 +417,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Call::hangup(CallClosedReasons reason)
       {
-        ZS_LOG_DEBUG(log("hangup called") + ", reason=" + ICall::toString(reason))
+        ZS_LOG_DEBUG(log("hangup called") + ZS_PARAM("reason", ICall::toString(reason)))
 
         AutoRecursiveLock lock(getLock());
         setClosedReason(reason);
@@ -511,7 +515,7 @@ namespace openpeer
           }
 
           if ((!isAudio) && (!isVideo)) {
-            ZS_LOG_WARNING(Detail, String("call does not contain valid media") + ", type=" + description->mType)
+            ZS_LOG_WARNING(Detail, slog("call does not contain valid media") + ZS_PARAM("type", description->mType))
             continue;
           }
         }
@@ -627,7 +631,7 @@ namespace openpeer
           }
 
           if (IICESocket::ICESocketState_Shutdown == state) {
-            ZS_LOG_DEBUG(log("ICE socket is shutdown") + ", type=" + ICallForCallTransport::toString(type) + ", is RTP=" + (wasRTP ? "true" : "false"))
+            ZS_LOG_DEBUG(log("ICE socket is shutdown") + ZS_PARAM("type", ICallForCallTransport::toString(type)) + ZS_PARAM("is RTP", wasRTP))
             subscription.reset();
           }
         }
@@ -718,7 +722,7 @@ namespace openpeer
               return;
             }
           } else if (mPickedLocation->getID() != locationID) {
-            ZS_LOG_WARNING(Trace, log("ignoring received RTP packet as location specified is not chosen location") + ", chosen=" + string(mPickedLocation->getID()) + ", specified=" + string(locationID))
+            ZS_LOG_WARNING(Trace, log("ignoring received RTP packet as location specified is not chosen location") + ZS_PARAM("chosen", mPickedLocation->getID()) + ZS_PARAM("specified", locationID))
             return;
           }
         }
@@ -738,7 +742,7 @@ namespace openpeer
             AutoRecursiveLock lock(getLock());
             CallLocationMap::iterator found = mCallLocations.find(location->getLocationID());
             if (found != mCallLocations.end()) {
-              ZS_LOG_DEBUG(log("location shutdown") + ", object ID=" + string(location->getID()) + ", location ID=" + location->getLocationID())
+              ZS_LOG_DEBUG(log("location shutdown") + ZS_PARAM("object ID", location->getID()) + ZS_PARAM("location ID", location->getLocationID()))
               mCallLocations.erase(found);
             }
           }
@@ -751,7 +755,7 @@ namespace openpeer
             if (mPickedLocation) {
               if (mPickedLocation->getLocationID() == location->getLocationID()) {
                 // the picked location is shutting down...
-                ZS_LOG_WARNING(Detail, log("picked location shutdown") + ", object ID=" + string(location->getID()) + ", location ID=" + location->getLocationID())
+                ZS_LOG_WARNING(Detail, log("picked location shutdown") + ZS_PARAM("object ID", location->getID()) + ZS_PARAM("location ID", location->getLocationID()))
                 mPickedLocation.reset();
                 pickedRemoved = true;
               }
@@ -803,50 +807,62 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      String Call::log(const char *message) const
+      Log::Params Call::slog(const char *message)
       {
-        return String("Call [") + string(mID) + "] " + message;
+        return Log::Params(message, "core::Call");
       }
 
       //-----------------------------------------------------------------------
-      String Call::getDebugValueString(
-                                       bool callData,
-                                       bool mediaData,
-                                       bool includeCommaPrefix
-                                       ) const
+      Log::Params Call::log(const char *message) const
       {
-        bool firstTime = !includeCommaPrefix;
-        String result = Helper::getDebugValue("call id", string(mID), firstTime) +
-                        Helper::getDebugValue("call id (s)", mCallID, firstTime) +
-                        Helper::getDebugValue("has audio", mHasAudio ? String("true") : String(), firstTime) +
-                        Helper::getDebugValue("has video", mHasVideo ? String("true") : String(), firstTime) +
-                        Helper::getDebugValue("incoming", mIncomingCall ? String("true") : String(), firstTime) +
-                        ", caller: " + IContact::toDebugString(mCaller, false) +
-                        ", callee: " + IContact::toDebugString(mCallee, false);
+        ElementPtr objectEl = Element::create("core::Call");
+        IHelper::debugAppend(objectEl, "id", mID);
+        return Log::Params(message, objectEl);
+      }
+
+      //-----------------------------------------------------------------------
+      ElementPtr Call::toDebug(
+                               bool callData,
+                               bool mediaData
+                               ) const
+      {
+        ElementPtr resultEl = Element::create("core::Call");
+
+        IHelper::debugAppend(resultEl, "id", mID);
+        IHelper::debugAppend(resultEl, "call id (s)", mCallID);
+        IHelper::debugAppend(resultEl, "has audio", mHasAudio);
+        IHelper::debugAppend(resultEl, "has video", mHasVideo);
+        IHelper::debugAppend(resultEl, "incoming", mIncomingCall);
+        IHelper::debugAppend(resultEl, "caller", IContact::toDebug(mCaller));
+        IHelper::debugAppend(resultEl, "callee", IContact::toDebug(mCallee));
+
         if (callData)
         {
           AutoRecursiveLock lock(getLock());
-          result += Helper::getDebugValue("state", ICall::toString(mCurrentState), firstTime) +
-                    Helper::getDebugValue("closed reason", ICall::toString(mClosedReason), firstTime) +
-                    Helper::getDebugValue("notified", mIncomingNotifiedThreadOfPreparing ? String("true") : String(), firstTime) +
-                    Helper::getDebugValue("locations", mCallLocations.size() > 0 ? string(mCallLocations.size()) : String(), firstTime) +
-                    Helper::getDebugValue("place call", mPlaceCall ? String("true") : String(), firstTime) +
-                    Helper::getDebugValue("ring called", mRingCalled ? String("true") : String(), firstTime) +
-                    Helper::getDebugValue("answer called", mAnswerCalled ? String("true") : String(), firstTime) +
-                    Helper::getDebugValue("local on hold", mLocalOnHold ? String("true") : String(), firstTime) +
-                    Helper::getDebugValue("creation", Time() != mCreationTime ? services::IHelper::timeToString(mCreationTime) : String(), firstTime) +
-                    Helper::getDebugValue("ring", Time() != mRingTime ? services::IHelper::timeToString(mRingTime) : String(), firstTime) +
-                    Helper::getDebugValue("answer", Time() != mAnswerTime ? services::IHelper::timeToString(mAnswerTime) : String(), firstTime) +
-                    Helper::getDebugValue("closed", Time() != mClosedTime ? services::IHelper::timeToString(mClosedTime) : String(), firstTime) +
-                    Helper::getDebugValue("first closed", Time() != mFirstClosedRemoteCallTime ? services::IHelper::timeToString(mFirstClosedRemoteCallTime) : String(), firstTime);
+
+          IHelper::debugAppend(resultEl, "state", ICall::toString(mCurrentState));
+          IHelper::debugAppend(resultEl, "closed reason", ICall::toString(mClosedReason));
+          IHelper::debugAppend(resultEl, "notified", mIncomingNotifiedThreadOfPreparing);
+          IHelper::debugAppend(resultEl, "locations", mCallLocations.size());
+          IHelper::debugAppend(resultEl, "place call", mPlaceCall);
+          IHelper::debugAppend(resultEl, "ring called", mRingCalled);
+          IHelper::debugAppend(resultEl, "answer called", mAnswerCalled);
+          IHelper::debugAppend(resultEl, "local on hold", mLocalOnHold);
+          IHelper::debugAppend(resultEl, "creation", mCreationTime);
+          IHelper::debugAppend(resultEl, "ring", mRingTime);
+          IHelper::debugAppend(resultEl, "answer", mAnswerTime);
+          IHelper::debugAppend(resultEl, "closed", mClosedTime);
+          IHelper::debugAppend(resultEl, "first closed", mFirstClosedRemoteCallTime);
         }
         if (mediaData)
         {
           AutoRecursiveLock lock(getMediaLock());
-          result += Helper::getDebugValue("media hold", mMediaHolding ? String("true") : String(), firstTime) +
-                    Helper::getDebugValue("notified destroyed", mNotifiedCallTransportDestroyed ? String("true") : String(), firstTime);
+
+          IHelper::debugAppend(resultEl, "media hold", mMediaHolding);
+          IHelper::debugAppend(resultEl, "notified destroyed", mNotifiedCallTransportDestroyed);
         }
-        return result;
+
+        return resultEl;
       }
 
       //-----------------------------------------------------------------------
@@ -895,7 +911,7 @@ namespace openpeer
           mCallLocations.clear();
         }
 
-        ZS_LOG_DEBUG(log("closing call locations") + ", total=" + string(locationsToClose.size()))
+        ZS_LOG_DEBUG(log("closing call locations") + ZS_PARAM("total", locationsToClose.size()))
 
         // close the locations now...
         for (CallLocationList::iterator iter = locationsToClose.begin(); iter != locationsToClose.end(); ++iter)
@@ -991,15 +1007,15 @@ namespace openpeer
           *callClosedNoThrow = false;
 
         bool didPlaceCall = (isLocal ? !mIncomingCall : mIncomingCall);
-        ZS_LOG_DEBUG(log("checking state") + ", state=" + ICall::toString(state) + ", placed call=" + (didPlaceCall ? "true" : "false") + ", side=" + (isLocal ? "local" : "remote"))
+        ZS_LOG_DEBUG(log("checking state") + ZS_PARAM("state", ICall::toString(state)) + ZS_PARAM("placed call", didPlaceCall) + ZS_PARAM("side", (isLocal ? "local" : "remote")))
         switch (state) {
-          case ICall::CallState_None:       ZS_THROW_CUSTOM(Exceptions::IllegalState, log("call state is none") + ", side=" + (isLocal ? "local" : "remote"))
+          case ICall::CallState_None:       ZS_THROW_CUSTOM(Exceptions::IllegalState, log("call state is none") + ZS_PARAM("side", (isLocal ? "local" : "remote")))
           case ICall::CallState_Preparing:  break;
-          case ICall::CallState_Incoming:   if (didPlaceCall) {ZS_THROW_CUSTOM(Exceptions::IllegalState, log("call state is illegal") + ", side=" + (isLocal ? "local" : "remote"))} break;
-          case ICall::CallState_Placed:     if (!didPlaceCall) {ZS_THROW_CUSTOM(Exceptions::IllegalState, log("call state is illegal") + ", side=" + (isLocal ? "local" : "remote"))} break;
+          case ICall::CallState_Incoming:   if (didPlaceCall) {ZS_THROW_CUSTOM(Exceptions::IllegalState, log("call state is illegal") + ZS_PARAM("side", (isLocal ? "local" : "remote")))} break;
+          case ICall::CallState_Placed:     if (!didPlaceCall) {ZS_THROW_CUSTOM(Exceptions::IllegalState, log("call state is illegal") + ZS_PARAM("side", (isLocal ? "local" : "remote")))} break;
           case ICall::CallState_Early:      break;
-          case ICall::CallState_Ringing:    if (didPlaceCall) {ZS_THROW_CUSTOM(Exceptions::IllegalState, log("call state is illegal") + ", side=" + (isLocal ? "local" : "remote"))} break;
-          case ICall::CallState_Ringback:   if (!didPlaceCall) {ZS_THROW_CUSTOM(Exceptions::IllegalState, log("call state is illegal") + ", side=" + (isLocal ? "local" : "remote"))} break;
+          case ICall::CallState_Ringing:    if (didPlaceCall) {ZS_THROW_CUSTOM(Exceptions::IllegalState, log("call state is illegal") + ZS_PARAM("side", (isLocal ? "local" : "remote")))} break;
+          case ICall::CallState_Ringback:   if (!didPlaceCall) {ZS_THROW_CUSTOM(Exceptions::IllegalState, log("call state is illegal") + ZS_PARAM("side", (isLocal ? "local" : "remote")))} break;
           case ICall::CallState_Open:       break;
           case ICall::CallState_Active:     break;
           case ICall::CallState_Inactive:   break;
@@ -1009,7 +1025,7 @@ namespace openpeer
             if (callClosedNoThrow) {
               *callClosedNoThrow = true;
             } else {
-              ZS_THROW_CUSTOM(Exceptions::CallClosed, log("call state is closed") + ", side=" + (isLocal ? "local" : "remote"))
+              ZS_THROW_CUSTOM(Exceptions::CallClosed, log("call state is closed") + ZS_PARAM("side", (isLocal ? "local" : "remote")))
             }
             break;
           }
@@ -1020,7 +1036,7 @@ namespace openpeer
       void Call::checkLegalWhenNotPicked() const throw (Exceptions::IllegalState)
       {
         bool didPlaceCall = !mIncomingCall;
-        ZS_LOG_DEBUG(log("checking state legal when not picked") + ", state=" + ICall::toString(mCurrentState) + ", placed call=" + (didPlaceCall ? "true" : "false") + ", side=local")
+        ZS_LOG_DEBUG(log("checking state legal when not picked") + ZS_PARAM("state", ICall::toString(mCurrentState)) + ZS_PARAM("placed call", didPlaceCall) + ZS_PARAM("side", "local"))
         ZS_THROW_CUSTOM_MSG_IF(Exceptions::IllegalState, !didPlaceCall, log("must have picked a location for the local if the call was incoming"))
 
         switch (mCurrentState) {
@@ -1051,16 +1067,16 @@ namespace openpeer
                                       ) const throw (Exceptions::IllegalState)
       {
         bool didPlaceCall = (isLocal ? !mIncomingCall : mIncomingCall);
-        ZS_LOG_DEBUG(log("checking state is legal when picked") + ", state=" + ICall::toString(state) + ", placed call=" + (didPlaceCall ? "true" : "false") + ", side=" + (isLocal ? "local" : "remote"))
+        ZS_LOG_DEBUG(log("checking state is legal when picked") + ZS_PARAM("state", ICall::toString(state)) + ZS_PARAM("placed call", didPlaceCall) + ZS_PARAM("side", (isLocal ? "local" : "remote")))
         if (isLocal) {
           switch (state) {
             case ICall::CallState_None:       break;  // already handled
-            case ICall::CallState_Preparing:  if (didPlaceCall) {ZS_THROW_CUSTOM(Exceptions::IllegalState, log("call state is illegal") + ", side=" + (isLocal ? "local" : "remote"))} break;
+            case ICall::CallState_Preparing:  if (didPlaceCall) {ZS_THROW_CUSTOM(Exceptions::IllegalState, log("call state is illegal") + ZS_PARAM("side", (isLocal ? "local" : "remote")))} break;
             case ICall::CallState_Incoming:   break;
-            case ICall::CallState_Placed:     ZS_THROW_CUSTOM(Exceptions::IllegalState, log("call state is illegal - how could local have picked a location but still be placing the call") + ", side=" + (isLocal ? "local" : "remote"))
-            case ICall::CallState_Early:      if (didPlaceCall) {ZS_THROW_CUSTOM(Exceptions::IllegalState, log("call state is illegal - how could local have picked a location but still be in early state") + ", side=" + (isLocal ? "local" : "remote"))} break;
+            case ICall::CallState_Placed:     ZS_THROW_CUSTOM(Exceptions::IllegalState, log("call state is illegal - how could local have picked a location but still be placing the call") + ZS_PARAM("side", (isLocal ? "local" : "remote")))
+            case ICall::CallState_Early:      if (didPlaceCall) {ZS_THROW_CUSTOM(Exceptions::IllegalState, log("call state is illegal - how could local have picked a location but still be in early state") + ZS_PARAM("side", (isLocal ? "local" : "remote")))} break;
             case ICall::CallState_Ringing:    break;
-            case ICall::CallState_Ringback:   if (didPlaceCall) {ZS_THROW_CUSTOM(Exceptions::IllegalState, log("call state is illegal - how could local have picked a location but still be in ringback state") + ", side=" + (isLocal ? "local" : "remote"))} break;
+            case ICall::CallState_Ringback:   if (didPlaceCall) {ZS_THROW_CUSTOM(Exceptions::IllegalState, log("call state is illegal - how could local have picked a location but still be in ringback state") + ZS_PARAM("side", (isLocal ? "local" : "remote")))} break;
             case ICall::CallState_Open:       break;
             case ICall::CallState_Active:     break;
             case ICall::CallState_Inactive:   break;
@@ -1071,11 +1087,11 @@ namespace openpeer
         } else {
           switch (state) {
             case ICall::CallState_None:       break;  // already handled
-            case ICall::CallState_Preparing:  if (!mIncomingCall) { if (didPlaceCall) {ZS_THROW_CUSTOM(Exceptions::IllegalState, log("call state is illegal - why pick remote if it's still preparing") + ", side=" + (isLocal ? "local" : "remote"))} } break;
-            case ICall::CallState_Incoming:   if (didPlaceCall) {ZS_THROW_CUSTOM(Exceptions::IllegalState, log("call state is illegal - why pick remote if it's still incoming") + ", side=" + (isLocal ? "local" : "remote"))} break;
+            case ICall::CallState_Preparing:  if (!mIncomingCall) { if (didPlaceCall) {ZS_THROW_CUSTOM(Exceptions::IllegalState, log("call state is illegal - why pick remote if it's still preparing") + ZS_PARAM("side", (isLocal ? "local" : "remote")))} } break;
+            case ICall::CallState_Incoming:   if (didPlaceCall) {ZS_THROW_CUSTOM(Exceptions::IllegalState, log("call state is illegal - why pick remote if it's still incoming") + ZS_PARAM("side", (isLocal ? "local" : "remote")))} break;
             case ICall::CallState_Placed:     break;
-            case ICall::CallState_Early:      if (didPlaceCall) {ZS_THROW_CUSTOM(Exceptions::IllegalState, log("call state is illegal - why pick remote if it's still early media") + ", side=" + (isLocal ? "local" : "remote"))} break;
-            case ICall::CallState_Ringing:    if (didPlaceCall) {ZS_THROW_CUSTOM(Exceptions::IllegalState, log("call state is illegal - why pick remote if it's still ringing") + ", side=" + (isLocal ? "local" : "remote"))} break;
+            case ICall::CallState_Early:      if (didPlaceCall) {ZS_THROW_CUSTOM(Exceptions::IllegalState, log("call state is illegal - why pick remote if it's still early media") + ZS_PARAM("side", (isLocal ? "local" : "remote")))} break;
+            case ICall::CallState_Ringing:    if (didPlaceCall) {ZS_THROW_CUSTOM(Exceptions::IllegalState, log("call state is illegal - why pick remote if it's still ringing") + ZS_PARAM("side", (isLocal ? "local" : "remote")))} break;
             case ICall::CallState_Ringback:   break;
             case ICall::CallState_Open:       break;
             case ICall::CallState_Active:     break;
@@ -1167,7 +1183,7 @@ namespace openpeer
           }
         }
 
-        ZS_LOG_DEBUG(log("audio and/or video sockets are all awake and ready") + ", has audio=" + (hasAudio() ? "true" : "false") + ", has video=" + (hasVideo() ? "true" : "false"))
+        ZS_LOG_DEBUG(log("audio and/or video sockets are all awake and ready") + ZS_PARAM("has audio", hasAudio()) + ZS_PARAM("has video", hasVideo()))
 
         if (needCandidates) {
           ZS_LOG_DEBUG(log("candidates are being fetched"))
@@ -1334,13 +1350,13 @@ namespace openpeer
 
           CallLocationMap::iterator found = mCallLocations.find(locationID);
           if (found != mCallLocations.end()) {
-            ZS_LOG_DEBUG(log("updating an existing call location") + ", remote location ID=" + locationID)
+            ZS_LOG_DEBUG(log("updating an existing call location") + ZS_PARAM("remote location ID", locationID))
             CallLocationPtr &callLocation = (*found).second;
             callLocation->updateDialog(remoteDialog);
 
             if (picked) {
               if (locationID != picked->getLocationID()) {
-                ZS_LOG_DEBUG(log("this call location was not picked therefor must close later") + ", remote: " + CallLocation::toDebugString(callLocation, true, false, false) + ", picked: " + CallLocation::toDebugString(picked, true, false, false))
+                ZS_LOG_DEBUG(log("this call location was not picked therefor must close later") + ZS_PARAM("remote", CallLocation::toDebug(callLocation, true, false)) + ZS_PARAM("picked", CallLocation::toDebug(picked, true, false)))
                 // this location must be removed...
                 CallLocationPtr &callLocation = (*found).second;
                 outLocationsToClose.push_back(callLocation);
@@ -1353,7 +1369,7 @@ namespace openpeer
           }
 
           if (picked) {
-            ZS_LOG_DEBUG(log("found a new location for the call but already picked the current location") + ", location ID=" + locationID)
+            ZS_LOG_DEBUG(log("found a new location for the call but already picked the current location") + ZS_PARAM("location ID", locationID))
             continue;
           }
 
@@ -1362,12 +1378,12 @@ namespace openpeer
           if ((remoteCallState != ICall::CallState_Closing) &&
               (remoteCallState != ICall::CallState_Closed)) {
 
-            ZS_LOG_DEBUG(log("creating a new call location") + ", remote location ID=" + locationID)
+            ZS_LOG_DEBUG(log("creating a new call location") + ZS_PARAM("remote location ID", locationID))
             CallLocationPtr callLocation = CallLocation::create(getQueue(), getMediaQueue(), mThisWeak.lock(), mTransport, locationID, remoteDialog, hasAudio(), hasVideo());
             mCallLocations[locationID] = callLocation;
 
             if (mIncomingCall) {
-              ZS_LOG_DEBUG(log("incoming call must pick the remote location") + ", remote local ID=" + locationID + CallLocation::toDebugString(callLocation, true, false))
+              ZS_LOG_DEBUG(log("incoming call must pick the remote location") + ZS_PARAM("remote location ID", locationID) + CallLocation::toDebug(callLocation, true, false))
               // we *must* pick this location
               picked = callLocation;
             }
@@ -1375,7 +1391,7 @@ namespace openpeer
           }
 
           CallClosedReasons remoteReason = internal::convert(remoteDialog->closedReason());
-          ZS_LOG_DEBUG(log("found a new location for the call but location was already closing/closed") + ", location ID=" + locationID + ", reason=" + ICall::toString(remoteReason))
+          ZS_LOG_DEBUG(log("found a new location for the call but location was already closing/closed") + ZS_PARAM("location ID", locationID) + ZS_PARAM("reason", ICall::toString(remoteReason)))
 
           switch (internal::convert(remoteDialog->closedReason())) {
             case CallClosedReason_Decline: {
@@ -1477,7 +1493,7 @@ namespace openpeer
         if (ioPicked) {
           DialogPtr remoteDialog = ioPicked->getRemoteDialog();
           if (isLockedToAnotherLocation(remoteDialog)) {
-            ZS_LOG_WARNING(Detail, log("remote side locked onto another location... harumph... remove the location") + Dialog::toDebugString(remoteDialog))
+            ZS_LOG_WARNING(Detail, log("remote side locked onto another location... harumph... remove the location") + Dialog::toDebug(remoteDialog))
             return false;
           }
 
@@ -1509,7 +1525,7 @@ namespace openpeer
           }
 
           try {
-            ZS_LOG_TRACE(log("checking possible location to see if it has a valid state") + CallLocation::toDebugString(callLocation, true, false) + Dialog::toDebugString(remoteDialog))
+            ZS_LOG_TRACE(log("checking possible location to see if it has a valid state") + CallLocation::toDebug(callLocation, true, false) + Dialog::toDebug(remoteDialog))
             bool callClosedException = false;
             checkState(internal::convert(remoteDialog->dialogState()), false, &callClosedException);
             if (callClosedException) {
@@ -1558,7 +1574,7 @@ namespace openpeer
             case CallState_Inactive:
             case CallState_Hold:      {
               if (ICallLocation::CallLocationState_Ready == callLocation->getState()) {
-                ZS_LOG_DEBUG(log("picked location") + CallLocation::toDebugString(callLocation, true, false))
+                ZS_LOG_DEBUG(log("picked location") + CallLocation::toDebug(callLocation, true, false))
                 ioPicked = callLocation;
               }
               break;
@@ -1623,7 +1639,7 @@ namespace openpeer
 
         ICallLocation::CallLocationStates pickedLocationState = picked->getState();
 
-        ZS_LOG_DEBUG(log("picked call state logic") + CallLocation::toDebugString(picked, true, false) + getDebugValueString(true, false) + Dialog::toDebugString(pickedRemoteDialog))
+        ZS_LOG_DEBUG(log("picked call state logic") + CallLocation::toDebug(picked, true, false) + toDebug(true, false) + Dialog::toDebug(pickedRemoteDialog))
 
         // if the picked location is now gone then we must shutdown the object...
         checkLegalWhenPicked(mCurrentState, true);
@@ -1715,7 +1731,7 @@ namespace openpeer
 
           if (ICall::CallState_Hold != mCurrentState) {
             // this call must be in focus...
-            ZS_LOG_DEBUG(log("setting focus to this call?") + ", focus=" + (mediaHolding ? "false" : "true"))
+            ZS_LOG_DEBUG(log("setting focus to this call?") + ZS_PARAM("focus", !mediaHolding))
             ICallAsyncProxy::create(getMediaQueue(), mThisWeak.lock())->onSetFocus(!mediaHolding);
           } else {
             ZS_LOG_DEBUG(log("this call state is holding thus it should not have focus"))
@@ -1748,7 +1764,7 @@ namespace openpeer
         for (CallLocationList::iterator iter = locationsToClose.begin(); iter != locationsToClose.end(); ++iter)
         {
           CallLocationPtr &callLocation = (*iter);
-          ZS_LOG_DEBUG(log("forcing call location to close") + CallLocation::toDebugString(callLocation, true, false))
+          ZS_LOG_DEBUG(log("forcing call location to close") + CallLocation::toDebug(callLocation, true, false))
           callLocation->close();
         }
         return true;
@@ -1788,14 +1804,14 @@ namespace openpeer
           }
 
           if (CallClosedReason_None != mClosedReason) {
-            ZS_LOG_WARNING(Detail, log("call close reason set thus call must be shutdown") + ", reason=" + ICall::toString(mClosedReason))
+            ZS_LOG_WARNING(Detail, log("call close reason set thus call must be shutdown") + ZS_PARAM("reason", ICall::toString(mClosedReason)))
             goto call_closed_exception;
           }
 
           needCandidates = !mDialog;
         }
 
-        ZS_LOG_DEBUG(log("step") + getDebugValueString(true, true))
+        ZS_LOG_DEBUG(log("step") + toDebug(true, true))
 
         // scope: media
         try
@@ -1835,7 +1851,7 @@ namespace openpeer
         // examine what is going on in the conversation thread...
         thread->forCall().gatherDialogReplies(mCallID, locationDialogMap);
 
-        ZS_LOG_DEBUG(log("gathering dialog replies has completed") + ", total found=" + string(locationDialogMap.size()))
+        ZS_LOG_DEBUG(log("gathering dialog replies has completed") + ZS_PARAM("total found", locationDialogMap.size()))
 
         try
         {
@@ -1895,14 +1911,14 @@ namespace openpeer
         {
           AutoRecursiveLock lock(getMediaLock());
           if (mediaHolding != mMediaHolding) {
-            ZS_LOG_DEBUG(log("changing media holding state") + ", now holding=" + (mediaHolding ? "true" : "false"))
+            ZS_LOG_DEBUG(log("changing media holding state") + ZS_PARAM("now holding", mediaHolding))
             mMediaHolding = mediaHolding;
           }
           if ((early) && (!mEarlyLocation)) {
             mEarlyLocation = early;
           }
           if ((picked) && (!mPickedLocation)) {
-            ZS_LOG_DEBUG(log("this call now has a picked location") + CallLocation::toDebugString(picked, false, true))
+            ZS_LOG_DEBUG(log("this call now has a picked location") + CallLocation::toDebug(picked, false, true))
             mPickedLocation = picked;
             mEarlyLocation.reset();
           }
@@ -1913,7 +1929,7 @@ namespace openpeer
           goto call_closed_exception;
         }
 
-        ZS_LOG_DEBUG(log("step completed") + getDebugValueString(true, true))
+        ZS_LOG_DEBUG(log("step completed") + toDebug(true, true))
         return;
 
       call_closed_exception:
@@ -1942,7 +1958,7 @@ namespace openpeer
             case CallState_Inactive:
             case CallState_Hold:
             {
-              ZS_LOG_DEBUG(log("call state is being forced to be treated as 'hold' state") + ", was state=" + ICall::toString(state))
+              ZS_LOG_DEBUG(log("call state is being forced to be treated as 'hold' state") + ZS_PARAM("was state", ICall::toString(state)))
               state = CallState_Hold;
               break;
             }
@@ -1956,11 +1972,11 @@ namespace openpeer
 
         bool changedState = false;
         if (state != mCurrentState) {
-          ZS_LOG_BASIC(log("state changed") + ", new state=" + ICall::toString(state) + getDebugValueString(true, false))
+          ZS_LOG_BASIC(log("state changed") + ZS_PARAM("new state", ICall::toString(state)) + toDebug(true, false))
           mCurrentState = state;
           changedState = true;
         } else {
-          ZS_LOG_DEBUG(log("forcing call to state change") + ", state=" + ICall::toString(state) + getDebugValueString(true, false))
+          ZS_LOG_DEBUG(log("forcing call to state change") + ZS_PARAM("state", ICall::toString(state)) + toDebug(true, false))
         }
 
         // record when certain states changed...
@@ -2030,7 +2046,7 @@ namespace openpeer
         CallPtr pThis = mThisWeak.lock();
         if (pThis) {
           if (changedState) {
-            ZS_LOG_DEBUG(log("notifying delegate of state change") + ", state=" + ICall::toString(state) + getDebugValueString(true, false))
+            ZS_LOG_DEBUG(log("notifying delegate of state change") + ZS_PARAM("state", ICall::toString(state)) + toDebug(true, false))
             try {
               mDelegate->onCallStateChanged(pThis, state);
             } catch (ICallDelegateProxy::Exceptions::DelegateGone &) {
@@ -2041,7 +2057,7 @@ namespace openpeer
 
           ConversationThreadPtr thread = mConversationThread.lock();
           if (thread) {
-            ZS_LOG_DEBUG(log("notifying conversation thread of state change") + ", state=" + ICall::toString(state) + getDebugValueString(true, false))
+            ZS_LOG_DEBUG(log("notifying conversation thread of state change") + ZS_PARAM("state", ICall::toString(state)) + toDebug(true, false))
             thread->forCall().notifyCallStateChanged(pThis);
           }
         }
@@ -2056,10 +2072,10 @@ namespace openpeer
           return;
         }
         if (CallClosedReason_None != mClosedReason) {
-          ZS_LOG_WARNING(Debug, log("once the call closed reason is set it cannot be changed (probably okay)") + ", current reason=" + ICall::toString(mClosedReason) + ", attempted to change to=" + ICall::toString(reason))
+          ZS_LOG_WARNING(Debug, log("once the call closed reason is set it cannot be changed (probably okay)") + ZS_PARAM("current reason", ICall::toString(mClosedReason)) + ZS_PARAM("attempted to change to", ICall::toString(reason)))
           return;
         }
-        ZS_LOG_DEBUG(log("call closed reason is now set") + ", reason=" + ICall::toString(reason))
+        ZS_LOG_DEBUG(log("call closed reason is now set") + ZS_PARAM("reason", ICall::toString(reason)))
         mClosedReason = reason;
       }
 
@@ -2095,7 +2111,7 @@ namespace openpeer
           }
         }
 
-        ZS_LOG_WARNING(Detail, log("did not find socket subscription for socket") + ", socket ID=" + string(socket->getID()))
+        ZS_LOG_WARNING(Detail, log("did not find socket subscription for socket") + ZS_PARAM("socket ID", socket->getID()))
 
         outFound = false;
         if (outType) *outType = SocketType_Audio;
@@ -2175,13 +2191,13 @@ namespace openpeer
           }
 
           if ((!isAudio) && (!isVideo)) {
-            ZS_LOG_WARNING(Detail, log("call location media type is not supported") + ", type=" + description->mType)
+            ZS_LOG_WARNING(Detail, log("call location media type is not supported") + ZS_PARAM("type", description->mType))
             continue;
           }
 
           IICESocketPtr rtpSocket = transport->forCall().getSocket(type);
           if (!rtpSocket) {
-            ZS_LOG_WARNING(Detail, log("failed to object transport's sockets for media type") + ", type=" + description->mType)
+            ZS_LOG_WARNING(Detail, log("failed to object transport's sockets for media type") + ZS_PARAM("type", description->mType))
             continue;
           }
 
@@ -2207,8 +2223,8 @@ namespace openpeer
         }
 
         ZS_LOG_DEBUG(log("init completed") +
-                     ", audio RTP session ID=" + string(mAudioRTPSocketSession ? mAudioRTPSocketSession->getID() : 0) +
-                     ", video RTP session ID=" + string(mVideoRTPSocketSession ? mVideoRTPSocketSession->getID() : 0))
+                     ZS_PARAM("audio RTP session ID", mAudioRTPSocketSession ? mAudioRTPSocketSession->getID() : 0) +
+                     ZS_PARAM("video RTP session ID", mVideoRTPSocketSession ? mVideoRTPSocketSession->getID() : 0))
       }
 
       //-----------------------------------------------------------------------
@@ -2219,15 +2235,14 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      String Call::CallLocation::toDebugString(
-                                               CallLocationPtr location,
-                                               bool normal,
-                                               bool media,
-                                               bool includeCallPrefix
-                                               )
+      ElementPtr Call::CallLocation::toDebug(
+                                         CallLocationPtr location,
+                                         bool normal,
+                                         bool media
+                                         )
       {
-        if (!location) return includeCallPrefix ? ", calll location=(null)" : "calll location=(null)";
-        return location->getDebugValueString(normal, media, includeCallPrefix);
+        if (!location) return ElementPtr();
+        return location->toDebug(normal, media);
       }
 
       //-----------------------------------------------------------------------
@@ -2338,12 +2353,12 @@ namespace openpeer
 
           IICESocketSessionPtr &session = findSession(inSession, found, &type, &wasRTP);
           if (!found) {
-            ZS_LOG_WARNING(Detail, log("ignoring ICE socket session state change on obsolete session") + ", session ID=" + string(inSession->getID()))
+            ZS_LOG_WARNING(Detail, log("ignoring ICE socket session state change on obsolete session") + ZS_PARAM("session ID", inSession->getID()))
             return;
           }
 
           if (IICESocketSession::ICESocketSessionState_Shutdown == state) {
-            ZS_LOG_DEBUG(log("ICE socket session is shutdown") + ", type=" + ICallForCallTransport::toString(type) + ", is RTP=" + (wasRTP ? "true" : "false"))
+            ZS_LOG_DEBUG(log("ICE socket session is shutdown") + ZS_PARAM("type", ICallForCallTransport::toString(type)) + ZS_PARAM("is RTP", wasRTP))
             session.reset();
           }
         }
@@ -2438,36 +2453,39 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      String Call::CallLocation::log(const char *message) const
+      Log::Params Call::CallLocation::log(const char *message) const
       {
-        return String("Call::CallLocation [") + string(mID) + "] " + message;
+        ElementPtr objectEl = Element::create("core::Call::CallLocation");
+        IHelper::debugAppend(objectEl, "id", mID);
+        return Log::Params(message, objectEl);
       }
 
       //-----------------------------------------------------------------------
-      String Call::CallLocation::getDebugValueString(
-                                                     bool normal,
-                                                     bool media,
-                                                     bool includeCallPrefix
-                                                     ) const
+      ElementPtr Call::CallLocation::toDebug(
+                                             bool normal,
+                                             bool media
+                                             ) const
       {
-        bool firstTime = !includeCallPrefix;
-        String result = Helper::getDebugValue("call location id", string(mID), firstTime) +
-                        Helper::getDebugValue("location id", mLocationID, firstTime) +
-                        Helper::getDebugValue("audio", mHasAudio ? String("true") : String(), firstTime) +
-                        Helper::getDebugValue("video", mHasAudio ? String("true") : String(), firstTime);
+        ElementPtr resultEl = Element::create("core::Call::CallLocation");
+
+        IHelper::debugAppend(resultEl, "id", mID);
+        IHelper::debugAppend(resultEl, "location id", mLocationID);
+        IHelper::debugAppend(resultEl, "audio", mHasAudio);
+        IHelper::debugAppend(resultEl, "video", mHasAudio);
 
         if (normal)
         {
           AutoRecursiveLock lock(getLock());
-          result += Dialog::toDebugString(mRemoteDialog);
+          IHelper::debugAppend(resultEl, Dialog::toDebug(mRemoteDialog));
         }
         if (media)
         {
           AutoRecursiveLock lock(getMediaLock());
-          result += Helper::getDebugValue("audio rtp socket session", mAudioRTPSocketSession ? string(mAudioRTPSocketSession->getID()) : String(), firstTime) +
-                    Helper::getDebugValue("video rtp socket session", mVideoRTPSocketSession ? string(mVideoRTPSocketSession->getID()) : String(), firstTime);
+          IHelper::debugAppend(resultEl, "audio rtp socket session", mAudioRTPSocketSession ? mAudioRTPSocketSession->getID() : 0);
+          IHelper::debugAppend(resultEl, "video rtp socket session", mVideoRTPSocketSession ? mVideoRTPSocketSession->getID() : 0);
         }
-        return result;
+
+        return resultEl;
       }
 
       //-----------------------------------------------------------------------
@@ -2541,7 +2559,7 @@ namespace openpeer
 
             if ((IICESocketSession::ICESocketSessionState_Nominated != state) &&
                 (IICESocketSession::ICESocketSessionState_Completed != state)) {
-              ZS_LOG_DEBUG(log("waiting on audio RTP socket to be nominated...") + ", socket session ID=" + string(mAudioRTPSocketSession->getID()))
+              ZS_LOG_DEBUG(log("waiting on audio RTP socket to be nominated...") + ZS_PARAM("socket session ID", mAudioRTPSocketSession->getID()))
               return;
             }
           }
@@ -2557,7 +2575,7 @@ namespace openpeer
             if (mVideoRTPSocketSession) {
               if ((IICESocketSession::ICESocketSessionState_Nominated != state) &&
                   (IICESocketSession::ICESocketSessionState_Completed != state)) {
-                ZS_LOG_DEBUG(log("waiting on video RTP socket to be nominated...") + ", socket session ID=" + string(mVideoRTPSocketSession->getID()))
+                ZS_LOG_DEBUG(log("waiting on video RTP socket to be nominated...") + ZS_PARAM("socket session ID", mVideoRTPSocketSession->getID()))
                 return;
               }
             }
@@ -2580,7 +2598,7 @@ namespace openpeer
           AutoRecursiveLock lock(getLock());
           if (state <= mCurrentState) return;
 
-          ZS_LOG_BASIC(log("state changed") + ", old state=" + toString(mCurrentState) + ", new state=" + toString(state))
+          ZS_LOG_BASIC(log("state changed") + ZS_PARAM("old state", toString(mCurrentState)) + ZS_PARAM("new state", toString(state)))
 
           mCurrentState = state;
         }
@@ -2623,7 +2641,7 @@ namespace openpeer
           }
         }
 
-        ZS_LOG_WARNING(Trace, log("did not find socket session thus returning bogus session") + ", socket session ID=" + string(session->getID()))
+        ZS_LOG_WARNING(Trace, log("did not find socket session thus returning bogus session") + ZS_PARAM("socket session ID", session->getID()))
 
         outFound = false;
         if (outType) *outType = SocketType_Audio;
@@ -2641,9 +2659,9 @@ namespace openpeer
     #pragma mark
 
     //-------------------------------------------------------------------------
-    String ICall::toDebugString(ICallPtr call, bool includeCommaPrefix)
+    ElementPtr ICall::toDebug(ICallPtr call)
     {
-      return internal::Call::toDebugString(call, includeCommaPrefix);
+      return internal::Call::toDebug(call);
     }
 
     //-------------------------------------------------------------------------

@@ -36,8 +36,11 @@
 #include <openpeer/core/internal/core_MediaEngine.h>
 #include <openpeer/core/internal/core_Helper.h>
 
+#include <openpeer/services/IHelper.h>
+
 #include <zsLib/Stringize.h>
 #include <zsLib/helpers.h>
+#include <zsLib/XML.h>
 
 #define OPENPEER_CALLTRANSPORT_CLOSE_UNUSED_SOCKETS_AFTER_IN_SECONDS (90)
 
@@ -49,6 +52,8 @@ namespace openpeer
   {
     namespace internal
     {
+      using services::IHelper;
+
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -70,10 +75,10 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      String ICallTransport::toDebugString(ICallTransportPtr transport, bool includeCommaPrefix)
+      ElementPtr ICallTransport::toDebug(ICallTransportPtr transport)
       {
-        if (!transport) return includeCommaPrefix ? ", call transport=(null)" : "call transport=(null)";
-        return CallTransport::convert(transport)->getDebugValueString(includeCommaPrefix);
+        if (!transport) return ElementPtr();
+        return CallTransport::convert(transport)->toDebug();
       }
 
       //-----------------------------------------------------------------------
@@ -275,7 +280,7 @@ namespace openpeer
 
               oldFocus = mFocus.lock();
 
-              ZS_LOG_DEBUG(log("focused call ID changed") + ", was=" + string(mFocusCallID) + ", now=" + string(call->forCallTransport().getID()) + ", block count=" + string(mBlockUntilStartStopCompleted))
+              ZS_LOG_DEBUG(log("focused call ID changed") + ZS_PARAM("was", mFocusCallID) + ZS_PARAM("now", call->forCallTransport().getID()) + ZS_PARAM("block count", mBlockUntilStartStopCompleted))
 
               mFocus = call;
               mFocusCallID = call->forCallTransport().getID();
@@ -286,7 +291,7 @@ namespace openpeer
               ICallTransportAsyncProxy::create(mThisWeak.lock())->onStart();
             } else {
               if (locationID != mFocusLocationID) {
-                ZS_LOG_DEBUG(log("focused location ID changed") + ", was=" + string(mFocusLocationID) + ", now=" + string(locationID) + ", block count=" + string(mBlockUntilStartStopCompleted))
+                ZS_LOG_DEBUG(log("focused location ID changed") + ZS_PARAM("was", mFocusLocationID) + ZS_PARAM("now", locationID) + ZS_PARAM("block count", mBlockUntilStartStopCompleted))
 
                 // must restart the media
                 ++mBlockUntilStartStopCompleted;
@@ -295,7 +300,7 @@ namespace openpeer
               }
             }
           } else {
-            ZS_LOG_DEBUG(log("no focus at all") + ", was=" + string(mFocusLocationID) + ", now=" + string(locationID) + ", block count=" + string(mBlockUntilStartStopCompleted))
+            ZS_LOG_DEBUG(log("no focus at all") + ZS_PARAM("was", mFocusLocationID) + ZS_PARAM("now", locationID) + ZS_PARAM("block count", mBlockUntilStartStopCompleted))
             mFocusCallID = 0;
             mFocusLocationID = 0;
             ++mBlockUntilStartStopCompleted;
@@ -315,12 +320,12 @@ namespace openpeer
         AutoRecursiveLock lock(getLock());
 
         if (0 == mFocusCallID) {
-          ZS_LOG_DEBUG(log("no call has focus (ignoring request to lose focus)") + ", lose focus ID=" + string(callID))
+          ZS_LOG_DEBUG(log("no call has focus (ignoring request to lose focus)") + ZS_PARAM("lose focus ID", callID))
           return;
         }
 
         if (callID != mFocusCallID) {
-          ZS_LOG_WARNING(Detail, log("did not have focus on current call to lose") + ", focusing on ID=" + string(mFocusCallID) + ", lose focus ID=" + string(callID))
+          ZS_LOG_WARNING(Detail, log("did not have focus on current call to lose") + ZS_PARAM("focusing on ID", mFocusCallID) + ZS_PARAM("lose focus ID", callID))
           return;
         }
 
@@ -359,14 +364,14 @@ namespace openpeer
         BYTE filterType = (payloadType & 0x7F);
         bool isRTP = ((filterType < 64) || (filterType > 96));
 
-        ZS_LOG_TRACE(log("notified of packet") + (isRTP ? ", type=RTP" : ", type=RTCP") + ", from call ID=" + string(callID) + ", from location ID=" + string(locationID) + ", type=" + ICallTransportForCall::toString(type) + ", payload type=" + string(payloadType) + ", length=" + string(bufferLengthInBytes))
+        ZS_LOG_TRACE(log("notified of packet") + ZS_PARAM("type", (isRTP ? "RTP" : "RTCP")) + ZS_PARAM("from call ID", callID) + ZS_PARAM("from location ID", locationID) + ZS_PARAM("socket type", ICallTransportForCall::toString(type)) + ZS_PARAM("payload type", payloadType) + ZS_PARAM("length", bufferLengthInBytes))
 
         // scope - get locked variable
         {
           AutoRecursiveLock lock(getLock());
 
           if (0 != mBlockUntilStartStopCompleted) {
-            ZS_LOG_WARNING(Debug, log("ignoring RTP/RTCP packet as media is blocked until the start/stop routine complete") + ", blocked count=" + string(mBlockUntilStartStopCompleted))
+            ZS_LOG_WARNING(Debug, log("ignoring RTP/RTCP packet as media is blocked until the start/stop routine complete") + ZS_PARAM("blocked count", mBlockUntilStartStopCompleted))
             return;
           }
 
@@ -377,7 +382,7 @@ namespace openpeer
 
           if ((callID != mFocusCallID) ||
               (locationID != mFocusLocationID)) {
-            ZS_LOG_TRACE(log("ignoring RTP/RTCP packet as not from call/location ID in focus") + ", focus call ID=" + string(mFocusCallID) + ", focus location ID=" + string(mFocusLocationID))
+            ZS_LOG_TRACE(log("ignoring RTP/RTCP packet as not from call/location ID in focus") + ZS_PARAM("focus call ID", mFocusCallID) + ZS_PARAM("focus location ID", mFocusLocationID))
             return;
           }
 
@@ -421,7 +426,7 @@ namespace openpeer
       {
         AutoRecursiveLock lock(getLock());
         if (timer != mSocketCleanupTimer) {
-          ZS_LOG_WARNING(Detail, log("notification from obsolete timer") + string(timer->getID()))
+          ZS_LOG_WARNING(Detail, log("notification from obsolete timer") + ZS_PARAM("timer id", timer->getID()))
           return;
         }
 
@@ -452,13 +457,13 @@ namespace openpeer
           AutoRecursiveLock lock(getLock());
 
           if (0 != mBlockUntilStartStopCompleted) {
-            ZS_LOG_WARNING(Debug, log("ignoring request to send RTP packet as media is blocked until the start/stop routine complete") + ", blocked count=" + string(mBlockUntilStartStopCompleted))
+            ZS_LOG_WARNING(Debug, log("ignoring request to send RTP packet as media is blocked until the start/stop routine complete") + ZS_PARAM("blocked count", mBlockUntilStartStopCompleted))
             return 0;
           }
 
           if ((0 == mFocusCallID) ||
               (!mStarted)) {
-            ZS_LOG_WARNING(Trace, log("unable to send RTP packet media isn't start or there is no focus object") + ", started=" + (mStarted ? "true" : "false") + ", focus ID=" + string(mFocusCallID))
+            ZS_LOG_WARNING(Trace, log("unable to send RTP packet media isn't start or there is no focus object") + ZS_PARAM("started", mStarted) + ZS_PARAM("focus ID", mFocusCallID))
             return 0;
           }
 
@@ -488,35 +493,40 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      String CallTransport::log(const char *message) const
+      Log::Params CallTransport::log(const char *message) const
       {
-        return String("CallTransport [") + string(mID) + "] " + message;
+        ElementPtr objectEl = Element::create("core::CallTransport");
+        IHelper::debugAppend(objectEl, "id", mID);
+        return Log::Params(message, objectEl);
       }
 
       //-----------------------------------------------------------------------
-      String CallTransport::getDebugValueString(bool includeCommaPrefix) const
+      ElementPtr CallTransport::toDebug() const
       {
         AutoRecursiveLock lock(getLock());
-        bool firstTime = !includeCommaPrefix;
-        return
-        Helper::getDebugValue("call transport id", string(mID), firstTime) +
-        Helper::getDebugValue("state", ICallTransport::toString(mCurrentState), firstTime) +
-        Helper::getDebugValue("turn servers", mTURNServers.size() > 0 ? string(mTURNServers.size()) : String(), firstTime) +
-        Helper::getDebugValue("stun", mSTUNServers.size() > 0 ? string(mSTUNServers.size()) : String(), firstTime) +
-        Helper::getDebugValue("total calls", 0 != mTotalCalls ? string(mTotalCalls) : String(), firstTime) +
-        Helper::getDebugValue("socket cleanup timer", mSocketCleanupTimer ? String("true") : String(), firstTime) +
-        Helper::getDebugValue("started", mStarted ? String("true") : String(), firstTime) +
-        ICall::toDebugString(mFocus.lock()) +
-        Helper::getDebugValue("focus call id", 0 != mFocusCallID ? string(mFocusCallID) : String(), firstTime) +
-        Helper::getDebugValue("focus location id", 0 != mFocusLocationID ? string(mFocusLocationID) : String(), firstTime) +
-        Helper::getDebugValue("has audio", mHasAudio ? String("true") : String(), firstTime) +
-        Helper::getDebugValue("has video", mHasAudio ? String("true") : String(), firstTime) +
-        Helper::getDebugValue("blocked until", 0 != mBlockUntilStartStopCompleted ? string(mBlockUntilStartStopCompleted) : String(), firstTime) +
-        ", audio: " + TransportSocket::toDebugString(mAudioSocket, false) +
-        ", video: " + TransportSocket::toDebugString(mVideoSocket, false) +
-        Helper::getDebugValue("audio socket id", 0 != mAudioSocketID ? string(mAudioSocketID) : String(), firstTime) +
-        Helper::getDebugValue("video socket id", 0 != mVideoSocketID ? string(mVideoSocketID) : String(), firstTime) +
-        Helper::getDebugValue("obsolete sockets", mObsoleteSockets.size() > 0 ? string(mObsoleteSockets.size()) : String(), firstTime);
+
+        ElementPtr resultEl = Element::create("core::CallTransport");
+
+        IHelper::debugAppend(resultEl, "id", mID);
+        IHelper::debugAppend(resultEl, "state", ICallTransport::toString(mCurrentState));
+        IHelper::debugAppend(resultEl, "turn servers", mTURNServers.size());
+        IHelper::debugAppend(resultEl, "stun", mSTUNServers.size());
+        IHelper::debugAppend(resultEl, "total calls", mTotalCalls);
+        IHelper::debugAppend(resultEl, "socket cleanup timer", (bool)mSocketCleanupTimer);
+        IHelper::debugAppend(resultEl, "started", mStarted);
+        IHelper::debugAppend(resultEl, ICall::toDebug(mFocus.lock()));
+        IHelper::debugAppend(resultEl, "focus call id", mFocusCallID);
+        IHelper::debugAppend(resultEl, "focus location id", mFocusLocationID);
+        IHelper::debugAppend(resultEl, "has audio", mHasAudio);
+        IHelper::debugAppend(resultEl, "has video", mHasAudio);
+        IHelper::debugAppend(resultEl, "blocked until", mBlockUntilStartStopCompleted);
+        IHelper::debugAppend(resultEl, "audio", TransportSocket::toDebug(mAudioSocket));
+        IHelper::debugAppend(resultEl, "video", TransportSocket::toDebug(mVideoSocket));
+        IHelper::debugAppend(resultEl, "audio socket id", mAudioSocketID);
+        IHelper::debugAppend(resultEl, "video socket id", mVideoSocketID);
+        IHelper::debugAppend(resultEl, "obsolete sockets", mObsoleteSockets.size());
+
+        return resultEl;
       }
 
       //-----------------------------------------------------------------------
@@ -561,7 +571,7 @@ namespace openpeer
           AutoRecursiveLock lock(mLock);
 
           if (mStarted) {
-            ZS_LOG_DEBUG(log("must stop existing media before starting a new focus") + ", block count=" + string(mBlockUntilStartStopCompleted))
+            ZS_LOG_DEBUG(log("must stop existing media before starting a new focus") + ZS_PARAM("block count", mBlockUntilStartStopCompleted))
             ++mBlockUntilStartStopCompleted;  // extra count required because we are calling manually
             stop();
           }
@@ -584,7 +594,7 @@ namespace openpeer
           audioSocket = mAudioSocket;
           videoSocket = mVideoSocket;
 
-          ZS_LOG_DETAIL(log("starting media engine") + ", audio=" + (mHasAudio ? "true" : "false") + ", video=" + (mHasVideo ? "true" : "false"))
+          ZS_LOG_DETAIL(log("starting media engine") + ZS_PARAM("audio", mHasAudio) + ZS_PARAM("video", mHasVideo))
         }
 
         MediaEnginePtr engine = IMediaEngineForCallTransport::singleton();
@@ -626,7 +636,7 @@ namespace openpeer
           hasAudio = mHasAudio;
           hasVideo = mHasVideo;
 
-          ZS_LOG_DETAIL(log("stopping media engine") + ", audio=" + (mHasAudio ? "true" : "false") + ", video=" + (mHasVideo ? "true" : "false"))
+          ZS_LOG_DETAIL(log("stopping media engine") + ZS_PARAM("audio", mHasAudio) + ZS_PARAM("video", mHasVideo))
 
           mStarted = false;
           mHasAudio = false;
@@ -724,7 +734,7 @@ namespace openpeer
 
         if (state == mCurrentState) return;
 
-        ZS_LOG_BASIC(log("state changed") + ", old state=" + ICallTransport::toString(mCurrentState) + ", new state=" + ICallTransport::toString(state))
+        ZS_LOG_BASIC(log("state changed") + ZS_PARAM("old state", ICallTransport::toString(mCurrentState)) + ZS_PARAM("new state", ICallTransport::toString(state)))
 
         mCurrentState = state;
 
@@ -810,12 +820,12 @@ namespace openpeer
           socket->shutdown();
 
           if (socket->isShutdown()) {
-            ZS_LOG_DEBUG(log("transport socket is now shutdown") + ", transport socket ID=" + string(socket->getID()))
+            ZS_LOG_DEBUG(log("transport socket is now shutdown") + ZS_PARAM("transport socket ID", socket->getID()))
             mObsoleteSockets.erase(current);
             continue;
           }
 
-          ZS_LOG_DEBUG(log("transport socket is still shutting down") + ", transport socket ID=" + string(socket->getID()))
+          ZS_LOG_DEBUG(log("transport socket is still shutting down") + ZS_PARAM("transport socket ID", socket->getID()))
         }
 
         return mObsoleteSockets.size() < 1;
@@ -859,10 +869,10 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      String CallTransport::TransportSocket::toDebugString(TransportSocketPtr socket, bool includeCommaPrefix)
+      ElementPtr CallTransport::TransportSocket::toDebug(TransportSocketPtr socket)
       {
-        if (!socket) return includeCommaPrefix ? ", transport socket=(null)" : "transport socket=(null)";
-        return socket->getDebugValueString(includeCommaPrefix);
+        if (!socket) return ElementPtr();
+        return socket->toDebug();
       }
 
       //-----------------------------------------------------------------------
@@ -967,7 +977,7 @@ namespace openpeer
         if (len < (sizeof(BYTE)*2)) return 0;
 
         BYTE payloadType = ((const BYTE *)data)[1];
-        ZS_LOG_TRACE(log("request to send RTP packet") + ", payload type=" + string(payloadType) + ", length=" + string(len))
+        ZS_LOG_TRACE(log("request to send RTP packet") + ZS_PARAM("payload type", payloadType) + ZS_PARAM("length", len))
 
         CallTransportPtr outer = mOuter.lock();
         if (!outer) {
@@ -984,7 +994,7 @@ namespace openpeer
         if (len < (sizeof(BYTE)*2)) return 0;
 
         BYTE payloadType = ((const BYTE *)data)[1];
-        ZS_LOG_TRACE(log("request to send RTCP packet") + ", payload type=" + string(payloadType) + ", length=" + string(len))
+        ZS_LOG_TRACE(log("request to send RTCP packet") + ZS_PARAM("payload type", payloadType) + ZS_PARAM("length", len))
 
         CallTransportPtr outer = mOuter.lock();
         if (!outer) {
@@ -1004,17 +1014,22 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      String CallTransport::TransportSocket::log(const char *message) const
+      Log::Params CallTransport::TransportSocket::log(const char *message) const
       {
-        return String("CallTransport::TransportSocket [") + string(mID) + "] " + message;
+        ElementPtr objectEl = Element::create("core::CallTransport::TransportSocket");
+        IHelper::debugAppend(objectEl, "id", mID);
+        return Log::Params(message, objectEl);
       }
 
       //-----------------------------------------------------------------------
-      String CallTransport::TransportSocket::getDebugValueString(bool includeCommaPrefix) const
+      ElementPtr CallTransport::TransportSocket::toDebug() const
       {
-        bool firstTime = !includeCommaPrefix;
-        return Helper::getDebugValue("transport socket id", string(mID), firstTime) +
-               Helper::getDebugValue("rtp socket id", mRTPSocket ? string(mRTPSocket->getID()) : String(), firstTime);
+        ElementPtr resultEl = Element::create("core::CallTransport::TransportSocket");
+
+        IHelper::debugAppend(resultEl, "id", mID);
+        IHelper::debugAppend(resultEl, "rtp socket id", mRTPSocket ? mRTPSocket->getID() : 0);
+
+        return resultEl;
       }
     }
   }

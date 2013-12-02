@@ -92,7 +92,20 @@ namespace openpeer
       class StackAutoCleanup;
       typedef boost::shared_ptr<StackAutoCleanup> StackAutoCleanupPtr;
       typedef boost::weak_ptr<StackAutoCleanup> StackAutoCleanupWeakPtr;
+      
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark (helpers)
+      #pragma mark
 
+      static Log::Params slog(const char *message)
+      {
+        return Log::Params(message, "core::Stack");
+      }
+      
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -500,8 +513,8 @@ namespace openpeer
 
         if (!services::IHelper::isValidDomain(fakeDomain)) {
           // if you are hitting this it's because your app ID value was set wrong
-          ZS_LOG_WARNING(Basic, String("core::Stack [] Illegal application ID value") + ", application ID=" + applicationID)
-          ZS_THROW_INVALID_ARGUMENT("core::Stack [] Illegal application ID value")
+          ZS_LOG_WARNING(Basic, slog("illegal application ID value") + ZS_PARAM("application ID", applicationID))
+          ZS_THROW_INVALID_ARGUMENT(slog("Illegal application ID value"))
         }
 
         String appID(applicationID);
@@ -514,7 +527,7 @@ namespace openpeer
 
         String final = merged + "-" + hash;
 
-        ZS_LOG_WARNING(Basic, String("core::Stack [] Method should only be called during development") + ", authorized application ID=" + final)
+        ZS_LOG_WARNING(Basic, slog("method should only be called during development") + ZS_PARAM("authorized application ID", final))
 
         return final;
       }

@@ -36,8 +36,11 @@
 #include <openpeer/stack/IPeerFilePublic.h>
 #include <openpeer/stack/IHelper.h>
 
+#include <openpeer/services/IHelper.h>
+
 #include <zsLib/Stringize.h>
 #include <zsLib/helpers.h>
+#include <zsLib/XML.h>
 
 
 namespace openpeer { namespace core { ZS_DECLARE_SUBSYSTEM(openpeer_core) } }
@@ -48,6 +51,8 @@ namespace openpeer
   {
     namespace internal
     {
+      using services::IHelper;
+
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -108,7 +113,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Contact::init()
       {
-        ZS_LOG_DEBUG(log("init") + getDebugValueString())
+        ZS_LOG_DEBUG(debug("init"))
       }
 
       //-----------------------------------------------------------------------
@@ -135,10 +140,10 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      String Contact::toDebugString(IContactPtr contact, bool includeCommaPrefix)
+      ElementPtr Contact::toDebug(IContactPtr contact)
       {
-        if (!contact) return includeCommaPrefix ? String(", contact=(null)") : String("contact=(null)");
-        return Contact::convert(contact)->getDebugValueString(includeCommaPrefix);
+        if (!contact) return ElementPtr();
+        return Contact::convert(contact)->toDebug();
       }
 
       //-----------------------------------------------------------------------
@@ -306,17 +311,29 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      String Contact::log(const char *message) const
+      Log::Params Contact::log(const char *message) const
       {
-        return String("Contact [") + string(mID) + "] " + message;
+        ElementPtr objectEl = Element::create("core::Contact");
+        IHelper::debugAppend(objectEl, "id", mID);
+        return Log::Params(message, objectEl);
       }
 
       //-----------------------------------------------------------------------
-      String Contact::getDebugValueString(bool includeCommaPrefix) const
+      Log::Params Contact::debug(const char *message) const
       {
-        bool firstTime = !includeCommaPrefix;
-        return Helper::getDebugValue("contact id", string(mID), firstTime) +
-               IPeer::toDebugString(mPeer) + (isSelf() ? String(" (self)") : String());
+        return Log::Params(message, toDebug());
+      }
+
+      //-----------------------------------------------------------------------
+      ElementPtr Contact::toDebug() const
+      {
+        ElementPtr resultEl = Element::create("core::Contact");
+
+        IHelper::debugAppend(resultEl, "id", mID);
+        IHelper::debugAppend(resultEl, IPeer::toDebug(mPeer));
+        IHelper::debugAppend(resultEl, "is self", isSelf());
+
+        return resultEl;
       }
 
       //-----------------------------------------------------------------------
@@ -342,9 +359,9 @@ namespace openpeer
     #pragma mark
 
     //-------------------------------------------------------------------------
-    String IContact::toDebugString(IContactPtr contact, bool includeCommaPrefix)
+    ElementPtr IContact::toDebug(IContactPtr contact)
     {
-      return internal::Contact::toDebugString(contact, includeCommaPrefix);
+      return internal::Contact::toDebug(contact);
     }
 
     //-------------------------------------------------------------------------

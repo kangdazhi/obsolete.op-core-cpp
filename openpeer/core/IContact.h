@@ -47,7 +47,7 @@ namespace openpeer
 
     interaction IContact
     {
-      static String toDebugString(IContactPtr contact, bool includeCommaPrefix = true);
+      static ElementPtr toDebug(IContactPtr contact);
 
       static IContactPtr createFromPeerFilePublic(
                                                   IAccountPtr account,

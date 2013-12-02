@@ -43,6 +43,7 @@
 #include <zsLib/Stringize.h>
 #include <zsLib/helpers.h>
 #include <zsLib/Log.h>
+#include <zsLib/XML.h>
 
 #define OPENPEER_CORE_IDENTITY_LOOK_REQUEST_TIMEOUT_SECONDS (60)
 
@@ -55,6 +56,8 @@ namespace openpeer
   {
     namespace internal
     {
+      using services::IHelper;
+
       typedef stack::message::IdentityInfoList StackIdentityInfoList;
       typedef stack::message::IdentityInfo StackIdentityInfo;
 
@@ -118,19 +121,19 @@ namespace openpeer
           const Time &lastUpdated = (*iter).mLastUpdated;
 
           if (!IServiceIdentity::isValid(identityURI)) {
-            ZS_LOG_WARNING(Detail, log("identity not valid") + ", identity=" + identityURI)
+            ZS_LOG_WARNING(Detail, log("identity not valid") + ZS_PARAM("identity", identityURI))
             continue;
           }
 
           String domainOrType;
           String identifier;
           if (!IServiceIdentity::splitURI(identityURI, domainOrType, identifier)) {
-            ZS_LOG_WARNING(Detail, log("failed to parse identity") + ", identity=" + identityURI)
+            ZS_LOG_WARNING(Detail, log("failed to parse identity") + ZS_PARAM("identity", identityURI))
             continue;
           }
 
           if (identifier.isEmpty()) {
-            ZS_LOG_WARNING(Detail, log("failed to obtain identifier for identity") + ", identity=" + identityURI)
+            ZS_LOG_WARNING(Detail, log("failed to obtain identifier for identity") + ZS_PARAM("identity", identityURI))
             continue;
           }
 
@@ -152,7 +155,7 @@ namespace openpeer
 
           char safeChar = getSafeSplitChar(concat);
           if (0 == safeChar) {
-            ZS_LOG_WARNING(Detail, log("failed to obain a safe char to split for domain or legacy type") + ", domain or type=" + type)
+            ZS_LOG_WARNING(Detail, log("failed to obain a safe char to split for domain or legacy type") + ZS_PARAM("domain or type", type))
             mConcatDomains.erase(current);
             mDomainOrLegacyTypeIdentifiers.erase(mDomainOrLegacyTypeIdentifiers.find(type));
             continue;
@@ -175,7 +178,7 @@ namespace openpeer
             concat += safeChar + identifier;
           }
 
-          ZS_LOG_DEBUG(log("adding safe char for type") + ", type=" + type + ", safe char=" + (String() + safeChar))
+          ZS_LOG_DEBUG(log("adding safe char for type") + ZS_PARAM("type", type) + ZS_PARAM("safe char", (String() + safeChar)))
 
           mSafeCharDomains[type] = String() + safeChar;
         }
@@ -209,10 +212,10 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      String IdentityLookup::toDebugString(IIdentityLookupPtr identity, bool includeCommaPrefix)
+      ElementPtr IdentityLookup::toDebug(IIdentityLookupPtr identity)
       {
-        if (!identity) return includeCommaPrefix ? String(", identity lookup=(null)") : String("identity lookup=(null)");
-        return IdentityLookup::convert(identity)->getDebugValueString(includeCommaPrefix);
+        if (!identity) return ElementPtr();
+        return IdentityLookup::convert(identity)->toDebug();
       }
 
       //-----------------------------------------------------------------------
@@ -262,7 +265,7 @@ namespace openpeer
         if ((pThis) &&
             (mDelegate)) {
           try {
-            ZS_LOG_DEBUG(log("notifying outer of completion") + getDebugValueString())
+            ZS_LOG_DEBUG(debug("notifying outer of completion"))
             mDelegate->onIdentityLookupCompleted(pThis);
           } catch(IIdentityLookupDelegateProxy::Exceptions::DelegateGone &) {
             ZS_LOG_WARNING(Detail, log("delegate gone"))
@@ -295,7 +298,7 @@ namespace openpeer
         for (IdentityContactList::const_iterator iter = mResults.begin(); iter != mResults.end(); ++iter)
         {
           const IdentityContact &info = (*iter);
-          ZS_LOG_TRACE(log("found result") + ", identity=" + info.mIdentityURI)
+          ZS_LOG_TRACE(log("found result") + ZS_PARAM("identity", info.mIdentityURI))
           result->push_back(info);
         }
 
@@ -311,7 +314,7 @@ namespace openpeer
         for (IdentityLookupInfoList::const_iterator iter = mUnchangedResults.begin(); iter != mUnchangedResults.end(); ++iter)
         {
           const IdentityLookupInfo &info = (*iter);
-          ZS_LOG_TRACE(log("found unchanged result") + ", identity=" + info.mIdentityURI)
+          ZS_LOG_TRACE(log("found unchanged result") + ZS_PARAM("identity", info.mIdentityURI))
           result->push_back(info);
         }
 
@@ -327,7 +330,7 @@ namespace openpeer
         for (IdentityLookupInfoList::const_iterator iter = mInvalidResults.begin(); iter != mInvalidResults.end(); ++iter)
         {
           const IdentityLookupInfo &info = (*iter);
-          ZS_LOG_TRACE(log("found invalid result") + ", identity=" + info.mIdentityURI)
+          ZS_LOG_TRACE(log("found invalid result") + ZS_PARAM("identity", info.mIdentityURI))
           result->push_back(info);
         }
 
@@ -347,11 +350,11 @@ namespace openpeer
       {
         AutoRecursiveLock lock(getLock());
 
-        ZS_LOG_DEBUG(log("bootstrapped network prepared notification") + IBootstrappedNetwork::toDebugString(network))
+        ZS_LOG_DEBUG(log("bootstrapped network prepared notification") + IBootstrappedNetwork::toDebug(network))
 
         BootstrappedNetworkMap::iterator found = mBootstrappedNetworks.find(network->getDomain());
         if (found == mBootstrappedNetworks.end()) {
-          ZS_LOG_WARNING(Detail, log("notified about obsolete bootstrapped network") + IBootstrappedNetwork::toDebugString(network))
+          ZS_LOG_WARNING(Detail, log("notified about obsolete bootstrapped network") + IBootstrappedNetwork::toDebug(network))
           return;
         }
 
@@ -361,10 +364,10 @@ namespace openpeer
         String errorResaon;
         bool success = network->wasSuccessful(&errorCode, &errorResaon);
         if (!success) {
-          ZS_LOG_ERROR(Detail, log("bootstrapped network failed") + IBootstrappedNetwork::toDebugString(network))
+          ZS_LOG_ERROR(Detail, log("bootstrapped network failed") + IBootstrappedNetwork::toDebug(network))
 
           if (mIdentityServiceDomain == network->getDomain()) {
-            ZS_LOG_ERROR(Detail, log("cannot access peer contact service's identity lookup service") + ", provider domain=" + mIdentityServiceDomain)
+            ZS_LOG_ERROR(Detail, log("cannot access peer contact service's identity lookup service") + ZS_PARAM("provider domain", mIdentityServiceDomain))
             setError(errorCode, errorResaon);
             step();
             return;
@@ -375,7 +378,7 @@ namespace openpeer
           if (foundProvider == mBootstrappedNetworks.end()) {
             IBootstrappedNetworkPtr providerNetwork = IBootstrappedNetwork::prepare(mIdentityServiceDomain, mThisWeak.lock());
             if (!providerNetwork) {
-              ZS_LOG_ERROR(Detail, log("failed to create bootstrapper for domain") + ", domain=" + mIdentityServiceDomain)
+              ZS_LOG_ERROR(Detail, log("failed to create bootstrapper for domain") + ZS_PARAM("domain", mIdentityServiceDomain))
               setError(errorCode, errorResaon);
               step();
               return;
@@ -387,7 +390,7 @@ namespace openpeer
             // delay handling this failure until later...
             mFailedBootstrappedNetworks[network->getDomain()] = true;
 
-            ZS_LOG_DETAIL(log("waiting to perform lookup on backup service peer contact's identity lookup service") + ", failed domain=" + network->getDomain() + ", backup=" + providerNetwork->getDomain())
+            ZS_LOG_DETAIL(log("waiting to perform lookup on backup service peer contact's identity lookup service") + ZS_PARAM("failed domain", network->getDomain()) + ZS_PARAM("backup", providerNetwork->getDomain()))
 
             // wait for the bootstrapped network to complete
             return;
@@ -397,12 +400,12 @@ namespace openpeer
           if (!providerNetwork->isPreparationComplete()) {
             mFailedBootstrappedNetworks[network->getDomain()] = true;
 
-            ZS_LOG_DETAIL(log("waiting to perform lookup on backup service peer contact's identity lookup service") + ", failed domain=" + network->getDomain() + ", backup=" + providerNetwork->getDomain())
+            ZS_LOG_DETAIL(log("waiting to perform lookup on backup service peer contact's identity lookup service") + ZS_PARAM("failed domain", network->getDomain()) + ZS_PARAM("backup", providerNetwork->getDomain()))
             return;
           }
 
           if (!providerNetwork->wasSuccessful(&errorCode, &errorResaon)) {
-            ZS_LOG_ERROR(Detail, log("failed to create bootstrapper for domain") + ", domain=" + mIdentityServiceDomain)
+            ZS_LOG_ERROR(Detail, log("failed to create bootstrapper for domain") + ZS_PARAM("domain", mIdentityServiceDomain))
             setError(errorCode, errorResaon);
             step();
             return;
@@ -433,13 +436,13 @@ namespace openpeer
               lookupThisDomain = false; // don't issue unless this is for a failed domain
 
             if (mFailedBootstrappedNetworks.find(domain) != mFailedBootstrappedNetworks.end()) {
-              ZS_LOG_DETAIL(log("performing lookup on failed domain") + ", failed domain=" + domain + ", lookup now done on domain=" + mIdentityServiceDomain)
+              ZS_LOG_DETAIL(log("performing lookup on failed domain") + ZS_PARAM("failed domain", domain) + ZS_PARAM("lookup now done on domain", mIdentityServiceDomain))
               lookupThisDomain = true;
             }
           }
 
           if (lookupThisDomain) {
-            ZS_LOG_DEBUG(log("will perform lookup on type") + ", type/domain=" + domainOrType)
+            ZS_LOG_DEBUG(log("will perform lookup on type") + ZS_PARAM("type/domain", domainOrType))
 
             // this type uses this domain
             IdentifierSafeCharDomainLegacyTypeMap::iterator foundConcat = mConcatDomains.find(domainOrType);
@@ -452,7 +455,7 @@ namespace openpeer
             const String &splitChar = (*foundSafeChar).second;
 
             if (identifiers.isEmpty()) {
-              ZS_LOG_WARNING(Detail, log("no identifiers found for this domain/type") + ", domain=" + network->getDomain() + ", type/domain=" + domainOrType)
+              ZS_LOG_WARNING(Detail, log("no identifiers found for this domain/type") + ZS_PARAM("domain", network->getDomain()) + ZS_PARAM("type/domain", domainOrType))
               continue;
             }
 
@@ -461,7 +464,7 @@ namespace openpeer
             provider.mSeparator = splitChar;
             provider.mIdentities = identifiers;
 
-            ZS_LOG_DEBUG(log("adding provider to list") + ", base=" + provider.mBase + ", seperator=" + provider.mSeparator + ", identities" + provider.mIdentities)
+            ZS_LOG_DEBUG(log("adding provider to list") + ZS_PARAM("base", provider.mBase) + ZS_PARAM("seperator", provider.mSeparator) + ZS_PARAM("identities", provider.mIdentities))
             providers.push_back(provider);
           }
         }
@@ -486,7 +489,7 @@ namespace openpeer
             return;
           }
 
-          ZS_LOG_DEBUG(log("monitoring identity lookup request") + IMessageMonitor::toDebugString(monitor))
+          ZS_LOG_DEBUG(log("monitoring identity lookup request") + IMessageMonitor::toDebug(monitor))
           mMonitors[monitor->getID()] = monitor;
         }
 
@@ -514,7 +517,7 @@ namespace openpeer
 
         MonitorMap::iterator found = mMonitors.find(monitor->getID());
         if (found == mMonitors.end()) {
-          ZS_LOG_WARNING(Detail, log("notified about obsolete monitor") + IMessageMonitor::toDebugString(monitor))
+          ZS_LOG_WARNING(Detail, log("notified about obsolete monitor") + IMessageMonitor::toDebug(monitor))
           return false;
         }
 
@@ -544,7 +547,7 @@ namespace openpeer
           String domainOrType;
           String identifier;
           if (!IServiceIdentity::splitURI(resultInfo.mURI, domainOrType, identifier)) {
-            ZS_LOG_ERROR(Detail, log("failed to split an identity") + ", identity uri=" + resultInfo.mURI)
+            ZS_LOG_ERROR(Detail, log("failed to split an identity") + ZS_PARAM("identity uri", resultInfo.mURI))
             continue;
           }
 
@@ -552,28 +555,28 @@ namespace openpeer
           {
             IdentityMap::iterator found = previousIdentities.find(resultInfo.mURI);
             if (found != previousIdentities.end()) {
-              ZS_LOG_TRACE(log("previous identifier was found in result") + ", identity uri=" + resultInfo.mURI)
+              ZS_LOG_TRACE(log("previous identifier was found in result") + ZS_PARAM("identity uri", resultInfo.mURI))
               previousIdentities.erase(found);
             }
           }
 
           IdentifierDomainOrLegacyTypeMap::iterator foundType = mDomainOrLegacyTypeIdentifiers.find(domainOrType);
           if (foundType == mDomainOrLegacyTypeIdentifiers.end()) {
-            ZS_LOG_ERROR(Detail, log("failed to find previous known last update for identity") + ", identity url=" + resultInfo.mURI)
+            ZS_LOG_ERROR(Detail, log("failed to find previous known last update for identity") + ZS_PARAM("identity url", resultInfo.mURI))
             continue;
           }
 
           IdentifierMap &identifiers = (*foundType).second;
           IdentifierMap::iterator foundIdentifier = identifiers.find(identifier);
           if (foundIdentifier == identifiers.end()) {
-            ZS_LOG_ERROR(Detail, log("failed to find previous identifier in identitifers map") + ", identity url=" + resultInfo.mURI)
+            ZS_LOG_ERROR(Detail, log("failed to find previous identifier in identitifers map") + ZS_PARAM("identity url", resultInfo.mURI))
             continue;
           }
 
           Time lastKnownUpdate = (*foundIdentifier).second;
 
           if (lastKnownUpdate == resultInfo.mUpdated) {
-            ZS_LOG_TRACE(log("identity information has not changed since last time") + ", identity uri=" + resultInfo.mURI + ", last updated=" + services::IHelper::timeToString(resultInfo.mUpdated))
+            ZS_LOG_TRACE(log("identity information has not changed since last time") + ZS_PARAM("identity uri", resultInfo.mURI) + ZS_PARAM("last updated", resultInfo.mUpdated))
 
             // nothing about this identity has changed since last time
             IdentityContact info;
@@ -619,11 +622,11 @@ namespace openpeer
           }
 
           if (!found) {
-            ZS_LOG_ERROR(Detail, log("failed to find a previous provider base that can satisfy this identifier's type/domain") + ", identity url=" + resultInfo.mURI)
+            ZS_LOG_ERROR(Detail, log("failed to find a previous provider base that can satisfy this identifier's type/domain") + ZS_PARAM("identity url", resultInfo.mURI))
             continue;
           }
 
-          ZS_LOG_TRACE(log("will perform new detailed lookup for identity") + ", identity" + resultInfo.mURI)
+          ZS_LOG_TRACE(log("will perform new detailed lookup for identity") + ZS_PARAM("identity", resultInfo.mURI))
         }
 
         // scope: these identities failed to lookup for whatever reason
@@ -631,7 +634,7 @@ namespace openpeer
           for (IdentityMap::iterator iter = previousIdentities.begin(); iter != previousIdentities.end(); ++iter)
           {
             const String &identityURI = (*iter).first;
-            ZS_LOG_WARNING(Trace, log("identity was not found on server when performing lookup") + ", identity uri=" + identityURI)
+            ZS_LOG_WARNING(Trace, log("identity was not found on server when performing lookup") + ZS_PARAM("identity uri", identityURI))
             IdentityLookupInfo info;
             info.mIdentityURI = identityURI;
             mInvalidResults.push_back(info);
@@ -663,7 +666,7 @@ namespace openpeer
 
         MonitorMap::iterator found = mMonitors.find(monitor->getID());
         if (found == mMonitors.end()) {
-          ZS_LOG_WARNING(Detail, log("notified about failure for obsolete monitor") + IMessageMonitor::toDebugString(monitor))
+          ZS_LOG_WARNING(Detail, log("notified about failure for obsolete monitor") + IMessageMonitor::toDebug(monitor))
           return false;
         }
 
@@ -694,7 +697,7 @@ namespace openpeer
 
         MonitorMap::iterator found = mMonitors.find(monitor->getID());
         if (found == mMonitors.end()) {
-          ZS_LOG_WARNING(Detail, log("notified about obsolete monitor") + IMessageMonitor::toDebugString(monitor))
+          ZS_LOG_WARNING(Detail, log("notified about obsolete monitor") + IMessageMonitor::toDebug(monitor))
           return false;
         }
 
@@ -715,7 +718,7 @@ namespace openpeer
           const StackIdentityInfo &resultInfo = (*iter);
 
           if (!resultInfo.mPeerFilePublic) {
-            ZS_LOG_WARNING(Detail, log("peer URI found in result not valid") + resultInfo.getDebugValueString())
+            ZS_LOG_WARNING(Detail, log("peer URI found in result not valid") + resultInfo.toDebug())
             continue;
           }
 
@@ -723,7 +726,7 @@ namespace openpeer
           {
             IdentityMap::iterator found = previousIdentities.find(resultInfo.mURI);
             if (found != previousIdentities.end()) {
-              ZS_LOG_TRACE(log("previous identifier was found in result") + ", identity uri=" + resultInfo.mURI)
+              ZS_LOG_TRACE(log("previous identifier was found in result") + ZS_PARAM("identity uri", resultInfo.mURI))
               previousIdentities.erase(found);
             }
           }
@@ -739,7 +742,7 @@ namespace openpeer
           for (IdentityMap::iterator iter = previousIdentities.begin(); iter != previousIdentities.end(); ++iter)
           {
             const String &identityURI = (*iter).first;
-            ZS_LOG_WARNING(Trace, log("identity was not found on server when performing lookup") + ", identity uri=" + identityURI)
+            ZS_LOG_WARNING(Trace, log("identity was not found on server when performing lookup") + ZS_PARAM("identity uri", identityURI))
             IdentityLookupInfo info;
             info.mIdentityURI = identityURI;
             mInvalidResults.push_back(info);
@@ -761,7 +764,7 @@ namespace openpeer
 
         MonitorMap::iterator found = mMonitors.find(monitor->getID());
         if (found == mMonitors.end()) {
-          ZS_LOG_WARNING(Detail, log("notified about failure for obsolete monitor") + IMessageMonitor::toDebugString(monitor))
+          ZS_LOG_WARNING(Detail, log("notified about failure for obsolete monitor") + IMessageMonitor::toDebug(monitor))
           return false;
         }
 
@@ -781,28 +784,40 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      String IdentityLookup::log(const char *message) const
+      Log::Params IdentityLookup::log(const char *message) const
       {
-        return String("IdentityLookup [") + string(mID) + "] " + message;
+        ElementPtr objectEl = Element::create("core::IdentityLookup");
+        IHelper::debugAppend(objectEl, "id", mID);
+        return Log::Params(message, objectEl);
       }
 
       //-----------------------------------------------------------------------
-      String IdentityLookup::getDebugValueString(bool includeCommaPrefix) const
+      Log::Params IdentityLookup::debug(const char *message) const
+      {
+        return Log::Params(message, toDebug());
+      }
+
+      //-----------------------------------------------------------------------
+      ElementPtr IdentityLookup::toDebug() const
       {
         AutoRecursiveLock lock(getLock());
-        bool firstTime = !includeCommaPrefix;
-        return Helper::getDebugValue("identity lookup", string(mID), firstTime) +
-               Helper::getDebugValue("delegate", mDelegate ? String("true") : String(), firstTime) +
-               Helper::getDebugValue("error code", 0 != mErrorCode ? string(mErrorCode) : String(), firstTime) +
-               Helper::getDebugValue("error reason", mErrorReason, firstTime) +
-               Helper::getDebugValue("identity service domain", mIdentityServiceDomain, firstTime) +
-               Helper::getDebugValue("bootstrapped networks", mBootstrappedNetworks.size() > 0 ? string(mBootstrappedNetworks.size()) : String(), firstTime) +
-               Helper::getDebugValue("monitors", mMonitors.size() > 0 ? string(mMonitors.size()) : String(), firstTime) +
-               Helper::getDebugValue("type identifiers", mDomainOrLegacyTypeIdentifiers.size() > 0 ? string(mDomainOrLegacyTypeIdentifiers.size()) : String(), firstTime) +
-               Helper::getDebugValue("concat domains", mConcatDomains.size() > 0 ? string(mConcatDomains.size()) : String(), firstTime) +
-               Helper::getDebugValue("safe char domains", mSafeCharDomains.size() > 0 ? string(mSafeCharDomains.size()) : String(), firstTime) +
-               Helper::getDebugValue("type to domains", mTypeToDomainMap.size() > 0 ? string(mTypeToDomainMap.size()) : String(), firstTime) +
-               Helper::getDebugValue("results", mResults.size() > 0 ? string(mResults.size()) : String(), firstTime);
+
+        ElementPtr resultEl = Element::create("core::IdentityLookup");
+
+        IHelper::debugAppend(resultEl, "id", mID);
+        IHelper::debugAppend(resultEl, "delegate", (bool)mDelegate);
+        IHelper::debugAppend(resultEl, "error code", mErrorCode);
+        IHelper::debugAppend(resultEl, "error reason", mErrorReason);
+        IHelper::debugAppend(resultEl, "identity service domain", mIdentityServiceDomain);
+        IHelper::debugAppend(resultEl, "bootstrapped networks", mBootstrappedNetworks.size());
+        IHelper::debugAppend(resultEl, "monitors", mMonitors.size());
+        IHelper::debugAppend(resultEl, "type identifiers", mDomainOrLegacyTypeIdentifiers.size());
+        IHelper::debugAppend(resultEl, "concat domains", mConcatDomains.size());
+        IHelper::debugAppend(resultEl, "safe char domains", mSafeCharDomains.size());
+        IHelper::debugAppend(resultEl, "type to domains", mTypeToDomainMap.size());
+        IHelper::debugAppend(resultEl, "results", mResults.size());
+
+        return resultEl;
       }
 
       //-----------------------------------------------------------------------
@@ -819,16 +834,16 @@ namespace openpeer
                                            const Time &lastUpdated
                                            )
       {
-        ZS_LOG_DEBUG(log("preparing domain") + ", domain=" + domain + ", identifier=" + identifier)
+        ZS_LOG_DEBUG(log("preparing domain") + ZS_PARAM("domain", domain) + ZS_PARAM("identifier", identifier))
 
         // scope: prepare bootstrapper for domain
         {
           BootstrappedNetworkMap::iterator found = mBootstrappedNetworks.find(domain);
           if (found == mBootstrappedNetworks.end()) {
-            ZS_LOG_DEBUG(log("domain not found, adding new bootstrapper") + ", domain=" + domain)
+            ZS_LOG_DEBUG(log("domain not found, adding new bootstrapper") + ZS_PARAM("domain", domain))
             IBootstrappedNetworkPtr network = IBootstrappedNetwork::prepare(domain, mThisWeak.lock());
             if (!network) {
-              ZS_LOG_WARNING(Detail, log("failed to create bootstrapper for domain") + ", domain=" + domain)
+              ZS_LOG_WARNING(Detail, log("failed to create bootstrapper for domain") + ZS_PARAM("domain", domain))
               return;
             }
 
@@ -845,7 +860,7 @@ namespace openpeer
             mDomainOrLegacyTypeIdentifiers[type] = empty;
             found = mDomainOrLegacyTypeIdentifiers.find(type);
 
-            ZS_LOG_DEBUG(log("adding contact type") + ", type=" + type)
+            ZS_LOG_DEBUG(log("adding contact type") + ZS_PARAM("type", type))
 
             mConcatDomains[type] = String();
             mTypeToDomainMap[type] = domain;
@@ -892,14 +907,14 @@ namespace openpeer
         }
 
         if (0 != mErrorCode) {
-          ZS_LOG_ERROR(Detail, log("error already set (thus ignoring new error)") + ", error code=" + string(errorCode) + ", reason=" + reason + getDebugValueString())
+          ZS_LOG_ERROR(Detail, debug("error already set (thus ignoring new error)") + ZS_PARAM("error code", errorCode) + ZS_PARAM("reason", reason))
           return;
         }
 
         mErrorCode = errorCode;
         mErrorReason = reason;
 
-        ZS_LOG_ERROR(Detail, log("error set") + getDebugValueString())
+        ZS_LOG_ERROR(Detail, debug("error set"))
       }
 
       //-----------------------------------------------------------------------
@@ -956,9 +971,9 @@ namespace openpeer
     #pragma mark
 
     //-------------------------------------------------------------------------
-    String IIdentityLookup::toDebugString(IIdentityLookupPtr identity, bool includeCommaPrefix)
+    ElementPtr IIdentityLookup::toDebug(IIdentityLookupPtr identity)
     {
-      return internal::IdentityLookup::toDebugString(identity);
+      return internal::IdentityLookup::toDebug(identity);
     }
 
     //-------------------------------------------------------------------------

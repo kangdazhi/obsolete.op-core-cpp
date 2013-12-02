@@ -151,7 +151,7 @@ namespace openpeer
         typedef IConversationThreadForCall::LocationDialogMap LocationDialogMap;
         typedef IConversationThread::ContactStates ContactStates;
 
-        static String toDebugValueString(IConversationThreadHostSlaveBasePtr hostOrSlave, bool includeComaPrefix = true);
+        static ElementPtr toDebug(IConversationThreadHostSlaveBasePtr hostOrSlave);
 
         virtual String getThreadID() const = 0;
 
@@ -367,7 +367,7 @@ namespace openpeer
         #pragma mark ConversationThread => IConversationThread
         #pragma mark
 
-        static String toDebugString(IConversationThreadPtr thread, bool includeCommaPrefix = true);
+        static ElementPtr toDebug(IConversationThreadPtr thread);
 
         static ConversationThreadPtr create(
                                             IAccountPtr account,
@@ -543,8 +543,9 @@ namespace openpeer
         bool isShuttingDown() const {return ConversationThreadState_ShuttingDown == mCurrentState;}
         bool isShutdown() const {return ConversationThreadState_Shutdown == mCurrentState;}
 
-        String log(const char *message) const;
-        virtual String getDebugValueString(bool includeCommaPrefix = true) const;
+        Log::Params log(const char *message) const;
+
+        virtual ElementPtr toDebug() const;
 
         RecursiveLock &getLock() const;
 

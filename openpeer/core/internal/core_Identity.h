@@ -100,7 +100,7 @@ namespace openpeer
         #pragma mark Identity => IIdentity
         #pragma mark
 
-        static String toDebugString(IIdentityPtr identity, bool includeCommaPrefix = true);
+        static ElementPtr toDebug(IIdentityPtr identity);
 
         static IdentityPtr login(
                                  IAccountPtr account,
@@ -193,8 +193,9 @@ namespace openpeer
         #pragma mark Identity => (internal)
         #pragma mark
 
-        String log(const char *message) const;
-        virtual String getDebugValueString(bool includeCommaPrefix = true) const;
+        Log::Params log(const char *message) const;
+
+        virtual ElementPtr toDebug() const;
 
       protected:
         //---------------------------------------------------------------------

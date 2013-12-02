@@ -47,7 +47,7 @@ namespace openpeer
 
     interaction IIdentityLookup
     {
-      static String toDebugString(IIdentityLookupPtr lookup, bool includeCommaPrefix = true);
+      static ElementPtr toDebug(IIdentityLookupPtr lookup);
 
       struct IdentityLookupInfo
       {

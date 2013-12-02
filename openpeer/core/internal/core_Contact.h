@@ -145,7 +145,7 @@ namespace openpeer
         #pragma mark Contact => IContact
         #pragma mark
 
-        static String toDebugString(IContactPtr contact, bool includeCommaPrefix = true);
+        static ElementPtr toDebug(IContactPtr contact);
 
         static ContactPtr createFromPeerFilePublic(
                                                    AccountPtr account,
@@ -213,8 +213,10 @@ namespace openpeer
         #pragma mark Contact => (internal)
         #pragma mark
 
-        String log(const char *message) const;
-        virtual String getDebugValueString(bool includeCommaPrefix = true) const;
+        Log::Params log(const char *message) const;
+        Log::Params debug(const char *message) const;
+
+        virtual ElementPtr toDebug() const;
 
         RecursiveLock &getLock() const;
 

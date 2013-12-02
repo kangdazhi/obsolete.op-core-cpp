@@ -84,7 +84,7 @@ namespace openpeer
       static const char *toString(CallStates state);
       static const char *toString(CallClosedReasons reason);
 
-      static String toDebugString(ICallPtr call, bool includeCommaPrefix = true);
+      static ElementPtr toDebug(ICallPtr call);
 
       static ICallPtr placeCall(
                                 IConversationThreadPtr conversationThread,

@@ -44,6 +44,8 @@
 #include <openpeer/stack/IHelper.h>
 #include <openpeer/stack/IDiff.h>
 
+#include <openpeer/services/IHelper.h>
+
 #include <zsLib/XML.h>
 //#include <zsLib/Log.h>
 #include <zsLib/Stringize.h>
@@ -60,6 +62,8 @@ namespace openpeer
   {
     namespace internal
     {
+      using services::IHelper;
+
       using zsLib::Numeric;
       using zsLib::IPAddress;
 
@@ -261,10 +265,10 @@ namespace openpeer
       // </thread>
 
       //-----------------------------------------------------------------------
-      String IConversationThreadParser::Message::toDebugString(MessagePtr message, bool includeCommaPrefix)
+      ElementPtr IConversationThreadParser::Message::toDebug(MessagePtr message)
       {
-        if (!message) return includeCommaPrefix ? String(", mesage=(null)") : String("message=(null");
-        return message->getDebugValueString(includeCommaPrefix);
+        if (!message) return ElementPtr();
+        return message->toDebug();
       }
 
       //-----------------------------------------------------------------------
@@ -334,20 +338,20 @@ namespace openpeer
           pThis->mSent = services::IHelper::stringToTime(sentEl->getText());
           pThis->mBundleEl = messageBundleEl;
         } catch (CheckFailed &) {
-          ZS_LOG_ERROR(Detail, "message bundle XML parse element check failure")
+          ZS_LOG_ERROR(Detail, pThis->log("message bundle XML parse element check failure"))
           return MessagePtr();
         }
 
         if (Time() == pThis->mSent) {
-          ZS_LOG_ERROR(Detail, "message bundle value out of range parse error")
+          ZS_LOG_ERROR(Detail, pThis->log("message bundle value out of range parse error"))
           return MessagePtr();
         }
         if (pThis->mMessageID.size() < 1) {
-          ZS_LOG_ERROR(Detail, "message id missing")
+          ZS_LOG_ERROR(Detail, pThis->log("message id missing"))
           return MessagePtr();
         }
         if (pThis->mFromPeerURI.size() < 1) {
-          ZS_LOG_ERROR(Detail, "missing peer URI")
+          ZS_LOG_ERROR(Detail, pThis->log("missing peer URI"))
           return MessagePtr();
         }
 
@@ -355,15 +359,26 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      String IConversationThreadParser::Message::getDebugValueString(bool includeCommaPrefix) const
+      ElementPtr IConversationThreadParser::Message::toDebug() const
       {
-        bool firstTime = !includeCommaPrefix;
-        return Helper::getDebugValue("message id", string(mID), firstTime) +
-               Helper::getDebugValue("message id (s)", mMessageID, firstTime) +
-               Helper::getDebugValue("from peer URI", mFromPeerURI, firstTime) +
-               Helper::getDebugValue("mime type", mMimeType, firstTime) +
-               Helper::getDebugValue("body", mBody, firstTime) +
-               Helper::getDebugValue("sent", Time() != mSent ? services::IHelper::timeToString(mSent) : String(), firstTime);
+        ElementPtr resultEl = Element::create("IConversationThreadParser::Message");
+
+        IHelper::debugAppend(resultEl, "id", mID);
+        IHelper::debugAppend(resultEl, "message id (s)", mMessageID);
+        IHelper::debugAppend(resultEl, "from peer URI", mFromPeerURI);
+        IHelper::debugAppend(resultEl, "mime type", mMimeType);
+        IHelper::debugAppend(resultEl, "body", mBody);
+        IHelper::debugAppend(resultEl, "sent", mSent);
+
+        return resultEl;
+      }
+
+      //-----------------------------------------------------------------------
+      Log::Params IConversationThreadParser::Message::log(const char *message) const
+      {
+        ElementPtr objectEl = Element::create("core::IConversationThreadParser::Message");
+        IHelper::debugAppend(objectEl, "id", mID);
+        return Log::Params(message, objectEl);
       }
 
       //-----------------------------------------------------------------------
@@ -384,10 +399,10 @@ namespace openpeer
       // </thread>
 
       //-----------------------------------------------------------------------
-      String IConversationThreadParser::MessageReceipts::toDebugString(MessageReceiptsPtr receipts, bool includeCommaPrefix)
+      ElementPtr IConversationThreadParser::MessageReceipts::toDebug(MessageReceiptsPtr receipts)
       {
-        if (!receipts) return includeCommaPrefix ? String(", receipts=(null)") : String("receipts=(null");
-        return receipts->getDebugValueString(includeCommaPrefix);
+        if (!receipts) return ElementPtr();
+        return receipts->toDebug();
       }
 
       //-----------------------------------------------------------------------
@@ -457,36 +472,47 @@ namespace openpeer
           {
             String id = receiptEl->getAttributeValue("id");
             String timeStr = receiptEl->getText();
-            ZS_LOG_TRACE(String("Parsing receipt") + ", receipt ID=" + id + ", acknowledged at=" + timeStr)
+            ZS_LOG_TRACE(pThis->log("Parsing receipt") + ZS_PARAM("receipt ID", id) + ZS_PARAM("acknowledged at", timeStr))
             Time time = services::IHelper::stringToTime(timeStr);
 
             if (Time() == time) {
-              ZS_LOG_ERROR(Detail, "message receipt parse time invalid")
+              ZS_LOG_ERROR(Detail, pThis->log("message receipt parse time invalid"))
               return MessageReceiptsPtr();
             }
 
             pThis->mReceipts[id] = time;
-            ZS_LOG_TRACE(String("Found receipt") + ", receipt ID=" + id + ", acknowledged at=" + string(time))
+            ZS_LOG_TRACE(pThis->log("Found receipt") + ZS_PARAM("receipt ID", id) + ZS_PARAM("acknowledged at", time))
 
             receiptEl = receiptEl->findNextSiblingElement("receipt");
           }
         } catch(CheckFailed &) {
           return MessageReceiptsPtr();
         } catch (Numeric<UINT>::ValueOutOfRange &) {
-          ZS_LOG_ERROR(Detail, "message receipt parse value out of range")
+          ZS_LOG_ERROR(Detail, pThis->log("message receipt parse value out of range"))
           return MessageReceiptsPtr();
         }
         return pThis;
       }
 
       //-----------------------------------------------------------------------
-      String IConversationThreadParser::MessageReceipts::getDebugValueString(bool includeCommaPrefix) const
+      ElementPtr IConversationThreadParser::MessageReceipts::toDebug() const
       {
-        bool firstTime = !includeCommaPrefix;
-        return Helper::getDebugValue("receipts id", string(mID), firstTime) +
-               Helper::getDebugValue("receipts element", mReceiptsEl ? String("true") : String(), firstTime) +
-               Helper::getDebugValue("version", 0 != mVersion ? string(mVersion) : String(), firstTime) +
-               Helper::getDebugValue("receipts", mReceipts.size() > 0 ? string(mReceipts.size()) : String(), firstTime);
+        ElementPtr resultEl = Element::create("IConversationThreadParser::MessageReceipts");
+
+        IHelper::debugAppend(resultEl, "id", mID);
+        IHelper::debugAppend(resultEl, "receipts element", (bool)mReceiptsEl);
+        IHelper::debugAppend(resultEl, "version", mVersion);
+        IHelper::debugAppend(resultEl, "receipts", mReceipts.size());
+
+        return resultEl;
+      }
+
+      //-----------------------------------------------------------------------
+      Log::Params IConversationThreadParser::MessageReceipts::log(const char *message) const
+      {
+        ElementPtr objectEl = Element::create("core::IConversationThreadParser::MessageReceipts");
+        IHelper::debugAppend(objectEl, "id", mID);
+        return Log::Params(message, objectEl);
       }
 
       //-----------------------------------------------------------------------
@@ -498,10 +524,10 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      String IConversationThreadParser::ThreadContact::toDebugString(ThreadContactPtr contact, bool includeCommaPrefix)
+      ElementPtr IConversationThreadParser::ThreadContact::toDebug(ThreadContactPtr contact)
       {
-        if (!contact) return includeCommaPrefix ? String(", contact=(null)") : String("contact=(null");
-        return contact->getDebugValueString(includeCommaPrefix);
+        if (!contact) return ElementPtr();
+        return contact->toDebug();
       }
 
       //-----------------------------------------------------------------------
@@ -520,12 +546,15 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      String IConversationThreadParser::ThreadContact::getDebugValueString(bool includeCommaPrefix) const
+      ElementPtr IConversationThreadParser::ThreadContact::toDebug() const
       {
-        bool firstTime = !includeCommaPrefix;
-        return Helper::getDebugValue("contact id", string(mID), firstTime) +
-               IContact::toDebugString(mContact) +
-               Helper::getDebugValue("profile bundle", mProfileBundleEl ? String("true") : String(), firstTime);
+        ElementPtr resultEl = Element::create("IConversationThreadParser::ThreadContact");
+
+        IHelper::debugAppend(resultEl, "contact id", mID);
+        IHelper::debugAppend(resultEl, IContact::toDebug(mContact));
+        IHelper::debugAppend(resultEl, "profile bundle", (bool)mProfileBundleEl);
+
+        return resultEl;
       }
 
       //-----------------------------------------------------------------------
@@ -548,10 +577,10 @@ namespace openpeer
       // </thread>
 
       //-----------------------------------------------------------------------
-      String IConversationThreadParser::ThreadContacts::toDebugString(ThreadContactsPtr contacts, bool includeCommaPrefix)
+      ElementPtr IConversationThreadParser::ThreadContacts::toDebug(ThreadContactsPtr contacts)
       {
-        if (!contacts) return includeCommaPrefix ? String(", contacts=(null)") : String("contacts=(null");
-        return contacts->getDebugValueString(includeCommaPrefix);
+        if (!contacts) return ElementPtr();
+        return contacts->toDebug();
       }
 
       //-----------------------------------------------------------------------
@@ -592,7 +621,7 @@ namespace openpeer
           const ThreadContactPtr &contact = (*iter).second;
           IPeerFilePublicPtr peerPublic = contact->contact()->forConversationThread().getPeerFilePublic();
           if (!peerPublic) {
-            ZS_LOG_ERROR(Detail, String("IConversationThreadParser::Contacts contact does not have a public peer file") + ", contact URI=" + peerURI)
+            ZS_LOG_ERROR(Detail, pThis->log("contact does not have a public peer file") + ZS_PARAM("contact URI", peerURI))
             return ThreadContactsPtr();
           }
 
@@ -612,7 +641,7 @@ namespace openpeer
           const ThreadContactPtr &contact = (*iter).second;
           IPeerFilePublicPtr peerPublic = contact->contact()->forConversationThread().getPeerFilePublic();
           if (!peerPublic) {
-            ZS_LOG_ERROR(Detail, String("IConversationThreadParser::Contacts contact does not have a public peer file") + ", peer URI=" + peerURI)
+            ZS_LOG_ERROR(Detail, pThis->log("contact does not have a public peer file") + ZS_PARAM("peer URI", peerURI))
             return ThreadContactsPtr();
           }
 
@@ -706,24 +735,35 @@ namespace openpeer
             contactEl = contactEl->findNextSiblingElement("contact");
           }
         } catch(CheckFailed &) {
-          ZS_LOG_ERROR(Detail, "contact XML element check parser failure")
+          ZS_LOG_ERROR(Detail, pThis->log("contact XML element check parser failure"))
           return ThreadContactsPtr();
         } catch (Numeric<UINT>::ValueOutOfRange &) {
-          ZS_LOG_ERROR(Detail, "contact parser value out of range")
+          ZS_LOG_ERROR(Detail, pThis->log("contact parser value out of range"))
           return ThreadContactsPtr();
         }
         return pThis;
       }
 
       //-----------------------------------------------------------------------
-      String IConversationThreadParser::ThreadContacts::getDebugValueString(bool includeCommaPrefix) const
+      ElementPtr IConversationThreadParser::ThreadContacts::toDebug() const
       {
-        bool firstTime = !includeCommaPrefix;
-        return Helper::getDebugValue("contact id", string(mID), firstTime) +
-               Helper::getDebugValue("version", 0 != mVersion ? string(mVersion) : String(), firstTime) +
-               Helper::getDebugValue("contacts", mContacts.size() > 0 ? string(mContacts.size()) : String(), firstTime) +
-               Helper::getDebugValue("add contacts", mAddContacts.size() > 0 ? string(mAddContacts.size()) : String(), firstTime) +
-               Helper::getDebugValue("remove contacts", mRemoveContacts.size() > 0 ? string(mRemoveContacts.size()) : String(), firstTime);
+        ElementPtr resultEl = Element::create("IConversationThreadParser::ThreadContacts");
+
+        IHelper::debugAppend(resultEl, "id", mID);
+        IHelper::debugAppend(resultEl, "version", mVersion);
+        IHelper::debugAppend(resultEl, "contacts", mContacts.size());
+        IHelper::debugAppend(resultEl, "add contacts", mAddContacts.size());
+        IHelper::debugAppend(resultEl, "remove contacts", mRemoveContacts.size());
+
+        return resultEl;
+      }
+
+      //-----------------------------------------------------------------------
+      Log::Params IConversationThreadParser::ThreadContacts::log(const char *message) const
+      {
+        ElementPtr objectEl = Element::create("core::IConversationThreadParser::ThreadContacts");
+        IHelper::debugAppend(objectEl, "id", mID);
+        return Log::Params(message, objectEl);
       }
 
       //-----------------------------------------------------------------------
@@ -872,10 +912,10 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      String IConversationThreadParser::Dialog::toDebugString(DialogPtr dialog, bool includeCommaPrefix)
+      ElementPtr IConversationThreadParser::Dialog::toDebug(DialogPtr dialog)
       {
-        if (!dialog) return includeCommaPrefix ? String(", dialog=(null)") : String("dialog=(null");
-        return dialog->getDebugValueString(includeCommaPrefix);
+        if (!dialog) return ElementPtr();
+        return dialog->toDebug();
       }
 
       //-----------------------------------------------------------------------
@@ -1058,7 +1098,7 @@ namespace openpeer
               WORD value = Numeric<WORD>(closedEl->getAttributeValue("id"));
               pThis->mClosedReason = (DialogClosedReasons)value;
             } catch(Numeric<WORD>::ValueOutOfRange &) {
-              ZS_LOG_DEBUG("Illegal value for closed reason")
+              ZS_LOG_DEBUG(pThis->log("illegal value for closed reason"))
               return DialogPtr();
             }
             pThis->mClosedReasonMessage = closedEl->getTextDecoded();
@@ -1138,19 +1178,19 @@ namespace openpeer
             descriptionEl = descriptionEl->findNextSiblingElement("description");
           }
         } catch(CheckFailed &) {
-          ZS_LOG_ERROR(Detail, "dialog XML element parse check failed")
+          ZS_LOG_ERROR(Detail, pThis->log("dialog XML element parse check failed"))
           return DialogPtr();
         } catch (Numeric<BYTE>::ValueOutOfRange &) {
-          ZS_LOG_ERROR(Detail, "dialog parse value out of range")
+          ZS_LOG_ERROR(Detail, pThis->log("dialog parse value out of range"))
           return DialogPtr();
         } catch (Numeric<WORD>::ValueOutOfRange &) {
-          ZS_LOG_ERROR(Detail, "dialog parse value out of range")
+          ZS_LOG_ERROR(Detail, pThis->log("dialog parse value out of range"))
           return DialogPtr();
         } catch (Numeric<DWORD>::ValueOutOfRange &) {
-          ZS_LOG_ERROR(Detail, "dialog parse value out of range")
+          ZS_LOG_ERROR(Detail, pThis->log("dialog parse value out of range"))
           return DialogPtr();
         } catch (IPAddress::Exceptions::ParseError &) {
-          ZS_LOG_ERROR(Detail, "dialog parse IP address parse error")
+          ZS_LOG_ERROR(Detail, pThis->log("dialog parse IP address parse error"))
           return DialogPtr();
         }
         return pThis;
@@ -1164,18 +1204,29 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      String IConversationThreadParser::Dialog::getDebugValueString(bool includeCommaPrefix) const
+      ElementPtr IConversationThreadParser::Dialog::toDebug() const
       {
-        bool firstTime = !includeCommaPrefix;
-        return Helper::getDebugValue("dialog id", string(mID), firstTime) +
-               Helper::getDebugValue("version", (0 != mVersion ? string(mVersion) : String()), firstTime) +
-               Helper::getDebugValue("dialog ID", mDialogID, firstTime) +
-               Helper::getDebugValue("state", toString(mState), firstTime) +
-               Helper::getDebugValue("closed reason", toString(mClosedReason), firstTime) +
-               Helper::getDebugValue("closed reason message", mClosedReasonMessage, firstTime) +
-               Helper::getDebugValue("caller contact URI", mCallerContactURI, firstTime) +
-               Helper::getDebugValue("callee contact URI", mCalleeContactURI, firstTime) +
-               Helper::getDebugValue("replaces", mReplacesDialogID, firstTime);
+        ElementPtr resultEl = Element::create("IConversationThreadParser::Dialog");
+
+        IHelper::debugAppend(resultEl, "id", mID);
+        IHelper::debugAppend(resultEl, "version", mVersion);
+        IHelper::debugAppend(resultEl, "dialog ID", mDialogID);
+        IHelper::debugAppend(resultEl, "state", toString(mState));
+        IHelper::debugAppend(resultEl, "closed reason", toString(mClosedReason));
+        IHelper::debugAppend(resultEl, "closed reason message", mClosedReasonMessage);
+        IHelper::debugAppend(resultEl, "caller contact URI", mCallerContactURI);
+        IHelper::debugAppend(resultEl, "callee contact URI", mCalleeContactURI);
+        IHelper::debugAppend(resultEl, "replaces", mReplacesDialogID);
+
+        return resultEl;
+      }
+
+      //-----------------------------------------------------------------------
+      Log::Params IConversationThreadParser::Dialog::log(const char *message) const
+      {
+        ElementPtr objectEl = Element::create("core::IConversationThreadParser::Dialog");
+        IHelper::debugAppend(objectEl, "id", mID);
+        return Log::Params(message, objectEl);
       }
 
       //-----------------------------------------------------------------------
@@ -1187,14 +1238,17 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      String IConversationThreadParser::Dialog::Codec::getDebugValueString(bool includeCommaPrefix) const
+      ElementPtr IConversationThreadParser::Dialog::Codec::toDebug() const
       {
-        bool firstTime = !includeCommaPrefix;
-        return Helper::getDebugValue("codec id", string(mCodecID), firstTime) +
-               Helper::getDebugValue("name", mName, firstTime) +
-               Helper::getDebugValue("ptime", 0 != mPTime ? string(mPTime) : String(), firstTime) +
-               Helper::getDebugValue("rate", 0 != mRate ? string(mRate) : String(), firstTime) +
-               Helper::getDebugValue("channels", 0 != mChannels ? string(mChannels) : String(), firstTime);
+        ElementPtr resultEl = Element::create("IConversationThreadParser::Dialog::Codec");
+
+        IHelper::debugAppend(resultEl, "id", string(mCodecID));
+        IHelper::debugAppend(resultEl, "name", mName);
+        IHelper::debugAppend(resultEl, "ptime", mPTime);
+        IHelper::debugAppend(resultEl, "rate", mRate);
+        IHelper::debugAppend(resultEl, "channels", mChannels);
+
+        return resultEl;
       }
 
       //-----------------------------------------------------------------------
@@ -1206,18 +1260,21 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      String IConversationThreadParser::Dialog::Description::getDebugValueString(bool includeCommaPrefix) const
+      ElementPtr IConversationThreadParser::Dialog::Description::toDebug() const
       {
-        bool firstTime = !includeCommaPrefix;
-        return Helper::getDebugValue("description id", mDescriptionID, firstTime) +
-               Helper::getDebugValue("version", 0 != mVersion ? string(mVersion) : String(), firstTime) +
-               Helper::getDebugValue("type", mType, firstTime) +
-               Helper::getDebugValue("ssrc", 0 != mSSRC ? string(mSSRC) : String(), firstTime) +
-               Helper::getDebugValue("cipher", mSecurityCipher, firstTime) +
-               Helper::getDebugValue("secret", mSecuritySecret, firstTime) +
-               Helper::getDebugValue("salt", mSecuritySalt, firstTime) +
-               Helper::getDebugValue("codecs", mCodecs.size() > 0 ? string(mCodecs.size()) : String(), firstTime) +
-               Helper::getDebugValue("candidates", mCandidates.size() > 0 ? string(mCandidates.size()) : String(), firstTime);
+        ElementPtr resultEl = Element::create("IConversationThreadParser::Dialog::Description");
+
+        IHelper::debugAppend(resultEl, "id", mDescriptionID);
+        IHelper::debugAppend(resultEl, "version", mVersion);
+        IHelper::debugAppend(resultEl, "type", mType);
+        IHelper::debugAppend(resultEl, "ssrc", mSSRC);
+        IHelper::debugAppend(resultEl, "cipher", mSecurityCipher);
+        IHelper::debugAppend(resultEl, "secret", mSecuritySecret);
+        IHelper::debugAppend(resultEl, "salt", mSecuritySalt);
+        IHelper::debugAppend(resultEl, "codecs", mCodecs.size());
+        IHelper::debugAppend(resultEl, "candidates", mCandidates.size());
+
+        return resultEl;
       }
 
       //-----------------------------------------------------------------------
@@ -1264,10 +1321,10 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      String IConversationThreadParser::Details::toDebugString(DetailsPtr details, bool includeCommaPrefix)
+      ElementPtr IConversationThreadParser::Details::toDebug(DetailsPtr details)
       {
-        if (!details) return includeCommaPrefix ? String(", details=(null)") : String("details=(null");
-        return details->getDebugValueString(includeCommaPrefix);
+        if (!details) return ElementPtr();
+        return details->toDebug();
       }
 
       //-----------------------------------------------------------------------
@@ -1339,31 +1396,42 @@ namespace openpeer
           pThis->mTopic = detailsEl->findFirstChildElementChecked("topic")->getTextDecoded();
           pThis->mCreated = services::IHelper::stringToTime(detailsEl->findFirstChildElementChecked("created")->getText());
           if (Time() == pThis->mCreated) {
-            ZS_LOG_ERROR(Detail, "details parse time value not valid")
+            ZS_LOG_ERROR(Detail, pThis->log("details parse time value not valid"))
             return DetailsPtr();
           }
         } catch(CheckFailed &) {
-          ZS_LOG_ERROR(Detail, "details XML element parse check failed")
+          ZS_LOG_ERROR(Detail, pThis->log("details XML element parse check failed"))
           return DetailsPtr();
         } catch (Numeric<UINT>::ValueOutOfRange &) {
-          ZS_LOG_ERROR(Detail, "details parse value out of range")
+          ZS_LOG_ERROR(Detail, pThis->log("details parse value out of range"))
           return DetailsPtr();
         }
         return pThis;
       }
 
       //-----------------------------------------------------------------------
-      String IConversationThreadParser::Details::getDebugValueString(bool includeCommaPrefix) const
+      ElementPtr IConversationThreadParser::Details::toDebug() const
       {
-        bool firstTime = !includeCommaPrefix;
-        return Helper::getDebugValue("details id", string(mID), firstTime) +
-               Helper::getDebugValue("version", 0 != mVersion ? string(mVersion) : String(), firstTime) +
-               Helper::getDebugValue("base thread id (s)", mBaseThreadID, firstTime) +
-               Helper::getDebugValue("host thread id (s)", mHostThreadID, firstTime) +
-               Helper::getDebugValue("replaces thread id (s)", mReplacesThreadID, firstTime) +
-               Helper::getDebugValue("state", toString(mState), firstTime) +
-               Helper::getDebugValue("topic", mTopic, firstTime) +
-               Helper::getDebugValue("created", Time() != mCreated ? services::IHelper::timeToString(mCreated) : String(), firstTime);
+        ElementPtr resultEl = Element::create("IConversationThreadParser::Details");
+
+        IHelper::debugAppend(resultEl, "id", mID);
+        IHelper::debugAppend(resultEl, "version", mVersion);
+        IHelper::debugAppend(resultEl, "base thread id", mBaseThreadID);
+        IHelper::debugAppend(resultEl, "host thread id", mHostThreadID);
+        IHelper::debugAppend(resultEl, "replaces thread id", mReplacesThreadID);
+        IHelper::debugAppend(resultEl, "state", toString(mState));
+        IHelper::debugAppend(resultEl, "topic", mTopic);
+        IHelper::debugAppend(resultEl, "created", mCreated);
+
+        return resultEl;
+      }
+
+      //-----------------------------------------------------------------------
+      Log::Params IConversationThreadParser::Details::log(const char *message) const
+      {
+        ElementPtr objectEl = Element::create("core::IConversationThreadParser::Details");
+        IHelper::debugAppend(objectEl, "id", mID);
+        return Log::Params(message, objectEl);
       }
 
       //-----------------------------------------------------------------------
@@ -1403,10 +1471,10 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      String IConversationThreadParser::Thread::toDebugString(ThreadPtr thread, bool includeCommaPrefix)
+      ElementPtr IConversationThreadParser::Thread::toDebug(ThreadPtr thread)
       {
-        if (!thread) return includeCommaPrefix ? String(", parser thread=(null)") : String("parser thread=(null");
-        return thread->getDebugValueString(includeCommaPrefix);
+        if (!thread) return ElementPtr();
+        return thread->toDebug();
       }
 
       //-----------------------------------------------------------------------
@@ -1457,7 +1525,7 @@ namespace openpeer
         try {
           pThis->mType = toThreadTypes(type);
         } catch (InvalidArgument &) {
-          ZS_LOG_ERROR(Detail, pThis->log("thread type is invalid") + ", type specified=" + type)
+          ZS_LOG_ERROR(Detail, pThis->log("thread type is invalid") + ZS_PARAM("type specified", type))
           return ThreadPtr();
         }
 
@@ -1664,15 +1732,15 @@ namespace openpeer
                 version = getVersion(dialogEl);
                 DialogPtr &dialog = (*found).second;
                 if (version > dialog->version()) {
-                  ZS_LOG_TRACE(log("dialog change detected") + ", dialog ID=" + dialog->getDebugValueString(false))
+                  ZS_LOG_TRACE(log("dialog change detected") + ZS_PARAM("dialog", dialog->toDebug()))
                   update = true;
                 } else {
                   dialogs[id] = dialog; // using existing dialog
-                  ZS_LOG_TRACE(log("using existing dialog") + ", dialog ID=" + dialog->getDebugValueString(false))
+                  ZS_LOG_TRACE(log("using existing dialog") + ZS_PARAM("dialog", dialog->toDebug()))
                 }
               } else {
                 update = true;
-                ZS_LOG_TRACE(log("new dialog detected") + ", dialog ID=" + id)
+                ZS_LOG_TRACE(log("new dialog detected") + ZS_PARAM("dialog ID", id))
               }
 
               if (update) {
@@ -1830,7 +1898,7 @@ namespace openpeer
             {
               const DescriptionPtr &description = (*descIter);
 
-              ZS_LOG_TRACE(log("found old description") + Dialog::toDebugString(dialog) + description->getDebugValueString())
+              ZS_LOG_TRACE(log("found old description") + Dialog::toDebug(dialog) + description->toDebug())
               oldDescriptions[description->mDescriptionID] = ChangedDescription(dialog->dialogID(), description);
             }
           }
@@ -1843,7 +1911,7 @@ namespace openpeer
             {
               const DescriptionPtr &description = (*descIter);
 
-              ZS_LOG_TRACE(log("found new description") + Dialog::toDebugString(dialog) + description->getDebugValueString())
+              ZS_LOG_TRACE(log("found new description") + Dialog::toDebug(dialog) + description->toDebug())
               newDescriptions[description->mDescriptionID] = ChangedDescription(dialog->dialogID(), description);
             }
           }
@@ -1862,11 +1930,11 @@ namespace openpeer
               if (description->mVersion > oldDescription->mVersion) {
                 // this description has changed
                 mDescriptionsChanged[descriptionID] = changed;
-                ZS_LOG_TRACE(log("description change detected") + ", dialog ID=" + dialogID + description->getDebugValueString())
+                ZS_LOG_TRACE(log("description change detected") + ZS_PARAM("dialog ID", dialogID) + description->toDebug())
               }
             } else {
               // this is a new description entirely
-              ZS_LOG_TRACE(log("new description detected") + ", dialog ID=" + dialogID + description->getDebugValueString())
+              ZS_LOG_TRACE(log("new description detected") + ZS_PARAM("dialog ID", dialogID) + description->toDebug())
               mDescriptionsChanged[descriptionID] = changed;
             }
           }
@@ -1881,7 +1949,7 @@ namespace openpeer
             if (found == newDescriptions.end()) {
               // this description has now been removed entirely...
               mDescriptionsRemoved.push_back(descriptionID);
-              ZS_LOG_TRACE(log("description removal detected") + ", dialog ID=" + dialogID + ", description ID=" + descriptionID)
+              ZS_LOG_TRACE(log("description removal detected") + ZS_PARAM("dialog ID", dialogID) + ZS_PARAM("description ID", descriptionID))
             }
           }
 
@@ -1895,7 +1963,7 @@ namespace openpeer
             DialogMap::iterator found = dialogs.find(id);
             if (found == dialogs.end()) {
               // this is dialog is completely gone...
-              ZS_LOG_TRACE(log("dialog detected removed") + ", dialog ID=" + id)
+              ZS_LOG_TRACE(log("dialog detected removed") + ZS_PARAM("dialog ID", id))
               mDialogsRemoved.push_back(id);
             }
           }
@@ -1986,7 +2054,7 @@ namespace openpeer
           ZS_THROW_INVALID_ARGUMENT_IF(!peerHostLocation->getPeer())
 
           String hostContactURI = peerHostLocation->getPeer()->getPeerURI();
-          ZS_LOG_TRACE(pThis->log("slave thread") + ", using host URI=" + hostContactURI + ", thread ID=" + baseThreadID + ", host thread ID=" + hostThreadID)
+          ZS_LOG_TRACE(pThis->log("slave thread") + ZS_PARAM("using host URI", hostContactURI) + ZS_PARAM("base thread ID", baseThreadID) + ZS_PARAM("host thread ID", hostThreadID))
 
           relationships.push_back(hostContactURI);
         }
@@ -2209,7 +2277,7 @@ namespace openpeer
 
               DialogMap::iterator found = mDialogs.find(id);
               if (found != mDialogs.end()) {
-                ZS_LOG_DEBUG(log("removing dialog from dialog map") + ", dialog ID=" + id)
+                ZS_LOG_DEBUG(log("removing dialog from dialog map") + ZS_PARAM("dialog ID", id))
                 mDialogs.erase(found);
               }
 
@@ -2522,38 +2590,41 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      String IConversationThreadParser::Thread::getDebugValueString(bool includeCommaPrefix) const
+      ElementPtr IConversationThreadParser::Thread::toDebug() const
       {
-        bool firstTime = !includeCommaPrefix;
-        return Helper::getDebugValue("parser thread id", string(mID), firstTime) +
-               Helper::getDebugValue("type", toString(mType), firstTime) +
-               Helper::getDebugValue("can modify", mCanModify ? String("true") : String(), firstTime) +
-               Helper::getDebugValue("modifying", mModifying ? String("true") : String(), firstTime) +
-               IPublication::toDebugString(mPublication) +
-               IPublication::toDebugString(mPermissionPublication) +
-               Details::toDebugString(mDetails) +
-               ThreadContacts::toDebugString(mContacts) +
-               Helper::getDebugValue("message version", 0 != mMessagesVersion ? string(mMessagesVersion) : String(), firstTime) +
-               Helper::getDebugValue("message list", mMessageList.size() > 0 ? string(mMessageList.size()) : String(), firstTime) +
-               Helper::getDebugValue("message map", mMessageMap.size() > 0 ? string(mMessageMap.size()) : String(), firstTime) +
-               MessageReceipts::toDebugString(mMessageReceipts) +
-               Helper::getDebugValue("dialog version", 0 != mDialogsVersion ? string(mDialogsVersion) : String(), firstTime) +
-               Helper::getDebugValue("dialogs", mDialogs.size() > 0 ? string(mDialogs.size()) : String(), firstTime) +
-               Helper::getDebugValue("changes", mChangesDoc ? String("true") : String(), firstTime) +
-               Helper::getDebugValue("details changed", mDetailsChanged ? String("true") : String(), firstTime) +
-               Helper::getDebugValue("contacts changed", mContactsChanged.size() > 0 ? string(mContactsChanged.size()) : String(), firstTime) +
-               Helper::getDebugValue("contacts removed", mContactsRemoved.size() > 0 ? string(mContactsRemoved.size()) : String(), firstTime) +
-               Helper::getDebugValue("contacts to add changed", mContactsToAddChanged.size() > 0 ? string(mContactsToAddChanged.size()) : String(), firstTime) +
-               Helper::getDebugValue("contacts to add removed", mContactsToAddRemoved.size() > 0 ? string(mContactsToAddRemoved.size()) : String(), firstTime) +
-               Helper::getDebugValue("contacts to remove changed", mContactsToRemoveChanged.size() > 0 ? string(mContactsToRemoveChanged.size()) : String(), firstTime) +
-               Helper::getDebugValue("contacts to remove removed", mContactsToRemoveRemoved.size() > 0 ? string(mContactsToRemoveRemoved.size()) : String(), firstTime) +
-               Helper::getDebugValue("messages changed", mMessagesChanged.size() > 0 ? string(mMessagesChanged.size()) : String(), firstTime) +
-               Helper::getDebugValue("messages changed time", Time() != mMessagesChangedTime ? services::IHelper::timeToString(mMessagesChangedTime) : String(), firstTime) +
-               Helper::getDebugValue("messages receipts changed", mMessageReceiptsChanged.size() > 0 ? string(mMessageReceiptsChanged.size()) : String(), firstTime) +
-               Helper::getDebugValue("dialogs changed", mDialogsChanged.size() > 0 ? string(mDialogsChanged.size()) : String(), firstTime) +
-               Helper::getDebugValue("dialogs removed", mDialogsRemoved.size() > 0 ? string(mDialogsRemoved.size()) : String(), firstTime) +
-               Helper::getDebugValue("descriptions changed", mDescriptionsChanged.size() > 0 ? string(mDescriptionsChanged.size()) : String(), firstTime) +
-               Helper::getDebugValue("descriptions removed", mDescriptionsRemoved.size() > 0 ? string(mDescriptionsRemoved.size()) : String(), firstTime);
+        ElementPtr resultEl = Element::create("IConversationThreadParser::Thread");
+
+        IHelper::debugAppend(resultEl, "id", mID);
+        IHelper::debugAppend(resultEl, "type", toString(mType));
+        IHelper::debugAppend(resultEl, "can modify", mCanModify);
+        IHelper::debugAppend(resultEl, "modifying", mModifying);
+        IHelper::debugAppend(resultEl, IPublication::toDebug(mPublication));
+        IHelper::debugAppend(resultEl, IPublication::toDebug(mPermissionPublication));
+        IHelper::debugAppend(resultEl, Details::toDebug(mDetails));
+        IHelper::debugAppend(resultEl, ThreadContacts::toDebug(mContacts));
+        IHelper::debugAppend(resultEl, "message version", mMessagesVersion);
+        IHelper::debugAppend(resultEl, "message list", mMessageList.size());
+        IHelper::debugAppend(resultEl, "message map", mMessageMap.size());
+        IHelper::debugAppend(resultEl, MessageReceipts::toDebug(mMessageReceipts));
+        IHelper::debugAppend(resultEl, "dialog version", mDialogsVersion);
+        IHelper::debugAppend(resultEl, "dialogs", mDialogs.size());
+        IHelper::debugAppend(resultEl, "changes", (bool)mChangesDoc);
+        IHelper::debugAppend(resultEl, "details changed", mDetailsChanged);
+        IHelper::debugAppend(resultEl, "contacts changed", mContactsChanged.size());
+        IHelper::debugAppend(resultEl, "contacts removed", mContactsRemoved.size());
+        IHelper::debugAppend(resultEl, "contacts to add changed", mContactsToAddChanged.size());
+        IHelper::debugAppend(resultEl, "contacts to add removed", mContactsToAddRemoved.size());
+        IHelper::debugAppend(resultEl, "contacts to remove changed", mContactsToRemoveChanged.size());
+        IHelper::debugAppend(resultEl, "contacts to remove removed", mContactsToRemoveRemoved.size());
+        IHelper::debugAppend(resultEl, "messages changed", mMessagesChanged.size());
+        IHelper::debugAppend(resultEl, "messages changed time", mMessagesChangedTime);
+        IHelper::debugAppend(resultEl, "messages receipts changed", mMessageReceiptsChanged.size());
+        IHelper::debugAppend(resultEl, "dialogs changed", mDialogsChanged.size());
+        IHelper::debugAppend(resultEl, "dialogs removed", mDialogsRemoved.size());
+        IHelper::debugAppend(resultEl, "descriptions changed", mDescriptionsChanged.size());
+        IHelper::debugAppend(resultEl, "descriptions removed", mDescriptionsRemoved.size());
+
+        return resultEl;
       }
 
       //-----------------------------------------------------------------------
@@ -2575,9 +2646,11 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      String IConversationThreadParser::Thread::log(const char *message) const
+      Log::Params IConversationThreadParser::Thread::log(const char *message) const
       {
-        return String("IConversationThreadParser::Thread [") + string(mID) + "] " + message;
+        ElementPtr objectEl = Element::create("core::IConversationThreadParser::Thread");
+        IHelper::debugAppend(objectEl, "id", mID);
+        return Log::Params(message, objectEl);
       }
 
       //-----------------------------------------------------------------------

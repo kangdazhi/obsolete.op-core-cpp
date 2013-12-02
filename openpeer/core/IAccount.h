@@ -62,7 +62,7 @@ namespace openpeer
 
       static const char *toString(AccountStates state);
 
-      static String toDebugString(IAccountPtr account, bool includeCommaPrefix = true);
+      static ElementPtr toDebug(IAccountPtr account);
 
       static IAccountPtr login(
                                IAccountDelegatePtr delegate,

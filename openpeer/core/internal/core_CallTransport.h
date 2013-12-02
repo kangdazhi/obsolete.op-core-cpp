@@ -65,7 +65,7 @@ namespace openpeer
 
         static const char *toString(CallTransportStates state);
 
-        static String toDebugString(ICallTransportPtr transport, bool includeCommaPrefix = true);
+        static ElementPtr toDebug(ICallTransportPtr transport);
 
         virtual PUID getID() const = 0;
         virtual CallTransportStates getState() const = 0;
@@ -299,8 +299,9 @@ namespace openpeer
         int sendRTPPacket(PUID socketID, const void *data, int len);
 
       protected:
-        String log(const char *message) const;
-        virtual String getDebugValueString(bool includeCommaPrefix = true) const;
+        Log::Params log(const char *message) const;
+
+        virtual ElementPtr toDebug() const;
 
         bool isPending() const {return CallTransportState_Pending == mCurrentState;}
         bool isReady() const {return CallTransportState_Ready == mCurrentState;}
@@ -345,7 +346,7 @@ namespace openpeer
         public:
           ~TransportSocket();
 
-          static String toDebugString(TransportSocketPtr socket, bool includeCommaPrefix = true);
+          static ElementPtr toDebug(TransportSocketPtr socket);
 
           //-------------------------------------------------------------------
           #pragma mark CallTransport::TransportSocket => friend CallTransport
@@ -383,8 +384,10 @@ namespace openpeer
         protected:
           //-------------------------------------------------------------------
           #pragma mark CallTransport::TransportSocket => (internal)
-          String log(const char *message) const;
-          virtual String getDebugValueString(bool includeCommaPrefix = true) const;
+
+          Log::Params log(const char *message) const;
+
+          virtual ElementPtr toDebug() const;
 
           void cancel();
 

@@ -128,7 +128,7 @@ namespace openpeer
       public:
         ~ConversationThreadHost();
 
-        static String toDebugString(ConversationThreadHostPtr host, bool includeCommaPrefix = true);
+        static ElementPtr toDebug(ConversationThreadHostPtr host);
 
       protected:
         //---------------------------------------------------------------------
@@ -246,8 +246,9 @@ namespace openpeer
         bool isShuttingDown() const {return ConversationThreadHostState_ShuttingDown == mCurrentState;}
         virtual bool isShutdown() const {AutoRecursiveLock(getLock()); return ConversationThreadHostState_Shutdown == mCurrentState;}
 
-        String log(const char *message) const;
-        virtual String getDebugValueString(bool includeCommaPrefix = true) const;
+        Log::Params log(const char *message) const;
+
+        virtual ElementPtr toDebug() const;
 
       protected:
         RecursiveLock &getLock() const;
@@ -318,7 +319,7 @@ namespace openpeer
         public:
           ~PeerContact();
 
-          static String toDebugString(PeerContactPtr contact, bool includeCommaPrefix = true);
+          static ElementPtr toDebug(PeerContactPtr contact);
 
         protected:
           //-------------------------------------------------------------------
@@ -435,8 +436,9 @@ namespace openpeer
           RecursiveLock &getLock() const;
           PUID getID() const {return mID;}
 
-          String log(const char *message) const;
-          virtual String getDebugValueString(bool includeCommaPrefix = true) const;
+          Log::Params log(const char *message) const;
+
+          virtual ElementPtr toDebug() const;
 
           bool isPending() const {return PeerContactState_Pending == mCurrentState;}
           bool isReady() const {return PeerContactState_Ready == mCurrentState;}
@@ -510,7 +512,7 @@ namespace openpeer
         public:
           ~PeerLocation();
 
-          static String toDebugString(PeerLocationPtr contact, bool includeCommaPrefix = true);
+          static ElementPtr toDebug(PeerLocationPtr contact);
 
         protected:
           //-------------------------------------------------------------------
@@ -579,12 +581,14 @@ namespace openpeer
           #pragma mark
 
         private:
-          String log(const char *message) const;
+          Log::Params log(const char *message) const;
+
           bool isShutdown() {return mShutdown;}
 
         protected:
           RecursiveLock &getLock() const;
-          virtual String getDebugValueString(bool includeCommaPrefix = true) const;
+
+          virtual ElementPtr toDebug() const;
 
           void cancel();
           void step();

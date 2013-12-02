@@ -55,7 +55,7 @@ namespace openpeer
 
       interaction IConversationThreadDocumentFetcher
       {
-        static String toDebugString(IConversationThreadDocumentFetcherPtr fetcher, bool includeCommaPrefix = true);
+        static ElementPtr toDebug(IConversationThreadDocumentFetcherPtr fetcher);
 
         static IConversationThreadDocumentFetcherPtr create(
                                                             IConversationThreadDocumentFetcherDelegatePtr delegate,
@@ -136,7 +136,7 @@ namespace openpeer
 
         static ConversationThreadDocumentFetcherPtr convert(IConversationThreadDocumentFetcherPtr fetcher);
 
-        static String toDebugString(ConversationThreadDocumentFetcherPtr fetcher, bool includeCommaPrefix = true);
+        static ElementPtr toDebug(ConversationThreadDocumentFetcherPtr fetcher);
 
       protected:
         //---------------------------------------------------------------------
@@ -178,8 +178,9 @@ namespace openpeer
 
         virtual bool isShutdown() const;
 
-        String log(const char *message) const;
-        virtual String getDebugValueString(bool includeCommaPrefix = true) const;
+        Log::Params log(const char *message) const;
+
+        virtual ElementPtr toDebug() const;
 
         RecursiveLock &getLock() const {return mLock;}
 

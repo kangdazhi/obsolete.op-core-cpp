@@ -169,15 +169,15 @@ namespace openpeer
         }
 
         //---------------------------------------------------------------------
-        virtual void log(
-                         const Subsystem &inSubsystem,
-                         zsLib::Log::Severity inSeverity,
-                         zsLib::Log::Level inLevel,
-                         CSTR inMessage,
-                         CSTR inFunction,
-                         CSTR inFilePath,
-                         ULONG inLineNumber
-                         )
+        virtual void onLog(
+                           const Subsystem &inSubsystem,
+                           zsLib::Log::Severity inSeverity,
+                           zsLib::Log::Level inLevel,
+                           CSTR inFunction,
+                           CSTR inFilePath,
+                           ULONG inLineNumber,
+                           const Log::Params &params
+                           )
         {
           ILoggerDelegatePtr delegate;
 
@@ -194,7 +194,7 @@ namespace openpeer
                           inSubsystem.getName(),
                           severityToSeverity(inSeverity),
                           levelToLevel(inLevel),
-                          inMessage,
+                          params.message(),
                           inFunction,
                           inFilePath,
                           inLineNumber
@@ -365,7 +365,7 @@ namespace openpeer
                *(((Subsystem *)subsystemUniqueID)),
                internal::severityToSeverity(severity),
                internal::levelToLevel(level),
-               message,
+               String(message),
                function,
                filePath,
                lineNumber

@@ -203,7 +203,7 @@ namespace openpeer
 
         static CallPtr convert(ICallPtr call);
 
-        static String toDebugString(ICallPtr call, bool includeCommaPrefix = true);
+        static ElementPtr toDebug(ICallPtr call);
 
       protected:
         //---------------------------------------------------------------------
@@ -351,12 +351,13 @@ namespace openpeer
         IMessageQueuePtr getMediaQueue() const {return mMediaQueue;}
 
       private:
-        String log(const char *message) const;
-        virtual String getDebugValueString(
-                                           bool callData,
-                                           bool mediaData,
-                                           bool includeCommaPrefix = true
-                                           ) const;
+        static Log::Params slog(const char *message);
+        Log::Params log(const char *message) const;
+
+        virtual ElementPtr toDebug(
+                                   bool callData,
+                                   bool mediaData
+                                   ) const;
 
         bool isShuttingdown() const;
         bool isShutdown() const;
@@ -480,12 +481,11 @@ namespace openpeer
         public:
           ~CallLocation();
 
-          static String toDebugString(
-                                      CallLocationPtr location,
-                                      bool normal,
-                                      bool media,
-                                      bool includeCallPrefix = true
-                                      );
+          static ElementPtr toDebug(
+                                    CallLocationPtr location,
+                                    bool normal,
+                                    bool media
+                                    );
 
           //-------------------------------------------------------------------
           #pragma mark
@@ -562,12 +562,8 @@ namespace openpeer
           RecursiveLock &getLock() const;
           RecursiveLock &getMediaLock() const;
 
-          String log(const char *message) const;
-          virtual String getDebugValueString(
-                                             bool normal,
-                                             bool media,
-                                             bool includeCallPrefix = true
-                                             ) const;
+          Log::Params log(const char *message) const;
+          virtual ElementPtr toDebug(bool normal, bool media) const;
 
           bool isPending() const  {return CallLocationState_Pending == mCurrentState;}
           bool isReady() const    {return CallLocationState_Ready == mCurrentState;}

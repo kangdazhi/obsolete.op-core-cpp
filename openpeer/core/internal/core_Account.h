@@ -254,7 +254,7 @@ namespace openpeer
         #pragma mark Account => IAccount
         #pragma mark
 
-        static String toDebugString(IAccountPtr account, bool includeCommaPrefix = true);
+        static ElementPtr toDebug(IAccountPtr account);
 
         static AccountPtr login(
                                 IAccountDelegatePtr delegate,
@@ -487,8 +487,10 @@ namespace openpeer
         bool isShuttingDown() const {return AccountState_ShuttingDown == mCurrentState;}
         bool isShutdown() const     {return AccountState_Shutdown == mCurrentState;}
 
-        String log(const char *message) const;
-        virtual String getDebugValueString(bool includeCommaPrefix = true) const;
+        Log::Params log(const char *message) const;
+        Log::Params debug(const char *message) const;
+
+        virtual ElementPtr toDebug() const;
 
         void cancel();
 
@@ -552,7 +554,7 @@ namespace openpeer
         public:
           ~ContactSubscription();
 
-          static String toDebugString(ContactSubscriptionPtr contactSubscription, bool includeCommaPrefix = true);
+          static ElementPtr toDebug(ContactSubscriptionPtr contactSubscription);
 
         protected:
           //-------------------------------------------------------------------
@@ -644,8 +646,9 @@ namespace openpeer
           RecursiveLock &getLock() const;
 
         private:
-          String log(const char *message) const;
-          virtual String getDebugValueString(bool includeCommaPrefix = true) const;
+          Log::Params log(const char *message) const;
+
+          virtual ElementPtr toDebug() const;
 
           void cancel();
           void step();
@@ -711,7 +714,7 @@ namespace openpeer
         public:
           ~LocationSubscription();
 
-          static String toDebugString(LocationSubscriptionPtr subscription, bool includeCommaPrefix = true);
+          static ElementPtr toDebug(LocationSubscriptionPtr subscription);
 
         protected:
           //-------------------------------------------------------------------
@@ -765,8 +768,10 @@ namespace openpeer
         private:
           RecursiveLock &getLock() const;
           virtual PUID getID() const {return mID;}
-          String log(const char *message) const;
-          virtual String getDebugValueString(bool includeCommaPrefix = true) const;
+
+          Log::Params log(const char *message) const;
+
+          virtual ElementPtr toDebug() const;
 
           String getPeerURI() const;
           String getLocationID() const;

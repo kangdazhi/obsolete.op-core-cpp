@@ -31,7 +31,10 @@
 
 #include <openpeer/core/internal/core_Cache.h>
 
+#include <openpeer/services/IHelper.h>
+
 #include <zsLib/helpers.h>
+#include <zsLib/XML.h>
 #include <zsLib/Stringize.h>
 
 namespace openpeer { namespace core { ZS_DECLARE_SUBSYSTEM(openpeer_core) } }
@@ -42,6 +45,8 @@ namespace openpeer
   {
     namespace internal
     {
+      using services::IHelper;
+
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -185,9 +190,11 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      String Cache::log(const char *message) const
+      Log::Params Cache::log(const char *message) const
       {
-        return String("core::Cache [") + string(mID) + "] " + message;
+        ElementPtr objectEl = Element::create("core::Cache");
+        IHelper::debugAppend(objectEl, "id", mID);
+        return Log::Params(message, objectEl);
       }
 
       //-----------------------------------------------------------------------
@@ -196,7 +203,7 @@ namespace openpeer
         AutoRecursiveLock lock(mLock);
         mDelegate = delegate;
 
-        ZS_LOG_DEBUG(log("setup called") + ", has delegate=" + (delegate ? "true":"false"))
+        ZS_LOG_DEBUG(log("setup called") + ZS_PARAM("has delegate", (bool)delegate))
       }
 
     }

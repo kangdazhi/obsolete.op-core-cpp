@@ -102,7 +102,7 @@ namespace openpeer
         #pragma mark Cache => (internal)
         #pragma mark
 
-        String log(const char *message) const;
+        Log::Params log(const char *message) const;
 
         void actualSetup(ICacheDelegatePtr delegate);
 

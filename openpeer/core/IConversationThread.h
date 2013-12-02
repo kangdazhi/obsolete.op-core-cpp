@@ -65,7 +65,7 @@ namespace openpeer
       static const char *toString(MessageDeliveryStates state);
       static const char *toString(ContactStates state);
 
-      static String toDebugString(IConversationThreadPtr thread, bool includeCommaPrefix = true);
+      static ElementPtr toDebug(IConversationThreadPtr thread);
 
       static IConversationThreadPtr create(
                                            IAccountPtr account,

@@ -37,6 +37,8 @@
 #include <openpeer/stack/IBootstrappedNetwork.h>
 #include <openpeer/stack/IHelper.h>
 
+#include <openpeer/services/IHelper.h>
+
 #include <zsLib/Stringize.h>
 #include <zsLib/XML.h>
 #include <zsLib/helpers.h>
@@ -53,6 +55,8 @@ namespace openpeer
 
     namespace internal
     {
+      using services::IHelper;
+
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -130,7 +134,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Identity::init()
       {
-        ZS_LOG_DEBUG(log("init called") + ", identity session id=" + string(mSession->getID()))
+        ZS_LOG_DEBUG(log("init called") + ZS_PARAM("identity session id", mSession->getID()))
       }
 
       //-----------------------------------------------------------------------
@@ -158,10 +162,10 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      String Identity::toDebugString(IIdentityPtr identity, bool includeCommaPrefix)
+      ElementPtr Identity::toDebug(IIdentityPtr identity)
       {
-        if (!identity) return includeCommaPrefix ? String(", identity=(null)") : String("identity=(null)");
-        return Identity::convert(identity)->getDebugValueString(includeCommaPrefix);
+        if (!identity) return ElementPtr();
+        return Identity::convert(identity)->toDebug();
       }
 
       //-----------------------------------------------------------------------
@@ -191,11 +195,11 @@ namespace openpeer
         ZS_THROW_INVALID_ARGUMENT_IF(!services::IHelper::isValidDomain(domain))
 
         IServiceIdentityPtr provider;
-        ZS_LOG_DEBUG(pThis->log("preparing bootstrapped network domain") + ", identity=" + identity + ", domain=" + domain)
+        ZS_LOG_DEBUG(pThis->log("preparing bootstrapped network domain") + ZS_PARAM("identity", identity) + ZS_PARAM("domain", domain))
 
         IBootstrappedNetworkPtr network = IBootstrappedNetwork::prepare(domain);
         if (!network) {
-          ZS_LOG_ERROR(Detail, pThis->log("bootstrapper failed for domain specified") + ", identity=" + identity + ", domain=" + domain)
+          ZS_LOG_ERROR(Detail, pThis->log("bootstrapper failed for domain specified") + ZS_PARAM("identity", identity) + ZS_PARAM("domain", domain))
           return IdentityPtr();
         }
 
@@ -242,11 +246,11 @@ namespace openpeer
         ZS_THROW_INVALID_ARGUMENT_IF(!services::IHelper::isValidDomain(domain))
 
         IServiceIdentityPtr provider;
-        ZS_LOG_DEBUG(pThis->log("preparing bootstrapped network domain") + ", identity=" + identity + ", domain=" + domain)
+        ZS_LOG_DEBUG(pThis->log("preparing bootstrapped network domain") + ZS_PARAM("identity", identity) + ZS_PARAM("domain", domain))
 
         IBootstrappedNetworkPtr network = IBootstrappedNetwork::prepare(domain);
         if (!network) {
-          ZS_LOG_ERROR(Detail, pThis->log("bootstrapper failed for domain specified") + ", identity=" + identity + ", domain=" + domain)
+          ZS_LOG_ERROR(Detail, pThis->log("bootstrapper failed for domain specified") + ZS_PARAM("identity", identity) + ZS_PARAM("domain", domain))
           return IdentityPtr();
         }
 
@@ -389,14 +393,14 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Identity::startRolodexDownload(const char *inLastDownloadedVersion)
       {
-        ZS_LOG_DEBUG(log("start rolodex download called") + ", identity session id=" + string(mSession->getID()) + ", last downloaded=" + String(inLastDownloadedVersion))
+        ZS_LOG_DEBUG(log("start rolodex download called") + ZS_PARAM("identity session id", mSession->getID()) + ZS_PARAM("last downloaded", inLastDownloadedVersion))
         mSession->startRolodexDownload(inLastDownloadedVersion);
       }
 
       //-----------------------------------------------------------------------
       void Identity::refreshRolodexContacts()
       {
-        ZS_LOG_DEBUG(log("refresh rolodex contacts called") + ", identity session id=" + string(mSession->getID()))
+        ZS_LOG_DEBUG(log("refresh rolodex contacts called") + ZS_PARAM("identity session id", mSession->getID()))
         mSession->refreshRolodexContacts();
       }
 
@@ -411,7 +415,7 @@ namespace openpeer
         typedef stack::message::IdentityInfoList StackIdentityInfoList;
         typedef stack::message::IdentityInfoListPtr StackIdentityInfoListPtr;
 
-        ZS_LOG_DEBUG(log("download rolodex contacts") + ", identity session id=" + string(mSession->getID()))
+        ZS_LOG_DEBUG(log("download rolodex contacts") + ZS_PARAM("identity session id", mSession->getID()))
 
         StackIdentityInfoListPtr identities;
         bool result = mSession->getDownloadedRolodexContacts(
@@ -505,7 +509,7 @@ namespace openpeer
                                                           SessionStates state
                                                           )
       {
-        ZS_LOG_DEBUG(log("session state changed") + ", identity session id=" + string(session->getID()) + ", state=" + IServiceIdentitySession::toString(state))
+        ZS_LOG_DEBUG(log("session state changed") + ZS_PARAM("identity session id", session->getID()) + ZS_PARAM("state", IServiceIdentitySession::toString(state)))
 
         ZS_THROW_BAD_STATE_IF(!mDelegate)
         try {
@@ -518,7 +522,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Identity::onServiceIdentitySessionPendingMessageForInnerBrowserWindowFrame(IServiceIdentitySessionPtr session)
       {
-        ZS_LOG_DEBUG(log("pending inner browser window frame message") + ", identity session id=" + string(session->getID()))
+        ZS_LOG_DEBUG(log("pending inner browser window frame message") + ZS_PARAM("identity session id", session->getID()))
 
         ZS_THROW_BAD_STATE_IF(!mDelegate)
         try {
@@ -531,7 +535,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Identity::onServiceIdentitySessionRolodexContactsDownloaded(IServiceIdentitySessionPtr session)
       {
-        ZS_LOG_DEBUG(log("rolodex contacts downloaded") + ", identity session id=" + string(session->getID()))
+        ZS_LOG_DEBUG(log("rolodex contacts downloaded") + ZS_PARAM("identity session id", session->getID()))
 
         ZS_THROW_BAD_STATE_IF(!mDelegate)
         try {
@@ -550,15 +554,17 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      String Identity::log(const char *message) const
+      Log::Params Identity::log(const char *message) const
       {
-        return String("core::Identity [") + string(mID) + "] " + message;
+        ElementPtr objectEl = Element::create("core::Identity");
+        IHelper::debugAppend(objectEl, "id", mID);
+        return Log::Params(message, objectEl);
       }
 
       //-----------------------------------------------------------------------
-      String Identity::getDebugValueString(bool includeCommaPrefix) const
+      ElementPtr Identity::toDebug() const
       {
-        return IServiceIdentitySession::toDebugString(mSession, includeCommaPrefix);
+        return IServiceIdentitySession::toDebug(mSession);
       }
 
       //-----------------------------------------------------------------------
@@ -576,9 +582,9 @@ namespace openpeer
     #pragma mark
 
     //-------------------------------------------------------------------------
-    String IIdentity::toDebugString(IIdentityPtr identity, bool includeCommaPrefix)
+    ElementPtr IIdentity::toDebug(IIdentityPtr identity)
     {
-      return internal::Identity::toDebugString(identity);
+      return internal::Identity::toDebug(identity);
     }
 
     //-------------------------------------------------------------------------

@@ -43,6 +43,7 @@
 
 #include <openpeer/services/IHelper.h>
 
+#include <zsLib/XML.h>
 #include <zsLib/Stringize.h>
 #include <zsLib/helpers.h>
 
@@ -55,6 +56,8 @@ namespace openpeer
   {
     namespace internal
     {
+      using services::IHelper;
+
       typedef IConversationThreadParser::Thread Thread;
       typedef IConversationThreadParser::ThreadPtr ThreadPtr;
       typedef IConversationThreadParser::ThreadContact ThreadContact;
@@ -151,10 +154,10 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      String ConversationThreadHost::toDebugString(ConversationThreadHostPtr host, bool includeCommaPrefix)
+      ElementPtr ConversationThreadHost::toDebug(ConversationThreadHostPtr host)
       {
-        if (!host) return includeCommaPrefix ? String(", host thread=(null)") : String("host thread=(null)");
-        return host->getDebugValueString(includeCommaPrefix);
+        if (!host) return ElementPtr();
+        return host->toDebug();
       }
 
       //-----------------------------------------------------------------------
@@ -217,13 +220,13 @@ namespace openpeer
         AutoRecursiveLock lock(getLock());
         if ((isShutdown()) ||
             (isShuttingDown())) {
-          ZS_LOG_WARNING(Detail, log("notification of an updated document after shutdown") + IPublicationMetaData::toDebugString(metaData))
+          ZS_LOG_WARNING(Detail, log("notification of an updated document after shutdown") + IPublicationMetaData::toDebug(metaData))
           return;
         }
 
         PeerContactPtr peerContact = findContact(peerLocation);
         if (!peerContact) {
-          ZS_LOG_WARNING(Detail, log("failed to notify of an updated publication because unable to find peer contact") + IPublicationMetaData::toDebugString(metaData))
+          ZS_LOG_WARNING(Detail, log("failed to notify of an updated publication because unable to find peer contact") + IPublicationMetaData::toDebug(metaData))
           return;
         }
 
@@ -240,13 +243,13 @@ namespace openpeer
         AutoRecursiveLock lock(getLock());
         if ((isShutdown()) ||
             (isShuttingDown())) {
-          ZS_LOG_DEBUG(log("notification of a document gone after shutdown") + IPublicationMetaData::toDebugString(metaData))
+          ZS_LOG_DEBUG(log("notification of a document gone after shutdown") + IPublicationMetaData::toDebug(metaData))
           return;
         }
 
         PeerContactPtr peerContact = findContact(peerLocation);
         if (!peerContact) {
-          ZS_LOG_WARNING(Detail, log("failed to notify of a publication being gone because unable to find peer contact") + IPublicationMetaData::toDebugString(metaData))
+          ZS_LOG_WARNING(Detail, log("failed to notify of a publication being gone because unable to find peer contact") + IPublicationMetaData::toDebug(metaData))
           return;
         }
 
@@ -259,7 +262,7 @@ namespace openpeer
         AutoRecursiveLock lock(getLock());
         if ((isShutdown()) ||
             (isShuttingDown())) {
-          ZS_LOG_DEBUG(log("notification of a peer shutdown") + ILocation::toDebugString(peerLocation))
+          ZS_LOG_DEBUG(log("notification of a peer shutdown") + ILocation::toDebug(peerLocation))
           return;
         }
         PeerContactPtr peerContact = findContact(peerLocation);
@@ -445,7 +448,7 @@ namespace openpeer
 
         PeerContactMap::const_iterator found = mPeerContacts.find(contact->forConversationThread().getPeerURI());
         if (found == mPeerContacts.end()) {
-          ZS_LOG_WARNING(Detail, log("contact was not found as part of the conversation") + IContact::toDebugString(contact))
+          ZS_LOG_WARNING(Detail, log("contact was not found as part of the conversation") + IContact::toDebug(contact))
           return IConversationThread::ContactState_NotApplicable;
         }
 
@@ -477,9 +480,9 @@ namespace openpeer
 
           if (found == dialogs.end()) {
             ZS_LOG_DEBUG(log("adding call") +
-                              ", call ID=" + call->forConversationThread().getCallID() +
-                              ", caller peer URI=" + call->forConversationThread().getCaller()->forConversationThread().getPeerURI() + (call->forConversationThread().getCaller()->forConversationThread().isSelf() ? " (self)" : "") +
-                              ", callee peer URI=" + call->forConversationThread().getCallee()->forConversationThread().getPeerURI() + (call->forConversationThread().getCallee()->forConversationThread().isSelf() ? " (self)" : ""))
+                         ZS_PARAM("call ID", call->forConversationThread().getCallID()) +
+                         ZS_PARAM("caller peer URI", call->forConversationThread().getCaller()->forConversationThread().getPeerURI()) + ZS_PARAM("caller self", call->forConversationThread().getCaller()->forConversationThread().isSelf()) +
+                         ZS_PARAM("callee peer URI", call->forConversationThread().getCallee()->forConversationThread().getPeerURI()) + ZS_PARAM("callee self", call->forConversationThread().getCallee()->forConversationThread().isSelf()))
 
             additions.push_back(call->forConversationThread().getDialog());
           }
@@ -524,7 +527,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::notifyCallCleanup(CallPtr call)
       {
-        ZS_LOG_DEBUG(log("call cleanup called") + ", call ID=" + ICall::toDebugString(call))
+        ZS_LOG_DEBUG(log("call cleanup called") + ZS_PARAM("call ID", ICall::toDebug(call)))
 
         AutoRecursiveLock lock(getLock());
 
@@ -655,7 +658,7 @@ namespace openpeer
           for (MessageList::const_iterator iter = messages.begin(); iter != messages.end(); ++iter)
           {
             const MessagePtr &message = (*iter);
-            ZS_LOG_TRACE(log("notifying of message received") + message->getDebugValueString())
+            ZS_LOG_TRACE(log("notifying of message received") + message->toDebug())
             baseThread->forHostOrSlave().notifyMessageReceived(message);
           }
         }
@@ -678,7 +681,7 @@ namespace openpeer
         if (found != mMessageDeliveryStates.end()) {
           IConversationThread::MessageDeliveryStates &deliveryState = (*found).second;
           if (state <= deliveryState) {
-            ZS_LOG_DEBUG(log("no need to change delievery state") + ", current state=" + IConversationThread::toString(state) + ", reported state=" + IConversationThread::toString(deliveryState))
+            ZS_LOG_DEBUG(log("no need to change delievery state") + ZS_PARAM("current state", IConversationThread::toString(state)) + ZS_PARAM("reported state", IConversationThread::toString(deliveryState)))
             return;
           }
         }
@@ -733,7 +736,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       bool ConversationThreadHost::hasCallPlacedTo(ContactPtr toContact)
       {
-        ZS_LOG_TRACE(log("checking for calls placed to") + IContact::toDebugString(toContact))
+        ZS_LOG_TRACE(log("checking for calls placed to") + IContact::toDebug(toContact))
 
         AutoRecursiveLock lock(getLock());
 
@@ -743,10 +746,10 @@ namespace openpeer
         for (DialogMap::const_iterator iter = dialogs.begin(); iter != dialogs.end(); ++iter)
         {
           const DialogPtr &dialog = (*iter).second;
-          ZS_LOG_TRACE(log("thread has call (thus comparing)") + dialog->getDebugValueString())
+          ZS_LOG_TRACE(log("thread has call (thus comparing)") + dialog->toDebug())
 
           if (dialog->calleePeerURI() == toContact->forConversationThread().getPeerURI()) {
-            ZS_LOG_TRACE(log("found call placed to") + IContact::toDebugString(toContact))
+            ZS_LOG_TRACE(log("found call placed to") + IContact::toDebug(toContact))
             return true;
           }
         }
@@ -764,29 +767,37 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      String ConversationThreadHost::log(const char *message) const
+      Log::Params ConversationThreadHost::log(const char *message) const
       {
         String baseThreadID;
         ConversationThreadPtr baseThread = mBaseThread.lock();
 
         if (baseThread) baseThreadID = baseThread->forHostOrSlave().getThreadID();
 
-        return String("ConversationThreadHost [") + string(mID) + "] "  + message + ", base thread ID=" + baseThreadID + ", thread ID=" + mThreadID;
+        ElementPtr objectEl = Element::create("core::ConversationThreadHost");
+        IHelper::debugAppend(objectEl, "id", mID);
+        IHelper::debugAppend(objectEl, "base thread id", baseThreadID);
+        IHelper::debugAppend(objectEl, "thread id", mThreadID);
+        return Log::Params(message, objectEl);
       }
 
       //-----------------------------------------------------------------------
-      String ConversationThreadHost::getDebugValueString(bool includeCommaPrefix) const
+      ElementPtr ConversationThreadHost::toDebug() const
       {
         AutoRecursiveLock lock(getLock());
         ConversationThreadPtr base = mBaseThread.lock();
-        bool firstTime = !includeCommaPrefix;
-        return Helper::getDebugValue("host thread id=", string(mID), firstTime) +
-               Helper::getDebugValue("host thread id (s)=", mThreadID, firstTime) +
-               Helper::getDebugValue("base thread id (s)=", base ? base->forHostOrSlave().getThreadID() : String(), firstTime) +
-               Helper::getDebugValue("state=", toString(mCurrentState), firstTime) +
-               Helper::getDebugValue("delivery states=", mMessageDeliveryStates.size() > 0 ? string(mMessageDeliveryStates.size()) : String(), firstTime) +
-               Helper::getDebugValue("peer contacts=", mPeerContacts.size() > 0 ? string(mPeerContacts.size()) : String(), firstTime) +
-               Thread::toDebugString(mHostThread);
+
+        ElementPtr resultEl = Element::create("core::ConversationThreadHost");
+
+        IHelper::debugAppend(resultEl, "id", mID);
+        IHelper::debugAppend(resultEl, "host thread id", mThreadID);
+        IHelper::debugAppend(resultEl, "base thread id", base ? base->forHostOrSlave().getThreadID() : String());
+        IHelper::debugAppend(resultEl, "state", toString(mCurrentState));
+        IHelper::debugAppend(resultEl, "delivery states", mMessageDeliveryStates.size());
+        IHelper::debugAppend(resultEl, "peer contacts", mPeerContacts.size());
+        IHelper::debugAppend(resultEl, Thread::toDebug(mHostThread));
+
+        return resultEl;
       }
 
       //-----------------------------------------------------------------------
@@ -816,7 +827,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::step()
       {
-        ZS_LOG_TRACE(log("step") + getDebugValueString())
+        ZS_LOG_TRACE(log("step") + toDebug())
 
         AutoRecursiveLock lock(getLock());
         if ((isShuttingDown()) || (isShutdown())) {cancel();}
@@ -880,7 +891,7 @@ namespace openpeer
         AutoRecursiveLock lock(getLock());
         if (state == mCurrentState) return;
 
-        ZS_LOG_BASIC(log("state changed") + ", old state=" + toString(mCurrentState) + ", new state=" + toString(state))
+        ZS_LOG_BASIC(log("state changed") + ZS_PARAM("old state", toString(mCurrentState)) + ZS_PARAM("new state", toString(state)))
 
         mCurrentState = state;
       }
@@ -962,7 +973,7 @@ namespace openpeer
       {
         PeerContactMap::const_iterator found = mPeerContacts.find(peerLocation->getPeerURI());
         if (found == mPeerContacts.end()) {
-          ZS_LOG_WARNING(Detail, log("failed to find any peer contact for the location given") + ILocation::toDebugString(peerLocation))
+          ZS_LOG_WARNING(Detail, log("failed to find any peer contact for the location given") + ILocation::toDebug(peerLocation))
           return PeerContactPtr();
         }
         const PeerContactPtr &peerContact = (*found).second;
@@ -1004,7 +1015,7 @@ namespace openpeer
         mContact(contact),
         mProfileBundleEl(profileBundleEl)
       {
-        ZS_LOG_DEBUG(log("created") + IContact::toDebugString(contact))
+        ZS_LOG_DEBUG(log("created") + IContact::toDebug(contact))
       }
 
       //-----------------------------------------------------------------------
@@ -1021,10 +1032,10 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      String ConversationThreadHost::PeerContact::toDebugString(PeerContactPtr contact, bool includeCommaPrefix)
+      ElementPtr ConversationThreadHost::PeerContact::toDebug(PeerContactPtr contact)
       {
-        if (!contact) return includeCommaPrefix ? ", host peer contact=(null)" : "host peer contact=(null)";
-        return contact->getDebugValueString(includeCommaPrefix);
+        if (!contact) return ElementPtr();
+        return contact->toDebug();
       }
 
       //-----------------------------------------------------------------------
@@ -1068,10 +1079,10 @@ namespace openpeer
         if (!location) {
           location = PeerLocation::create(getAssociatedMessageQueue(), mThisWeak.lock(), peerLocation);
           if (!location) {
-            ZS_LOG_WARNING(Detail, log("failed to create peer location") + ILocation::toDebugString(peerLocation))
+            ZS_LOG_WARNING(Detail, log("failed to create peer location") + ILocation::toDebug(peerLocation))
             return;
           }
-          ZS_LOG_DEBUG(log("created new oeer location") + IContact::toDebugString(mContact))
+          ZS_LOG_DEBUG(log("created new oeer location") + IContact::toDebug(mContact))
           mPeerLocations[location->getLocationID()] = location;
         }
 
@@ -1092,7 +1103,7 @@ namespace openpeer
         }
         PeerLocationPtr location = findPeerLocation(peerLocation);
         if (!location) {
-          ZS_LOG_WARNING(Detail, log("location was not found to pass on publication gone notification") + ILocation::toDebugString(peerLocation))
+          ZS_LOG_WARNING(Detail, log("location was not found to pass on publication gone notification") + ILocation::toDebug(peerLocation))
           return;
         }
         location->notifyPublicationGone(peerLocation, metaData, split);
@@ -1109,7 +1120,7 @@ namespace openpeer
 
         PeerLocationPtr location = findPeerLocation(peerLocation);
         if (!location) {
-          ZS_LOG_WARNING(Detail, log("unable to pass on peer disconnection notification as location is not available") + ILocation::toDebugString(peerLocation))
+          ZS_LOG_WARNING(Detail, log("unable to pass on peer disconnection notification as location is not available") + ILocation::toDebug(peerLocation))
           return;
         }
         location->notifyPeerDisconnected(peerLocation);
@@ -1256,7 +1267,7 @@ namespace openpeer
           ZS_LOG_WARNING(Detail, log("notified of subscription state from obsolete subscription (probably okay)"))
           return;
         }
-        ZS_LOG_DEBUG(log("notified peer subscription state changed") + ", state=" + IPeer::toString(state))
+        ZS_LOG_DEBUG(log("notified peer subscription state changed") + ZS_PARAM("state", IPeer::toString(state)))
         step();
       }
 
@@ -1380,7 +1391,7 @@ namespace openpeer
           DeliveryStatePair &deliveryStatePair = (*found).second;
           IConversationThread::MessageDeliveryStates &deliveryState = deliveryStatePair.second;
           if (state <= deliveryState) {
-            ZS_LOG_DEBUG(log("no need to change delievery state") + ", current state=" + IConversationThread::toString(state) + ", reported state=" + IConversationThread::toString(deliveryState))
+            ZS_LOG_DEBUG(log("no need to change delievery state") + ZS_PARAM("current state", IConversationThread::toString(state)) + ZS_PARAM("reported state", IConversationThread::toString(deliveryState)))
             return;
           }
         }
@@ -1412,11 +1423,11 @@ namespace openpeer
       {
         AutoRecursiveLock lock(getLock());
 
-        ZS_LOG_DEBUG(log("notified peer location shutdown") + IContact::toDebugString(mContact) + PeerLocation::toDebugString(location))
+        ZS_LOG_DEBUG(log("notified peer location shutdown") + IContact::toDebug(mContact) + PeerLocation::toDebug(location))
 
         PeerLocationMap::iterator found = mPeerLocations.find(location->getLocationID());
         if (found != mPeerLocations.end()) {
-          ZS_LOG_TRACE(log("peer location removed from map") + IContact::toDebugString(mContact) + PeerLocation::toDebugString(location))
+          ZS_LOG_TRACE(log("peer location removed from map") + IContact::toDebug(mContact) + PeerLocation::toDebug(location))
           mPeerLocations.erase(found);
         }
 
@@ -1443,28 +1454,36 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      String ConversationThreadHost::PeerContact::log(const char *message) const
+      Log::Params ConversationThreadHost::PeerContact::log(const char *message) const
       {
         String peerURI;
         if (mContact) {
           peerURI = mContact->forConversationThread().getPeerURI();
         }
-        return String("ConversationThreadHost::PeerContact [") + string(mID) + "] " + message + ", peer URI=" + peerURI;
+
+        ElementPtr objectEl = Element::create("core::ConversationThreadHost::PeerContact");
+        IHelper::debugAppend(objectEl, "id", mID);
+        IHelper::debugAppend(objectEl, "peer uri", peerURI);
+        return Log::Params(message, objectEl);
       }
 
       //-----------------------------------------------------------------------
-      String ConversationThreadHost::PeerContact::getDebugValueString(bool includeCommaPrefix) const
+      ElementPtr ConversationThreadHost::PeerContact::toDebug() const
       {
         AutoRecursiveLock lock(getLock());
-        bool firstTime = !includeCommaPrefix;
-        return Helper::getDebugValue("host peer contact id", string(mID), firstTime) +
-               Helper::getDebugValue("state", toString(mCurrentState), firstTime) +
-               IContact::toDebugString(mContact) +
-               Helper::getDebugValue("profile bundle", mProfileBundleEl ? String("true") : String(), firstTime) +
-               IPeerSubscription::toDebugString(mSlaveSubscription) +
-               Helper::getDebugValue("slave delivery timer", mSlaveMessageDeliveryTimer ? String("true") : String(), firstTime) +
-               Helper::getDebugValue("locations", mPeerLocations.size() > 0 ? string(mPeerLocations.size()) : String(), firstTime) +
-               Helper::getDebugValue("delivery states", mMessageDeliveryStates.size() > 0 ? string(mMessageDeliveryStates.size()) : String(), firstTime);
+
+        ElementPtr resultEl = Element::create("core::ConversationThreadHost::PeerContact");
+
+        IHelper::debugAppend(resultEl, "id", mID);
+        IHelper::debugAppend(resultEl, "state", toString(mCurrentState));
+        IHelper::debugAppend(resultEl, IContact::toDebug(mContact));
+        IHelper::debugAppend(resultEl, "profile bundle", (bool)mProfileBundleEl);
+        IHelper::debugAppend(resultEl, IPeerSubscription::toDebug(mSlaveSubscription));
+        IHelper::debugAppend(resultEl, "slave delivery timer", (bool)mSlaveMessageDeliveryTimer);
+        IHelper::debugAppend(resultEl, "locations", mPeerLocations.size());
+        IHelper::debugAppend(resultEl, "delivery states", mMessageDeliveryStates.size());
+
+        return resultEl;
       }
 
       //-----------------------------------------------------------------------
@@ -1572,12 +1591,12 @@ namespace openpeer
             DeliveryStatePair &deliveryStatePair = (*found).second;
             IConversationThread::MessageDeliveryStates &deliveryState = deliveryStatePair.second;
             if (IConversationThread::MessageDeliveryState_Delivered != deliveryState) {
-              ZS_LOG_DEBUG(log("still requires subscription because of undelivered message") + message->getDebugValueString() + ", was in delivery state=" + IConversationThread::toString(deliveryState))
+              ZS_LOG_DEBUG(log("still requires subscription because of undelivered message") + message->toDebug() + ZS_PARAM("was in delivery state", IConversationThread::toString(deliveryState)))
               requiresTimer = (IConversationThread::MessageDeliveryState_UserNotAvailable != deliveryState);
               requiresSubscription = true;
             }
           } else {
-            ZS_LOG_DEBUG(log("still requires subscription because of undelivered message") + message->getDebugValueString())
+            ZS_LOG_DEBUG(log("still requires subscription because of undelivered message") + message->toDebug())
             requiresTimer = requiresSubscription = true;
           }
         }
@@ -1589,12 +1608,12 @@ namespace openpeer
         }
 
         if (requiresSubscription) {
-          ZS_LOG_DEBUG(log("subscription to slave is required") + getDebugValueString())
+          ZS_LOG_DEBUG(log("subscription to slave is required") + toDebug())
           if (!mSlaveSubscription) {
             mSlaveSubscription = IPeerSubscription::subscribe(mContact->forConversationThread().getPeer(), mThisWeak.lock());
           }
         } else {
-          ZS_LOG_DEBUG(log("subscription to slave is NOT required") + getDebugValueString())
+          ZS_LOG_DEBUG(log("subscription to slave is NOT required") + toDebug())
           if (mSlaveSubscription) {
             mSlaveSubscription->cancel();
             mSlaveSubscription.reset();
@@ -1602,12 +1621,12 @@ namespace openpeer
         }
 
         if (requiresTimer) {
-          ZS_LOG_DEBUG(log("timer for peer slave is required") + getDebugValueString())
+          ZS_LOG_DEBUG(log("timer for peer slave is required") + toDebug())
           if (!mSlaveMessageDeliveryTimer) {
             mSlaveMessageDeliveryTimer = Timer::create(mThisWeak.lock(), Seconds(1));
           }
         } else {
-          ZS_LOG_DEBUG(log("timer for peer slave is NOT required") + getDebugValueString())
+          ZS_LOG_DEBUG(log("timer for peer slave is NOT required") + toDebug())
           if (mSlaveMessageDeliveryTimer) {
             mSlaveMessageDeliveryTimer->cancel();
             mSlaveMessageDeliveryTimer.reset();
@@ -1620,7 +1639,7 @@ namespace openpeer
         if (mSlaveSubscription) {
           IPeerPtr peer = mContact->forConversationThread().getPeer();
           IPeer::PeerFindStates state = peer->getFindState();
-          ZS_LOG_DEBUG(log("slave subscription state") + ", state=" + IPeer::toString(state))
+          ZS_LOG_DEBUG(log("slave subscription state") + ZS_PARAM("state", IPeer::toString(state)))
 
           LocationListPtr peerLocations = peer->getLocationsForPeer(false);
 
@@ -1653,7 +1672,7 @@ namespace openpeer
               }
 
               if (stopProcessing) {
-                ZS_LOG_DEBUG(log("processing undeliverable messages stopped since message already has a delivery state") + message->getDebugValueString())
+                ZS_LOG_DEBUG(log("processing undeliverable messages stopped since message already has a delivery state") + message->toDebug())
                 break;
               }
             } else {
@@ -1663,7 +1682,7 @@ namespace openpeer
             if (((IPeer::PeerFindState_Finding != state) &&
                  (peerLocations->size() < 1)) ||
                 (lastStateChangeTime + Seconds(OPENPEER_CONVERSATION_THREAD_MAX_WAIT_DELIVERY_TIME_BEFORE_PUSH_IN_SECONDS) < tick)) {
-              ZS_LOG_DEBUG(log("state must now be set to undeliverable") + ", message ID=" + message->getDebugValueString() + ", peer find state=" + IPeer::toString(state) + ", last state changed time=" + string(lastStateChangeTime) + ", current time=" + string(tick))
+              ZS_LOG_DEBUG(log("state must now be set to undeliverable") + ZS_PARAM("message", message->toDebug()) + ZS_PARAM("peer find state", IPeer::toString(state)) + ZS_PARAM("last state changed time", lastStateChangeTime) + ZS_PARAM("current time", tick))
               mMessageDeliveryStates[message->messageID()] = DeliveryStatePair(zsLib::now(), IConversationThread::MessageDeliveryState_UserNotAvailable);
               outer->notifyMessageDeliveryStateChanged(message->messageID(), IConversationThread::MessageDeliveryState_UserNotAvailable);
 
@@ -1681,7 +1700,7 @@ namespace openpeer
       {
         if (state == mCurrentState) return;
 
-        ZS_LOG_BASIC(log("state changed") + ", previous state=" + toString(mCurrentState) + ", new state=" + toString(state))
+        ZS_LOG_BASIC(log("state changed") + ZS_PARAM("previous state", toString(mCurrentState)) + ZS_PARAM("new state", toString(state)))
 
         mCurrentState = state;
       }
@@ -1760,10 +1779,10 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      String ConversationThreadHost::PeerLocation::toDebugString(PeerLocationPtr peerLocation, bool includeCommaPrefix)
+      ElementPtr ConversationThreadHost::PeerLocation::toDebug(PeerLocationPtr peerLocation)
       {
-        if (!peerLocation) return includeCommaPrefix ? ", host peer location=(null)" : "host peer location=(null)";
-        return peerLocation->getDebugValueString(includeCommaPrefix);
+        if (!peerLocation) return ElementPtr();
+        return peerLocation->toDebug();
       }
 
       //-----------------------------------------------------------------------
@@ -1817,7 +1836,7 @@ namespace openpeer
         AutoRecursiveLock lock(getLock());
 
         if (isShutdown()) {
-          ZS_LOG_WARNING(Detail, log("notification of an updated document after shutdown") + IPublicationMetaData::toDebugString(metaData))
+          ZS_LOG_WARNING(Detail, log("notification of an updated document after shutdown") + IPublicationMetaData::toDebug(metaData))
           return;
         }
         mFetcher->notifyPublicationUpdated(peerLocation, metaData);
@@ -1832,7 +1851,7 @@ namespace openpeer
       {
         AutoRecursiveLock lock(getLock());
         if (isShutdown()) {
-          ZS_LOG_WARNING(Detail, log("notification that publication is gone after shutdown") + IPublicationMetaData::toDebugString(metaData))
+          ZS_LOG_WARNING(Detail, log("notification that publication is gone after shutdown") + IPublicationMetaData::toDebug(metaData))
           return;
         }
         mFetcher->notifyPublicationGone(peerLocation, metaData);
@@ -1843,7 +1862,7 @@ namespace openpeer
       {
         AutoRecursiveLock lock(getLock());
         if (isShutdown()) {
-          ZS_LOG_DEBUG(log("notification of a peer shutdown") + ILocation::toDebugString(peerLocation))
+          ZS_LOG_DEBUG(log("notification of a peer shutdown") + ILocation::toDebug(peerLocation))
           return;
         }
         mFetcher->notifyPeerDisconnected(peerLocation);
@@ -1957,16 +1976,16 @@ namespace openpeer
 
         AutoRecursiveLock lock(getLock());
 
-        ZS_LOG_DEBUG(log("publication was updated notification received") + ", name=" + publication->getName())
+        ZS_LOG_DEBUG(log("publication was updated notification received") + ZS_PARAM("name", publication->getName()))
 
         if (isShutdown()) {
-          ZS_LOG_WARNING(Detail, log("received notification of updated slave document when shutdown") + IPublication::toDebugString(publication))
+          ZS_LOG_WARNING(Detail, log("received notification of updated slave document when shutdown") + IPublication::toDebug(publication))
           return;
         }
 
         PeerContactPtr outer = mOuter.lock();
         if (!outer) {
-          ZS_LOG_WARNING(Detail, log("unable to update publication as peer contact object is gone") + IPublication::toDebugString(publication))
+          ZS_LOG_WARNING(Detail, log("unable to update publication as peer contact object is gone") + IPublication::toDebug(publication))
           return;
         }
 
@@ -1978,7 +1997,7 @@ namespace openpeer
 
         AccountPtr account = outer->getAccount();
         if (!account) {
-          ZS_LOG_WARNING(Detail, log("unable to update publication as account object is gone") + IPublication::toDebugString(publication))
+          ZS_LOG_WARNING(Detail, log("unable to update publication as account object is gone") + IPublication::toDebug(publication))
           return;
         }
 
@@ -1991,7 +2010,7 @@ namespace openpeer
         if (!mSlaveThread) {
           mSlaveThread = Thread::create(account, publication);
           if (!mSlaveThread) {
-            ZS_LOG_WARNING(Detail, log("unable to create slave thread for publication") + IPublication::toDebugString(publication))
+            ZS_LOG_WARNING(Detail, log("unable to create slave thread for publication") + IPublication::toDebug(publication))
             return;
           }
         } else {
@@ -2017,12 +2036,12 @@ namespace openpeer
           // this incoming call is now gone, clean it out...
           CallPtr &call = (*found).second;
 
-          ZS_LOG_DEBUG(log("call object is now gone") + Call::toDebugString(call))
+          ZS_LOG_DEBUG(log("call object is now gone") + Call::toDebug(call))
 
           call->forConversationThread().notifyConversationThreadUpdated();
 
           mIncomingCallHandlers.erase(found);
-          ZS_LOG_DEBUG(log("removed incoming call handler") + getDebugValueString())
+          ZS_LOG_DEBUG(log("removed incoming call handler") + toDebug())
         }
 
         //.......................................................................
@@ -2036,22 +2055,22 @@ namespace openpeer
           const String &dialogID = (*iter).first;
           const DialogPtr &dialog = (*iter).second;
 
-          ZS_LOG_TRACE(log("call detected") + dialog->getDebugValueString() + ", our peer URI=" + selfPeerURI)
+          ZS_LOG_TRACE(log("call detected") + dialog->toDebug() + ZS_PARAM("our peer URI", selfPeerURI))
 
           CallHandlers::iterator found = mIncomingCallHandlers.find(dialogID);
           if (found != mIncomingCallHandlers.end()) {
             CallPtr &call = (*found).second;
-            ZS_LOG_DEBUG(log("call object is updated") + dialog->getDebugValueString() + ", our peer URI=" + selfPeerURI)
+            ZS_LOG_DEBUG(log("call object is updated") + dialog->toDebug() + ZS_PARAM("our peer URI", selfPeerURI))
             call->forConversationThread().notifyConversationThreadUpdated();
             continue;
           }
 
           if (dialog->calleePeerURI() != selfPeerURI) {
             if (dialog->callerPeerURI() == selfPeerURI) {
-              ZS_LOG_DEBUG(log("call detected this must be a reply to a call previously placed") + dialog->getDebugValueString() + ", our peer URI=" + selfPeerURI)
+              ZS_LOG_DEBUG(log("call detected this must be a reply to a call previously placed") + dialog->toDebug() + ZS_PARAM("our peer URI", selfPeerURI))
               baseThread->forHostOrSlave().notifyPossibleCallReplyStateChange(dialogID);
             } else {
-              ZS_LOG_WARNING(Detail, log("call detected but the call is not going to this contact") + dialog->getDebugValueString() + ", our peer URI=" + selfPeerURI)
+              ZS_LOG_WARNING(Detail, log("call detected but the call is not going to this contact") + dialog->toDebug() + ZS_PARAM("our peer URI", selfPeerURI))
             }
             continue;
           }
@@ -2059,18 +2078,18 @@ namespace openpeer
           const String callerContactID = dialog->callerPeerURI();
           ContactPtr contact = account->forConversationThread().findContact(callerContactID);
           if (!contact) {
-            ZS_LOG_WARNING(Detail, log("while an incoming call was found the contact is not known to the account thus cannot accept the call") + dialog->getDebugValueString() + ", our peer URI=" + selfPeerURI)
+            ZS_LOG_WARNING(Detail, log("while an incoming call was found the contact is not known to the account thus cannot accept the call") + dialog->toDebug() + ZS_PARAM("our peer URI", selfPeerURI))
             continue;
           }
 
           CallPtr call = ICallForConversationThread::createForIncomingCall(baseThread, contact, dialog);
 
           if (!call) {
-            ZS_LOG_WARNING(Detail, log("unable to create incoming call from contact") + dialog->getDebugValueString() + ", our peer URI=" + selfPeerURI)
+            ZS_LOG_WARNING(Detail, log("unable to create incoming call from contact") + dialog->toDebug() + ZS_PARAM("our peer URI", selfPeerURI))
             continue;
           }
 
-          ZS_LOG_DEBUG(log("found new call") + dialog->getDebugValueString() + ", our peer URI=" + selfPeerURI)
+          ZS_LOG_DEBUG(log("found new call") + dialog->toDebug() + ZS_PARAM("our peer URI", selfPeerURI))
 
           // new call handler found...
           mIncomingCallHandlers[dialogID] = call;
@@ -2095,21 +2114,21 @@ namespace openpeer
           {
             const MessageID &id = (*iter).first;
 
-            ZS_LOG_TRACE(log("examining message receipt") + ", receipt ID=" + id)
+            ZS_LOG_TRACE(log("examining message receipt") + ZS_PARAM("receipt ID", id))
 
             // check to see if this receipt has already been marked as delivered...
             MessageDeliveryStatesMap::iterator found = mMessageDeliveryStates.find(id);
             if (found != mMessageDeliveryStates.end()) {
               IConversationThread::MessageDeliveryStates &deliveryState = (*found).second;
               if (IConversationThread::MessageDeliveryState_Delivered == deliveryState) {
-                ZS_LOG_DEBUG(log("message receipt was already notified as delivered thus no need to notify any further") + ", message ID=" + id)
+                ZS_LOG_DEBUG(log("message receipt was already notified as delivered thus no need to notify any further") + ZS_PARAM("message ID", id))
                 continue;
               }
             }
 
             MessageMap::const_iterator foundInMap = messagesMap.find(id);
             if (foundInMap == messagesMap.end()) {
-              ZS_LOG_WARNING(Detail, log("host never send this message to the slave (what is slave acking?)") + ", receipt id=" + id)
+              ZS_LOG_WARNING(Detail, log("host never send this message to the slave (what is slave acking?)") + ZS_PARAM("receipt ID", id))
               continue;
             }
 
@@ -2122,11 +2141,11 @@ namespace openpeer
             {
               const MessagePtr &message = (*messageIter);
               if (message->messageID() == id) {
-                ZS_LOG_TRACE(log("found message matching receipt") + ", receipt id=" + id)
+                ZS_LOG_TRACE(log("found message matching receipt") + ZS_PARAM("receipt ID", id))
                 foundMessageID = true;
               }
 
-              ZS_LOG_TRACE(log("processing host message") + ", found=" + (foundMessageID ? "true" : "false") + message->getDebugValueString())
+              ZS_LOG_TRACE(log("processing host message") + ZS_PARAM("found", foundMessageID) + message->toDebug())
 
               if (foundMessageID) {
                 // first check if this delivery was already sent...
@@ -2136,16 +2155,16 @@ namespace openpeer
                   IConversationThread::MessageDeliveryStates &deliveryState = (*found).second;
                   if (IConversationThread::MessageDeliveryState_Delivered == deliveryState) {
                     // stop notifying of delivered since it's alerady been marked as delivered
-                    ZS_LOG_DEBUG(log("message was already notified as delivered thus no need to notify any further") + message->getDebugValueString())
+                    ZS_LOG_DEBUG(log("message was already notified as delivered thus no need to notify any further") + message->toDebug())
                     break;
                   }
 
-                  ZS_LOG_DEBUG(log("message is now notified as delivered") + message->getDebugValueString() + ", was in state" + IConversationThread::toString(deliveryState))
+                  ZS_LOG_DEBUG(log("message is now notified as delivered") + message->toDebug() + ZS_PARAM("was in state", IConversationThread::toString(deliveryState)))
 
                   // change the state to delivered since it wasn't delivered
                   deliveryState = IConversationThread::MessageDeliveryState_Delivered;
                 } else {
-                  ZS_LOG_DEBUG(log("message is now delivered") + message->getDebugValueString())
+                  ZS_LOG_DEBUG(log("message is now delivered") + message->toDebug())
                   mMessageDeliveryStates[message->messageID()] = IConversationThread::MessageDeliveryState_Delivered;
                 }
 
@@ -2183,26 +2202,35 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      String ConversationThreadHost::PeerLocation::log(const char *message) const
+      Log::Params ConversationThreadHost::PeerLocation::log(const char *message) const
       {
         ZS_THROW_INVALID_ASSUMPTION_IF(!mPeerLocation)
+
         String peerURI = mPeerLocation->getPeerURI();
         String locationID = mPeerLocation->getLocationID();
 
-        return String("ConversationThreadHost::PeerLocation [") + string(mID) + "] " + message + ", peer peer URI=" + peerURI + ", peer location ID=" + locationID;
+        ElementPtr objectEl = Element::create("core::ConversationThreadHost::PeerLocation");
+        IHelper::debugAppend(objectEl, "id", mID);
+        IHelper::debugAppend(objectEl, "peer uri", peerURI);
+        IHelper::debugAppend(objectEl, "peer location id", locationID);
+        return Log::Params(message, objectEl);
       }
 
       //-----------------------------------------------------------------------
-      String ConversationThreadHost::PeerLocation::getDebugValueString(bool includeCommaPrefix) const
+      ElementPtr ConversationThreadHost::PeerLocation::toDebug() const
       {
         AutoRecursiveLock lock(getLock());
-        bool firstTime = !includeCommaPrefix;
-        return Helper::getDebugValue("host peer location id", string(mID), firstTime) +
-               ILocation::toDebugString(mPeerLocation) +
-               Thread::toDebugString(mSlaveThread) +
-               IConversationThreadDocumentFetcher::toDebugString(mFetcher) +
-               Helper::getDebugValue("message delivery states", mMessageDeliveryStates.size() > 0 ? string(mMessageDeliveryStates.size()) : String(), firstTime) +
-               Helper::getDebugValue("incoming call handlers", mIncomingCallHandlers.size() > 0 ? string(mIncomingCallHandlers.size()) : String(), firstTime);
+
+        ElementPtr resultEl = Element::create("core::ConversationThreadHost::PeerLocation");
+
+        IHelper::debugAppend(resultEl, "id", mID);
+        IHelper::debugAppend(resultEl, ILocation::toDebug(mPeerLocation));
+        IHelper::debugAppend(resultEl, Thread::toDebug(mSlaveThread));
+        IHelper::debugAppend(resultEl, IConversationThreadDocumentFetcher::toDebug(mFetcher));
+        IHelper::debugAppend(resultEl, "message delivery states", mMessageDeliveryStates.size());
+        IHelper::debugAppend(resultEl, "incoming call handlers", mIncomingCallHandlers.size());
+
+        return resultEl;
       }
 
       //-----------------------------------------------------------------------

@@ -121,7 +121,7 @@ namespace openpeer
         class Message
         {
         public:
-          static String toDebugString(MessagePtr message, bool includeCommaPrefix = true);
+          static ElementPtr toDebug(MessagePtr message);
 
           static MessagePtr create(
                                    const char *messageID,
@@ -142,7 +142,10 @@ namespace openpeer
           const String &body() const              {return mBody;}
           const Time &sent() const                {return mSent;}
 
-          String getDebugValueString(bool includeCommaPrefix = true) const;
+          ElementPtr toDebug() const;
+
+        protected:
+          Log::Params log(const char *message) const;
 
         protected:
           MessageWeakPtr mThisWeak;
@@ -167,7 +170,7 @@ namespace openpeer
         class MessageReceipts
         {
         public:
-          static String toDebugString(MessageReceiptsPtr receipts, bool includeCommaPrefix = true);
+          static ElementPtr toDebug(MessageReceiptsPtr receipts);
 
           static MessageReceiptsPtr create(UINT version);
           static MessageReceiptsPtr create(UINT version, const String &messageID);
@@ -181,7 +184,10 @@ namespace openpeer
           UINT version() const                        {return mVersion;}
           const MessageReceiptMap &receipts() const  {return mReceipts;}
 
-          String getDebugValueString(bool includeCommaPrefix = true) const;
+          ElementPtr toDebug() const;
+
+        protected:
+          Log::Params log(const char *message) const;
 
         protected:
           MessageReceiptsWeakPtr mThisWeak;
@@ -204,7 +210,7 @@ namespace openpeer
         class ThreadContact
         {
         public:
-          static String toDebugString(ThreadContactPtr contact, bool includeCommaPrefix = true);
+          static ElementPtr toDebug(ThreadContactPtr contact);
 
           static ThreadContactPtr create(
                                          ContactPtr contact,
@@ -214,7 +220,7 @@ namespace openpeer
           ContactPtr contact() const              {return mContact;}
           ElementPtr profileBundleElement() const {return mProfileBundleEl;}
 
-          String getDebugValueString(bool includeCommaPrefix = true) const;
+          ElementPtr toDebug() const;
 
         protected:
           PUID mID;
@@ -233,7 +239,7 @@ namespace openpeer
         class ThreadContacts
         {
         public:
-          static String toDebugString(ThreadContactsPtr threadContacts, bool includeCommaPrefix = true);
+          static ElementPtr toDebug(ThreadContactsPtr threadContacts);
 
           static ThreadContactsPtr create(
                                     UINT version,
@@ -254,7 +260,10 @@ namespace openpeer
           const ThreadContactMap &addContacts() const   {return mAddContacts;}
           const ContactURIList &removeContacts() const  {return mRemoveContacts;}
 
-          String getDebugValueString(bool includeCommaPrefix = true) const;
+          ElementPtr toDebug() const;
+
+        protected:
+          Log::Params log(const char *message) const;
 
         protected:
           ThreadContactsWeakPtr mThisWeak;
@@ -341,7 +350,8 @@ namespace openpeer
             DWORD mChannels;
 
             Codec() : mCodecID(0), mPTime(0), mRate(0), mChannels(0) {}
-            String getDebugValueString(bool includeCommaPrefix = true) const;
+
+            ElementPtr toDebug() const;
           };
           typedef std::list<Codec> CodecList;
 
@@ -370,11 +380,12 @@ namespace openpeer
             CandidateList mCandidates;
 
             Description() : mVersion(0), mSSRC(0) {}
-            String getDebugValueString(bool includeCommaPrefix = true) const;
+
+            ElementPtr toDebug() const;
           };
           typedef std::list<DescriptionPtr> DescriptionList;
 
-          static String toDebugString(DialogPtr dialog, bool includeCommaPrefix = true);
+          static ElementPtr toDebug(DialogPtr dialog);
 
           static DialogPtr create(
                                   UINT version,
@@ -405,7 +416,10 @@ namespace openpeer
           const String &replacesDialogID() const      {return mReplacesDialogID;}
           const DescriptionList &descriptions() const {return mDescriptions;}
 
-          String getDebugValueString(bool includeCommaPrefix = true) const;
+          ElementPtr toDebug() const;
+
+        protected:
+          Log::Params log(const char *message) const;
 
         private:
           DialogWeakPtr mThisWeak;
@@ -460,7 +474,7 @@ namespace openpeer
           static const char *toString(ConversationThreadStates state);
           static ConversationThreadStates toConversationThreadState(const char *state);
 
-          static String toDebugString(DetailsPtr details, bool includeCommaPrefix = true);
+          static ElementPtr toDebug(DetailsPtr details);
 
           static DetailsPtr create(
                                    UINT version,
@@ -482,7 +496,10 @@ namespace openpeer
           const String &topic() const             {return mTopic;}
           Time created() const                    {return mCreated;}
 
-          String getDebugValueString(bool includeCommaPrefix = true) const;
+          ElementPtr toDebug() const;
+
+        protected:
+          Log::Params log(const char *message) const;
 
         protected:
           PUID mID;
@@ -526,7 +543,7 @@ namespace openpeer
         public:
           ~Thread();
 
-          static String toDebugString(ThreadPtr thread, bool includeCommaPrefix = true);
+          static ElementPtr toDebug(ThreadPtr thread);
 
           static ThreadPtr create(
                                   AccountPtr account,
@@ -594,12 +611,12 @@ namespace openpeer
           const ChangedDescriptionMap &descriptionsChanged() const  {return mDescriptionsChanged;}
           const DescriptionIDList &descriptionsRemoved() const      {return mDescriptionsRemoved;}
 
-          String getDebugValueString(bool includeCommaPrefix = true) const;
+          ElementPtr toDebug() const;
 
         protected:
           void resetChanged();
 
-          String log(const char *message) const;
+          Log::Params log(const char *message) const;
 
         protected:
           PUID mID;

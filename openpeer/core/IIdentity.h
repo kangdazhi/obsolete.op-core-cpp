@@ -61,7 +61,7 @@ namespace openpeer
 
       static const char *toString(IdentityStates state);
 
-      static String toDebugString(IIdentityPtr identity, bool includeCommaPrefix = true);
+      static ElementPtr toDebug(IIdentityPtr identity);
 
       static IIdentityPtr login(
                                 IAccountPtr account,
