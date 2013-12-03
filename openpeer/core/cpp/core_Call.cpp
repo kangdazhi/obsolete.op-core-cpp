@@ -63,6 +63,7 @@ namespace openpeer
     namespace internal
     {
       using services::IHelper;
+      using services::IICESocketSessionDelegateProxy;
 
       using zsLib::ITimerDelegateProxy;
 
@@ -2206,11 +2207,11 @@ namespace openpeer
 
           if (isAudio) {
             if (!mAudioRTPSocketSession) {
-              mAudioRTPSocketSession = rtpSocket->createSessionFromRemoteCandidates(mThisWeak.lock(), description->mICEUsernameFrag, description->mICEPassword, tempCandidates, outer->isIncoming() ? IICESocket::ICEControl_Controlled : IICESocket::ICEControl_Controlling);
+              mAudioRTPSocketSession = rtpSocket->createSessionFromRemoteCandidates(IICESocketSessionDelegateProxy::create(mMediaQueue, mThisWeak.lock()), description->mICEUsernameFrag, description->mICEPassword, tempCandidates, outer->isIncoming() ? IICESocket::ICEControl_Controlled : IICESocket::ICEControl_Controlling);
             }
           } else if (isVideo) {
             if (!mVideoRTPSocketSession) {
-              mVideoRTPSocketSession = rtpSocket->createSessionFromRemoteCandidates(mThisWeak.lock(), description->mICEUsernameFrag, description->mICEPassword, tempCandidates, outer->isIncoming() ? IICESocket::ICEControl_Controlled : IICESocket::ICEControl_Controlling);
+              mVideoRTPSocketSession = rtpSocket->createSessionFromRemoteCandidates(IICESocketSessionDelegateProxy::create(mMediaQueue, mThisWeak.lock()), description->mICEUsernameFrag, description->mICEPassword, tempCandidates, outer->isIncoming() ? IICESocket::ICEControl_Controlled : IICESocket::ICEControl_Controlling);
             }
           }
         }
