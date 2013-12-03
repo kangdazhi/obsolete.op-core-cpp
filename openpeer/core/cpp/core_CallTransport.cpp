@@ -424,6 +424,8 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void CallTransport::onTimer(TimerPtr timer)
       {
+        ZS_LOG_DEBUG(log("on timer") + ZS_PARAM("timer id", timer->getID()))
+
         AutoRecursiveLock lock(getLock());
         if (timer != mSocketCleanupTimer) {
           ZS_LOG_WARNING(Detail, log("notification from obsolete timer") + ZS_PARAM("timer id", timer->getID()))
@@ -434,6 +436,43 @@ namespace openpeer
         mSocketCleanupTimer.reset();
 
         fixSockets();
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark CallTransport => IWakeDelegate
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      void CallTransport::onWake()
+      {
+        ZS_LOG_DEBUG(log("on wake"))
+        step();
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark CallTransport => ICallTransportAsync
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      void CallTransport::onStart()
+      {
+        ZS_LOG_DEBUG(log("on start"))
+        start();
+      }
+
+      //-----------------------------------------------------------------------
+      void CallTransport::onStop()
+      {
+        ZS_LOG_DEBUG(log("on stop"))
+        stop();
       }
 
       //-----------------------------------------------------------------------

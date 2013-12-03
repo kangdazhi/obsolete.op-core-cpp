@@ -281,15 +281,15 @@ namespace openpeer
         #pragma mark CallTransport => IWakeDelegate
         #pragma mark
 
-        virtual void onWake() {step();}
+        virtual void onWake();
 
         //---------------------------------------------------------------------
         #pragma mark
         #pragma mark CallTransport => ICallTransportAsync
         #pragma mark
 
-        virtual void onStart() {start();}
-        virtual void onStop() {stop();}
+        virtual void onStart();
+        virtual void onStop();
 
         //---------------------------------------------------------------------
         #pragma mark
