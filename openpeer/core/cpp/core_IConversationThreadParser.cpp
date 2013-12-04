@@ -550,7 +550,7 @@ namespace openpeer
       {
         ElementPtr resultEl = Element::create("IConversationThreadParser::ThreadContact");
 
-        IHelper::debugAppend(resultEl, "contact id", mID);
+        IHelper::debugAppend(resultEl, "id", mID);
         IHelper::debugAppend(resultEl, IContact::toDebug(mContact));
         IHelper::debugAppend(resultEl, "profile bundle", (bool)mProfileBundleEl);
 
