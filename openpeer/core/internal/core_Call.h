@@ -594,7 +594,11 @@ namespace openpeer
 
           PUID mID;
           mutable RecursiveLock mBogusLock;
-          CallLocationWeakPtr mThisWeak;
+          CallLocationWeakPtr mThisWeakNoQueue;
+
+          IWakeDelegatePtr mThisWakeDelegate;
+          IICESocketSessionDelegatePtr mThisICESocketSessionDelegate;
+
           CallLocationStates mCurrentState;
 
           CallWeakPtr mOuter;
@@ -623,8 +627,14 @@ namespace openpeer
 
         PUID mID;
         mutable RecursiveLock mBogusLock;
-        CallWeakPtr mThisWeak;
+        CallWeakPtr mThisWeakNoQueue;
         CallPtr mGracefulShutdownReference;
+
+        IWakeDelegatePtr mThisWakeDelegate;
+        ICallAsyncPtr mThisCallAsyncNormalQueue;
+        ICallAsyncPtr mThisCallAsyncMediaQueue;
+        IICESocketDelegatePtr mThisICESocketDelegate;
+        ITimerDelegatePtr mThisTimerDelegate;
 
         mutable RecursiveLock mStepLock;
 

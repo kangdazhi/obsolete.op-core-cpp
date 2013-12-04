@@ -68,6 +68,7 @@ namespace openpeer
       using zsLib::Timer;
       using zsLib::TimerPtr;
       using zsLib::ITimerDelegate;
+      using zsLib::ITimerDelegatePtr;
       using zsLib::Seconds;
       using zsLib::Socket;
 
@@ -134,9 +135,13 @@ namespace openpeer
       using services::IICESocket;
       using services::IICESocketPtr;
       using services::IICESocketDelegate;
+      using services::IICESocketDelegatePtr;
+      using services::IICESocketDelegateProxy;
       using services::IICESocketSubscriptionPtr;
       using services::IICESocketSession;
       using services::IICESocketSessionPtr;
+      using services::IICESocketSessionDelegatePtr;
+      using services::IICESocketSessionDelegateProxy;
       using services::IHTTP;
       using services::IWakeDelegate;
       using services::IWakeDelegatePtr;

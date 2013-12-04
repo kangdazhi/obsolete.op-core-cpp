@@ -220,12 +220,6 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      IMessageQueuePtr CallTransport::getMediaQueue() const
-      {
-        return getAssociatedMessageQueue();
-      }
-
-      //-----------------------------------------------------------------------
       void CallTransport::notifyCallCreation(PUID idCall)
       {
         AutoRecursiveLock lock(getLock());

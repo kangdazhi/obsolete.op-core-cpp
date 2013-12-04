@@ -63,7 +63,6 @@ namespace openpeer
     namespace internal
     {
       using services::IHelper;
-      using services::IICESocketSessionDelegateProxy;
 
       using zsLib::ITimerDelegateProxy;
 
@@ -192,6 +191,7 @@ namespace openpeer
                  ) :
         mID(zsLib::createPUID()),
         mQueue(IStackForInternal::queueCore()),
+        mMediaQueue(IStackForInternal::queueMedia()),
         mDelegate(delegate),
         mCallID(callID ? string(callID) : services::IHelper::randomString(32)),
         mHasAudio(hasAudio),
@@ -217,14 +217,20 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Call::init()
       {
+        mThisWakeDelegate = IWakeDelegateProxy::createWeak(getQueue(), mThisWeakNoQueue.lock());
+        mThisCallAsyncNormalQueue = ICallAsyncProxy::createWeak(getQueue(), mThisWeakNoQueue.lock());
+        mThisCallAsyncMediaQueue = ICallAsyncProxy::createWeak(getMediaQueue(), mThisWeakNoQueue.lock());
+        mThisICESocketDelegate = IICESocketDelegateProxy::createWeak(getMediaQueue(), mThisWeakNoQueue.lock());
+        mThisTimerDelegate = ITimerDelegateProxy::createWeak(getQueue(), mThisWeakNoQueue.lock());
+
         if (mTransport) {
-          mMediaQueue = mTransport->forCall().getMediaQueue();
           mTransport->forCall().notifyCallCreation(mID);
         }
+
         setCurrentState(ICall::CallState_Preparing);
 
         ZS_LOG_DEBUG(log("call init called thus invoking step"))
-        IWakeDelegateProxy::create(getQueue(), mThisWeak.lock())->onWake();
+        IWakeDelegateProxy::create(mThisWakeDelegate)->onWake();
       }
 
       //-----------------------------------------------------------------------
@@ -232,7 +238,7 @@ namespace openpeer
       {
         if (isNoop()) return;
 
-        mThisWeak.reset();
+        mThisWeakNoQueue.reset();
         ZS_LOG_BASIC(log("destroyed"))
         cancel();
       }
@@ -277,7 +283,7 @@ namespace openpeer
         }
 
         CallPtr pThis(new Call(account,  conversationThread, account->forCall().getCallDelegate(), includeAudio, includeVideo, NULL));
-        pThis->mThisWeak = pThis;
+        pThis->mThisWeakNoQueue = pThis;
         pThis->mCaller = account->forCall().getSelfContact();
         pThis->mCallee = Contact::convert(toContact);
         pThis->mIncomingCall = false;
@@ -385,7 +391,7 @@ namespace openpeer
         mRingCalled = true;
 
         ZS_LOG_DEBUG(log("ring called thus invoking step"))
-        IWakeDelegateProxy::create(getQueue(), mThisWeak.lock())->onWake();
+        IWakeDelegateProxy::create(mThisWakeDelegate)->onWake();
       }
 
       //-----------------------------------------------------------------------
@@ -400,7 +406,7 @@ namespace openpeer
         mAnswerCalled = true;
 
         ZS_LOG_DEBUG(log("answer called thus invoking step"))
-        IWakeDelegateProxy::create(getQueue(), mThisWeak.lock())->onWake();
+        IWakeDelegateProxy::create(mThisWakeDelegate)->onWake();
       }
 
       //-----------------------------------------------------------------------
@@ -412,7 +418,7 @@ namespace openpeer
         mLocalOnHold = hold;
 
         ZS_LOG_DEBUG(log("hold called thus invoking step"))
-        IWakeDelegateProxy::create(getQueue(), mThisWeak.lock())->onWake();
+        IWakeDelegateProxy::create(mThisWakeDelegate)->onWake();
       }
 
       //-----------------------------------------------------------------------
@@ -422,7 +428,7 @@ namespace openpeer
 
         AutoRecursiveLock lock(getLock());
         setClosedReason(reason);
-        ICallAsyncProxy::create(getQueue(), mThisWeak.lock())->onHangup();
+        ICallAsyncProxy::create(mThisCallAsyncNormalQueue)->onHangup();
       }
 
       //-----------------------------------------------------------------------
@@ -522,7 +528,7 @@ namespace openpeer
         }
 
         CallPtr pThis(new Call(account,  conversationThread, account->forCall().getCallDelegate(), hasAudio, hasVideo, remoteDialog->dialogID()));
-        pThis->mThisWeak = pThis;
+        pThis->mThisWeakNoQueue = pThis;
         pThis->mCaller = callerContact;
         pThis->mCallee = account->forCall().getSelfContact();
         pThis->mIncomingCall = true;
@@ -563,7 +569,7 @@ namespace openpeer
       void Call::notifyConversationThreadUpdated()
       {
         ZS_LOG_DEBUG(log("notified conversation thread updated thus invoking step"))
-        IWakeDelegateProxy::create(mQueue, mThisWeak.lock())->onWake();
+        IWakeDelegateProxy::create(mThisWakeDelegate)->onWake();
       }
 
       //-----------------------------------------------------------------------
@@ -596,7 +602,7 @@ namespace openpeer
 
         // tell the transport to focus on this call/location...
         if (0 != focusLocationID) {
-          mTransport->forCall().focus(mThisWeak.lock(), focusLocationID);
+          mTransport->forCall().focus(mThisWeakNoQueue.lock(), focusLocationID);
         } else {
           ZS_LOG_WARNING(Detail, log("told to set focus but there is no location to focus"))
           mTransport->forCall().loseFocus(mID);
@@ -638,14 +644,14 @@ namespace openpeer
         }
 
         ZS_LOG_DEBUG(log("ICE socket state change thus invoking step"))
-        IWakeDelegateProxy::create(getQueue(), mThisWeak.lock())->onWake();
+        IWakeDelegateProxy::create(mThisWakeDelegate)->onWake();
       }
 
       //-----------------------------------------------------------------------
       void Call::onICESocketCandidatesChanged(IICESocketPtr inSocket)
       {
         ZS_LOG_DEBUG(log("ICE socket candidates change thus invoking step"))
-        IWakeDelegateProxy::create(getQueue(), mThisWeak.lock())->onWake();
+        IWakeDelegateProxy::create(mThisWakeDelegate)->onWake();
       }
 
       //-----------------------------------------------------------------------
@@ -685,7 +691,7 @@ namespace openpeer
               return;
             }
 
-            thread->forCall().notifyCallCleanup(mThisWeak.lock());
+            thread->forCall().notifyCallCleanup(mThisWeakNoQueue.lock());
           }
           return;
         }
@@ -771,7 +777,7 @@ namespace openpeer
           }
         }
 
-        CallPtr pThis = mThisWeak.lock();
+        CallPtr pThis = mThisWeakNoQueue.lock();
         if (pThis) {
           ZS_LOG_DEBUG(log("call location state changed thus invoking step"))
           IWakeDelegateProxy::create(getQueue(), pThis)->onWake();
@@ -899,7 +905,7 @@ namespace openpeer
             return;
           }
 
-          if (!mGracefulShutdownReference) mGracefulShutdownReference = mThisWeak.lock();
+          if (!mGracefulShutdownReference) mGracefulShutdownReference = mThisWeakNoQueue.lock();
 
           setCurrentState(ICall::CallState_Closing);
 
@@ -1135,8 +1141,6 @@ namespace openpeer
                                   CandidateList &outVideoRTPCandidates
                                   ) throw (Exceptions::StepFailure)
       {
-        typedef services::IICESocketDelegateProxy IICESocketDelegateProxy;
-
         ZS_LOG_DEBUG(log("checking if media is ready"))
 
         AutoRecursiveLock lock(getMediaLock());
@@ -1148,7 +1152,7 @@ namespace openpeer
         if (hasAudio()) {
           if (!mAudioRTPSocketSubscription) {
             ZS_LOG_DEBUG(log("subscripting audio RTP socket"))
-            mAudioRTPSocketSubscription = socketAudioRTP->subscribe(IICESocketDelegateProxy::create(mMediaQueue, mThisWeak.lock()));
+            mAudioRTPSocketSubscription = socketAudioRTP->subscribe(mThisICESocketDelegate);
             ZS_THROW_CUSTOM_IF(Exceptions::StepFailure, !mAudioRTPSocketSubscription)
           }
         }
@@ -1157,7 +1161,7 @@ namespace openpeer
           // setup all the video ICE socket subscriptions...
           if (!mVideoRTPSocketSubscription) {
             ZS_LOG_DEBUG(log("subscripting video RTP socket"))
-            mVideoRTPSocketSubscription = socketVideoRTP->subscribe(IICESocketDelegateProxy::create(mMediaQueue, mThisWeak.lock()));
+            mVideoRTPSocketSubscription = socketVideoRTP->subscribe(mThisICESocketDelegate);
             ZS_THROW_CUSTOM_IF(Exceptions::StepFailure, !mVideoRTPSocketSubscription)
           }
         }
@@ -1380,7 +1384,7 @@ namespace openpeer
               (remoteCallState != ICall::CallState_Closed)) {
 
             ZS_LOG_DEBUG(log("creating a new call location") + ZS_PARAM("remote location ID", locationID))
-            CallLocationPtr callLocation = CallLocation::create(getQueue(), getMediaQueue(), mThisWeak.lock(), mTransport, locationID, remoteDialog, hasAudio(), hasVideo());
+            CallLocationPtr callLocation = CallLocation::create(getQueue(), getMediaQueue(), mThisWeakNoQueue.lock(), mTransport, locationID, remoteDialog, hasAudio(), hasVideo());
             mCallLocations[locationID] = callLocation;
 
             if (mIncomingCall) {
@@ -1435,7 +1439,7 @@ namespace openpeer
                 return false;
               }
               if (!mFirstClosedRemoteCallTimer) {
-                mFirstClosedRemoteCallTimer = Timer::create(ITimerDelegateProxy::createWeak(getQueue(), mThisWeak.lock()), Seconds(OPENPEER_CALL_FIRST_CLOSED_REMOTE_CALL_TIME_IN_SECONDS), false);
+                mFirstClosedRemoteCallTimer = Timer::create(mThisTimerDelegate, Seconds(OPENPEER_CALL_FIRST_CLOSED_REMOTE_CALL_TIME_IN_SECONDS), false);
               }
               ZS_LOG_DEBUG(log("remote party is closed but will try to connect with other locations (if possible)"))
             }
@@ -1612,7 +1616,7 @@ namespace openpeer
           setCurrentState(CallState_Open);
 
           ZS_LOG_DEBUG(log("call state changed to open thus forcing step to force close unchosen locations"))
-          IWakeDelegateProxy::create(getQueue(), mThisWeak.lock())->onWake();
+          IWakeDelegateProxy::create(mThisWakeDelegate)->onWake();
         } else if (ioEarly) {
           setCurrentState(CallState_Early);
         } else if (ringing) {
@@ -1727,23 +1731,23 @@ namespace openpeer
 
           if (!mPeerAliveTimer) {
             ZS_LOG_DEBUG(log("peer alive timer is required (thus starting the timer)"))
-            mPeerAliveTimer = Timer::create(ITimerDelegateProxy::createWeak(getQueue(), mThisWeak.lock()), Seconds(OPENPEER_CALL_CALL_CHECK_PEER_ALIVE_TIMER_IN_SECONDS));
+            mPeerAliveTimer = Timer::create(mThisTimerDelegate, Seconds(OPENPEER_CALL_CALL_CHECK_PEER_ALIVE_TIMER_IN_SECONDS));
           }
 
           if (ICall::CallState_Hold != mCurrentState) {
             // this call must be in focus...
             ZS_LOG_DEBUG(log("setting focus to this call?") + ZS_PARAM("focus", !mediaHolding))
-            ICallAsyncProxy::create(getMediaQueue(), mThisWeak.lock())->onSetFocus(!mediaHolding);
+            ICallAsyncProxy::create(mThisCallAsyncMediaQueue)->onSetFocus(!mediaHolding);
           } else {
             ZS_LOG_DEBUG(log("this call state is holding thus it should not have focus"))
-            ICallAsyncProxy::create(getMediaQueue(), mThisWeak.lock())->onSetFocus(false);
+            ICallAsyncProxy::create(mThisCallAsyncMediaQueue)->onSetFocus(false);
           }
 
           return true;
         }
 
         ZS_LOG_DEBUG(log("this call does not have any picked remote locatio thus it should not have focus"))
-        ICallAsyncProxy::create(getMediaQueue(), mThisWeak.lock())->onSetFocus(false);
+        ICallAsyncProxy::create(mThisCallAsyncMediaQueue)->onSetFocus(false);
 
         if (mPeerAliveTimer) {
           ZS_LOG_DEBUG(log("peer alive timer is not required (thus stopping the timer)"))
@@ -1758,7 +1762,7 @@ namespace openpeer
       {
         if (locationsToClose.size() > 0) {
           ZS_LOG_DEBUG(log("since locations were closed we must invoke a step to cleanup properly"))
-          IWakeDelegateProxy::create(getQueue(), mThisWeak.lock())->onWake();
+          IWakeDelegateProxy::create(mThisWakeDelegate)->onWake();
         }
 
         // force a closing of all these call locations...
@@ -2044,7 +2048,7 @@ namespace openpeer
                                    );
         }
 
-        CallPtr pThis = mThisWeak.lock();
+        CallPtr pThis = mThisWeakNoQueue.lock();
         if (pThis) {
           if (changedState) {
             ZS_LOG_DEBUG(log("notifying delegate of state change") + ZS_PARAM("state", ICall::toString(state)) + toDebug(true, false))
@@ -2128,7 +2132,7 @@ namespace openpeer
           ZS_LOG_WARNING(Detail, log("unable to place call as conversation thread object is gone"))
           return false;
         }
-        return thread->forCall().placeCall(mThisWeak.lock());
+        return thread->forCall().placeCall(mThisWeakNoQueue.lock());
       }
 
       //-----------------------------------------------------------------------
@@ -2165,6 +2169,9 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Call::CallLocation::init(CallTransportPtr transport)
       {
+        mThisWakeDelegate = IWakeDelegateProxy::create(mQueue, mThisWeakNoQueue.lock());
+        mThisICESocketSessionDelegate = IICESocketSessionDelegateProxy::create(mMediaQueue, mThisWeakNoQueue.lock());
+
         ZS_THROW_INVALID_ARGUMENT_IF(!transport)
 
         CallPtr outer = mOuter.lock();
@@ -2207,11 +2214,11 @@ namespace openpeer
 
           if (isAudio) {
             if (!mAudioRTPSocketSession) {
-              mAudioRTPSocketSession = rtpSocket->createSessionFromRemoteCandidates(IICESocketSessionDelegateProxy::create(mMediaQueue, mThisWeak.lock()), description->mICEUsernameFrag, description->mICEPassword, tempCandidates, outer->isIncoming() ? IICESocket::ICEControl_Controlled : IICESocket::ICEControl_Controlling);
+              mAudioRTPSocketSession = rtpSocket->createSessionFromRemoteCandidates(mThisICESocketSessionDelegate, description->mICEUsernameFrag, description->mICEPassword, tempCandidates, outer->isIncoming() ? IICESocket::ICEControl_Controlled : IICESocket::ICEControl_Controlling);
             }
           } else if (isVideo) {
             if (!mVideoRTPSocketSession) {
-              mVideoRTPSocketSession = rtpSocket->createSessionFromRemoteCandidates(IICESocketSessionDelegateProxy::create(mMediaQueue, mThisWeak.lock()), description->mICEUsernameFrag, description->mICEPassword, tempCandidates, outer->isIncoming() ? IICESocket::ICEControl_Controlled : IICESocket::ICEControl_Controlling);
+              mVideoRTPSocketSession = rtpSocket->createSessionFromRemoteCandidates(mThisICESocketSessionDelegate, description->mICEUsernameFrag, description->mICEPassword, tempCandidates, outer->isIncoming() ? IICESocket::ICEControl_Controlled : IICESocket::ICEControl_Controlling);
             }
           }
         }
@@ -2231,7 +2238,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       Call::CallLocation::~CallLocation()
       {
-        mThisWeak.reset();
+        mThisWeakNoQueue.reset();
         close();
       }
 
@@ -2267,7 +2274,7 @@ namespace openpeer
                                                        )
       {
         CallLocationPtr pThis(new CallLocation(queue, mediaQueue, outer, locationID, remoteDialog, hasAudio, hasVideo));
-        pThis->mThisWeak = pThis;
+        pThis->mThisWeakNoQueue = pThis;
         pThis->init(transport);
         return pThis;
       }
@@ -2365,7 +2372,7 @@ namespace openpeer
         }
 
         ZS_LOG_DEBUG(log("ICE socket session state changed thus invoking step"))
-        IWakeDelegateProxy::create(getQueue(), mThisWeak.lock())->onWake();
+        IWakeDelegateProxy::create(mThisWakeDelegate)->onWake();
       }
 
       //-----------------------------------------------------------------------
@@ -2606,7 +2613,7 @@ namespace openpeer
 
         CallPtr outer = mOuter.lock();
         if (outer) {
-          CallLocationPtr pThis = mThisWeak.lock();
+          CallLocationPtr pThis = mThisWeakNoQueue.lock();
           if (pThis) {
             outer->notifyStateChanged(pThis, state);
           }

@@ -137,8 +137,6 @@ namespace openpeer
 
         virtual RecursiveLock &getLock() const = 0;
 
-        virtual IMessageQueuePtr getMediaQueue() const = 0;
-
         virtual void notifyCallCreation(PUID idCall) = 0;
         virtual void notifyCallDestruction(PUID idCall) = 0;
 
@@ -247,8 +245,6 @@ namespace openpeer
         #pragma mark
 
         virtual RecursiveLock &getLock() const;
-
-        virtual IMessageQueuePtr getMediaQueue() const;
 
         virtual void notifyCallCreation(PUID idCall);
         virtual void notifyCallDestruction(PUID idCall);
