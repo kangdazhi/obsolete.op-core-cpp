@@ -359,6 +359,12 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      IMessageQueuePtr IStackForInternal::queueKeyGeneration()
+      {
+        return (Stack::singleton())->getQueueKeyGeneration();
+      }
+
+      //-----------------------------------------------------------------------
       IMediaEngineDelegatePtr IStackForInternal::mediaEngineDelegate()
       {
         return (Stack::singleton())->getMediaEngineDelegate();
@@ -474,7 +480,7 @@ namespace openpeer
         ZS_THROW_INVALID_ARGUMENT_IF(mOS.isEmpty())
         ZS_THROW_INVALID_ARGUMENT_IF(mSystem.isEmpty())
 
-        stack::IStack::setup(mApplicationThreadQueue, mCoreThreadQueue, mServicesThreadQueue, mAppID, mAppName, mAppImageURL, mAppURL, mUserAgent, mDeviceID, mOS, mSystem);
+        stack::IStack::setup(mApplicationThreadQueue, mCoreThreadQueue, mServicesThreadQueue, mKeyGenerationThreadQueue, mAppID, mAppName, mAppImageURL, mAppURL, mUserAgent, mDeviceID, mOS, mSystem);
       }
 
       //-----------------------------------------------------------------------
@@ -582,7 +588,8 @@ namespace openpeer
         total = mApplicationThreadQueue->getTotalUnprocessedMessages() +
                 mCoreThreadQueue->getTotalUnprocessedMessages() +
                 mMediaThreadQueue->getTotalUnprocessedMessages() +
-                mServicesThreadQueue->getTotalUnprocessedMessages();
+                mServicesThreadQueue->getTotalUnprocessedMessages() +
+                mKeyGenerationThreadQueue->getTotalUnprocessedMessages();
 
         if (total > 0) {
           mShutdownCheckAgainDelegate->onShutdownCheckAgain();
@@ -596,7 +603,8 @@ namespace openpeer
         total = mApplicationThreadQueue->getTotalUnprocessedMessages() +
                 mCoreThreadQueue->getTotalUnprocessedMessages() +
                 mMediaThreadQueue->getTotalUnprocessedMessages() +
-                mServicesThreadQueue->getTotalUnprocessedMessages();
+                mServicesThreadQueue->getTotalUnprocessedMessages() +
+                mKeyGenerationThreadQueue->getTotalUnprocessedMessages();
 
         if (total > 0) {
           mShutdownCheckAgainDelegate->onShutdownCheckAgain();
@@ -658,6 +666,13 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      IMessageQueuePtr Stack::getQueueKeyGeneration() const
+      {
+        AutoRecursiveLock lock(mLock);
+        return mKeyGenerationThreadQueue;
+      }
+
+      //-----------------------------------------------------------------------
       IMediaEngineDelegatePtr Stack::getMediaEngineDelegate() const
       {
         AutoRecursiveLock lock(mLock);
@@ -671,6 +686,7 @@ namespace openpeer
         MessageQueueThreadPtr  coreThread;
         MessageQueueThreadPtr  mediaThread;
         MessageQueueThreadPtr  servicesThread;
+        MessageQueueThreadPtr  keyGenerationThread;
         IStackMessageQueueDelegatePtr stackMessage;
 
         {
@@ -680,12 +696,14 @@ namespace openpeer
           mediaThread = mMediaThreadQueue;
           servicesThread = mServicesThreadQueue;
           stackMessage = mStackMessageQueueDelegate;
+          keyGenerationThread = mKeyGenerationThreadQueue;
         }
 
         applicationThread->waitForShutdown();
         coreThread->waitForShutdown();
         mediaThread->waitForShutdown();
         servicesThread->waitForShutdown();
+        keyGenerationThread->waitForShutdown();
 
         {
           AutoRecursiveLock lock(mLock);
@@ -693,6 +711,7 @@ namespace openpeer
           mCoreThreadQueue.reset();
           mMediaThreadQueue.reset();
           mServicesThreadQueue.reset();
+          mKeyGenerationThreadQueue.reset();
           mStackMessageQueueDelegate.reset();
         }
       }
@@ -714,7 +733,8 @@ namespace openpeer
 
         mCoreThreadQueue = MessageQueueThread::createBasic("org.openpeer.core.mainThread");
         mMediaThreadQueue = MessageQueueThread::createBasic("org.openpeer.core.mediaThread", zsLib::ThreadPriority_RealtimePriority);
-        mServicesThreadQueue = MessageQueueThread::createBasic("org.openpeer.core.servicesThread");
+        mServicesThreadQueue = MessageQueueThread::createBasic("org.openpeer.core.servicesThread", zsLib::ThreadPriority_HighPriority);
+        mKeyGenerationThreadQueue = MessageQueueThread::createBasic("org.openpeer.core.keyGenerationThread", zsLib::ThreadPriority_LowPriority);
         if (!mStackMessageQueueDelegate) {
           mApplicationThreadQueue = MessageQueueThread::singletonUsingCurrentGUIThreadsMessageQueue();
         } else {

@@ -110,6 +110,7 @@ namespace openpeer
                                         bool forceCreateNewLockboxAccount
                                         )
       {
+        if (this) {}
         return Account::login(delegate, conversationThreadDelegate, callDelegate, namespaceGrantOuterFrameURLUponReload, grantID, lockboxServiceDomain, forceCreateNewLockboxAccount);
       }
 
@@ -122,6 +123,7 @@ namespace openpeer
                                           ElementPtr reloginInformation
                                           )
       {
+        if (this) {}
         return Account::relogin(delegate, conversationThreadDelegate, callDelegate, namespaceGrantOuterFrameURLUponReload, reloginInformation);
       }
 
@@ -147,6 +149,7 @@ namespace openpeer
                                       bool includeVideo
                                       )
       {
+        if (this) {}
         return Call::placeCall(conversationThread, toContact, includeAudio, includeVideo);
       }
 
@@ -157,6 +160,7 @@ namespace openpeer
                                                   const DialogPtr &remoteDialog
                                                   )
       {
+        if (this) {}
         return Call::createForIncomingCall(inConversationThread, callerContact, remoteDialog);
       }
 
@@ -181,6 +185,7 @@ namespace openpeer
                                                      const IICESocket::STUNServerInfoList &stunServers
                                                      )
       {
+        if (this) {}
         return CallTransport::create(delegate, turnServers, stunServers);
       }
 
@@ -204,6 +209,7 @@ namespace openpeer
                                                  IPeerPtr peer
                                                  )
       {
+        if (this) {}
         return Contact::createFromPeer(account, peer);
       }
 
@@ -213,12 +219,14 @@ namespace openpeer
                                                            IPeerFilePublicPtr peerFilePublic
                                                            )
       {
+        if (this) {}
         return Contact::createFromPeerFilePublic(account, peerFilePublic);
       }
 
       //-----------------------------------------------------------------------
       ContactPtr IContactFactory::getForSelf(IAccountPtr account)
       {
+        if (this) {}
         return Contact::getForSelf(account);
       }
 
@@ -242,6 +250,7 @@ namespace openpeer
                                                                                  ElementPtr profileBundleEl
                                                                                  )
       {
+        if (this) {}
         return ConversationThread::create(account, profileBundleEl);
       }
 
@@ -253,6 +262,7 @@ namespace openpeer
                                                                                  const SplitMap &split
                                                                                  )
       {
+        if (this) {}
         return ConversationThread::create(account, peerLocation, metaData, split);
       }
 
@@ -275,6 +285,7 @@ namespace openpeer
                                                                                              IPublicationRepositoryPtr repository
                                                                                              )
       {
+        if (this) {}
         return ConversationThreadDocumentFetcher::create(delegate, repository);
       }
 
@@ -298,6 +309,7 @@ namespace openpeer
                                                                                              IConversationThreadParser::Details::ConversationThreadStates state
                                                                                              )
       {
+        if (this) {}
         return ConversationThreadHost::create(baseThread, state);
       }
 
@@ -323,6 +335,7 @@ namespace openpeer
                                                                                                 const SplitMap &split
                                                                                                 )
       {
+        if (this) {}
         return ConversationThreadSlave::create(baseThread, peerLocation, metaData, split);
       }
 
@@ -349,6 +362,7 @@ namespace openpeer
                                           const char *outerFrameURLUponReload
                                           )
       {
+        if (this) {}
         return Identity::login(account, delegate, identityProviderDomain, identityURI_or_identityBaseURI, outerFrameURLUponReload);
       }
 
@@ -363,12 +377,14 @@ namespace openpeer
                                                                    Time identityAccessSecretExpires
                                                                    )
       {
+        if (this) {}
         return Identity::loginWithIdentityPreauthorized(account, delegate, identityProviderDomain, identityURI, identityAccessToken, identityAccessSecret, identityAccessSecretExpires);
       }
 
       //-----------------------------------------------------------------------
       IdentityPtr IIdentityFactory::createFromExistingSession(IServiceIdentitySessionPtr session)
       {
+        if (this) {}
         return Identity::createFromExistingSession(session);
       }
 
@@ -394,6 +410,7 @@ namespace openpeer
                                                        const char *identityServiceDomain
                                                        )
       {
+        if (this) {}
         return IdentityLookup::create(account, delegate, identityLookupInfos, identityServiceDomain);
       }
 
@@ -414,6 +431,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       MediaEnginePtr IMediaEngineFactory::createMediaEngine(IMediaEngineDelegatePtr delegate)
       {
+        if (this) {}
         return MediaEngine::create(delegate);
       }
     }

@@ -80,6 +80,12 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
+      static Log::Params slog(const char *message)
+      {
+        return Log::Params(message, "core::Call");
+      }
+
+      //-----------------------------------------------------------------------
       static Dialog::DialogStates convert(ICall::CallStates state)
       {
         return (Dialog::DialogStates)state;
@@ -278,7 +284,7 @@ namespace openpeer
         ConversationThreadPtr conversationThread = ConversationThread::convert(inConversationThread);
         AccountPtr account = conversationThread->forCall().getAccount();
         if (!account) {
-          ZS_LOG_WARNING(Detail, "account object is gone thus cannot create call")
+          ZS_LOG_WARNING(Detail, slog("account object is gone thus cannot create call"))
           return CallPtr();
         }
 
@@ -498,7 +504,7 @@ namespace openpeer
 
         AccountPtr account = conversationThread->forCall().getAccount();
         if (!account) {
-          ZS_LOG_WARNING(Detail, "account object is gone thus cannot create call")
+          ZS_LOG_WARNING(Detail, slog("account object is gone thus cannot create call"))
           return CallPtr();
         }
 

@@ -68,6 +68,19 @@ namespace openpeer
       typedef IConversationThreadParser::MessageReceiptMap MessageReceiptMap;
       typedef IConversationThreadParser::MessageMap MessageMap;
       
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark (helpers)
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      static Log::Params slog(const char *message)
+      {
+        return Log::Params(message, "core::ConversationThreadHost");
+      }
 
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -176,7 +189,7 @@ namespace openpeer
       {
         AccountPtr account = baseThread->forHostOrSlave().getAccount();
         if (!account) {
-          ZS_LOG_WARNING(Detail, "unable to create a new conversation thread object as account object is null")
+          ZS_LOG_WARNING(Detail, slog("unable to create a new conversation thread object as account object is null"))
           return ConversationThreadHostPtr();
         }
 

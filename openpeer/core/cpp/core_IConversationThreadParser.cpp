@@ -1519,7 +1519,7 @@ namespace openpeer
         pThis->mPublication = publication;
 
         SplitMap result;
-        services::IHelper::split(publication->getName(), result);
+        services::IHelper::split(publication->getName(), result, '/');
         String type = services::IHelper::get(result, OPENPEER_CONVERSATION_THREAD_TYPE_INDEX);
 
         try {
@@ -1542,7 +1542,7 @@ namespace openpeer
           // parse the details...
           pThis->mDetails = Details::create(threadEl->findFirstChildElementChecked("details"));
           if (!pThis->mDetails) {
-            ZS_LOG_ERROR(Detail, "Unable to load thread details from publication")
+            ZS_LOG_ERROR(Detail, pThis->log("Unable to load thread details from publication"))
             return ThreadPtr();
           }
           pThis->mDetailsChanged = true;
@@ -1999,16 +1999,16 @@ namespace openpeer
         ZS_THROW_INVALID_ARGUMENT_IF(!baseThreadID)
         ZS_THROW_INVALID_ARGUMENT_IF(!hostThreadID)
 
-        stack::IAccountPtr stackAccount = account->forConversationThread().getStackAccount();
-        if (!stackAccount) {
-          ZS_LOG_ERROR(Basic, "stack account is null")
-          return ThreadPtr();
-        }
-
         ThreadPtr pThis = ThreadPtr(new Thread);
         pThis->mThisWeak = pThis;
         pThis->mType = threadType;
         pThis->mCanModify = true;
+
+        stack::IAccountPtr stackAccount = account->forConversationThread().getStackAccount();
+        if (!stackAccount) {
+          ZS_LOG_ERROR(Basic, pThis->log("stack account is null"))
+          return ThreadPtr();
+        }
 
         pThis->mDetails = Details::create(1, baseThreadID, hostThreadID, topic, replaces, state);
         if (!pThis->mDetails) return ThreadPtr();

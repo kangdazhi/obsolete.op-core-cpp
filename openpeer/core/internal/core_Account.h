@@ -498,6 +498,7 @@ namespace openpeer
         bool stepLoginIdentityAssociated();
         bool stepLockboxShutdownCheck();
         bool stepGrantSession();
+        bool stepStackAccountCreation();
         bool stepLockboxSession();
         bool stepStackAccount();
         bool stepSelfContact();

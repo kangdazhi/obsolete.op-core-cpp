@@ -82,6 +82,7 @@ namespace openpeer
         static IMessageQueuePtr queueCore();
         static IMessageQueuePtr queueMedia();
         static IMessageQueuePtr queueServices();
+        static IMessageQueuePtr queueKeyGeneration();
 
         static IMediaEngineDelegatePtr        mediaEngineDelegate();
         static IConversationThreadDelegatePtr conversationThreadDelegate();
@@ -180,6 +181,7 @@ namespace openpeer
         virtual IMessageQueuePtr getQueueCore() const;
         virtual IMessageQueuePtr getQueueMedia() const;
         virtual IMessageQueuePtr getQueueServices() const;
+        virtual IMessageQueuePtr getQueueKeyGeneration() const;
 
         virtual IMediaEngineDelegatePtr        getMediaEngineDelegate() const;
 
@@ -209,6 +211,7 @@ namespace openpeer
         MessageQueueThreadPtr  mCoreThreadQueue;
         MessageQueueThreadPtr  mMediaThreadQueue;
         MessageQueueThreadPtr  mServicesThreadQueue;
+        MessageQueueThreadPtr  mKeyGenerationThreadQueue;
 
         IStackDelegatePtr              mStackDelegate;
         IMediaEngineDelegatePtr        mMediaEngineDelegate;

@@ -58,6 +58,20 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       #pragma mark
+      #pragma mark (helpers)
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      static Log::Params slog(const char *message)
+      {
+        return Log::Params(message, "core::Contact");
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
       #pragma mark IContactForAccount
       #pragma mark
 
@@ -156,13 +170,13 @@ namespace openpeer
         stack::IAccountPtr stackAcount = account->forContact().getStackAccount();
 
         if (!stackAcount) {
-          ZS_LOG_ERROR(Detail, "stack account is not ready")
+          ZS_LOG_ERROR(Detail, slog("stack account is not ready"))
           return ContactPtr();
         }
 
         IPeerPtr peer = IPeer::create(stackAcount, peerFilePublic);
         if (!peer) {
-          ZS_LOG_ERROR(Detail, "failed to create peer object")
+          ZS_LOG_ERROR(Detail, slog("failed to create peer object"))
           return ContactPtr();
         }
 
@@ -252,7 +266,7 @@ namespace openpeer
         stack::IAccountPtr stackAcount = account->forContact().getStackAccount();
 
         if (!stackAcount) {
-          ZS_LOG_ERROR(Detail, "stack account is not ready")
+          ZS_LOG_ERROR(Detail, slog("stack account is not ready"))
           return ContactPtr();
         }
 

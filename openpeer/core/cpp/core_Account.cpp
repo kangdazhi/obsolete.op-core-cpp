@@ -216,7 +216,7 @@ namespace openpeer
           lockboxDomain = reloginInformation->findFirstChildElementChecked("lockboxDomain")->getTextDecoded();
           accountID = reloginInformation->findFirstChildElementChecked("accountID")->getTextDecoded();
           grantID = reloginInformation->findFirstChildElementChecked("grantID")->getTextDecoded();
-          lockboxKey = services::IHelper::convertFromBase64(reloginInformation->findFirstChildElementChecked("lockboxKey")->getTextDecoded());
+          lockboxKey = IHelper::convertFromBase64(reloginInformation->findFirstChildElementChecked("lockboxKey")->getTextDecoded());
         } catch (CheckFailed &) {
           return AccountPtr();
         }
@@ -227,7 +227,7 @@ namespace openpeer
           return AccountPtr();
         }
 
-        if (!lockboxKey) {
+        if (IHelper::isEmpty(lockboxKey)) {
           ZS_LOG_ERROR(Detail, pThis->log("lockbox key specified in relogin information is not valid"))
           return AccountPtr();
         }
@@ -1249,6 +1249,7 @@ namespace openpeer
 
         if (!stepLoginIdentityAssociated()) return;
         if (!stepLockboxShutdownCheck()) return;
+        if (!stepStackAccountCreation()) return;
         if (!stepGrantSession()) return;
         if (!stepLockboxSession()) return;
         if (!stepStackAccount()) return;
@@ -1345,8 +1346,25 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      bool Account::stepStackAccountCreation()
+      {
+        ZS_THROW_BAD_STATE_IF(!mLockboxSession)
+
+        if (mStackAccount) {
+          ZS_LOG_TRACE(log("stack account already created"))
+          return true;
+        }
+
+        ZS_LOG_DEBUG(log("creating stack account"))
+        mStackAccount = stack::IAccount::create(mThisWeak.lock(), mLockboxSession);
+        return true;
+      }
+
+      //-----------------------------------------------------------------------
       bool Account::stepLockboxSession()
       {
+        ZS_THROW_BAD_STATE_IF(!mLockboxSession)
+
         WORD errorCode = 0;
         String reason;
 
@@ -1385,10 +1403,7 @@ namespace openpeer
       bool Account::stepStackAccount()
       {
         ZS_THROW_BAD_STATE_IF(!mLockboxSession)
-
-        if (!mStackAccount) {
-          mStackAccount = stack::IAccount::create(mThisWeak.lock(), mLockboxSession);
-        }
+        ZS_THROW_BAD_STATE_IF(!mStackAccount)
 
         WORD errorCode = 0;
         String reason;
@@ -2163,7 +2178,7 @@ namespace openpeer
         String name = metaData->getName();
 
         SplitMap result;
-        services::IHelper::split(name, result);
+        services::IHelper::split(name, result, '/');
 
         if (result.size() < 6) {
           ZS_LOG_WARNING(Debug, log("subscription path is too short") + IPublicationMetaData::toDebug(metaData))
@@ -2218,7 +2233,7 @@ namespace openpeer
         String name = metaData->getName();
 
         SplitMap result;
-        services::IHelper::split(name, result);
+        services::IHelper::split(name, result, '/');
 
         if (result.size() < 6) {
           ZS_LOG_WARNING(Debug, log("subscription path is too short") + ZS_PARAM("path", name))
