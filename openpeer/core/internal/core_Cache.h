@@ -88,7 +88,7 @@ namespace openpeer
         #pragma mark Cache => stack::ICacheDelegate
         #pragma mark
 
-        virtual String fetch(const char *cookieNamePath);
+        // (duplciate) virtual String fetch(const char *cookieNamePath) = 0;
 
         // (duplicate) virtual void store(
         //                                const char *cookieNamePath,

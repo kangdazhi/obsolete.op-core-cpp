@@ -95,7 +95,6 @@ namespace openpeer
       void Cache::setup(ICacheDelegatePtr delegate)
       {
         singleton()->actualSetup(delegate);
-        stack::ICache::setup(delegate ? singleton() : stack::ICacheDelegatePtr());
       }
 
       //-----------------------------------------------------------------------
@@ -166,22 +165,6 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      String Cache::fetch(const char *cookieNamePath)
-      {
-        if (!cookieNamePath) return String();
-
-        ICacheDelegatePtr delegate;
-
-        {
-          AutoRecursiveLock lock(mLock);
-          delegate = mDelegate;
-        }
-
-        if (delegate) return delegate->fetch(cookieNamePath);
-        return String();
-      }
-
-      //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -204,6 +187,8 @@ namespace openpeer
         mDelegate = delegate;
 
         ZS_LOG_DEBUG(log("setup called") + ZS_PARAM("has delegate", (bool)delegate))
+
+        stack::ICache::setup(delegate ? mThisWeak.lock() : stack::ICacheDelegatePtr());
       }
 
     }
