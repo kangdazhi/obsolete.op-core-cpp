@@ -116,8 +116,13 @@ namespace openpeer
           delegate = mDelegate;
         }
 
-        if (delegate) return delegate->fetch(cookieNamePath);
-        return String();
+        if (!delegate) return String();
+
+        String result = delegate->fetch(cookieNamePath);
+        if (result.hasData()) {
+          ZS_LOG_TRACE(log("fetched from cache") + ZS_PARAM("cookie name", cookieNamePath) + ZS_PARAM("result", result))
+        }
+        return result;
       }
 
       //-----------------------------------------------------------------------
@@ -138,7 +143,10 @@ namespace openpeer
           delegate = mDelegate;
         }
 
-        if (delegate) return delegate->store(cookieNamePath, expires, str);
+        if (!delegate) return;
+
+        ZS_LOG_TRACE(log("storing in cache") + ZS_PARAM("cookie name", cookieNamePath) + ZS_PARAM("expires", expires) + ZS_PARAM("value", str))
+        delegate->store(cookieNamePath, expires, str);
       }
 
       //-----------------------------------------------------------------------
@@ -153,7 +161,10 @@ namespace openpeer
           delegate = mDelegate;
         }
 
-        if (delegate) return delegate->clear(cookieNamePath);
+        if (!delegate) return;
+
+        ZS_LOG_TRACE(log("clearing from cache") + ZS_PARAM("cookie name", cookieNamePath))
+        delegate->clear(cookieNamePath);
       }
       
       //-----------------------------------------------------------------------
