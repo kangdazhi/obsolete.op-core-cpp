@@ -2220,11 +2220,11 @@ namespace openpeer
 
           if (isAudio) {
             if (!mAudioRTPSocketSession) {
-              mAudioRTPSocketSession = rtpSocket->createSessionFromRemoteCandidates(mThisICESocketSessionDelegate, description->mICEUsernameFrag, description->mICEPassword, tempCandidates, outer->isIncoming() ? IICESocket::ICEControl_Controlled : IICESocket::ICEControl_Controlling);
+              mAudioRTPSocketSession = IICESocketSession::create(mThisICESocketSessionDelegate, rtpSocket, description->mICEUsernameFrag, description->mICEPassword, tempCandidates, outer->isIncoming() ? IICESocket::ICEControl_Controlled : IICESocket::ICEControl_Controlling);
             }
           } else if (isVideo) {
             if (!mVideoRTPSocketSession) {
-              mVideoRTPSocketSession = rtpSocket->createSessionFromRemoteCandidates(mThisICESocketSessionDelegate, description->mICEUsernameFrag, description->mICEPassword, tempCandidates, outer->isIncoming() ? IICESocket::ICEControl_Controlled : IICESocket::ICEControl_Controlling);
+              mVideoRTPSocketSession = IICESocketSession::create(mThisICESocketSessionDelegate, rtpSocket, description->mICEUsernameFrag, description->mICEPassword, tempCandidates, outer->isIncoming() ? IICESocket::ICEControl_Controlled : IICESocket::ICEControl_Controlling);
             }
           }
         }
