@@ -31,7 +31,7 @@
 
 #include <openpeer/core/internal/core_MediaEngine.h>
 #include <openpeer/core/internal/core_Stack.h>
-#include <openpeer/core/internal/core_IConversationThreadParser.h>
+#include <openpeer/core/internal/core_thread.h>
 #include <openpeer/core/ILogger.h>
 
 #include <openpeer/services/IHelper.h>
@@ -68,6 +68,10 @@ namespace openpeer
   {
     namespace internal
     {
+      ZS_DECLARE_TYPEDEF_PTR(MediaEngine::ForCallTransport, ForCallTransport)
+
+      typedef IStackForInternal UseStack;
+
       using services::IHelper;
 
       typedef zsLib::ThreadPtr ThreadPtr;
@@ -95,7 +99,7 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      MediaEnginePtr IMediaEngineForCallTransport::singleton()
+      ForCallTransportPtr IMediaEngineForCallTransport::singleton()
       {
         return MediaEngine::singleton();
       }
@@ -593,7 +597,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       MediaEnginePtr MediaEngine::create(IMediaEngineDelegatePtr delegate)
       {
-        MediaEnginePtr pThis(new MediaEngine(IStackForInternal::queueCore(), delegate));
+        MediaEnginePtr pThis(new MediaEngine(UseStack::queueCore(), delegate));
         pThis->mThisWeak = pThis;
         pThis->init();
         return pThis;

@@ -56,6 +56,8 @@ namespace openpeer
   {
     namespace internal
     {
+      typedef IStackForInternal UseStack;
+
       using services::IHelper;
 
       typedef stack::message::IdentityInfoList StackIdentityInfoList;
@@ -96,14 +98,14 @@ namespace openpeer
       //-----------------------------------------------------------------------
       IdentityLookup::IdentityLookup(
                                      IMessageQueuePtr queue,
-                                     AccountPtr account,
+                                     UseAccountPtr account,
                                      IIdentityLookupDelegatePtr delegate,
                                      const char *identityServiceDomain
                                      ) :
         MessageQueueAssociator(queue),
         mID(zsLib::createPUID()),
         mAccount(account),
-        mDelegate(IIdentityLookupDelegateProxy::createWeak(IStackForInternal::queueApplication(), delegate)),
+        mDelegate(IIdentityLookupDelegateProxy::createWeak(UseStack::queueApplication(), delegate)),
         mErrorCode(0),
         mIdentityServiceDomain(identityServiceDomain),
         mAlreadyIssuedForProviderDomain(false)
@@ -232,7 +234,7 @@ namespace openpeer
 
         ZS_THROW_INVALID_ARGUMENT_IF(!services::IHelper::isValidDomain(identityServiceDomain))
 
-        IdentityLookupPtr pThis(new IdentityLookup(IStackForInternal::queueCore(), Account::convert(account), delegate, identityServiceDomain));
+        IdentityLookupPtr pThis(new IdentityLookup(UseStack::queueCore(), Account::convert(account), delegate, identityServiceDomain));
         pThis->mThisWeak = pThis;
         pThis->init(identities);
         return pThis;
@@ -823,7 +825,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       RecursiveLock &IdentityLookup::getLock() const
       {
-        return mAccount->forIdentityLookup().getLock();
+        return mAccount->getLock();
       }
 
       //-----------------------------------------------------------------------

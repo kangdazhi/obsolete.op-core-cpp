@@ -32,7 +32,7 @@
 #pragma once
 
 #include <openpeer/core/internal/types.h>
-#include <openpeer/core/internal/core_IConversationThreadParser.h>
+#include <openpeer/core/internal/core_thread.h>
 #include <openpeer/core/internal/core_ConversationThread.h>
 #include <openpeer/core/ICall.h>
 
@@ -48,6 +48,11 @@ namespace openpeer
   {
     namespace internal
     {
+      interaction IAccountForCall;
+      interaction ICallTransportForCall;
+      interaction IContactForCall;
+      interaction IConversationThreadForCall;
+
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -58,16 +63,17 @@ namespace openpeer
 
       interaction ICallForConversationThread
       {
-        typedef IConversationThreadParser::DialogPtr DialogPtr;
+        ZS_DECLARE_TYPEDEF_PTR(ICallForConversationThread, ForConversationThread)
 
-        ICallForConversationThread &forConversationThread() {return *this;}
-        const ICallForConversationThread &forConversationThread() const {return *this;}
+        typedef thread::DialogPtr DialogPtr;
 
-        static CallPtr createForIncomingCall(
-                                             ConversationThreadPtr inConversationThread,
-                                             ContactPtr callerContact,
-                                             const DialogPtr &remoteDialog
-                                             );
+        static ElementPtr toDebug(ForConversationThreadPtr call);
+
+        static ForConversationThreadPtr createForIncomingCall(
+                                                              ConversationThreadPtr inConversationThread,
+                                                              ContactPtr callerContact,
+                                                              const DialogPtr &remoteDialog
+                                                              );
 
         virtual String getCallID() const = 0;
 
@@ -90,6 +96,8 @@ namespace openpeer
 
       interaction ICallForCallTransport
       {
+        ZS_DECLARE_TYPEDEF_PTR(ICallForCallTransport, ForCallTransport)
+
         enum SocketTypes
         {
           SocketType_Audio,
@@ -98,8 +106,7 @@ namespace openpeer
 
         static const char *toString(SocketTypes type);
 
-        ICallForCallTransport &forCallTransport() {return *this;}
-        const ICallForCallTransport &forCallTransport() const {return *this;}
+        static ElementPtr toDebug(ForCallTransportPtr call);
 
         virtual PUID getID() const = 0;
 
@@ -150,6 +157,14 @@ namespace openpeer
       {
       public:
         friend interaction ICallFactory;
+        friend interaction ICall;
+        friend interaction ICallForConversationThread;
+        friend interaction ICallForCallTransport;
+
+        ZS_DECLARE_TYPEDEF_PTR(IAccountForCall, UseAccount)
+        ZS_DECLARE_TYPEDEF_PTR(ICallTransportForCall, UseCallTransport)
+        ZS_DECLARE_TYPEDEF_PTR(IContactForCall, UseContact)
+        ZS_DECLARE_TYPEDEF_PTR(IConversationThreadForCall, UseConversationThread)
 
         struct Exceptions
         {
@@ -158,7 +173,7 @@ namespace openpeer
           ZS_DECLARE_CUSTOM_EXCEPTION(CallClosed)
         };
 
-        typedef IConversationThreadParser::DialogPtr DialogPtr;
+        typedef thread::DialogPtr DialogPtr;
         typedef IConversationThreadForCall::LocationDialogMap LocationDialogMap;
 
         //---------------------------------------------------------------------
@@ -187,8 +202,8 @@ namespace openpeer
 
       protected:
         Call(
-             AccountPtr account,
-             ConversationThreadPtr conversationThread,
+             UseAccountPtr account,
+             UseConversationThreadPtr conversationThread,
              ICallDelegatePtr delegate,
              bool hasAudio,
              bool hasVideo,
@@ -202,14 +217,16 @@ namespace openpeer
         ~Call();
 
         static CallPtr convert(ICallPtr call);
-
-        static ElementPtr toDebug(ICallPtr call);
+        static CallPtr convert(ForConversationThreadPtr call);
+        static CallPtr convert(ForCallTransportPtr call);
 
       protected:
         //---------------------------------------------------------------------
         #pragma mark
         #pragma mark Call => ICall
         #pragma mark
+
+        static ElementPtr toDebug(ICallPtr call);
 
         static CallPtr placeCall(
                                  IConversationThreadPtr conversationThread,
@@ -413,7 +430,7 @@ namespace openpeer
                                                                  );
 
         bool stepTryToPickALocation(
-                                    AccountPtr &account,
+                                    UseAccountPtr &account,
                                     CallLocationPtr &ioEarly,
                                     CallLocationPtr &ioPicked,
                                     CallLocationList &outLocationsToClose
@@ -425,7 +442,7 @@ namespace openpeer
                                       ) throw (Exceptions::IllegalState);
 
         bool stepFixCallInProgressStates(
-                                         AccountPtr &account,
+                                         UseAccountPtr &account,
                                          bool mediaHolding,
                                          CallLocationPtr &early,
                                          CallLocationPtr &picked
@@ -476,7 +493,7 @@ namespace openpeer
                        bool hasVideo
                        );
 
-          void init(CallTransportPtr tranasport);
+          void init(UseCallTransportPtr tranasport);
 
         public:
           ~CallLocation();
@@ -496,7 +513,7 @@ namespace openpeer
                                         IMessageQueuePtr queue,
                                         IMessageQueuePtr mediaQueue,
                                         CallPtr outer,
-                                        CallTransportPtr transport,
+                                        UseCallTransportPtr transport,
                                         const char *locationID,
                                         const DialogPtr &remoteDialog,
                                         bool hasAudio,
@@ -651,12 +668,12 @@ namespace openpeer
         bool mIncomingCall;
         bool mIncomingNotifiedThreadOfPreparing;
 
-        AccountWeakPtr mAccount;
-        ConversationThreadWeakPtr mConversationThread;
-        CallTransportPtr mTransport;
+        UseAccountWeakPtr mAccount;
+        UseConversationThreadWeakPtr mConversationThread;
+        UseCallTransportPtr mTransport;
 
-        ContactPtr mCaller;
-        ContactPtr mCallee;
+        UseContactPtr mCaller;
+        UseContactPtr mCallee;
 
         //---------------------------------------------------------------------
         // variables protected with object lock

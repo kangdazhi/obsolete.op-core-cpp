@@ -43,6 +43,10 @@ namespace openpeer
   {
     namespace internal
     {
+      using boost::shared_ptr;
+      using boost::weak_ptr;
+      using boost::dynamic_pointer_cast;
+
       using zsLib::string;
       using zsLib::Noop;
       using zsLib::BYTE;
@@ -50,6 +54,7 @@ namespace openpeer
       using zsLib::INT;
       using zsLib::UINT;
       using zsLib::DWORD;
+      using zsLib::AutoPUID;
       using zsLib::AutoLock;
       using zsLib::AutoRecursiveLock;
       using zsLib::Lock;
@@ -148,106 +153,33 @@ namespace openpeer
       using services::IWakeDelegateWeakPtr;
       using services::IWakeDelegateProxy;
 
-      class Account;
-      typedef boost::shared_ptr<Account> AccountPtr;
-      typedef boost::weak_ptr<Account> AccountWeakPtr;
+      ZS_DECLARE_INTERACTION_PTR(ICallTransport)
+      ZS_DECLARE_INTERACTION_PTR(IConversationThreadHostSlaveBase)
+      ZS_DECLARE_INTERACTION_PTR(IConversationThreadDocumentFetcher)
+      ZS_DECLARE_INTERACTION_PTR(IStackShutdownCheckAgain)
 
-      class Cache;
-      typedef boost::shared_ptr<Cache> CachePtr;
-      typedef boost::weak_ptr<Cache> CacheWeakPtr;
+      ZS_DECLARE_INTERACTION_PROXY(ICallAsync)
+      ZS_DECLARE_INTERACTION_PROXY(ICallTransportDelegate)
+      ZS_DECLARE_INTERACTION_PROXY(ICallTransportAsync)
+      ZS_DECLARE_INTERACTION_PROXY(IConversationThreadDocumentFetcherDelegate)
+      ZS_DECLARE_INTERACTION_PROXY(IShutdownCheckAgainDelegate)
 
-      class Call;
-      typedef boost::shared_ptr<Call> CallPtr;
-      typedef boost::weak_ptr<Call> CallWeakPtr;
-
-      interaction ICallAsync;
-      typedef boost::shared_ptr<ICallAsync> ICallAsyncPtr;
-      typedef boost::weak_ptr<ICallAsync> ICallAsyncWeakPtr;
-      typedef zsLib::Proxy<ICallAsync> ICallAsyncProxy;
-
-      class CallTransport;
-      typedef boost::shared_ptr<CallTransport> CallTransportPtr;
-      typedef boost::weak_ptr<CallTransport> CallTransportWeakPtr;
-
-      interaction ICallTransport;
-      typedef boost::shared_ptr<ICallTransport> ICallTransportPtr;
-      typedef boost::weak_ptr<ICallTransport> ICallTransportWeakPtr;
-
-      interaction ICallTransportDelegate;
-      typedef boost::shared_ptr<ICallTransportDelegate> ICallTransportDelegatePtr;
-      typedef boost::weak_ptr<ICallTransportDelegate> ICallTransportDelegateWeakPtr;
-      typedef zsLib::Proxy<ICallTransportDelegate> ICallTransportDelegateProxy;
-
-      interaction ICallTransportAsync;
-      typedef boost::shared_ptr<ICallTransportAsync> ICallTransportAsyncPtr;
-      typedef boost::weak_ptr<ICallTransportAsync> ICallTransportAsyncWeakPtr;
-      typedef zsLib::Proxy<ICallTransportAsync> ICallTransportAsyncProxy;
-
-      class Contact;
-      typedef boost::shared_ptr<Contact> ContactPtr;
-      typedef boost::weak_ptr<Contact> ContactWeakPtr;
-
-      class ContactPeerFilePublicLookup;
-      typedef boost::shared_ptr<ContactPeerFilePublicLookup> ContactPeerFilePublicLookupPtr;
-      typedef boost::weak_ptr<ContactPeerFilePublicLookup> ContactPeerFilePublicLookupWeakPtr;
-
-      class ConversationThread;
-      typedef boost::shared_ptr<ConversationThread> ConversationThreadPtr;
-      typedef boost::weak_ptr<ConversationThread> ConversationThreadWeakPtr;
-
-      interaction IConversationThreadHostSlaveBase;
-      typedef boost::shared_ptr<IConversationThreadHostSlaveBase> IConversationThreadHostSlaveBasePtr;
-      typedef boost::weak_ptr<IConversationThreadHostSlaveBase> IConversationThreadHostSlaveBaseWeakPtr;
-
-      class ConversationThreadHost;
-      typedef boost::shared_ptr<ConversationThreadHost> ConversationThreadHostPtr;
-      typedef boost::weak_ptr<ConversationThreadHost> ConversationThreadHostWeakPtr;
-
-      class ConversationThreadSlave;
-      typedef boost::shared_ptr<ConversationThreadSlave> ConversationThreadSlavePtr;
-      typedef boost::weak_ptr<ConversationThreadSlave> ConversationThreadSlaveWeakPtr;
-
-      interaction IConversationThreadDocumentFetcher;
-      typedef boost::shared_ptr<IConversationThreadDocumentFetcher> IConversationThreadDocumentFetcherPtr;
-      typedef boost::weak_ptr<IConversationThreadDocumentFetcher> IConversationThreadDocumentFetcherWeakPtr;
-
-      interaction IConversationThreadDocumentFetcherDelegate;
-      typedef boost::shared_ptr<IConversationThreadDocumentFetcherDelegate> IConversationThreadDocumentFetcherDelegatePtr;
-      typedef boost::weak_ptr<IConversationThreadDocumentFetcherDelegate> IConversationThreadDocumentFetcherDelegateWeakPtr;
-      typedef zsLib::Proxy<IConversationThreadDocumentFetcherDelegate> IConversationThreadDocumentFetcherDelegateProxy;
-
-      interaction ConversationThreadDocumentFetcher;
-      typedef boost::shared_ptr<ConversationThreadDocumentFetcher> ConversationThreadDocumentFetcherPtr;
-      typedef boost::weak_ptr<ConversationThreadDocumentFetcher> ConversationThreadDocumentFetcherWeakPtr;
-
-      interaction Factory;
-      typedef boost::shared_ptr<Factory> FactoryPtr;
-      typedef boost::weak_ptr<Factory> FactoryWeakPtr;
-
-      class Identity;
-      typedef boost::shared_ptr<Identity> IdentityPtr;
-      typedef boost::weak_ptr<Identity> IdentityWeakPtr;
-
-      class IdentityLookup;
-      typedef boost::shared_ptr<IdentityLookup> IdentityLookupPtr;
-      typedef boost::weak_ptr<IdentityLookup> IdentityLookupWeakPtr;
-
-      class MediaEngine;
-      typedef boost::shared_ptr<MediaEngine> MediaEnginePtr;
-      typedef boost::weak_ptr<MediaEngine> MediaEngineWeakPtr;
-
-      interaction IShutdownCheckAgainDelegate;
-      typedef boost::shared_ptr<IShutdownCheckAgainDelegate> IShutdownCheckAgainDelegatePtr;
-      typedef boost::weak_ptr<IShutdownCheckAgainDelegate> IShutdownCheckAgainDelegateWeakPtr;
-      typedef zsLib::Proxy<IShutdownCheckAgainDelegate> IShutdownCheckAgainDelegateProxy;
-
-      class Stack;
-      typedef boost::shared_ptr<Stack> StackPtr;
-      typedef boost::weak_ptr<Stack> StackWeakPtr;
-
-      class VideoViewPort;
-      typedef boost::shared_ptr<VideoViewPort> VideoViewPortPtr;
-      typedef boost::weak_ptr<VideoViewPort> VideoViewPortWeakPtr;
+      ZS_DECLARE_CLASS_PTR(Account)
+      ZS_DECLARE_CLASS_PTR(Cache)
+      ZS_DECLARE_CLASS_PTR(Call)
+      ZS_DECLARE_CLASS_PTR(CallTransport)
+      ZS_DECLARE_CLASS_PTR(Contact)
+      ZS_DECLARE_CLASS_PTR(ContactPeerFilePublicLookup)
+      ZS_DECLARE_CLASS_PTR(ConversationThread)
+      ZS_DECLARE_CLASS_PTR(ConversationThreadHost)
+      ZS_DECLARE_CLASS_PTR(ConversationThreadSlave)
+      ZS_DECLARE_CLASS_PTR(ConversationThreadDocumentFetcher)
+      ZS_DECLARE_CLASS_PTR(Factory)
+      ZS_DECLARE_CLASS_PTR(Identity)
+      ZS_DECLARE_CLASS_PTR(IdentityLookup)
+      ZS_DECLARE_CLASS_PTR(MediaEngine)
+      ZS_DECLARE_CLASS_PTR(Stack)
+      ZS_DECLARE_CLASS_PTR(VideoViewPort)
     }
   }
 }

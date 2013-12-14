@@ -45,14 +45,11 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       #pragma mark
-      #pragma mark IStackForShutdownCheckAgain
+      #pragma mark IStackShutdownCheckAgain
       #pragma mark
 
-      interaction IStackForShutdownCheckAgain
+      interaction IStackShutdownCheckAgain
       {
-        IStackForShutdownCheckAgain &forShutdownCheckAgain() {return *this;}
-        const IStackForShutdownCheckAgain &forShutdownCheckAgain() const {return *this;}
-
         virtual void notifyShutdownCheckAgain() = 0;
       };
 
@@ -66,9 +63,6 @@ namespace openpeer
 
       interaction IStackForInternal
       {
-        IStackForInternal &forInternal() {return *this;}
-        const IStackForInternal &forInternal() const {return *this;}
-
         static const String &appID();
         static const String &appName();
         static const String &appImageURL();
@@ -101,14 +95,14 @@ namespace openpeer
 
       class Stack : public IStack,
                     public IStackForInternal,
-                    public IStackForShutdownCheckAgain,
+                    public IStackShutdownCheckAgain,
                     public IStackMessageQueue
       {
       public:
         friend interaction IStack;
         friend interaction IStackMessageQueue;
         friend interaction IStackForInternal;
-        friend interaction IStackForShutdownCheckAgain;
+        friend interaction IStackShutdownCheckAgain;
 
       protected:
         Stack();
@@ -158,7 +152,7 @@ namespace openpeer
 
         //---------------------------------------------------------------------
         #pragma mark
-        #pragma mark Stack => IStackForShutdownCheckAgain
+        #pragma mark Stack => IStackShutdownCheckAgain
         #pragma mark
 
         void notifyShutdownCheckAgain();

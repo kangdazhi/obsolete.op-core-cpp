@@ -55,6 +55,10 @@ namespace openpeer
 
     namespace internal
     {
+      ZS_DECLARE_TYPEDEF_PTR(Identity::ForAccount, ForAccount)
+
+      typedef IStackForInternal UseStack;
+
       using services::IHelper;
 
       //-----------------------------------------------------------------------
@@ -110,7 +114,13 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      IdentityPtr IIdentityForAccount::createFromExistingSession(IServiceIdentitySessionPtr session)
+      ElementPtr IIdentityForAccount::toDebug(ForAccountPtr identity)
+      {
+        return Identity::toDebug(Identity::convert(identity));
+      }
+
+      //-----------------------------------------------------------------------
+      ForAccountPtr IIdentityForAccount::createFromExistingSession(IServiceIdentitySessionPtr session)
       {
         return IIdentityFactory::singleton().createFromExistingSession(session);
       }
@@ -154,6 +164,12 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      IdentityPtr Identity::convert(ForAccountPtr contact)
+      {
+        return boost::dynamic_pointer_cast<Identity>(contact);
+      }
+
+      //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -183,11 +199,11 @@ namespace openpeer
         ZS_THROW_INVALID_ARGUMENT_IF(!identityURI_or_identityBaseURI)
         ZS_THROW_INVALID_ARGUMENT_IF(!identityProviderDomain)
 
-        AccountPtr account = Account::convert(inAccount);
+        UseAccountPtr account = Account::convert(inAccount);
 
-        IdentityPtr pThis(new Identity(IStackForInternal::queueCore()));
+        IdentityPtr pThis(new Identity(UseStack::queueCore()));
         pThis->mThisWeak = pThis;
-        pThis->mDelegate = IIdentityDelegateProxy::createWeak(IStackForInternal::queueApplication(), delegate);
+        pThis->mDelegate = IIdentityDelegateProxy::createWeak(UseStack::queueApplication(), delegate);
 
         String identity(identityURI_or_identityBaseURI);
         String domain(identityProviderDomain);
@@ -206,12 +222,12 @@ namespace openpeer
         provider = IServiceIdentity::createServiceIdentityFrom(network);
         ZS_THROW_BAD_STATE_IF(!provider)
 
-        IServiceNamespaceGrantSessionPtr grantSession = account->forIdentity().getNamespaceGrantSession();
-        IServiceLockboxSessionPtr lockboxSession = account->forIdentity().getLockboxSession();
+        IServiceNamespaceGrantSessionPtr grantSession = account->getNamespaceGrantSession();
+        IServiceLockboxSessionPtr lockboxSession = account->getLockboxSession();
 
         pThis->mSession = IServiceIdentitySession::loginWithIdentity(pThis, provider, grantSession, lockboxSession, outerFrameURLUponReload, identityURI_or_identityBaseURI);
         pThis->init();
-        account->forIdentity().associateIdentity(pThis);
+        account->associateIdentity(pThis);
 
         return pThis;
       }
@@ -233,11 +249,11 @@ namespace openpeer
         ZS_THROW_INVALID_ARGUMENT_IF(!identityAccessToken)
         ZS_THROW_INVALID_ARGUMENT_IF(!identityAccessSecret)
 
-        AccountPtr account = Account::convert(inAccount);
+        UseAccountPtr account = Account::convert(inAccount);
 
-        IdentityPtr pThis(new Identity(IStackForInternal::queueCore()));
+        IdentityPtr pThis(new Identity(UseStack::queueCore()));
         pThis->mThisWeak = pThis;
-        pThis->mDelegate = IIdentityDelegateProxy::createWeak(IStackForInternal::queueApplication(), delegate);
+        pThis->mDelegate = IIdentityDelegateProxy::createWeak(UseStack::queueApplication(), delegate);
 
         String identity(identityURI);
 
@@ -257,12 +273,12 @@ namespace openpeer
         provider = IServiceIdentity::createServiceIdentityFrom(network);
         ZS_THROW_BAD_STATE_IF(!provider)
 
-        IServiceNamespaceGrantSessionPtr grantSession = account->forIdentity().getNamespaceGrantSession();
-        IServiceLockboxSessionPtr lockboxSession = account->forIdentity().getLockboxSession();
+        IServiceNamespaceGrantSessionPtr grantSession = account->getNamespaceGrantSession();
+        IServiceLockboxSessionPtr lockboxSession = account->getLockboxSession();
 
         pThis->mSession = IServiceIdentitySession::loginWithIdentityPreauthorized(pThis, provider, grantSession, lockboxSession, identityURI, identityAccessToken, identityAccessSecret, identityAccessSecretExpires);
         pThis->init();
-        account->forIdentity().associateIdentity(pThis);
+        account->associateIdentity(pThis);
 
         return pThis;
       }
@@ -296,7 +312,7 @@ namespace openpeer
         // scope: set delegate
         {
           AutoRecursiveLock lock(mLock);
-          mDelegate = IIdentityDelegateProxy::createWeak(IStackForInternal::queueApplication(), delegate);
+          mDelegate = IIdentityDelegateProxy::createWeak(Stack::queueApplication(), delegate);
         }
         mSession->attachDelegate(mThisWeak.lock(), outerFrameURLUponReload);
       }
@@ -318,7 +334,7 @@ namespace openpeer
         // scope: set delegate
         {
           AutoRecursiveLock lock(mLock);
-          mDelegate = IIdentityDelegateProxy::createWeak(IStackForInternal::queueApplication(), delegate);
+          mDelegate = IIdentityDelegateProxy::createWeak(UseStack::queueApplication(), delegate);
         }
         mSession->attachDelegateAndPreauthorizeLogin(mThisWeak.lock(), identityAccessToken, identityAccessSecret, identityAccessSecretExpires);
       }
@@ -482,7 +498,7 @@ namespace openpeer
       {
         ZS_THROW_INVALID_ARGUMENT_IF(!session)
 
-        IdentityPtr pThis(new Identity(IStackForInternal::queueCore()));
+        IdentityPtr pThis(new Identity(UseStack::queueCore()));
         pThis->mThisWeak = pThis;
         pThis->mSession = session;
         pThis->init();

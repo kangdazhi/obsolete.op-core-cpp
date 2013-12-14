@@ -46,48 +46,24 @@ namespace openpeer
   {
     namespace internal
     {
-      typedef zsLib::Exceptions::InvalidArgument InvalidArgument;
+      interaction IAccountForConversationThread;
+      interaction IContactForConversationThread;
 
-      //-----------------------------------------------------------------------
-      //-----------------------------------------------------------------------
-      //-----------------------------------------------------------------------
-      //-----------------------------------------------------------------------
-      #pragma mark
-      #pragma mark IConversationThreadParser
-      #pragma mark
-
-      interaction IConversationThreadParser
+      namespace thread
       {
-        //---------------------------------------------------------------------
-        class Thread;
-        typedef boost::shared_ptr<Thread> ThreadPtr;
-        typedef boost::weak_ptr<Thread> ThreadWeakPtr;
+        ZS_DECLARE_TYPEDEF_PTR(IAccountForConversationThread, UseAccount)
+        ZS_DECLARE_TYPEDEF_PTR(IContactForConversationThread, UseContact)
 
-        class Message;
-        typedef boost::shared_ptr<Message> MessagePtr;
-        typedef boost::weak_ptr<Message> MessageWeakPtr;
+        ZS_DECLARE_CLASS_PTR(Thread)
+        ZS_DECLARE_CLASS_PTR(Message)
+        ZS_DECLARE_CLASS_PTR(MessageReceipts)
+        ZS_DECLARE_CLASS_PTR(ThreadContact)
+        ZS_DECLARE_CLASS_PTR(ThreadContacts)
+        ZS_DECLARE_CLASS_PTR(Dialog)
+        ZS_DECLARE_CLASS_PTR(Details)
 
-        class MessageReceipts;
-        typedef boost::shared_ptr<MessageReceipts> MessageReceiptsPtr;
-        typedef boost::weak_ptr<MessageReceipts> MessageReceiptsWeakPtr;
-
-        class ThreadContact;
-        typedef boost::shared_ptr<ThreadContact> ThreadContactPtr;
-        typedef boost::weak_ptr<ThreadContact> ThreadContactWeakPtr;
-
-        class ThreadContacts;
-        typedef boost::shared_ptr<ThreadContacts> ThreadContactsPtr;
-        typedef boost::weak_ptr<ThreadContacts> ThreadContactsWeakPtr;
-
-        class Dialog;
-        typedef boost::shared_ptr<Dialog> DialogPtr;
-        typedef boost::weak_ptr<Dialog> DialogWeakPtr;
-
-        class Details;
-        typedef boost::shared_ptr<Details> DetailsPtr;
-        typedef boost::weak_ptr<Details> DetailsWeakPtr;
-
-        //---------------------------------------------------------------------
+        typedef zsLib::Exceptions::InvalidArgument InvalidArgument;
+        
         typedef String MessageID;
         typedef Time ReceiptTime;
         typedef std::map<MessageID, ReceiptTime> MessageReceiptMap;
@@ -115,7 +91,7 @@ namespace openpeer
         //---------------------------------------------------------------------
         //---------------------------------------------------------------------
         #pragma mark
-        #pragma mark IConversationThreadParser::Message
+        #pragma mark Message
         #pragma mark
 
         class Message
@@ -151,7 +127,7 @@ namespace openpeer
           MessageWeakPtr mThisWeak;
           ElementPtr mBundleEl;
 
-          PUID mID;
+          AutoPUID mID;
           String mMessageID;
           String mFromPeerURI;
           String mMimeType;
@@ -164,7 +140,7 @@ namespace openpeer
         //---------------------------------------------------------------------
         //---------------------------------------------------------------------
         #pragma mark
-        #pragma mark IConversationThreadParser::MessageReceipts
+        #pragma mark MessageReceipts
         #pragma mark
 
         class MessageReceipts
@@ -192,7 +168,7 @@ namespace openpeer
         protected:
           MessageReceiptsWeakPtr mThisWeak;
 
-          PUID mID;
+          AutoPUID mID;
           ElementPtr mReceiptsEl;
 
           UINT mVersion;
@@ -204,7 +180,7 @@ namespace openpeer
         //---------------------------------------------------------------------
         //---------------------------------------------------------------------
         #pragma mark
-        #pragma mark IConversationThreadParser::ThreadContacts
+        #pragma mark ThreadContacts
         #pragma mark
 
         class ThreadContact
@@ -213,18 +189,18 @@ namespace openpeer
           static ElementPtr toDebug(ThreadContactPtr contact);
 
           static ThreadContactPtr create(
-                                         ContactPtr contact,
+                                         UseContactPtr contact,
                                          ElementPtr profileBundleEl
                                          );
 
-          ContactPtr contact() const              {return mContact;}
+          UseContactPtr contact() const           {return mContact;}
           ElementPtr profileBundleElement() const {return mProfileBundleEl;}
 
           ElementPtr toDebug() const;
 
         protected:
-          PUID mID;
-          ContactPtr mContact;
+          AutoPUID mID;
+          UseContactPtr mContact;
           ElementPtr mProfileBundleEl;
         };
 
@@ -233,7 +209,7 @@ namespace openpeer
         //---------------------------------------------------------------------
         //---------------------------------------------------------------------
         #pragma mark
-        #pragma mark IConversationThreadParser::ThreadContacts
+        #pragma mark ThreadContacts
         #pragma mark
 
         class ThreadContacts
@@ -242,16 +218,16 @@ namespace openpeer
           static ElementPtr toDebug(ThreadContactsPtr threadContacts);
 
           static ThreadContactsPtr create(
-                                    UINT version,
-                                    const ThreadContactList &contacts,
-                                    const ThreadContactList &addContacts,
-                                    const ContactURIList &removeContacts
-                                    );
+                                          UINT version,
+                                          const ThreadContactList &contacts,
+                                          const ThreadContactList &addContacts,
+                                          const ContactURIList &removeContacts
+                                          );
 
           static ThreadContactsPtr create(
-                                    AccountPtr account,
-                                    ElementPtr contactsEl
-                                    );
+                                          UseAccountPtr account,
+                                          ElementPtr contactsEl
+                                          );
 
           ElementPtr contactsElement() const            {return mContactsEl;}
 
@@ -269,7 +245,7 @@ namespace openpeer
           ThreadContactsWeakPtr mThisWeak;
           ElementPtr mContactsEl;
 
-          PUID mID;
+          AutoPUID mID;
           UINT mVersion;
           ThreadContactMap mContacts;
           ThreadContactMap mAddContacts;
@@ -281,7 +257,7 @@ namespace openpeer
         //---------------------------------------------------------------------
         //---------------------------------------------------------------------
         #pragma mark
-        #pragma mark IConversationThreadParser::Dialog
+        #pragma mark Dialog
         #pragma mark
 
         class Dialog
@@ -337,7 +313,7 @@ namespace openpeer
 
           //---------------------------------------------------------------------
           #pragma mark
-          #pragma mark IConversationThreadParser::Dialog::Codec
+          #pragma mark Dialog::Codec
           #pragma mark
 
           struct Codec
@@ -357,7 +333,7 @@ namespace openpeer
 
           //---------------------------------------------------------------------
           #pragma mark
-          #pragma mark IConversationThreadParser::Dialog::Description
+          #pragma mark Dialog::Description
           #pragma mark
 
           struct Description
@@ -425,7 +401,7 @@ namespace openpeer
           DialogWeakPtr mThisWeak;
           ElementPtr mDialogBundleEl;
 
-          PUID mID;
+          AutoPUID mID;
           UINT mVersion;
           String mDialogID;
           DialogStates mState;
@@ -455,7 +431,7 @@ namespace openpeer
         //---------------------------------------------------------------------
         //---------------------------------------------------------------------
         #pragma mark
-        #pragma mark IConversationThreadParser::Details
+        #pragma mark Details
         #pragma mark
 
         class Details
@@ -502,7 +478,7 @@ namespace openpeer
           Log::Params log(const char *message) const;
 
         protected:
-          PUID mID;
+          AutoPUID mID;
           DetailsWeakPtr mThisWeak;
           ElementPtr mDetailsEl;
 
@@ -522,7 +498,7 @@ namespace openpeer
         //---------------------------------------------------------------------
         //---------------------------------------------------------------------
         #pragma mark
-        #pragma mark IConversationThreadParser::Thread
+        #pragma mark Thread
         #pragma mark
 
         class Thread
@@ -546,17 +522,17 @@ namespace openpeer
           static ElementPtr toDebug(ThreadPtr thread);
 
           static ThreadPtr create(
-                                  AccountPtr account,
+                                  UseAccountPtr account,
                                   IPublicationPtr publication
                                   );
 
           bool updateFrom(
-                          AccountPtr account,
+                          UseAccountPtr account,
                           IPublicationPtr publication
                           );
 
           static ThreadPtr create(
-                                  AccountPtr account,
+                                  UseAccountPtr account,
                                   ThreadTypes threadType,         // needed for document name
                                   ILocationPtr creatorLocation,
                                   const char *baseThreadID,
@@ -589,7 +565,7 @@ namespace openpeer
           IPublicationPtr publication() const                       {return mPublication;}
           IPublicationPtr permissionPublication() const             {return mPermissionPublication;}
           DetailsPtr details() const                                {return mDetails;}
-          ThreadContactsPtr contacts() const                              {return mContacts;}
+          ThreadContactsPtr contacts() const                        {return mContacts;}
           const MessageList &messages() const                       {return mMessageList;}
           const MessageMap &messagesAsMap() const                   {return mMessageMap;}
           MessageReceiptsPtr messageReceipts() const                {return mMessageReceipts;}
@@ -597,12 +573,12 @@ namespace openpeer
 
           // obtain a list of changes since the last updateFrom was called
           bool detailsChanged() const                               {return mDetailsChanged;}
-          const ThreadContactMap &contactsChanged() const                 {return mContactsChanged;}
-          const ContactURIList &contactsRemoved() const              {return mContactsRemoved;}
-          const ThreadContactMap &contactsToAddChanged() const            {return mContactsToAddChanged;}
-          const ContactURIList &contactsToAddRemoved() const         {return mContactsToAddRemoved;}
-          const ContactURIList &contactsToRemoveChanged() const      {return mContactsToRemoveChanged;}
-          const ContactURIList &contactsToRemoveRemoved() const      {return mContactsToRemoveRemoved;}
+          const ThreadContactMap &contactsChanged() const           {return mContactsChanged;}
+          const ContactURIList &contactsRemoved() const             {return mContactsRemoved;}
+          const ThreadContactMap &contactsToAddChanged() const      {return mContactsToAddChanged;}
+          const ContactURIList &contactsToAddRemoved() const        {return mContactsToAddRemoved;}
+          const ContactURIList &contactsToRemoveChanged() const     {return mContactsToRemoveChanged;}
+          const ContactURIList &contactsToRemoveRemoved() const     {return mContactsToRemoveRemoved;}
           const MessageList &messagedChanged() const                {return mMessagesChanged;}
           Time messagedChangedTime() const                          {return mMessagesChangedTime;}
           const MessageReceiptMap &messageReceiptsChanged() const   {return mMessageReceiptsChanged;}
@@ -619,7 +595,7 @@ namespace openpeer
           Log::Params log(const char *message) const;
 
         protected:
-          PUID mID;
+          AutoPUID mID;
           ThreadWeakPtr mThisWeak;
           ThreadTypes mType;
           bool mCanModify;

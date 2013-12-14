@@ -83,6 +83,10 @@ namespace openpeer
 
     namespace internal
     {
+      ZS_DECLARE_TYPEDEF_PTR(IMediaEngineForStack, UseMediaEngine)
+
+      typedef IStackForInternal UseStack;
+
       using zsLib::IMessageQueue;
 
       class ShutdownCheckAgain;
@@ -121,7 +125,7 @@ namespace openpeer
         //---------------------------------------------------------------------
         ShutdownCheckAgain(
                            IMessageQueuePtr queue,
-                           StackPtr stack
+                           IStackShutdownCheckAgainPtr stack
                            ) :
           zsLib::MessageQueueAssociator(queue),
           mStack(stack)
@@ -131,7 +135,7 @@ namespace openpeer
         //---------------------------------------------------------------------
         static ShutdownCheckAgainPtr create(
                                             IMessageQueuePtr queue,
-                                            StackPtr stack
+                                            IStackShutdownCheckAgainPtr stack
                                             )
         {
           return ShutdownCheckAgainPtr(new ShutdownCheckAgain(queue, stack));
@@ -145,7 +149,7 @@ namespace openpeer
         //---------------------------------------------------------------------
         virtual void onShutdownCheckAgain()
         {
-          mStack->forShutdownCheckAgain().notifyShutdownCheckAgain();
+          mStack->notifyShutdownCheckAgain();
         }
 
       protected:
@@ -154,7 +158,7 @@ namespace openpeer
         #pragma mark ShutdownCheckAgain => (data)
         #pragma mark
 
-        StackPtr mStack;
+        IStackShutdownCheckAgainPtr mStack;
       };
 
       //-----------------------------------------------------------------------
@@ -173,7 +177,7 @@ namespace openpeer
       public:
         ~StackAutoCleanup()
         {
-          IStackForInternal::finalShutdown();
+          UseStack::finalShutdown();
         }
 
         static StackAutoCleanupPtr create()
@@ -443,7 +447,7 @@ namespace openpeer
 
         if (mediaEngineDelegate) {
           mMediaEngineDelegate = IMediaEngineDelegateProxy::create(getQueueApplication(), mediaEngineDelegate);
-          IMediaEngineForStack::setup(mMediaEngineDelegate);
+          UseMediaEngine::setup(mMediaEngineDelegate);
         }
         
         if (appID) {
@@ -571,7 +575,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       #pragma mark
-      #pragma mark Stack => IStackForShutdownCheckAgain
+      #pragma mark Stack => IStackShutdownCheckAgain
       #pragma mark
 
       //-----------------------------------------------------------------------

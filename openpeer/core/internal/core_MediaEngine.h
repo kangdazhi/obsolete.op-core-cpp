@@ -69,8 +69,7 @@ namespace openpeer
 
       interaction IMediaEngineForStack
       {
-        IMediaEngineForStack &forStack() {return *this;}
-        const IMediaEngineForStack &forStack() const {return *this;}
+        ZS_DECLARE_TYPEDEF_PTR(IMediaEngineForStack, ForStack)
 
         static void setup(IMediaEngineDelegatePtr delegate);
       };
@@ -85,12 +84,11 @@ namespace openpeer
 
       interaction IMediaEngineForCallTransport
       {
+        ZS_DECLARE_TYPEDEF_PTR(IMediaEngineForCallTransport, ForCallTransport)
+
         typedef webrtc::Transport Transport;
 
-        IMediaEngineForCallTransport &forCallTransport() {return *this;}
-        const IMediaEngineForCallTransport &forCallTransport() const {return *this;}
-
-        static MediaEnginePtr singleton();
+        static ForCallTransportPtr singleton();
 
         virtual void startVoice() = 0;
         virtual void stopVoice() = 0;

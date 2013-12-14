@@ -49,6 +49,8 @@ namespace openpeer
   {
     namespace internal
     {
+      interaction IAccountForIdentityLookup;
+
       using stack::IMessageMonitorPtr;
       using stack::IMessageMonitorResultDelegate;
       using stack::message::MessageResultPtr;
@@ -80,6 +82,8 @@ namespace openpeer
         friend interaction IIdentityLookupFactory;
         friend interaction IIdentityLookup;
 
+        ZS_DECLARE_TYPEDEF_PTR(IAccountForIdentityLookup, UseAccount)
+
         typedef String Domain;
         typedef std::map<Domain, IBootstrappedNetworkPtr> BootstrappedNetworkMap;
 
@@ -107,7 +111,7 @@ namespace openpeer
       protected:
         IdentityLookup(
                        IMessageQueuePtr queue,
-                       AccountPtr account,
+                       UseAccountPtr account,
                        IIdentityLookupDelegatePtr delegate,
                        const char *identityServiceDomain
                        );
@@ -226,7 +230,7 @@ namespace openpeer
         PUID mID;
         IdentityLookupWeakPtr mThisWeak;
 
-        AccountPtr mAccount;
+        UseAccountPtr mAccount;
 
         IIdentityLookupDelegatePtr mDelegate;
 

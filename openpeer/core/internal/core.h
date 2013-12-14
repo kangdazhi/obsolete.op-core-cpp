@@ -39,7 +39,6 @@
 #include <openpeer/core/internal/core_ConversationThread.h>
 #include <openpeer/core/internal/core_ConversationThreadHost.h>
 #include <openpeer/core/internal/core_ConversationThreadSlave.h>
-#include <openpeer/core/internal/core_IConversationThreadParser.h>
 #include <openpeer/core/internal/core_ConversationThreadDocumentFetcher.h>
 #include <openpeer/core/internal/core_Helper.h>
 #include <openpeer/core/internal/core_Identity.h>
@@ -47,3 +46,4 @@
 #include <openpeer/core/internal/core_Logger.h>
 #include <openpeer/core/internal/core_MediaEngine.h>
 #include <openpeer/core/internal/core_Stack.h>
+#include <openpeer/core/internal/core_thread.h>

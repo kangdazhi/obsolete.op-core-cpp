@@ -53,8 +53,12 @@ namespace openpeer
   {
     namespace internal
     {
-      typedef services::IHelper::SplitMap SplitMap;
+      interaction ICallTransportForAccount;
+      interaction IContactForAccount;
+      interaction IConversationThreadForAccount;
+      interaction IIdentityForAccount;
 
+      typedef services::IHelper::SplitMap SplitMap;
 
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -66,8 +70,7 @@ namespace openpeer
 
       interaction IAccountForCall
       {
-        IAccountForCall &forCall() {return *this;}
-        const IAccountForCall &forCall() const {return *this;}
+        ZS_DECLARE_TYPEDEF_PTR(IAccountForCall, ForCall)
 
         virtual CallTransportPtr getCallTransport() const = 0;
         virtual ICallDelegatePtr getCallDelegate() const = 0;
@@ -90,8 +93,7 @@ namespace openpeer
 
       interaction IAccountForContact
       {
-        IAccountForContact &forContact() {return *this;}
-        const IAccountForContact &forContact() const {return *this;}
+        ZS_DECLARE_TYPEDEF_PTR(IAccountForContact, ForContact)
 
         virtual RecursiveLock &getLock() const = 0;
 
@@ -119,8 +121,7 @@ namespace openpeer
 
       interaction IAccountForConversationThread
       {
-        IAccountForConversationThread &forConversationThread() {return *this;}
-        const IAccountForConversationThread &forConversationThread() const {return *this;}
+        ZS_DECLARE_TYPEDEF_PTR(IAccountForConversationThread, ForConversationThread)
 
         virtual RecursiveLock &getLock() const = 0;
 
@@ -151,8 +152,7 @@ namespace openpeer
 
       interaction IAccountForIdentity
       {
-        IAccountForIdentity &forIdentity() {return *this;}
-        const IAccountForIdentity &forIdentity() const {return *this;}
+        ZS_DECLARE_TYPEDEF_PTR(IAccountForIdentity, ForIdentity)
 
         virtual stack::IServiceNamespaceGrantSessionPtr getNamespaceGrantSession() const = 0;
         virtual stack::IServiceLockboxSessionPtr getLockboxSession() const = 0;
@@ -170,8 +170,7 @@ namespace openpeer
 
       interaction IAccountForIdentityLookup
       {
-        IAccountForIdentityLookup &forIdentityLookup() {return *this;}
-        const IAccountForIdentityLookup &forIdentityLookup() const {return *this;}
+        ZS_DECLARE_TYPEDEF_PTR(IAccountForIdentityLookup, ForIdentityLookup)
 
         virtual RecursiveLock &getLock() const = 0;
 
@@ -205,15 +204,16 @@ namespace openpeer
         friend interaction IAccountFactory;
         friend interaction IAccount;
 
-        class ContactSubscription;
-        friend class ContactSubscription;
-        typedef boost::shared_ptr<ContactSubscription> ContactSubscriptionPtr;
-        typedef boost::weak_ptr<ContactSubscription> ContactSubscriptionWeakPtr;
+        ZS_DECLARE_TYPEDEF_PTR(ICallTransportForAccount, UseCallTransport)
+        ZS_DECLARE_TYPEDEF_PTR(IContactForAccount, UseContact)
+        ZS_DECLARE_TYPEDEF_PTR(IConversationThreadForAccount, UseConversationThread)
+        ZS_DECLARE_TYPEDEF_PTR(IIdentityForAccount, UseIdentity)
 
-        class LocationSubscription;
+        ZS_DECLARE_CLASS_PTR(ContactSubscription)
+        ZS_DECLARE_CLASS_PTR(LocationSubscription)
+
+        friend class ContactSubscription;
         friend class LocationSubscription;
-        typedef boost::shared_ptr<LocationSubscription> LocationSubscriptionPtr;
-        typedef boost::weak_ptr<LocationSubscription> LocationSubscriptionWeakPtr;
 
         typedef IAccount::AccountStates AccountStates;
 
@@ -224,12 +224,12 @@ namespace openpeer
         typedef std::map<PeerURI, ContactSubscriptionPtr> ContactSubscriptionMap;
 
         typedef String BaseThreadID;
-        typedef std::map<BaseThreadID, ConversationThreadPtr> ConversationThreadMap;
+        typedef std::map<BaseThreadID, UseConversationThreadPtr> ConversationThreadMap;
 
-        typedef std::map<PeerURI, ContactPtr> ContactMap;
+        typedef std::map<PeerURI, UseContactPtr> ContactMap;
 
         typedef PUID ServiceIdentitySessionID;
-        typedef std::map<ServiceIdentitySessionID, IdentityPtr> IdentityMap;
+        typedef std::map<ServiceIdentitySessionID, UseIdentityPtr> IdentityMap;
 
       protected:
         Account(
@@ -247,6 +247,11 @@ namespace openpeer
         ~Account();
 
         static AccountPtr convert(IAccountPtr account);
+        static AccountPtr convert(ForCallPtr account);
+        static AccountPtr convert(ForContactPtr account);
+        static AccountPtr convert(ForConversationThreadPtr account);
+        static AccountPtr convert(ForIdentityPtr account);
+        static AccountPtr convert(ForIdentityLookupPtr account);
 
       protected:
         //---------------------------------------------------------------------
@@ -464,11 +469,11 @@ namespace openpeer
         #pragma mark Account => friend Account::LocationSubscription
         #pragma mark
 
-        ConversationThreadPtr notifyPublicationUpdated(
-                                                       ILocationPtr peerLocation,
-                                                       IPublicationMetaDataPtr metaData,
-                                                       const SplitMap &split
-                                                       );
+        UseConversationThreadPtr notifyPublicationUpdated(
+                                                          ILocationPtr peerLocation,
+                                                          IPublicationMetaDataPtr metaData,
+                                                          const SplitMap &split
+                                                          );
 
         void notifyPublicationGone(
                                    ILocationPtr peerLocation,
@@ -547,7 +552,7 @@ namespace openpeer
         protected:
           ContactSubscription(
                               AccountPtr outer,
-                              ContactPtr contact
+                              UseContactPtr contact
                               );
 
           void init(ILocationPtr peerLocation);
@@ -565,7 +570,7 @@ namespace openpeer
 
           static ContactSubscriptionPtr create(
                                                AccountPtr outer,
-                                               ContactPtr contact,
+                                               UseContactPtr contact,
                                                ILocationPtr peerLocation = ILocationPtr()
                                                );
 
@@ -624,7 +629,7 @@ namespace openpeer
           // (duplicate) RecursiveLock &getLock() const;
           AccountPtr getOuter() const;
 
-          ContactPtr getContact() const {return mContact;}
+          UseContactPtr getContact() const {return mContact;}
 
           void notifyLocationShutdown(const String &locationID);
 
@@ -670,7 +675,7 @@ namespace openpeer
 
           ContactSubscriptionStates mCurrentState;
 
-          ContactPtr mContact;
+          UseContactPtr mContact;
           IPeerSubscriptionPtr mPeerSubscription;
           TimerPtr mPeerSubscriptionAutoCloseTimer;
 
@@ -702,7 +707,7 @@ namespace openpeer
           friend class Account::ContactSubscription;
 
           typedef String ThreadID;
-          typedef std::map<ThreadID, ConversationThreadPtr> ConversationThreadMap;
+          typedef std::map<ThreadID, UseConversationThreadPtr> ConversationThreadMap;
 
         protected:
           LocationSubscription(
@@ -841,14 +846,14 @@ namespace openpeer
 
         IPeerSubscriptionPtr mPeerSubscription;
 
-        ContactPtr mSelfContact;
+        UseContactPtr mSelfContact;
 
         ContactMap mContacts;
         ContactSubscriptionMap mContactSubscriptions;
 
         ConversationThreadMap mConversationThreads;
 
-        CallTransportPtr mCallTransport;
+        UseCallTransportPtr mCallTransport;
 
         IPublicationPtr mSubscribersPermissionDocument;
       };

@@ -44,6 +44,8 @@ namespace openpeer
   {
     namespace internal
     {
+      interaction IAccountForIdentity;
+
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -54,10 +56,11 @@ namespace openpeer
 
       interaction IIdentityForAccount
       {
-        IIdentityForAccount &forAccount() {return *this;}
-        const IIdentityForAccount &forAccount() const {return *this;}
+        ZS_DECLARE_TYPEDEF_PTR(IIdentityForAccount, ForAccount)
 
-        static IdentityPtr createFromExistingSession(IServiceIdentitySessionPtr session);
+        static ElementPtr toDebug(ForAccountPtr identity);
+
+        static ForAccountPtr createFromExistingSession(IServiceIdentitySessionPtr session);
 
         virtual String getIdentityURI() const = 0;
 
@@ -81,6 +84,9 @@ namespace openpeer
       public:
         friend interaction IIdentityFactory;
         friend interaction IIdentity;
+        friend interaction IIdentityForAccount;
+
+        ZS_DECLARE_TYPEDEF_PTR(IAccountForIdentity, UseAccount)
 
       protected:
         Identity(IMessageQueuePtr queue);
@@ -93,6 +99,7 @@ namespace openpeer
         ~Identity();
 
         static IdentityPtr convert(IIdentityPtr identity);
+        static IdentityPtr convert(ForAccountPtr identity);
 
       protected:
         //---------------------------------------------------------------------

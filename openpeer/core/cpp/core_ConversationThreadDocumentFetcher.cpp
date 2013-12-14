@@ -51,6 +51,8 @@ namespace openpeer
   {
     namespace internal
     {
+      typedef IStackForInternal UseStack;
+
       using services::IHelper;
 
       using stack::IPublicationFetcher;
@@ -171,7 +173,7 @@ namespace openpeer
                                                                                      IPublicationRepositoryPtr repository
                                                                                      )
       {
-        ConversationThreadDocumentFetcherPtr pThis(new ConversationThreadDocumentFetcher(IStackForInternal::queueCore(), delegate, repository));
+        ConversationThreadDocumentFetcherPtr pThis(new ConversationThreadDocumentFetcher(UseStack::queueCore(), delegate, repository));
         pThis->mThisWeak = pThis;
         pThis->init();
         return pThis;

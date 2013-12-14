@@ -34,7 +34,7 @@
 #include <openpeer/core/internal/types.h>
 #include <openpeer/core/internal/core_ConversationThread.h>
 #include <openpeer/core/internal/core_ConversationThreadDocumentFetcher.h>
-#include <openpeer/core/internal/core_IConversationThreadParser.h>
+#include <openpeer/core/internal/core_thread.h>
 
 #include <openpeer/stack/IPeerSubscription.h>
 
@@ -50,6 +50,11 @@ namespace openpeer
   {
     namespace internal
     {
+      interaction IAccountForConversationThread;
+      interaction ICallForConversationThread;
+      interaction IContactForConversationThread;
+      interaction IConversationThreadForHost;
+
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -60,13 +65,14 @@ namespace openpeer
 
       interaction IConversationThreadHostForConversationThread : public IConversationThreadHostSlaveBase
       {
-        IConversationThreadHostForConversationThread &forConversationThread() {return *this;}
-        const IConversationThreadHostForConversationThread &forConversationThread() const {return *this;}
+        ZS_DECLARE_TYPEDEF_PTR(IConversationThreadHostForConversationThread, ForConversationThread)
 
-        static ConversationThreadHostPtr create(
-                                                ConversationThreadPtr baseThread,
-                                                IConversationThreadParser::Details::ConversationThreadStates state = IConversationThreadParser::Details::ConversationThreadState_Open
-                                                );
+        static ElementPtr toDebug(ForConversationThreadPtr host);
+
+        static ForConversationThreadPtr create(
+                                               ConversationThreadPtr baseThread,
+                                               thread::Details::ConversationThreadStates state = thread::Details::ConversationThreadState_Open
+                                               );
 
         virtual void close() = 0;
       };
@@ -86,6 +92,12 @@ namespace openpeer
       {
       public:
         friend interaction IConversationThreadHostFactory;
+        friend interaction IConversationThreadHostForConversationThread;
+
+        ZS_DECLARE_TYPEDEF_PTR(IAccountForConversationThread, UseAccount)
+        ZS_DECLARE_TYPEDEF_PTR(ICallForConversationThread, UseCall)
+        ZS_DECLARE_TYPEDEF_PTR(IContactForConversationThread, UseContact)
+        ZS_DECLARE_TYPEDEF_PTR(IConversationThreadForHost, UseConversationThread)
 
         enum ConversationThreadHostStates
         {
@@ -97,7 +109,7 @@ namespace openpeer
 
         static const char *toString(ConversationThreadHostStates state);
 
-        typedef IConversationThreadParser::ThreadPtr ThreadPtr;
+        typedef thread::ThreadPtr ThreadPtr;
 
         class PeerContact;
         typedef boost::shared_ptr<PeerContact> PeerContactPtr;
@@ -116,18 +128,21 @@ namespace openpeer
       protected:
         ConversationThreadHost(
                                IMessageQueuePtr queue,
-                               AccountPtr account,
-                               ConversationThreadPtr baseThread,
+                               UseAccountPtr account,
+                               UseConversationThreadPtr baseThread,
                                const char *threadID
                                );
         
         ConversationThreadHost(Noop) : Noop(true), MessageQueueAssociator(IMessageQueuePtr()) {};
 
-        void init(IConversationThreadParser::Details::ConversationThreadStates state);
+        void init(thread::Details::ConversationThreadStates state);
 
       public:
         ~ConversationThreadHost();
 
+        static ConversationThreadHostPtr convert(ForConversationThreadPtr object);
+
+      protected:
         static ElementPtr toDebug(ConversationThreadHostPtr host);
 
       protected:
@@ -138,7 +153,7 @@ namespace openpeer
 
         static ConversationThreadHostPtr create(
                                                 ConversationThreadPtr baseThread,
-                                                IConversationThreadParser::Details::ConversationThreadStates state = IConversationThreadParser::Details::ConversationThreadState_Open
+                                                thread::Details::ConversationThreadStates state = thread::Details::ConversationThreadState_Open
                                                 );
 
         virtual String getThreadID() const;
@@ -175,15 +190,15 @@ namespace openpeer
         virtual bool safeToChangeContacts() const;
 
         virtual void getContacts(ThreadContactMap &outContacts) const;
-        virtual bool inConversation(ContactPtr contact) const;
+        virtual bool inConversation(UseContactPtr contact) const;
         virtual void addContacts(const ContactProfileInfoList &contacts);
         virtual void removeContacts(const ContactList &contacts);
 
-        virtual ContactStates getContactState(ContactPtr contact) const;
+        virtual ContactStates getContactState(UseContactPtr contact) const;
 
         virtual bool placeCalls(const PendingCallMap &pendingCalls);
-        virtual void notifyCallStateChanged(CallPtr call);
-        virtual void notifyCallCleanup(CallPtr call);
+        virtual void notifyCallStateChanged(UseCallPtr call);
+        virtual void notifyCallCleanup(UseCallPtr call);
 
         virtual void gatherDialogReplies(
                                          const char *callID,
@@ -213,9 +228,9 @@ namespace openpeer
         // (duplicate) RecursiveLock &getLock() const;
 
         ThreadPtr getHostThread() const;
-        AccountPtr getAccount() const;
+        UseAccountPtr getAccount() const;
         IPublicationRepositoryPtr getRepository() const;
-        ConversationThreadPtr getBaseThread() const;
+        UseConversationThreadPtr getBaseThread() const;
 
         void notifyMessagesReceived(const MessageList &messages);
         void notifyMessageDeliveryStateChanged(
@@ -224,16 +239,16 @@ namespace openpeer
                                                );
         virtual void notifyMessagePush(
                                        MessagePtr message,
-                                       ContactPtr toContact
+                                       UseContactPtr toContact
                                        );
 
         void notifyStateChanged(PeerContactPtr peerContact);
         void notifyContactState(
-                                ContactPtr contact,
+                                UseContactPtr contact,
                                 ContactStates state
                                 );
 
-        bool hasCallPlacedTo(ContactPtr toContact);
+        bool hasCallPlacedTo(UseContactPtr toContact);
 
       private:
         //---------------------------------------------------------------------
@@ -293,7 +308,7 @@ namespace openpeer
 
           static const char *toString(PeerContactStates state);
 
-          typedef IConversationThreadParser::MessageReceiptMap MessageReceiptMap;
+          typedef thread::MessageReceiptMap MessageReceiptMap;
 
           friend class ConversationThreadHost;
           friend class PeerLocation;
@@ -310,7 +325,7 @@ namespace openpeer
           PeerContact(
                       IMessageQueuePtr queue,
                       ConversationThreadHostPtr host,
-                      ContactPtr contact,
+                      UseContactPtr contact,
                       ElementPtr profileBundleEl
                       );
 
@@ -330,7 +345,7 @@ namespace openpeer
           static PeerContactPtr create(
                                        IMessageQueuePtr queue,
                                        ConversationThreadHostPtr host,
-                                       ContactPtr contact,
+                                       UseContactPtr contact,
                                        ElementPtr profileBundleEL
                                        );
 
@@ -346,7 +361,7 @@ namespace openpeer
                                      );
           void notifyPeerDisconnected(ILocationPtr peerLocation);
 
-          ContactPtr getContact() const;
+          UseContactPtr getContact() const;
           const ElementPtr &getProfileBundle() const;
 
           ContactStates getContactState() const;
@@ -412,9 +427,9 @@ namespace openpeer
           // (duplicate) RecursiveLock &getLock() const;
 
           ConversationThreadHostPtr getOuter() const;
-          ConversationThreadPtr getBaseThread() const;
+          UseConversationThreadPtr getBaseThread() const;
           ThreadPtr getHostThread() const;
-          AccountPtr getAccount() const;
+          UseAccountPtr getAccount() const;
           IPublicationRepositoryPtr getRepository() const;
 
           void notifyMessagesReceived(const MessageList &messages);
@@ -451,7 +466,7 @@ namespace openpeer
 
           PeerLocationPtr findPeerLocation(ILocationPtr peerLocation) const;
 
-          bool isStillPartOfCurrentConversation(ContactPtr contact) const;
+          bool isStillPartOfCurrentConversation(UseContactPtr contact) const;
 
         protected:
           //-------------------------------------------------------------------
@@ -467,7 +482,7 @@ namespace openpeer
 
           PeerContactStates mCurrentState;
 
-          ContactPtr mContact;
+          UseContactPtr mContact;
           ElementPtr mProfileBundleEl;
 
           IPeerSubscriptionPtr mSlaveSubscription;
@@ -490,13 +505,13 @@ namespace openpeer
                              public IConversationThreadDocumentFetcherDelegate
         {
         public:
-          typedef IConversationThreadParser::MessageReceiptMap MessageReceiptMap;
+          typedef thread::MessageReceiptMap MessageReceiptMap;
 
           typedef String MessageID;
           typedef std::map<MessageID, IConversationThread::MessageDeliveryStates> MessageDeliveryStatesMap;
 
           typedef String CallID;
-          typedef std::map<CallID, CallPtr> CallHandlers;
+          typedef std::map<CallID, UseCallPtr> CallHandlers;
 
           friend class PeerContact;
 
@@ -630,10 +645,10 @@ namespace openpeer
         ConversationThreadHostWeakPtr mThisWeak;
         ConversationThreadHostPtr mGracefulShutdownReference;
 
-        ConversationThreadWeakPtr mBaseThread;
-        AccountWeakPtr mAccount;
+        UseConversationThreadWeakPtr mBaseThread;
+        UseAccountWeakPtr mAccount;
 
-        ContactPtr mSelfContact;
+        UseContactPtr mSelfContact;
 
         String mThreadID;
 
@@ -660,7 +675,7 @@ namespace openpeer
 
         virtual ConversationThreadHostPtr createConversationThreadHost(
                                                                        ConversationThreadPtr baseThread,
-                                                                       IConversationThreadParser::Details::ConversationThreadStates state = IConversationThreadParser::Details::ConversationThreadState_Open
+                                                                       thread::Details::ConversationThreadStates state = thread::Details::ConversationThreadState_Open
                                                                        );
       };
     }

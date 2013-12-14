@@ -52,6 +52,11 @@ namespace openpeer
   {
     namespace internal
     {
+      ZS_DECLARE_TYPEDEF_PTR(IMediaEngineForCallTransport, UseMediaEngine)
+
+      typedef IStackForInternal UseStack;
+      typedef ICallTransportForAccount::ForAccountPtr ForAccountPtr;
+
       using services::IHelper;
 
       //-----------------------------------------------------------------------
@@ -107,11 +112,11 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      CallTransportPtr ICallTransportForAccount::create(
-                                                        ICallTransportDelegatePtr delegate,
-                                                        const IICESocket::TURNServerInfoList &turnServers,
-                                                        const IICESocket::STUNServerInfoList &stunServers
-                                                        )
+      ForAccountPtr ICallTransportForAccount::create(
+                                                     ICallTransportDelegatePtr delegate,
+                                                     const IICESocket::TURNServerInfoList &turnServers,
+                                                     const IICESocket::STUNServerInfoList &stunServers
+                                                     )
       {
         return ICallTransportFactory::singleton().create(delegate, turnServers, stunServers);
       }
@@ -167,7 +172,19 @@ namespace openpeer
       //-----------------------------------------------------------------------
       CallTransportPtr CallTransport::convert(ICallTransportPtr transport)
       {
-        return boost::dynamic_pointer_cast<CallTransport>(transport);
+        return dynamic_pointer_cast<CallTransport>(transport);
+      }
+
+      //-----------------------------------------------------------------------
+      CallTransportPtr CallTransport::convert(ForAccountPtr transport)
+      {
+        return dynamic_pointer_cast<CallTransport>(transport);
+      }
+
+      //-----------------------------------------------------------------------
+      CallTransportPtr CallTransport::convert(ForCallPtr transport)
+      {
+        return dynamic_pointer_cast<CallTransport>(transport);
       }
 
       //-----------------------------------------------------------------------
@@ -185,7 +202,7 @@ namespace openpeer
                                              const IICESocket::STUNServerInfoList &stunServers
                                              )
       {
-        CallTransportPtr pThis(new CallTransport(IStackForInternal::queueMedia(), delegate, turnServers, stunServers));
+        CallTransportPtr pThis(new CallTransport(UseStack::queueMedia(), delegate, turnServers, stunServers));
         pThis->mThisWeak = pThis;
         pThis->init();
         return pThis;
@@ -257,11 +274,12 @@ namespace openpeer
 
       //-----------------------------------------------------------------------
       void CallTransport::focus(
-                                CallPtr call,
+                                CallPtr inCall,
                                 PUID locationID
                                 )
       {
-        CallPtr oldFocus;
+        UseCallPtr call = inCall;
+        UseCallPtr oldFocus;
 
         // scope: do not want to call notifyLostFocus from inside a lock (possible deadlock)
         {
@@ -269,15 +287,15 @@ namespace openpeer
           ZS_THROW_BAD_STATE_IF(mTotalCalls < 1)
 
           if (call) {
-            if (mFocusCallID != call->forCallTransport().getID()) {
+            if (mFocusCallID != call->getID()) {
               // focus has changed...
 
               oldFocus = mFocus.lock();
 
-              ZS_LOG_DEBUG(log("focused call ID changed") + ZS_PARAM("was", mFocusCallID) + ZS_PARAM("now", call->forCallTransport().getID()) + ZS_PARAM("block count", mBlockUntilStartStopCompleted))
+              ZS_LOG_DEBUG(log("focused call ID changed") + ZS_PARAM("was", mFocusCallID) + ZS_PARAM("now", call->getID()) + ZS_PARAM("block count", mBlockUntilStartStopCompleted))
 
               mFocus = call;
-              mFocusCallID = call->forCallTransport().getID();
+              mFocusCallID = call->getID();
               mFocusLocationID = locationID;
 
               // must restart the media
@@ -304,7 +322,7 @@ namespace openpeer
 
         if (oldFocus) {
           ZS_LOG_DEBUG(log("telling old focus to go on hold..."))
-          oldFocus->forCallTransport().notifyLostFocus();
+          oldFocus->notifyLostFocus();
         }
       }
 
@@ -393,19 +411,19 @@ namespace openpeer
           }
         }
 
-        MediaEnginePtr engine = IMediaEngineForCallTransport::singleton();
+        UseMediaEnginePtr engine = UseMediaEngine::singleton();
 
         if (SocketType_Audio == type) {
           if (isRTP) {
-            engine->forCallTransport().receivedVoiceRTPPacket(buffer, bufferLengthInBytes);
+            engine->receivedVoiceRTPPacket(buffer, bufferLengthInBytes);
           } else {
-            engine->forCallTransport().receivedVoiceRTCPPacket(buffer, bufferLengthInBytes);
+            engine->receivedVoiceRTCPPacket(buffer, bufferLengthInBytes);
           }
         } else {
           if (isRTP) {
-            engine->forCallTransport().receivedVideoRTPPacket(buffer, bufferLengthInBytes);
+            engine->receivedVideoRTPPacket(buffer, bufferLengthInBytes);
           } else {
-            engine->forCallTransport().receivedVideoRTCPPacket(buffer, bufferLengthInBytes);
+            engine->receivedVideoRTCPPacket(buffer, bufferLengthInBytes);
           }
         }
       }
@@ -480,7 +498,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       int CallTransport::sendRTPPacket(PUID socketID, const void *data, int len)
       {
-        CallPtr call;
+        UseCallPtr call;
         PUID locationID = 0;
 
         ICallForCallTransport::SocketTypes type = ICallForCallTransport::SocketType_Audio;
@@ -514,7 +532,7 @@ namespace openpeer
           }
         }
 
-        return (call->forCallTransport().sendRTPPacket(locationID, type, (const BYTE *)data, (size_t)len) ? len : 0);
+        return (call->sendRTPPacket(locationID, type, (const BYTE *)data, (size_t)len) ? len : 0);
       }
 
       //-----------------------------------------------------------------------
@@ -547,7 +565,7 @@ namespace openpeer
         IHelper::debugAppend(resultEl, "total calls", mTotalCalls);
         IHelper::debugAppend(resultEl, "socket cleanup timer", (bool)mSocketCleanupTimer);
         IHelper::debugAppend(resultEl, "started", mStarted);
-        IHelper::debugAppend(resultEl, ICall::toDebug(mFocus.lock()));
+        IHelper::debugAppend(resultEl, UseCall::toDebug(mFocus.lock()));
         IHelper::debugAppend(resultEl, "focus call id", mFocusCallID);
         IHelper::debugAppend(resultEl, "focus location id", mFocusLocationID);
         IHelper::debugAppend(resultEl, "has audio", mHasAudio);
@@ -614,14 +632,14 @@ namespace openpeer
             return;
           }
 
-          CallPtr call = mFocus.lock();
+          UseCallPtr call = mFocus.lock();
           if (!call) {
             ZS_LOG_WARNING(Detail, log("call in focus is now gone thus cannot start media engine"))
             return;
           }
 
-          hasAudio = mHasAudio = call->forCallTransport().hasAudio();
-          hasVideo = mHasVideo = call->forCallTransport().hasVideo();
+          hasAudio = mHasAudio = call->hasAudio();
+          hasVideo = mHasVideo = call->hasVideo();
           mStarted = true;
 
           audioSocket = mAudioSocket;
@@ -630,25 +648,25 @@ namespace openpeer
           ZS_LOG_DETAIL(log("starting media engine") + ZS_PARAM("audio", mHasAudio) + ZS_PARAM("video", mHasVideo))
         }
 
-        MediaEnginePtr engine = IMediaEngineForCallTransport::singleton();
+        UseMediaEnginePtr engine = UseMediaEngine::singleton();
 
         if (hasAudio) {
           ZS_LOG_DETAIL(log("registering audio media engine transports"))
 
-          engine->forCallTransport().registerVoiceExternalTransport(*(audioSocket.get()));
+          engine->registerVoiceExternalTransport(*(audioSocket.get()));
         }
         if (hasVideo) {
           ZS_LOG_DETAIL(log("registering video media engine transports"))
-          engine->forCallTransport().registerVideoExternalTransport(*(videoSocket.get()));
+          engine->registerVideoExternalTransport(*(videoSocket.get()));
         }
 
         {
           AutoRecursiveLock lock(mLock);
           if (hasAudio) {
-            engine->forCallTransport().startVoice();
+            engine->startVoice();
           }
           if (hasVideo) {
-            engine->forCallTransport().startVideoChannel();
+            engine->startVideoChannel();
           }
         }
       }
@@ -676,25 +694,25 @@ namespace openpeer
           mHasVideo = false;
         }
 
-        MediaEnginePtr engine = boost::dynamic_pointer_cast<MediaEngine>(IMediaEngine::singleton());
+        UseMediaEnginePtr engine = UseMediaEngine::singleton();
 
         if (hasVideo) {
           ZS_LOG_DETAIL(log("stopping media engine video"))
-          engine->forCallTransport().stopVideoChannel();
+          engine->stopVideoChannel();
         }
         if (hasAudio) {
           ZS_LOG_DETAIL(log("stopping media engine audio"))
-          engine->forCallTransport().stopVoice();
+          engine->stopVoice();
         }
 
         if (hasVideo) {
           ZS_LOG_DETAIL(log("deregistering video media engine transport"))
-          engine->forCallTransport().deregisterVideoExternalTransport();
+          engine->deregisterVideoExternalTransport();
         }
 
         if (hasAudio) {
           ZS_LOG_DETAIL(log("deregistering audio media engine transport"))
-          engine->forCallTransport().deregisterVoiceExternalTransport();
+          engine->deregisterVoiceExternalTransport();
         }
       }
 

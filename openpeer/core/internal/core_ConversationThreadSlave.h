@@ -34,7 +34,7 @@
 #include <openpeer/core/internal/types.h>
 #include <openpeer/core/internal/core_ConversationThread.h>
 #include <openpeer/core/internal/core_ConversationThreadDocumentFetcher.h>
-#include <openpeer/core/internal/core_IConversationThreadParser.h>
+#include <openpeer/core/internal/core_thread.h>
 
 #include <openpeer/stack/IPeerSubscription.h>
 
@@ -50,6 +50,11 @@ namespace openpeer
   {
     namespace internal
     {
+      interaction IAccountForConversationThread;
+      interaction ICallForConversationThread;
+      interaction IContactForConversationThread;
+      interaction IConversationThreadForSlave;
+
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -60,15 +65,16 @@ namespace openpeer
 
       interaction IConversationThreadSlaveForConversationThread : public IConversationThreadHostSlaveBase
       {
-        IConversationThreadSlaveForConversationThread &forConversationThread() {return *this;}
-        const IConversationThreadSlaveForConversationThread &forConversationThread() const {return *this;}
+        ZS_DECLARE_TYPEDEF_PTR(IConversationThreadSlaveForConversationThread, ForConversationThread)
 
-        static ConversationThreadSlavePtr create(
-                                                 ConversationThreadPtr baseThread,
-                                                 ILocationPtr peerLocation,
-                                                 IPublicationMetaDataPtr metaData,
-                                                 const SplitMap &split
-                                                 );
+        static ElementPtr toDebug(ForConversationThreadPtr thread);
+
+        static ForConversationThreadPtr create(
+                                               ConversationThreadPtr baseThread,
+                                               ILocationPtr peerLocation,
+                                               IPublicationMetaDataPtr metaData,
+                                               const SplitMap &split
+                                               );
       };
 
       //-----------------------------------------------------------------------
@@ -89,7 +95,12 @@ namespace openpeer
       {
       public:
         friend interaction IConversationThreadSlaveFactory;
-//        friend interaction IConversationThreadSlaveForConversationThread;
+        friend interaction IConversationThreadSlaveForConversationThread;
+
+        ZS_DECLARE_TYPEDEF_PTR(IAccountForConversationThread, UseAccount)
+        ZS_DECLARE_TYPEDEF_PTR(ICallForConversationThread, UseCall)
+        ZS_DECLARE_TYPEDEF_PTR(IContactForConversationThread, UseContact)
+        ZS_DECLARE_TYPEDEF_PTR(IConversationThreadForSlave, UseConversationThread)
 
         enum ConversationThreadSlaveStates
         {
@@ -101,7 +112,7 @@ namespace openpeer
 
         static const char *toString(ConversationThreadSlaveStates state);
 
-        typedef IConversationThreadParser::ThreadPtr ThreadPtr;
+        typedef thread::ThreadPtr ThreadPtr;
 
         typedef String MessageID;
         typedef Time StateChangedTime;
@@ -110,14 +121,14 @@ namespace openpeer
         typedef std::map<MessageID, DeliveryStatePair> MessageDeliveryStatesMap;
 
         typedef String CallID;
-        typedef std::map<CallID, CallPtr> CallHandlers;
+        typedef std::map<CallID, UseCallPtr> CallHandlers;
 
       protected:
         ConversationThreadSlave(
                                 IMessageQueuePtr queue,
-                                AccountPtr account,
+                                UseAccountPtr account,
                                 ILocationPtr peerLocation,
-                                ConversationThreadPtr baseThread,
+                                UseConversationThreadPtr baseThread,
                                 const char *threadID
                                 );
         
@@ -128,6 +139,9 @@ namespace openpeer
       public:
         ~ConversationThreadSlave();
 
+        static ConversationThreadSlavePtr convert(ForConversationThreadPtr object);
+
+      protected:
         static ElementPtr toDebug(ConversationThreadSlavePtr thread);
 
       protected:
@@ -170,15 +184,15 @@ namespace openpeer
         virtual bool safeToChangeContacts() const;
 
         virtual void getContacts(ThreadContactMap &outContacts) const;
-        virtual bool inConversation(ContactPtr contact) const;
+        virtual bool inConversation(UseContactPtr contact) const;
         virtual void addContacts(const ContactProfileInfoList &contacts);
         virtual void removeContacts(const ContactList &contacts);
 
-        virtual ContactStates getContactState(ContactPtr contact) const;
+        virtual ContactStates getContactState(UseContactPtr contact) const;
 
         virtual bool placeCalls(const PendingCallMap &pendingCalls);
-        virtual void notifyCallStateChanged(CallPtr call);
-        virtual void notifyCallCleanup(CallPtr call);
+        virtual void notifyCallStateChanged(UseCallPtr call);
+        virtual void notifyCallCleanup(UseCallPtr call);
 
         virtual void gatherDialogReplies(
                                          const char *callID,
@@ -274,7 +288,7 @@ namespace openpeer
 
         void setState(ConversationThreadSlaveStates state);
 
-        ContactPtr getHostContact() const;
+        UseContactPtr getHostContact() const;
         void publish(
                      bool publishSlavePublication,
                      bool publishSlavePermissionPublication
@@ -292,8 +306,8 @@ namespace openpeer
         ConversationThreadSlavePtr mGracefulShutdownReference;
         ConversationThreadSlavePtr mSelfHoldingStartupReferenceUntilPublicationFetchCompletes;
 
-        ConversationThreadWeakPtr mBaseThread;
-        AccountWeakPtr mAccount;
+        UseConversationThreadWeakPtr mBaseThread;
+        UseAccountWeakPtr mAccount;
 
         String mThreadID;
         ILocationPtr mPeerLocation;

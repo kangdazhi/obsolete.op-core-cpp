@@ -51,6 +51,11 @@ namespace openpeer
   {
     namespace internal
     {
+      typedef IContactForAccount::ForAccountPtr ForAccountPtr;
+
+      ZS_DECLARE_TYPEDEF_PTR(IContactForConversationThread::ForConversationThread, ForConversationThread)
+      ZS_DECLARE_TYPEDEF_PTR(IContactForCall::ForCall, ForCall)
+
       using services::IHelper;
 
       //-----------------------------------------------------------------------
@@ -76,10 +81,16 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      ContactPtr IContactForAccount::createFromPeer(
-                                                    AccountPtr account,
-                                                    IPeerPtr peer
-                                                    )
+      ElementPtr IContactForAccount::toDebug(ForAccountPtr contact)
+      {
+        return Contact::toDebug(Contact::convert(contact));
+      }
+
+      //-----------------------------------------------------------------------
+      ForAccountPtr IContactForAccount::createFromPeer(
+                                                       AccountPtr account,
+                                                       IPeerPtr peer
+                                                       )
       {
         return IContactFactory::singleton().createFromPeer(account, peer);
       }
@@ -93,10 +104,16 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      ContactPtr IContactForConversationThread::createFromPeerFilePublic(
-                                                                         AccountPtr account,
-                                                                         IPeerFilePublicPtr peerFilePublic
-                                                                         )
+      ElementPtr IContactForConversationThread::toDebug(ForConversationThreadPtr contact)
+      {
+        return Contact::toDebug(Contact::convert(contact));
+      }
+
+      //-----------------------------------------------------------------------
+      ForConversationThreadPtr IContactForConversationThread::createFromPeerFilePublic(
+                                                                                       AccountPtr account,
+                                                                                       IPeerFilePublicPtr peerFilePublic
+                                                                                       )
       {
         return IContactFactory::singleton().createFromPeerFilePublic(account, peerFilePublic);
       }
@@ -110,6 +127,12 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
+      ElementPtr IContactForCall::toDebug(ForCallPtr contact)
+      {
+        return Contact::toDebug(Contact::convert(contact));
+      }
+
+      //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -118,8 +141,7 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      Contact::Contact() :
-        mID(zsLib::createPUID())
+      Contact::Contact()
       {
         ZS_LOG_DEBUG(log("created"))
       }
@@ -146,6 +168,24 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      ContactPtr Contact::convert(ForAccountPtr contact)
+      {
+        return boost::dynamic_pointer_cast<Contact>(contact);
+      }
+
+      //-----------------------------------------------------------------------
+      ContactPtr Contact::convert(ForConversationThreadPtr contact)
+      {
+        return boost::dynamic_pointer_cast<Contact>(contact);
+      }
+
+      //-----------------------------------------------------------------------
+      ContactPtr Contact::convert(ForCallPtr contact)
+      {
+        return boost::dynamic_pointer_cast<Contact>(contact);
+      }
+
+      //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -162,12 +202,12 @@ namespace openpeer
 
       //-----------------------------------------------------------------------
       ContactPtr Contact::createFromPeerFilePublic(
-                                                   AccountPtr account,
+                                                   UseAccountPtr account,
                                                    IPeerFilePublicPtr peerFilePublic
                                                    )
       {
         ZS_THROW_INVALID_ARGUMENT_IF(!peerFilePublic)
-        stack::IAccountPtr stackAcount = account->forContact().getStackAccount();
+        stack::IAccountPtr stackAcount = account->getStackAccount();
 
         if (!stackAcount) {
           ZS_LOG_ERROR(Detail, slog("stack account is not ready"))
@@ -180,10 +220,10 @@ namespace openpeer
           return ContactPtr();
         }
 
-        AutoRecursiveLock lock(account->forContact().getLock());
+        AutoRecursiveLock lock(account->getLock());
 
         String peerURI = peer->getPeerURI();
-        ContactPtr existingPeer = account->forContact().findContact(peerURI);
+        ContactPtr existingPeer = account->findContact(peerURI);
         if (existingPeer) {
           return existingPeer;
         }
@@ -193,7 +233,7 @@ namespace openpeer
         pThis->mAccount = account;
         pThis->mPeer = peer;
         pThis->init();
-        account->forContact().notifyAboutContact(pThis);
+        account->notifyAboutContact(pThis);
         return pThis;
       }
       
@@ -202,20 +242,20 @@ namespace openpeer
       {
         ZS_THROW_INVALID_ARGUMENT_IF(!inAccount)
 
-        AccountPtr account = Account::convert(inAccount);
-        return account->forContact().getSelfContact();
+        UseAccountPtr account = Account::convert(inAccount);
+        return account->getSelfContact();
       }
 
       //-----------------------------------------------------------------------
       bool Contact::isSelf() const
       {
         ContactPtr pThis = mThisWeak.lock();
-        AccountPtr account = mAccount.lock();
+        UseAccountPtr account = mAccount.lock();
         if (!account) {
           ZS_LOG_ERROR(Detail, log("account object is gone"))
           return false;
         }
-        return (account->forContact().getSelfContact() == pThis);
+        return (account->getSelfContact() == pThis);
       }
 
       //-----------------------------------------------------------------------
@@ -233,18 +273,18 @@ namespace openpeer
       //-----------------------------------------------------------------------
       IAccountPtr Contact::getAssociatedAccount() const
       {
-        return mAccount.lock();
+        return Account::convert(mAccount.lock());
       }
 
       //-----------------------------------------------------------------------
       void Contact::hintAboutLocation(const char *contactsLocationID)
       {
-        AccountPtr account = mAccount.lock();
+        UseAccountPtr account = mAccount.lock();
         if (!account) {
           ZS_LOG_ERROR(Detail, log("account object is gone"))
           return;
         }
-        account->forContact().hintAboutContactLocation(mThisWeak.lock(), contactsLocationID);
+        account->hintAboutContactLocation(mThisWeak.lock(), contactsLocationID);
       }
 
 
@@ -259,20 +299,20 @@ namespace openpeer
 
       //-----------------------------------------------------------------------
       ContactPtr Contact::createFromPeer(
-                                         AccountPtr account,
+                                         UseAccountPtr account,
                                          IPeerPtr peer
                                          )
       {
-        stack::IAccountPtr stackAcount = account->forContact().getStackAccount();
+        stack::IAccountPtr stackAcount = account->getStackAccount();
 
         if (!stackAcount) {
           ZS_LOG_ERROR(Detail, slog("stack account is not ready"))
           return ContactPtr();
         }
 
-        AutoRecursiveLock lock(account->forContact().getLock());
+        AutoRecursiveLock lock(account->getLock());
 
-        ContactPtr existingPeer = account->forContact().findContact(peer->getPeerURI());
+        ContactPtr existingPeer = account->findContact(peer->getPeerURI());
         if (existingPeer) {
           return existingPeer;
         }
@@ -282,7 +322,7 @@ namespace openpeer
         pThis->mAccount = account;
         pThis->mPeer = peer;
         pThis->init();
-        account->forContact().notifyAboutContact(pThis);
+        account->notifyAboutContact(pThis);
         return pThis;
       }
 
@@ -353,9 +393,9 @@ namespace openpeer
       //-----------------------------------------------------------------------
       RecursiveLock &Contact::getLock() const
       {
-        AccountPtr account = mAccount.lock();
+        UseAccountPtr account = mAccount.lock();
         if (!account) return mBogusLock;
-        return account->forContact().getLock();
+        return account->getLock();
       }
 
       //-----------------------------------------------------------------------

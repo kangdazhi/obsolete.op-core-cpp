@@ -40,6 +40,8 @@ namespace openpeer
   {
     namespace internal
     {
+      interaction IAccountForContact;
+
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -50,13 +52,14 @@ namespace openpeer
 
       interaction IContactForAccount
       {
-        IContactForAccount &forAccount() {return *this;}
-        const IContactForAccount &forAccount() const {return *this;}
+        ZS_DECLARE_TYPEDEF_PTR(IContactForAccount, ForAccount)
 
-        static ContactPtr createFromPeer(
-                                         AccountPtr account,
-                                         IPeerPtr peer
-                                         );
+        static ElementPtr toDebug(ForAccountPtr contact);
+
+        static ForAccountPtr createFromPeer(
+                                            AccountPtr account,
+                                            IPeerPtr peer
+                                            );
 
         virtual String getPeerURI() const = 0;
         virtual IPeerPtr getPeer() const = 0;
@@ -74,13 +77,14 @@ namespace openpeer
 
       interaction IContactForConversationThread
       {
-        IContactForConversationThread &forConversationThread() {return *this;}
-        const IContactForConversationThread &forConversationThread() const {return *this;}
+        ZS_DECLARE_TYPEDEF_PTR(IContactForConversationThread, ForConversationThread)
 
-        static ContactPtr createFromPeerFilePublic(
-                                                   AccountPtr account,
-                                                   IPeerFilePublicPtr peerFilePublic
-                                                   );
+        static ElementPtr toDebug(ForConversationThreadPtr contact);
+
+        static ForConversationThreadPtr createFromPeerFilePublic(
+                                                                 AccountPtr account,
+                                                                 IPeerFilePublicPtr peerFilePublic
+                                                                 );
 
         virtual String getPeerURI() const = 0;
         virtual IPeerPtr getPeer() const = 0;
@@ -100,8 +104,9 @@ namespace openpeer
 
       interaction IContactForCall
       {
-        IContactForCall &forCall() {return *this;}
-        const IContactForCall &forCall() const {return *this;}
+        ZS_DECLARE_TYPEDEF_PTR(IContactForCall, ForCall)
+
+        static ElementPtr toDebug(ForCallPtr contact);
 
         virtual bool isSelf() const = 0;
 
@@ -126,6 +131,11 @@ namespace openpeer
       public:
         friend interaction IContactFactory;
         friend interaction IContact;
+        friend interaction IContactForAccount;
+        friend interaction IContactForConversationThread;
+        friend interaction IContactForCall;
+
+        ZS_DECLARE_TYPEDEF_PTR(IAccountForContact, UseAccount)
 
       protected:
         Contact();
@@ -138,6 +148,9 @@ namespace openpeer
         ~Contact();
 
         static ContactPtr convert(IContactPtr contact);
+        static ContactPtr convert(ForAccountPtr contact);
+        static ContactPtr convert(ForConversationThreadPtr contact);
+        static ContactPtr convert(ForCallPtr contact);
 
       protected:
         //---------------------------------------------------------------------
@@ -148,7 +161,7 @@ namespace openpeer
         static ElementPtr toDebug(IContactPtr contact);
 
         static ContactPtr createFromPeerFilePublic(
-                                                   AccountPtr account,
+                                                   UseAccountPtr account,
                                                    IPeerFilePublicPtr peerFilePublic
                                                    );
 
@@ -171,7 +184,7 @@ namespace openpeer
         #pragma mark
 
         static ContactPtr createFromPeer(
-                                         AccountPtr account,
+                                         UseAccountPtr account,
                                          IPeerPtr peer
                                          );
 
@@ -226,11 +239,11 @@ namespace openpeer
         #pragma mark Contact => (data)
         #pragma mark
 
-        PUID mID;
+        AutoPUID mID;
         mutable RecursiveLock mBogusLock;
         ContactWeakPtr mThisWeak;
 
-        AccountWeakPtr mAccount;
+        UseAccountWeakPtr mAccount;
         IPeerPtr mPeer;
       };
 

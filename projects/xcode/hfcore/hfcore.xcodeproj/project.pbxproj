@@ -19,7 +19,7 @@
 		0063BDB116CA9A2A00E6DB4D /* core_ConversationThreadSlave.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BBF216CA9A2900E6DB4D /* core_ConversationThreadSlave.cpp */; };
 		0063BDB216CA9A2A00E6DB4D /* core_Factory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BBF316CA9A2900E6DB4D /* core_Factory.cpp */; };
 		0063BDB316CA9A2A00E6DB4D /* core_Helper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BBF416CA9A2900E6DB4D /* core_Helper.cpp */; };
-		0063BDB416CA9A2A00E6DB4D /* core_IConversationThreadParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BBF516CA9A2900E6DB4D /* core_IConversationThreadParser.cpp */; };
+		0063BDB416CA9A2A00E6DB4D /* core_thread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BBF516CA9A2900E6DB4D /* core_thread.cpp */; };
 		0063BDB516CA9A2A00E6DB4D /* core_Identity.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BBF616CA9A2900E6DB4D /* core_Identity.cpp */; };
 		0063BDB616CA9A2A00E6DB4D /* core_IdentityLookup.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BBF716CA9A2900E6DB4D /* core_IdentityLookup.cpp */; };
 		0063BDB716CA9A2A00E6DB4D /* core_Logger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BBF816CA9A2900E6DB4D /* core_Logger.cpp */; };
@@ -44,7 +44,7 @@
 		0063BBF216CA9A2900E6DB4D /* core_ConversationThreadSlave.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = core_ConversationThreadSlave.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		0063BBF316CA9A2900E6DB4D /* core_Factory.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Factory.cpp; sourceTree = "<group>"; };
 		0063BBF416CA9A2900E6DB4D /* core_Helper.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Helper.cpp; sourceTree = "<group>"; };
-		0063BBF516CA9A2900E6DB4D /* core_IConversationThreadParser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = core_IConversationThreadParser.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
+		0063BBF516CA9A2900E6DB4D /* core_thread.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = core_thread.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		0063BBF616CA9A2900E6DB4D /* core_Identity.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Identity.cpp; sourceTree = "<group>"; };
 		0063BBF716CA9A2900E6DB4D /* core_IdentityLookup.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_IdentityLookup.cpp; sourceTree = "<group>"; };
 		0063BBF816CA9A2900E6DB4D /* core_Logger.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Logger.cpp; sourceTree = "<group>"; };
@@ -70,7 +70,7 @@
 		0063BC0F16CA9A2900E6DB4D /* core_ConversationThreadSlave.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = core_ConversationThreadSlave.h; sourceTree = "<group>"; };
 		0063BC1016CA9A2900E6DB4D /* core_Factory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = core_Factory.h; sourceTree = "<group>"; };
 		0063BC1116CA9A2900E6DB4D /* core_Helper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = core_Helper.h; sourceTree = "<group>"; };
-		0063BC1216CA9A2900E6DB4D /* core_IConversationThreadParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = core_IConversationThreadParser.h; sourceTree = "<group>"; };
+		0063BC1216CA9A2900E6DB4D /* core_thread.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = core_thread.h; sourceTree = "<group>"; };
 		0063BC1316CA9A2900E6DB4D /* core_Identity.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = core_Identity.h; sourceTree = "<group>"; };
 		0063BC1416CA9A2900E6DB4D /* core_IdentityLookup.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = core_IdentityLookup.h; sourceTree = "<group>"; };
 		0063BC1516CA9A2900E6DB4D /* core_Logger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = core_Logger.h; sourceTree = "<group>"; };
@@ -154,12 +154,12 @@
 				0063BBF216CA9A2900E6DB4D /* core_ConversationThreadSlave.cpp */,
 				0063BBF316CA9A2900E6DB4D /* core_Factory.cpp */,
 				0063BBF416CA9A2900E6DB4D /* core_Helper.cpp */,
-				0063BBF516CA9A2900E6DB4D /* core_IConversationThreadParser.cpp */,
 				0063BBF616CA9A2900E6DB4D /* core_Identity.cpp */,
 				0063BBF716CA9A2900E6DB4D /* core_IdentityLookup.cpp */,
 				0063BBF816CA9A2900E6DB4D /* core_Logger.cpp */,
 				0063BBF916CA9A2900E6DB4D /* core_MediaEngine.cpp */,
 				0063BBFA16CA9A2900E6DB4D /* core_Stack.cpp */,
+				0063BBF516CA9A2900E6DB4D /* core_thread.cpp */,
 			);
 			path = cpp;
 			sourceTree = "<group>";
@@ -180,12 +180,12 @@
 				0063BC0F16CA9A2900E6DB4D /* core_ConversationThreadSlave.h */,
 				0063BC1016CA9A2900E6DB4D /* core_Factory.h */,
 				0063BC1116CA9A2900E6DB4D /* core_Helper.h */,
-				0063BC1216CA9A2900E6DB4D /* core_IConversationThreadParser.h */,
 				0063BC1316CA9A2900E6DB4D /* core_Identity.h */,
 				0063BC1416CA9A2900E6DB4D /* core_IdentityLookup.h */,
 				0063BC1516CA9A2900E6DB4D /* core_Logger.h */,
 				0063BC1616CA9A2900E6DB4D /* core_MediaEngine.h */,
 				0063BC1716CA9A2900E6DB4D /* core_Stack.h */,
+				0063BC1216CA9A2900E6DB4D /* core_thread.h */,
 			);
 			path = internal;
 			sourceTree = "<group>";
@@ -262,7 +262,7 @@
 				0063BDB116CA9A2A00E6DB4D /* core_ConversationThreadSlave.cpp in Sources */,
 				0063BDB216CA9A2A00E6DB4D /* core_Factory.cpp in Sources */,
 				0063BDB316CA9A2A00E6DB4D /* core_Helper.cpp in Sources */,
-				0063BDB416CA9A2A00E6DB4D /* core_IConversationThreadParser.cpp in Sources */,
+				0063BDB416CA9A2A00E6DB4D /* core_thread.cpp in Sources */,
 				0063BDB516CA9A2A00E6DB4D /* core_Identity.cpp in Sources */,
 				0063BDB616CA9A2A00E6DB4D /* core_IdentityLookup.cpp in Sources */,
 				0063BDB716CA9A2A00E6DB4D /* core_Logger.cpp in Sources */,

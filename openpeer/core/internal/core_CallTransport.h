@@ -45,6 +45,8 @@ namespace openpeer
   {
     namespace internal
     {
+      interaction ICallForCallTransport;
+
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -99,16 +101,15 @@ namespace openpeer
 
       interaction ICallTransportForAccount
       {
+        ZS_DECLARE_TYPEDEF_PTR(ICallTransportForAccount, ForAccount)
+
         typedef ICallTransport::CallTransportStates CallTransportStates;
 
-        ICallTransportForAccount &forAccount() {return *this;}
-        const ICallTransportForAccount &forAccount() const {return *this;}
-
-        static CallTransportPtr create(
-                                       ICallTransportDelegatePtr delegate,
-                                       const IICESocket::TURNServerInfoList &turnServers,
-                                       const IICESocket::STUNServerInfoList &stunServers
-                                       );
+        static ForAccountPtr create(
+                                    ICallTransportDelegatePtr delegate,
+                                    const IICESocket::TURNServerInfoList &turnServers,
+                                    const IICESocket::STUNServerInfoList &stunServers
+                                    );
 
         virtual void shutdown() = 0;
         virtual CallTransportStates getState() const = 0;
@@ -124,6 +125,8 @@ namespace openpeer
 
       interaction ICallTransportForCall
       {
+        ZS_DECLARE_TYPEDEF_PTR(ICallTransportForCall, ForCall)
+
         enum SocketTypes
         {
           SocketType_Audio,
@@ -131,9 +134,6 @@ namespace openpeer
         };
 
         static const char *toString(SocketTypes type);
-
-        ICallTransportForCall &forCall() {return *this;}
-        const ICallTransportForCall &forCall() const {return *this;}
 
         virtual RecursiveLock &getLock() const = 0;
 
@@ -175,7 +175,9 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
+      #pragma mark
       #pragma mark CallTransport
+      #pragma mark
 
       class CallTransport  : public Noop,
                              public MessageQueueAssociator,
@@ -190,12 +192,13 @@ namespace openpeer
         friend interaction ICallTransportFactory;
         friend interaction ICallTransport;
 
-        typedef ICallTransport::CallTransportStates CallTransportStates;
+        ZS_DECLARE_TYPEDEF_PTR(ICallForCallTransport, UseCall)
 
-        class TransportSocket;
-        typedef boost::shared_ptr<TransportSocket> TransportSocketPtr;
-        typedef boost::weak_ptr<TransportSocket> TransportSocketWeakPtr;
+        ZS_DECLARE_CLASS_PTR(TransportSocket)
+
         friend class TransportSocket;
+
+        typedef ICallTransport::CallTransportStates CallTransportStates;
 
         typedef std::list<TransportSocketPtr> TransportSocketList;
 
@@ -215,6 +218,8 @@ namespace openpeer
         ~CallTransport();
 
         static CallTransportPtr convert(ICallTransportPtr transport);
+        static CallTransportPtr convert(ForAccountPtr transport);
+        static CallTransportPtr convert(ForCallPtr transport);
 
       protected:
         //---------------------------------------------------------------------
@@ -416,7 +421,7 @@ namespace openpeer
         TimerPtr mSocketCleanupTimer;
 
         bool mStarted;
-        CallWeakPtr mFocus;
+        UseCallWeakPtr mFocus;
         PUID mFocusCallID;
         PUID mFocusLocationID;
         bool mHasAudio;

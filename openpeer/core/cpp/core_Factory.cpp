@@ -306,7 +306,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ConversationThreadHostPtr IConversationThreadHostFactory::createConversationThreadHost(
                                                                                              ConversationThreadPtr baseThread,
-                                                                                             IConversationThreadParser::Details::ConversationThreadStates state
+                                                                                             thread::Details::ConversationThreadStates state
                                                                                              )
       {
         if (this) {}
