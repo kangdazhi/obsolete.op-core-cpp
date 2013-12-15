@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0041DAB2185E6472004D4219 /* core_thread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0041DAB1185E6472004D4219 /* core_thread.cpp */; };
 		005F60B61756B7DB00BC3DD6 /* core_Cache.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 005F60B51756B7DB00BC3DD6 /* core_Cache.cpp */; };
 		0063C11516CA9B6A00E6DB4D /* core.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BF5716CA9B6900E6DB4D /* core.cpp */; };
 		0063C11616CA9B6A00E6DB4D /* core_Account.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BF5816CA9B6900E6DB4D /* core_Account.cpp */; };
@@ -19,7 +20,6 @@
 		0063C11E16CA9B6A00E6DB4D /* core_ConversationThreadSlave.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BF6016CA9B6900E6DB4D /* core_ConversationThreadSlave.cpp */; };
 		0063C11F16CA9B6A00E6DB4D /* core_Factory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BF6116CA9B6900E6DB4D /* core_Factory.cpp */; };
 		0063C12016CA9B6A00E6DB4D /* core_Helper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BF6216CA9B6900E6DB4D /* core_Helper.cpp */; };
-		0063C12116CA9B6A00E6DB4D /* core_IConversationThreadParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BF6316CA9B6900E6DB4D /* core_IConversationThreadParser.cpp */; };
 		0063C12216CA9B6A00E6DB4D /* core_Identity.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BF6416CA9B6900E6DB4D /* core_Identity.cpp */; };
 		0063C12316CA9B6A00E6DB4D /* core_IdentityLookup.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BF6516CA9B6900E6DB4D /* core_IdentityLookup.cpp */; };
 		0063C12416CA9B6A00E6DB4D /* core_Logger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BF6616CA9B6900E6DB4D /* core_Logger.cpp */; };
@@ -40,6 +40,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0041DAB1185E6472004D4219 /* core_thread.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_thread.cpp; sourceTree = "<group>"; };
+		0041DAB3185E6481004D4219 /* core_thread.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_thread.h; sourceTree = "<group>"; };
 		005F60B41756B7C500BC3DD6 /* ICache.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ICache.h; sourceTree = "<group>"; };
 		005F60B51756B7DB00BC3DD6 /* core_Cache.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Cache.cpp; sourceTree = "<group>"; };
 		005F60B71756B7E300BC3DD6 /* core_Cache.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_Cache.h; sourceTree = "<group>"; };
@@ -56,7 +58,6 @@
 		0063BF6016CA9B6900E6DB4D /* core_ConversationThreadSlave.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = core_ConversationThreadSlave.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		0063BF6116CA9B6900E6DB4D /* core_Factory.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Factory.cpp; sourceTree = "<group>"; };
 		0063BF6216CA9B6900E6DB4D /* core_Helper.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Helper.cpp; sourceTree = "<group>"; };
-		0063BF6316CA9B6900E6DB4D /* core_IConversationThreadParser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = core_IConversationThreadParser.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		0063BF6416CA9B6900E6DB4D /* core_Identity.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Identity.cpp; sourceTree = "<group>"; };
 		0063BF6516CA9B6900E6DB4D /* core_IdentityLookup.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_IdentityLookup.cpp; sourceTree = "<group>"; };
 		0063BF6616CA9B6900E6DB4D /* core_Logger.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Logger.cpp; sourceTree = "<group>"; };
@@ -82,7 +83,6 @@
 		0063BF7D16CA9B6900E6DB4D /* core_ConversationThreadSlave.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = core_ConversationThreadSlave.h; sourceTree = "<group>"; };
 		0063BF7E16CA9B6900E6DB4D /* core_Factory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = core_Factory.h; sourceTree = "<group>"; };
 		0063BF7F16CA9B6900E6DB4D /* core_Helper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = core_Helper.h; sourceTree = "<group>"; };
-		0063BF8016CA9B6900E6DB4D /* core_IConversationThreadParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = core_IConversationThreadParser.h; sourceTree = "<group>"; };
 		0063BF8116CA9B6900E6DB4D /* core_Identity.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = core_Identity.h; sourceTree = "<group>"; };
 		0063BF8216CA9B6900E6DB4D /* core_IdentityLookup.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = core_IdentityLookup.h; sourceTree = "<group>"; };
 		0063BF8316CA9B6900E6DB4D /* core_Logger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = core_Logger.h; sourceTree = "<group>"; };
@@ -166,12 +166,12 @@
 				0063BF6016CA9B6900E6DB4D /* core_ConversationThreadSlave.cpp */,
 				0063BF6116CA9B6900E6DB4D /* core_Factory.cpp */,
 				0063BF6216CA9B6900E6DB4D /* core_Helper.cpp */,
-				0063BF6316CA9B6900E6DB4D /* core_IConversationThreadParser.cpp */,
 				0063BF6416CA9B6900E6DB4D /* core_Identity.cpp */,
 				0063BF6516CA9B6900E6DB4D /* core_IdentityLookup.cpp */,
 				0063BF6616CA9B6900E6DB4D /* core_Logger.cpp */,
 				0063BF6716CA9B6900E6DB4D /* core_MediaEngine.cpp */,
 				0063BF6816CA9B6900E6DB4D /* core_Stack.cpp */,
+				0041DAB1185E6472004D4219 /* core_thread.cpp */,
 			);
 			path = cpp;
 			sourceTree = "<group>";
@@ -192,12 +192,12 @@
 				0063BF7D16CA9B6900E6DB4D /* core_ConversationThreadSlave.h */,
 				0063BF7E16CA9B6900E6DB4D /* core_Factory.h */,
 				0063BF7F16CA9B6900E6DB4D /* core_Helper.h */,
-				0063BF8016CA9B6900E6DB4D /* core_IConversationThreadParser.h */,
 				0063BF8116CA9B6900E6DB4D /* core_Identity.h */,
 				0063BF8216CA9B6900E6DB4D /* core_IdentityLookup.h */,
 				0063BF8316CA9B6900E6DB4D /* core_Logger.h */,
 				0063BF8416CA9B6900E6DB4D /* core_MediaEngine.h */,
 				0063BF8516CA9B6900E6DB4D /* core_Stack.h */,
+				0041DAB3185E6481004D4219 /* core_thread.h */,
 			);
 			path = internal;
 			sourceTree = "<group>";
@@ -259,12 +259,12 @@
 				0063C11816CA9B6A00E6DB4D /* core_CallTransport.cpp in Sources */,
 				0063C11916CA9B6A00E6DB4D /* core_Contact.cpp in Sources */,
 				0063C11B16CA9B6A00E6DB4D /* core_ConversationThread.cpp in Sources */,
+				0041DAB2185E6472004D4219 /* core_thread.cpp in Sources */,
 				0063C11C16CA9B6A00E6DB4D /* core_ConversationThreadDocumentFetcher.cpp in Sources */,
 				0063C11D16CA9B6A00E6DB4D /* core_ConversationThreadHost.cpp in Sources */,
 				0063C11E16CA9B6A00E6DB4D /* core_ConversationThreadSlave.cpp in Sources */,
 				0063C11F16CA9B6A00E6DB4D /* core_Factory.cpp in Sources */,
 				0063C12016CA9B6A00E6DB4D /* core_Helper.cpp in Sources */,
-				0063C12116CA9B6A00E6DB4D /* core_IConversationThreadParser.cpp in Sources */,
 				0063C12216CA9B6A00E6DB4D /* core_Identity.cpp in Sources */,
 				0063C12316CA9B6A00E6DB4D /* core_IdentityLookup.cpp in Sources */,
 				0063C12416CA9B6A00E6DB4D /* core_Logger.cpp in Sources */,
