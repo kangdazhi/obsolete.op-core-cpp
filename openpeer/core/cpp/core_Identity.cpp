@@ -160,13 +160,13 @@ namespace openpeer
       //-----------------------------------------------------------------------
       IdentityPtr Identity::convert(IIdentityPtr contact)
       {
-        return boost::dynamic_pointer_cast<Identity>(contact);
+        return dynamic_pointer_cast<Identity>(contact);
       }
 
       //-----------------------------------------------------------------------
       IdentityPtr Identity::convert(ForAccountPtr contact)
       {
-        return boost::dynamic_pointer_cast<Identity>(contact);
+        return dynamic_pointer_cast<Identity>(contact);
       }
 
       //-----------------------------------------------------------------------

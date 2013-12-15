@@ -194,9 +194,8 @@ namespace openpeer
         };
         typedef ICallLocation::CallLocationStates CallLocationStates;
 
-        class CallLocation;
-        typedef boost::shared_ptr<CallLocation> CallLocationPtr;
-        typedef boost::weak_ptr<CallLocation> CallLocationWeakPtr;
+        ZS_DECLARE_CLASS_PTR(CallLocation)
+
         typedef std::list<CallLocationPtr> CallLocationList;
         friend class CallLocation;
 

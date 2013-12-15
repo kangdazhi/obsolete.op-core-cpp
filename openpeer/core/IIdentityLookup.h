@@ -58,9 +58,8 @@ namespace openpeer
         IdentityLookupInfo(const RolodexContact &);   // construct from a previous "RolodexContact" structure
         IdentityLookupInfo(const IdentityContact &);  // construct from a previous "IdentityInfo" structure
       };
-      typedef std::list<IdentityLookupInfo> IdentityLookupInfoList;
-      typedef boost::shared_ptr<IdentityLookupInfoList> IdentityLookupInfoListPtr;
-      typedef boost::weak_ptr<IdentityLookupInfoList> IdentityLookupInfoListWeakPtr;
+
+      ZS_DECLARE_TYPEDEF_PTR(std::list<IdentityLookupInfo>, IdentityLookupInfoList)
 
       static IIdentityLookupPtr create(
                                        IAccountPtr account,

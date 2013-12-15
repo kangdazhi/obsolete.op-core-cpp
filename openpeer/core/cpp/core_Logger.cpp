@@ -100,9 +100,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
-      class CustomLogger;
-      typedef boost::shared_ptr<CustomLogger> CustomLoggerPtr;
-      typedef boost::weak_ptr<CustomLogger> CustomLoggerWeakPtr;
+      ZS_DECLARE_CLASS_PTR(CustomLogger)
 
       class CustomLogger : public zsLib::ILogDelegate
       {

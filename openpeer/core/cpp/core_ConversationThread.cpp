@@ -203,37 +203,37 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ConversationThreadPtr ConversationThread::convert(IConversationThreadPtr thread)
       {
-        return boost::dynamic_pointer_cast<ConversationThread>(thread);
+        return dynamic_pointer_cast<ConversationThread>(thread);
       }
 
       //-----------------------------------------------------------------------
       ConversationThreadPtr ConversationThread::convert(ForAccountPtr thread)
       {
-        return boost::dynamic_pointer_cast<ConversationThread>(thread);
+        return dynamic_pointer_cast<ConversationThread>(thread);
       }
 
       //-----------------------------------------------------------------------
       ConversationThreadPtr ConversationThread::convert(ForCallPtr thread)
       {
-        return boost::dynamic_pointer_cast<ConversationThread>(thread);
+        return dynamic_pointer_cast<ConversationThread>(thread);
       }
 
       //-----------------------------------------------------------------------
       ConversationThreadPtr ConversationThread::convert(ForHostOrSlavePtr thread)
       {
-        return boost::dynamic_pointer_cast<ConversationThread>(thread);
+        return dynamic_pointer_cast<ConversationThread>(thread);
       }
 
       //-----------------------------------------------------------------------
       ConversationThreadPtr ConversationThread::convert(ForHostPtr thread)
       {
-        return boost::dynamic_pointer_cast<ConversationThread>(thread);
+        return dynamic_pointer_cast<ConversationThread>(thread);
       }
 
       //-----------------------------------------------------------------------
       ConversationThreadPtr ConversationThread::convert(ForSlavePtr thread)
       {
-        return boost::dynamic_pointer_cast<ConversationThread>(thread);
+        return dynamic_pointer_cast<ConversationThread>(thread);
       }
 
       //-----------------------------------------------------------------------

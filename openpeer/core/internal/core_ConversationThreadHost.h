@@ -109,15 +109,10 @@ namespace openpeer
 
         static const char *toString(ConversationThreadHostStates state);
 
-        typedef thread::ThreadPtr ThreadPtr;
+        typedef core::internal::thread::ThreadPtr ThreadPtr;
 
-        class PeerContact;
-        typedef boost::shared_ptr<PeerContact> PeerContactPtr;
-        typedef boost::weak_ptr<PeerContact> PeerContactWeakPtr;
-
-        class PeerLocation;
-        typedef boost::shared_ptr<PeerLocation> PeerLocationPtr;
-        typedef boost::weak_ptr<PeerLocation> PeerLocationWeakPtr;
+        ZS_DECLARE_CLASS_PTR(PeerContact)
+        ZS_DECLARE_CLASS_PTR(PeerLocation)
 
         typedef String MessageID;
         typedef std::map<MessageID, IConversationThread::MessageDeliveryStates> MessageDeliveryStatesMap;

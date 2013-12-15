@@ -149,7 +149,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ConversationThreadDocumentFetcherPtr ConversationThreadDocumentFetcher::convert(IConversationThreadDocumentFetcherPtr fetcher)
       {
-        return boost::dynamic_pointer_cast<ConversationThreadDocumentFetcher>(fetcher);
+        return dynamic_pointer_cast<ConversationThreadDocumentFetcher>(fetcher);
       }
 
       //-----------------------------------------------------------------------

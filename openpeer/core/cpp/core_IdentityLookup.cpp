@@ -202,7 +202,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       IdentityLookupPtr IdentityLookup::convert(IIdentityLookupPtr contact)
       {
-        return boost::dynamic_pointer_cast<IdentityLookup>(contact);
+        return dynamic_pointer_cast<IdentityLookup>(contact);
       }
 
       //-----------------------------------------------------------------------

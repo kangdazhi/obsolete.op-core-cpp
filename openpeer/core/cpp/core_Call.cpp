@@ -267,19 +267,19 @@ namespace openpeer
       //-----------------------------------------------------------------------
       CallPtr Call::convert(ICallPtr call)
       {
-        return boost::dynamic_pointer_cast<Call>(call);
+        return dynamic_pointer_cast<Call>(call);
       }
 
       //-----------------------------------------------------------------------
       CallPtr Call::convert(ForConversationThreadPtr call)
       {
-        return boost::dynamic_pointer_cast<Call>(call);
+        return dynamic_pointer_cast<Call>(call);
       }
 
       //-----------------------------------------------------------------------
       CallPtr Call::convert(ForCallTransportPtr call)
       {
-        return boost::dynamic_pointer_cast<Call>(call);
+        return dynamic_pointer_cast<Call>(call);
       }
 
       //-----------------------------------------------------------------------

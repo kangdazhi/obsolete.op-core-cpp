@@ -43,8 +43,6 @@ namespace openpeer
   {
     namespace internal
     {
-      using boost::shared_ptr;
-      using boost::weak_ptr;
       using boost::dynamic_pointer_cast;
 
       using zsLib::string;
@@ -60,98 +58,69 @@ namespace openpeer
       using zsLib::Lock;
       using zsLib::RecursiveLock;
       using zsLib::Log;
-      using zsLib::MessageQueue;
-      using zsLib::IMessageQueuePtr;
-      using zsLib::MessageQueuePtr;
       using zsLib::MessageQueueAssociator;
-      using zsLib::IMessageQueueNotify;
-      using zsLib::IMessageQueueMessagePtr;
-      using zsLib::IMessageQueueThread;
-      using zsLib::MessageQueueThread;
-      using zsLib::IMessageQueueThreadPtr;
-      using zsLib::MessageQueueThreadPtr;
-      using zsLib::Timer;
-      using zsLib::TimerPtr;
-      using zsLib::ITimerDelegate;
-      using zsLib::ITimerDelegatePtr;
       using zsLib::Seconds;
       using zsLib::Socket;
 
-      using zsLib::XML::AttributePtr;
-      using zsLib::XML::Document;
-      using zsLib::XML::DocumentPtr;
-      using zsLib::XML::Generator;
-      using zsLib::XML::GeneratorPtr;
+      ZS_DECLARE_USING_PTR(zsLib, MessageQueue)
+      ZS_DECLARE_USING_PTR(zsLib, IMessageQueue)
+      ZS_DECLARE_USING_PTR(zsLib, IMessageQueueNotify)
+      ZS_DECLARE_USING_PTR(zsLib, IMessageQueueMessage)
+      ZS_DECLARE_USING_PTR(zsLib, IMessageQueueThread)
+      ZS_DECLARE_USING_PTR(zsLib, MessageQueueThread)
+      ZS_DECLARE_USING_PTR(zsLib, Timer)
+      ZS_DECLARE_USING_PTR(zsLib, ITimerDelegate)
+
+      ZS_DECLARE_USING_PTR(zsLib::XML, Attribute)
+      ZS_DECLARE_USING_PTR(zsLib::XML, Document)
+      ZS_DECLARE_USING_PTR(zsLib::XML, Generator)
 
       using stack::Candidate;
       using stack::CandidateList;
-      using stack::AutoRecursiveLockPtr;
-      using stack::IBootstrappedNetwork;
-      using stack::IBootstrappedNetworkPtr;
-      using stack::IBootstrappedNetworkDelegate;
-      using stack::ILocation;
-      using stack::ILocationPtr;
-      using stack::LocationList;
-      using stack::LocationListPtr;
-      using stack::IMessageIncomingPtr;
-      using stack::IMessageMonitor;
-      using stack::IMessageMonitorPtr;
-      using stack::IPeer;
-      using stack::IPeerPtr;
-      using stack::IPeerFiles;
-      using stack::IPeerFilesPtr;
-      using stack::IPeerFilePrivatePtr;
-      using stack::IPeerFilePublic;
-      using stack::IPeerFilePublicPtr;
-      using stack::IPeerSubscription;
-      using stack::IPeerSubscriptionPtr;
-      using stack::IPeerSubscriptionDelegate;
-      using stack::ILocation;
-      using stack::IPublication;
-      using stack::IPublicationPtr;
-      using stack::IPublicationMetaData;
-      using stack::IPublicationMetaDataPtr;
-      using stack::IPublicationFetcherPtr;
-      using stack::IPublicationPublisherPtr;
-      using stack::IPublicationPublisherDelegateProxy;
-      using stack::IPublicationRepository;
-      using stack::IPublicationRepositoryPtr;
-      using stack::IPublicationSubscription;
-      using stack::IPublicationSubscriptionPtr;
-      using stack::IPublicationSubscriptionDelegate;
-      using stack::IServiceIdentity;
-      using stack::IServiceIdentityPtr;
-      using stack::IServiceIdentitySession;
-      using stack::IServiceIdentitySessionPtr;
-      using stack::IServiceIdentitySessionDelegate;
-      using stack::ServiceIdentitySessionList;
-      using stack::ServiceIdentitySessionListPtr;
-      using stack::IServiceLockbox;
-      using stack::IServiceLockboxPtr;
-      using stack::IServiceLockboxSession;
-      using stack::IServiceLockboxSessionPtr;
-      using stack::IServiceLockboxSessionDelegate;
-      using stack::IServiceNamespaceGrantSession;
-      using stack::IServiceNamespaceGrantSessionPtr;
-      using stack::IServiceNamespaceGrantSessionDelegate;
 
-      using stack::message::IdentityInfo;
+      ZS_DECLARE_USING_PTR(stack, AutoRecursiveLock)
+      ZS_DECLARE_USING_PTR(stack, IBootstrappedNetwork)
+      ZS_DECLARE_USING_PTR(stack, IBootstrappedNetworkDelegate)
+      ZS_DECLARE_USING_PTR(stack, ILocation)
+      ZS_DECLARE_USING_PTR(stack, LocationList)
+      ZS_DECLARE_USING_PTR(stack, IMessageIncoming)
+      ZS_DECLARE_USING_PTR(stack, IMessageMonitor)
+      ZS_DECLARE_USING_PTR(stack, IPeer)
+      ZS_DECLARE_USING_PTR(stack, IPeerFiles)
+      ZS_DECLARE_USING_PTR(stack, IPeerFilePrivate)
+      ZS_DECLARE_USING_PTR(stack, IPeerFilePublic)
+      ZS_DECLARE_USING_PTR(stack, IPeerSubscription)
+      ZS_DECLARE_USING_PTR(stack, IPeerSubscriptionDelegate)
+      ZS_DECLARE_USING_PTR(stack, ILocation)
+      ZS_DECLARE_USING_PTR(stack, IPublication)
+      ZS_DECLARE_USING_PTR(stack, IPublicationMetaData)
+      ZS_DECLARE_USING_PTR(stack, IPublicationFetcher)
+      ZS_DECLARE_USING_PTR(stack, IPublicationPublisher)
+      ZS_DECLARE_USING_PTR(stack, IPublicationRepository)
+      ZS_DECLARE_USING_PTR(stack, IPublicationSubscription)
+      ZS_DECLARE_USING_PTR(stack, IPublicationSubscriptionDelegate)
+      ZS_DECLARE_USING_PTR(stack, IServiceIdentity)
+      ZS_DECLARE_USING_PTR(stack, IServiceIdentitySession)
+      ZS_DECLARE_USING_PTR(stack, IServiceIdentitySessionDelegate)
+      ZS_DECLARE_USING_PTR(stack, ServiceIdentitySessionList)
+      ZS_DECLARE_USING_PTR(stack, IServiceLockbox)
+      ZS_DECLARE_USING_PTR(stack, IServiceLockboxSession)
+      ZS_DECLARE_USING_PTR(stack, IServiceLockboxSessionDelegate)
+      ZS_DECLARE_USING_PTR(stack, IServiceNamespaceGrantSession)
+      ZS_DECLARE_USING_PTR(stack, IServiceNamespaceGrantSessionDelegate)
 
-      using services::IICESocket;
-      using services::IICESocketPtr;
-      using services::IICESocketDelegate;
-      using services::IICESocketDelegatePtr;
-      using services::IICESocketDelegateProxy;
-      using services::IICESocketSubscriptionPtr;
-      using services::IICESocketSession;
-      using services::IICESocketSessionPtr;
-      using services::IICESocketSessionDelegatePtr;
-      using services::IICESocketSessionDelegateProxy;
-      using services::IHTTP;
-      using services::IWakeDelegate;
-      using services::IWakeDelegatePtr;
-      using services::IWakeDelegateWeakPtr;
-      using services::IWakeDelegateProxy;
+      ZS_DECLARE_USING_PROXY(stack, IPublicationPublisherDelegate)
+
+      ZS_DECLARE_USING_PTR(stack::message, IdentityInfo)
+
+      ZS_DECLARE_USING_PTR(services, IICESocket)
+      ZS_DECLARE_USING_PTR(services, IICESocketSession)
+      ZS_DECLARE_USING_PTR(services, IICESocketSubscription)
+      ZS_DECLARE_USING_PTR(services, IHTTP)
+
+      ZS_DECLARE_USING_PROXY(services, IICESocketDelegate)
+      ZS_DECLARE_USING_PROXY(services, IICESocketSessionDelegate)
+      ZS_DECLARE_USING_PROXY(services, IWakeDelegate)
 
       ZS_DECLARE_INTERACTION_PTR(ICallTransport)
       ZS_DECLARE_INTERACTION_PTR(IConversationThreadHostSlaveBase)

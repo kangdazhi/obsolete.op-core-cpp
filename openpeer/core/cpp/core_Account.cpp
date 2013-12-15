@@ -141,37 +141,37 @@ namespace openpeer
       //-----------------------------------------------------------------------
       AccountPtr Account::convert(IAccountPtr account)
       {
-        return boost::dynamic_pointer_cast<Account>(account);
+        return dynamic_pointer_cast<Account>(account);
       }
 
       //-----------------------------------------------------------------------
       AccountPtr Account::convert(ForCallPtr account)
       {
-        return boost::dynamic_pointer_cast<Account>(account);
+        return dynamic_pointer_cast<Account>(account);
       }
 
       //-----------------------------------------------------------------------
       AccountPtr Account::convert(ForContactPtr account)
       {
-        return boost::dynamic_pointer_cast<Account>(account);
+        return dynamic_pointer_cast<Account>(account);
       }
 
       //-----------------------------------------------------------------------
       AccountPtr Account::convert(ForConversationThreadPtr account)
       {
-        return boost::dynamic_pointer_cast<Account>(account);
+        return dynamic_pointer_cast<Account>(account);
       }
 
       //-----------------------------------------------------------------------
       AccountPtr Account::convert(ForIdentityPtr account)
       {
-        return boost::dynamic_pointer_cast<Account>(account);
+        return dynamic_pointer_cast<Account>(account);
       }
 
       //-----------------------------------------------------------------------
       AccountPtr Account::convert(ForIdentityLookupPtr account)
       {
-        return boost::dynamic_pointer_cast<Account>(account);
+        return dynamic_pointer_cast<Account>(account);
       }
 
       //-----------------------------------------------------------------------

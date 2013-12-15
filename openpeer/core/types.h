@@ -68,9 +68,7 @@ namespace openpeer
     struct IdentityContact;
     struct RolodexContact;
 
-    interaction IContact;
-    typedef boost::shared_ptr<IContact> IContactPtr;
-    typedef boost::weak_ptr<IContact> IContactWeakPtr;
+    ZS_DECLARE_INTERACTION_PTR(IContact)
 
     //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------

@@ -89,14 +89,9 @@ namespace openpeer
 
       using zsLib::IMessageQueue;
 
-      class ShutdownCheckAgain;
-      typedef boost::shared_ptr<ShutdownCheckAgain> ShutdownCheckAgainPtr;
-      typedef boost::weak_ptr<ShutdownCheckAgain> ShutdownCheckAgainWeakPtr;
+      ZS_DECLARE_CLASS_PTR(ShutdownCheckAgain)
+      ZS_DECLARE_CLASS_PTR(StackAutoCleanup)
 
-      class StackAutoCleanup;
-      typedef boost::shared_ptr<StackAutoCleanup> StackAutoCleanupPtr;
-      typedef boost::weak_ptr<StackAutoCleanup> StackAutoCleanupWeakPtr;
-      
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -194,9 +189,7 @@ namespace openpeer
       #pragma mark Stack
       #pragma mark
 
-      class InterceptApplicationThread;
-      typedef boost::shared_ptr<InterceptApplicationThread> InterceptApplicationThreadPtr;
-      typedef boost::weak_ptr<InterceptApplicationThread> InterceptApplicationThreadWeakPtr;
+      ZS_DECLARE_CLASS_PTR(InterceptApplicationThread)
 
       class InterceptApplicationThread : public IMessageQueueThread,
                                          public IMessageQueueNotify
@@ -397,7 +390,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       StackPtr Stack::convert(IStackPtr stack)
       {
-        return boost::dynamic_pointer_cast<Stack>(stack);
+        return dynamic_pointer_cast<Stack>(stack);
       }
 
       //-----------------------------------------------------------------------
@@ -563,7 +556,7 @@ namespace openpeer
         InterceptApplicationThreadPtr thread;
         {
           AutoRecursiveLock lock(mLock);
-          thread = boost::dynamic_pointer_cast<InterceptApplicationThread>(mApplicationThreadQueue);
+          thread = dynamic_pointer_cast<InterceptApplicationThread>(mApplicationThreadQueue);
           ZS_THROW_INVALID_USAGE_IF(!thread)  // you can only call this method if you specified a delegate upon setup and have not already finalized the shutdown
         }
 

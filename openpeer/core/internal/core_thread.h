@@ -307,9 +307,7 @@ namespace openpeer
 
           struct Codec;
 
-          struct Description;
-          typedef boost::shared_ptr<Description> DescriptionPtr;
-          typedef boost::weak_ptr<Description> DescriptionWeakPtr;
+          ZS_DECLARE_STRUCT_PTR(Description)
 
           //---------------------------------------------------------------------
           #pragma mark
