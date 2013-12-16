@@ -116,7 +116,10 @@ namespace openpeer
           delegate = mDelegate;
         }
 
-        if (!delegate) return String();
+        if (!delegate) {
+          ZS_LOG_WARNING(Debug, log("no cache installed (thus cannot fetch cookie)") + ZS_PARAM("cookie name", cookieNamePath))
+          return String();
+        }
 
         String result = delegate->fetch(cookieNamePath);
         if (result.hasData()) {
@@ -143,7 +146,10 @@ namespace openpeer
           delegate = mDelegate;
         }
 
-        if (!delegate) return;
+        if (!delegate) {
+          ZS_LOG_WARNING(Debug, log("no cache installed (thus cannot store cookie)") + ZS_PARAM("cookie name", cookieNamePath) + ZS_PARAM("expires", expires) + ZS_PARAM("value", str))
+          return;
+        }
 
         ZS_LOG_TRACE(log("storing in cache") + ZS_PARAM("cookie name", cookieNamePath) + ZS_PARAM("expires", expires) + ZS_PARAM("value", str))
         delegate->store(cookieNamePath, expires, str);
@@ -161,7 +167,10 @@ namespace openpeer
           delegate = mDelegate;
         }
 
-        if (!delegate) return;
+        if (!delegate) {
+          ZS_LOG_WARNING(Debug, log("no cache installed (thus cannot clear cookie)") + ZS_PARAM("cookie name", cookieNamePath))
+          return;
+        }
 
         ZS_LOG_TRACE(log("clearing from cache") + ZS_PARAM("cookie name", cookieNamePath))
         delegate->clear(cookieNamePath);
