@@ -375,7 +375,7 @@ namespace openpeer
           return IConversationThread::ContactState_NotApplicable;
         }
         if (hostContact->getPeerURI() != contact->getPeerURI()) {
-          ZS_LOG_DEBUG(log("contact state requested is no the host contact thus do not know state of peer connnection"))
+          ZS_LOG_DEBUG(log("contact state requested is not the host contact (thus do not know state of peer connnection)"))
           return IConversationThread::ContactState_NotApplicable;
         }
 
@@ -649,9 +649,9 @@ namespace openpeer
             // check to see if this receipt has already been marked as delivered...
             MessageDeliveryStatesMap::iterator found = mMessageDeliveryStates.find(id);
             if (found != mMessageDeliveryStates.end()) {
-              DeliveryStatePair &deliveryStatePair = (*found).second;
-              IConversationThread::MessageDeliveryStates &deliveryState = deliveryStatePair.second;
-              if (IConversationThread::MessageDeliveryState_Delivered == deliveryState) {
+              MessageDeliveryStatePtr &deliveryState = (*found).second;
+
+              if (IConversationThread::MessageDeliveryState_Delivered == deliveryState->mState) {
                 ZS_LOG_DEBUG(log("message receipt was already notified as delivered thus no need to notify any further") + ZS_PARAM("message ID", id))
                 continue;
               }
@@ -659,7 +659,7 @@ namespace openpeer
 
             MessageMap::const_iterator foundInMap = messagesMap.find(id);
             if (foundInMap == messagesMap.end()) {
-              ZS_LOG_WARNING(Detail, log("slave never send this message to the host (message receipt acking a different slave?)") + ZS_PARAM("receipt ID", id))
+              ZS_LOG_WARNING(Detail, log("slave never sent this message to the host (message receipt acking a different slave?)") + ZS_PARAM("receipt ID", id))
               continue;
             }
 
@@ -683,21 +683,20 @@ namespace openpeer
                 found = mMessageDeliveryStates.find(message->messageID());
                 if (found != mMessageDeliveryStates.end()) {
                   // check to see if this message was already marked as delivered
-                  DeliveryStatePair &deliveryStatePair = (*found).second;
-                  IConversationThread::MessageDeliveryStates &deliveryState = deliveryStatePair.second;
-                  if (IConversationThread::MessageDeliveryState_Delivered == deliveryState) {
+                  MessageDeliveryStatePtr &deliveryState = (*found).second;
+                  if (IConversationThread::MessageDeliveryState_Delivered == deliveryState->mState) {
                     // stop notifying of delivered since it's alerady been marked as delivered
                     ZS_LOG_DEBUG(log("message was already notified as delivered thus no need to notify any further") + message->toDebug())
                     break;
                   }
 
-                  ZS_LOG_DEBUG(log("message is now notified as delivered") + message->toDebug() + ZS_PARAM("was in state", IConversationThread::toString(deliveryState)))
+                  ZS_LOG_DEBUG(log("message is now notified as delivered") + message->toDebug() + ZS_PARAM("was in state", IConversationThread::toString(deliveryState->mState)))
 
                   // change the state to delivered since it wasn't delivered
-                  deliveryState = IConversationThread::MessageDeliveryState_Delivered;
+                  deliveryState->setState(IConversationThread::MessageDeliveryState_Delivered);
                 } else {
                   ZS_LOG_DEBUG(log("message is now delivered") + message->toDebug())
-                  mMessageDeliveryStates[message->messageID()] = DeliveryStatePair(zsLib::now(), IConversationThread::MessageDeliveryState_Delivered);
+                  mMessageDeliveryStates[message->messageID()] = MessageDeliveryState::create(mThisWeak.lock(), IConversationThread::MessageDeliveryState_Delivered);
                 }
 
                 // this message is now considered acknowledged so tell the master thread of the new state...
@@ -1046,10 +1045,9 @@ namespace openpeer
                 goto done_checking_for_undelivered_messages;
               }
 
-              DeliveryStatePair &deliveryPair = (*found).second;
-              MessageDeliveryStates &state = deliveryPair.second;
-              if (IConversationThread::MessageDeliveryState_Delivered != state) {
-                ZS_LOG_DEBUG(log("found message that has not delivered yet") + message->toDebug() + ZS_PARAM("state", IConversationThread::toString(state)))
+              MessageDeliveryStatePtr &deliveryState = (*found).second;
+              if (IConversationThread::MessageDeliveryState_Delivered != deliveryState->mState) {
+                ZS_LOG_DEBUG(log("found message that has not delivered yet") + message->toDebug() + ZS_PARAM("state", IConversationThread::toString(deliveryState->mState)))
                 mustConvertToHost = true;
                 goto done_checking_for_undelivered_messages;
               }
@@ -1197,9 +1195,9 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadSlave::step()
       {
-        ZS_LOG_DEBUG(log("step"))
-
         AutoRecursiveLock lock(getLock());
+
+        ZS_LOG_DEBUG(log("step") + toDebug())
 
         if ((isShuttingDown()) ||
             (isShutdown())) {
@@ -1219,18 +1217,18 @@ namespace openpeer
         }
 
         if (!mHostThread) {
-          ZS_LOG_DEBUG(log("waiting for host thread to be ready..."))
+          ZS_LOG_TRACE(log("waiting for host thread to be ready..."))
           return;
         }
 
         if (!mSlaveThread) {
-          ZS_LOG_DEBUG(log("waiting for slave thread to be ready..."))
+          ZS_LOG_TRACE(log("waiting for slave thread to be ready..."))
+          return;
         }
 
         setState(ConversationThreadSlaveState_Ready);
 
         bool requiresSubscription = false;
-        bool requiresTimer = false;
 
         // check to see if there are undelivered messages, if so we will need a subscription...
         const MessageList &messages = mSlaveThread->messages();
@@ -1241,21 +1239,19 @@ namespace openpeer
           // check to see if this message has been acknowledged before...
           MessageDeliveryStatesMap::iterator found = mMessageDeliveryStates.find(message->messageID());
           if (found != mMessageDeliveryStates.end()) {
-            DeliveryStatePair &deliveryStatePair = (*found).second;
-            IConversationThread::MessageDeliveryStates &deliveryState = deliveryStatePair.second;
-            if (IConversationThread::MessageDeliveryState_Delivered != deliveryState) {
-              ZS_LOG_DEBUG(log("still requires subscription because of undelivered message") + message->toDebug() + ZS_PARAM("was in delivery state", IConversationThread::toString(deliveryState)))
-              requiresTimer = (IConversationThread::MessageDeliveryState_UserNotAvailable != deliveryState);
+            MessageDeliveryStatePtr &deliveryState = (*found).second;
+            if (IConversationThread::MessageDeliveryState_Delivered != deliveryState->mState) {
+              ZS_LOG_TRACE(log("requires subscription because of undelivered message") + message->toDebug() + ZS_PARAM("was in delivery state", IConversationThread::toString(deliveryState->mState)))
               requiresSubscription = true;
             }
           } else {
-            ZS_LOG_DEBUG(log("still requires subscription because of undelivered message") + message->toDebug())
-            requiresTimer = requiresSubscription = true;
+            ZS_LOG_TRACE(log("requires subscription because of undelivered message") + message->toDebug())
+            requiresSubscription = true;
           }
         }
 
         if (mSlaveThread->dialogs().size() > 0) {
-          ZS_LOG_DEBUG(log("slave thread has dialogs (i.e. calls) so a subscription is required"))
+          ZS_LOG_TRACE(log("slave thread has dialogs (i.e. calls) so a subscription is required"))
           requiresSubscription = true;
         }
 
@@ -1266,38 +1262,23 @@ namespace openpeer
         }
 
         if (requiresSubscription) {
-          ZS_LOG_DEBUG(log("subscription to host is required") + toDebug())
+          ZS_LOG_TRACE(log("subscription to host is required"))
           if (!mHostSubscription) {
             mHostSubscription = IPeerSubscription::subscribe(hostContact->getPeer(), mThisWeak.lock());
           }
         } else {
-          ZS_LOG_DEBUG(log("subscription to host is NOT required") + toDebug())
+          ZS_LOG_TRACE(log("subscription to host is NOT required"))
           if (mHostSubscription) {
             mHostSubscription->cancel();
             mHostSubscription.reset();
           }
         }
 
-        if (requiresTimer) {
-          ZS_LOG_DEBUG(log("timer for peer slave is required") + toDebug())
-          if (!mHostMessageDeliveryTimer) {
-            mHostMessageDeliveryTimer = Timer::create(mThisWeak.lock(), Seconds(1));
-          }
-        } else {
-          ZS_LOG_DEBUG(log("timer for peer slave is NOT required") + toDebug())
-          if (mHostMessageDeliveryTimer) {
-            mHostMessageDeliveryTimer->cancel();
-            mHostMessageDeliveryTimer.reset();
-          }
-        }
-
-        Time tick = zsLib::now();
-
         // scope: fix the state of pending messages...
         if (mHostSubscription) {
           IPeerPtr peer = hostContact->getPeer();
           IPeer::PeerFindStates state = peer->getFindState();
-          ZS_LOG_DEBUG(log("host subscription state") + ZS_PARAM("state", IPeer::toString(state)))
+          ZS_LOG_TRACE(log("host subscription state") + ZS_PARAM("state", IPeer::toString(state)))
 
           LocationListPtr peerLocations = peer->getLocationsForPeer(false);
 
@@ -1310,14 +1291,12 @@ namespace openpeer
             const MessagePtr &message = (*iter);
             MessageDeliveryStatesMap::iterator found = mMessageDeliveryStates.find(message->messageID());
 
-            Time lastStateChangeTime = tick;
+            MessageDeliveryStatePtr deliveryState;
 
             if (found != mMessageDeliveryStates.end()) {
               bool stopProcessing = false;
-              DeliveryStatePair &deliveryStatePair = (*found).second;
-              IConversationThread::MessageDeliveryStates &deliveryState = deliveryStatePair.second;
-              lastStateChangeTime = deliveryStatePair.first;
-              switch (deliveryState) {
+              deliveryState = (*found).second;
+              switch (deliveryState->mState) {
                 case IConversationThread::MessageDeliveryState_Discovering:   {
                   break;
                 }
@@ -1329,18 +1308,20 @@ namespace openpeer
               }
 
               if (stopProcessing) {
-                ZS_LOG_DEBUG(log("processing undeliverable messages stopped since message already has a delivery state") + message->toDebug())
+                ZS_LOG_TRACE(log("processing undeliverable messages stopped since message already has a delivery state") + message->toDebug())
                 break;
               }
             } else {
-              mMessageDeliveryStates[message->messageID()] = DeliveryStatePair(tick, IConversationThread::MessageDeliveryState_Discovering);
+              deliveryState = MessageDeliveryState::create(mThisWeak.lock(), IConversationThread::MessageDeliveryState_Discovering);
+              mMessageDeliveryStates[message->messageID()] = deliveryState;
             }
 
             if (((IPeer::PeerFindState_Finding != state) &&
                  (peerLocations->size() < 1)) ||
-                (lastStateChangeTime + Seconds(OPENPEER_CONVERSATION_THREAD_MAX_WAIT_DELIVERY_TIME_BEFORE_PUSH_IN_SECONDS) < tick)) {
-              ZS_LOG_DEBUG(log("state must now be set to undeliverable") + message->toDebug() + ZS_PARAM("peer find state", IPeer::toString(state)) + ZS_PARAM("last state changed time", lastStateChangeTime) + ZS_PARAM("current time", tick))
-              mMessageDeliveryStates[message->messageID()] = DeliveryStatePair(zsLib::now(), IConversationThread::MessageDeliveryState_UserNotAvailable);
+                (deliveryState->shouldPush())) {
+              ZS_LOG_TRACE(log("message develivery state must now be set to undeliverable") + message->toDebug() + ZS_PARAM("peer find state", IPeer::toString(state)) + ZS_PARAM("last state changed time", deliveryState->mLastStateChanged) + ZS_PARAM("current time", zsLib::now()))
+
+              deliveryState->setState(IConversationThread::MessageDeliveryState_UserNotAvailable);
               baseThread->notifyMessageDeliveryStateChanged(message->messageID(), IConversationThread::MessageDeliveryState_UserNotAvailable);
 
               // tell the application to push this message out as a push notification
@@ -1350,6 +1331,8 @@ namespace openpeer
         }
 
         baseThread->notifyContactState(mThisWeak.lock(), hostContact, getContactState(hostContact));
+
+        ZS_LOG_TRACE(log("step complete") + toDebug())
       }
 
       //-----------------------------------------------------------------------
@@ -1422,6 +1405,78 @@ namespace openpeer
         return contact;
       }
 
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark ConversationThreadSlave::MessageDeliveryState
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      ConversationThreadSlave::MessageDeliveryState::~MessageDeliveryState()
+      {
+        mOuter.reset();
+        if (mPushTimer) {
+          mPushTimer->cancel();
+          mPushTimer.reset();
+        }
+      }
+
+      //-----------------------------------------------------------------------
+      ConversationThreadSlave::MessageDeliveryStatePtr ConversationThreadSlave::MessageDeliveryState::create(
+                                                                                                             ConversationThreadSlavePtr owner,
+                                                                                                             MessageDeliveryStates state
+                                                                                                             )
+      {
+        MessageDeliveryStatePtr pThis(new MessageDeliveryState);
+        pThis->mOuter = owner;
+        pThis->mState = state;
+        pThis->setState(state);
+        return pThis;
+      }
+
+      //-----------------------------------------------------------------------
+      void ConversationThreadSlave::MessageDeliveryState::setState(MessageDeliveryStates state)
+      {
+        mLastStateChanged = zsLib::now();
+        mState = state;
+
+        if (IConversationThread::MessageDeliveryState_Discovering == state) {
+          if (mPushTimer) return;
+
+
+          ConversationThreadSlavePtr outer = mOuter.lock();
+          if (!outer) return; // no point adding a timer if the outer object is gone
+
+          mPushTimer = Timer::create(outer, Seconds(OPENPEER_CONVERSATION_THREAD_MAX_WAIT_DELIVERY_TIME_BEFORE_PUSH_IN_SECONDS), false);
+          mPushTime = mLastStateChanged + Seconds(OPENPEER_CONVERSATION_THREAD_MAX_WAIT_DELIVERY_TIME_BEFORE_PUSH_IN_SECONDS);
+          return;
+        }
+
+        if (!mPushTimer) return;
+
+        mPushTimer->cancel();
+        mPushTimer.reset();
+
+        mPushTime = Time();
+
+        switch (mState) {
+          case IConversationThread::MessageDeliveryState_Discovering:       break;  // not possible anyway
+          case IConversationThread::MessageDeliveryState_Delivered:
+          case IConversationThread::MessageDeliveryState_UserNotAvailable:  mOuter.reset(); break;  // no longer require link to outer
+        }
+      }
+      //-----------------------------------------------------------------------
+      bool ConversationThreadSlave::MessageDeliveryState::shouldPush() const
+      {
+        if (IConversationThread::MessageDeliveryState_Discovering != mState) return false;
+        if (Time() == mPushTime) return false;
+
+        return (zsLib::now() >= mPushTime);
+      }
+
+      //-----------------------------------------------------------------------
     }
   }
 }

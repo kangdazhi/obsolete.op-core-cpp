@@ -138,7 +138,7 @@ namespace openpeer
         MessageQueueAssociator(queue),
         mID(zsLib::createPUID())
       {
-        ZS_LOG_DEBUG(log("created"))
+        ZS_LOG_BASIC(log("created"))
       }
 
       //-----------------------------------------------------------------------
@@ -153,7 +153,7 @@ namespace openpeer
         if(isNoop()) return;
         
         mThisWeak.reset();
-        ZS_LOG_DEBUG(log("destroyed"))
+        ZS_LOG_BASIC(log("destroyed"))
         cancel();
       }
 
@@ -525,7 +525,7 @@ namespace openpeer
                                                           SessionStates state
                                                           )
       {
-        ZS_LOG_DEBUG(log("session state changed") + ZS_PARAM("identity session id", session->getID()) + ZS_PARAM("state", IServiceIdentitySession::toString(state)))
+        ZS_LOG_BASIC(log("state changed") + ZS_PARAM("identity session id", session->getID()) + ZS_PARAM("state", IServiceIdentitySession::toString(state)))
 
         ZS_THROW_BAD_STATE_IF(!mDelegate)
         try {

@@ -123,6 +123,11 @@ namespace openpeer
       {
         ZS_DECLARE_TYPEDEF_PTR(IAccountForConversationThread, ForConversationThread)
 
+        virtual IAccount::AccountStates getState(
+                                                 WORD *outErrorCode = NULL,
+                                                 String *outErrorReason = NULL
+                                                 ) const = 0;
+
         virtual RecursiveLock &getLock() const = 0;
 
         virtual ContactPtr getSelfContact() const = 0;
@@ -345,6 +350,11 @@ namespace openpeer
         #pragma mark
         #pragma mark Account => IAccountForConversationThread
         #pragma mark
+
+        // (duplicate) virtual IAccount::AccountStates getState(
+        //                                                      WORD *outErrorCode,
+        //                                                      String *outErrorReason
+        //                                                      ) const = 0;
 
         virtual RecursiveLock &getLock() const {return mLock;}
 

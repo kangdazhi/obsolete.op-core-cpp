@@ -2638,7 +2638,7 @@ namespace openpeer
           AutoRecursiveLock lock(getLock());
           if (state <= mCurrentState) return;
 
-          ZS_LOG_BASIC(log("state changed") + ZS_PARAM("old state", toString(mCurrentState)) + ZS_PARAM("new state", toString(state)))
+          ZS_LOG_DETAIL(log("state changed") + ZS_PARAM("old state", toString(mCurrentState)) + ZS_PARAM("new state", toString(state)))
 
           mCurrentState = state;
         }

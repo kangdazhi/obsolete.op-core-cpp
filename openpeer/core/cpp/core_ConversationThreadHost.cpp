@@ -473,6 +473,35 @@ namespace openpeer
 
         PeerContactMap::const_iterator found = mPeerContacts.find(contact->getPeerURI());
         if (found == mPeerContacts.end()) {
+          if (contact->isSelf()) {
+            ZS_LOG_DEBUG(log("contact state of self is always based upon account state") + UseContact::toDebug(contact))
+
+            UseAccountPtr account = mAccount.lock();
+
+            if (account) {
+              switch (account->getState()) {
+                case IAccount::AccountState_Pending:
+                case IAccount::AccountState_PendingPeerFilesGeneration:
+                case IAccount::AccountState_WaitingForAssociationToIdentity:
+                case IAccount::AccountState_WaitingForBrowserWindowToBeLoaded:
+                case IAccount::AccountState_WaitingForBrowserWindowToBeMadeVisible:
+                case IAccount::AccountState_WaitingForBrowserWindowToClose:
+                {
+                  return IConversationThread::ContactState_Finding;
+                }
+                case IAccount::AccountState_Ready:
+                {
+                  return IConversationThread::ContactState_Connected;
+                }
+                case IAccount::AccountState_ShuttingDown:
+                case IAccount::AccountState_Shutdown:
+                {
+                  return IConversationThread::ContactState_Disconnected;
+                }
+              }
+            }
+            return IConversationThread::ContactState_NotApplicable;
+          }
           ZS_LOG_WARNING(Detail, log("contact was not found as part of the conversation") + UseContact::toDebug(contact))
           return IConversationThread::ContactState_NotApplicable;
         }
@@ -1038,7 +1067,7 @@ namespace openpeer
         mContact(contact),
         mProfileBundleEl(profileBundleEl)
       {
-        ZS_LOG_DEBUG(log("created") + UseContact::toDebug(contact))
+        ZS_LOG_DETAIL(log("created") + UseContact::toDebug(contact))
       }
 
       //-----------------------------------------------------------------------
@@ -1050,7 +1079,7 @@ namespace openpeer
       ConversationThreadHost::PeerContact::~PeerContact()
       {
         mThisWeak.reset();
-        ZS_LOG_DEBUG(log("destroyed"))
+        ZS_LOG_DETAIL(log("destroyed"))
         cancel();
       }
 
@@ -1614,12 +1643,12 @@ namespace openpeer
             DeliveryStatePair &deliveryStatePair = (*found).second;
             IConversationThread::MessageDeliveryStates &deliveryState = deliveryStatePair.second;
             if (IConversationThread::MessageDeliveryState_Delivered != deliveryState) {
-              ZS_LOG_DEBUG(log("still requires subscription because of undelivered message") + message->toDebug() + ZS_PARAM("was in delivery state", IConversationThread::toString(deliveryState)))
+              ZS_LOG_DEBUG(log("requires subscription because of undelivered message") + message->toDebug() + ZS_PARAM("was in delivery state", IConversationThread::toString(deliveryState)))
               requiresTimer = (IConversationThread::MessageDeliveryState_UserNotAvailable != deliveryState);
               requiresSubscription = true;
             }
           } else {
-            ZS_LOG_DEBUG(log("still requires subscription because of undelivered message") + message->toDebug())
+            ZS_LOG_DEBUG(log("requires subscription because of undelivered message") + message->toDebug())
             requiresTimer = requiresSubscription = true;
           }
         }
@@ -1778,7 +1807,7 @@ namespace openpeer
         mShutdown(false),
         mPeerLocation(peerLocation)
       {
-        ZS_LOG_DEBUG(log("created"))
+        ZS_LOG_DETAIL(log("created"))
       }
 
       //-----------------------------------------------------------------------
@@ -1797,7 +1826,7 @@ namespace openpeer
       ConversationThreadHost::PeerLocation::~PeerLocation()
       {
         mThisWeak.reset();
-        ZS_LOG_DEBUG(log("destroyed"))
+        ZS_LOG_DETAIL(log("destroyed"))
         cancel();
       }
 

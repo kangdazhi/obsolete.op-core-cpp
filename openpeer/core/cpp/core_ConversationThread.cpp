@@ -1338,7 +1338,7 @@ namespace openpeer
           return;
         }
 
-        ZS_LOG_DEBUG(log("step continued"))
+        ZS_LOG_TRACE(log("step continued"))
 
         setState(ConversationThreadState_Ready);
 
@@ -1357,17 +1357,17 @@ namespace openpeer
             } else {
               Time created = thread->getHostCreationTime();
               if (created > mostRecentOpenTime) {
-                ZS_LOG_DEBUG(log("thread found is the most recent (thus chosing)") + IConversationThreadHostSlaveBase::toDebug(thread))
+                ZS_LOG_TRACE(log("thread found is the most recent (thus choosing)") + IConversationThreadHostSlaveBase::toDebug(thread))
                 mostRecentOpen = thread;
                 mostRecentOpenTime = thread->getHostCreationTime();
               } else {
-                ZS_LOG_DEBUG(log("thread found is older than the most recent") + IConversationThreadHostSlaveBase::toDebug(thread))
+                ZS_LOG_TRACE(log("thread found is older than the most recent") + IConversationThreadHostSlaveBase::toDebug(thread))
               }
             }
           }
         }
 
-        ZS_LOG_DEBUG(log("finished counting open threads") + ZS_PARAM("total open", totalOpen))
+        ZS_LOG_TRACE(log("finished counting open threads") + ZS_PARAM("total open", totalOpen))
 
         if (totalOpen > 1) {
           ZS_LOG_DEBUG(log("found more than one thread open (thus will close any hosts that are not the most recent)"))
@@ -1378,7 +1378,7 @@ namespace openpeer
             IConversationThreadHostSlaveBasePtr &thread = (*iter).second;
             if (thread != mostRecentOpen) {
               if (thread->isHost()) {
-                ZS_LOG_DEBUG(log("due to more than one thread being open host is being closed") + IConversationThreadHostSlaveBase::toDebug(thread))
+                ZS_LOG_DEBUG(log("due to more than one thread being open host is being closed (as it's not the most recent)") + IConversationThreadHostSlaveBase::toDebug(thread))
                 // close the thread...
                 UseConversationThreadHostPtr(thread->toHost())->close();
               }
@@ -1388,29 +1388,29 @@ namespace openpeer
 
         if (mostRecentOpen) {
           // remember which thread is open now...
-          ZS_LOG_DEBUG(log("determined which thread is the most recent open") + IConversationThreadHostSlaveBase::toDebug(mostRecentOpen))
+          ZS_LOG_TRACE(log("determined which thread is the most recent open") + IConversationThreadHostSlaveBase::toDebug(mostRecentOpen))
           mOpenThread = mostRecentOpen;
           mLastOpenThread = mostRecentOpen;
         }
 
         if (0 == totalOpen) {
-          ZS_LOG_DEBUG(log("no open conversation threads found"))
+          ZS_LOG_TRACE(log("no open conversation threads found"))
           mOpenThread.reset();
         }
 
         bool mustHaveOpenThread = false;
 
         if (mPendingDeliveryMessages.size() > 0) {
-          ZS_LOG_DEBUG(log("messages are pending delivery") + ZS_PARAM("total pending", mPendingDeliveryMessages.size()))
+          ZS_LOG_TRACE(log("messages are pending delivery") + ZS_PARAM("total pending", mPendingDeliveryMessages.size()))
           mustHaveOpenThread = true;
         }
 
         if (mPendingCalls.size() > 0) {
-          ZS_LOG_DEBUG(log("calls are pending being placed") + ZS_PARAM("total pending", mPendingCalls.size()))
+          ZS_LOG_TRACE(log("calls are pending being placed") + ZS_PARAM("total pending", mPendingCalls.size()))
           mustHaveOpenThread = true;
         }
 
-        ZS_LOG_DEBUG(log("finished checking if must have open thread") + ZS_PARAM("must have", mustHaveOpenThread))
+        ZS_LOG_TRACE(log("finished checking if must have open thread") + ZS_PARAM("must have", mustHaveOpenThread))
         if (mustHaveOpenThread) {
           if (!mOpenThread) {
             // create a host thread since there is no open thread...
@@ -1438,7 +1438,8 @@ namespace openpeer
         }
 
         if (mOpenThread) {
-          ZS_LOG_DEBUG(log("thread has open thread") + IConversationThreadHostSlaveBase::toDebug(mOpenThread))
+          ZS_LOG_TRACE(log("thread has open thread") + IConversationThreadHostSlaveBase::toDebug(mOpenThread))
+
           if (mPendingDeliveryMessages.size() > 0) {
             bool sent = mOpenThread->sendMessages(mPendingDeliveryMessages);
             if (sent) {
@@ -1471,7 +1472,7 @@ namespace openpeer
 
         handleLastOpenThreadChanged();
 
-        ZS_LOG_DEBUG(log("step completed"))
+        ZS_LOG_TRACE(log("step completed"))
       }
 
       //-----------------------------------------------------------------------
@@ -1488,7 +1489,7 @@ namespace openpeer
       void ConversationThread::handleLastOpenThreadChanged()
       {
         if (mHandleThreadChanged == mLastOpenThread) {
-          ZS_LOG_DEBUG(log("last open thread did not change"))
+          ZS_LOG_TRACE(log("last open thread did not change"))
           return;
         }
 

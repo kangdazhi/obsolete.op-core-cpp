@@ -128,7 +128,7 @@ namespace openpeer
         mDelegate(IConversationThreadDocumentFetcherDelegateProxy::createWeak(queue, delegate))
       {
         ZS_THROW_INVALID_ARGUMENT_IF(!repository)
-        ZS_LOG_BASIC(log("created"))
+        ZS_LOG_DEBUG(log("created"))
       }
 
       //-----------------------------------------------------------------------
@@ -142,7 +142,7 @@ namespace openpeer
         if(isNoop()) return;
         
         mThisWeak.reset();
-        ZS_LOG_BASIC(log("destroyed"))
+        ZS_LOG_DEBUG(log("destroyed"))
         cancel();
       }
 

@@ -102,6 +102,8 @@ namespace openpeer
         ZS_DECLARE_TYPEDEF_PTR(IContactForConversationThread, UseContact)
         ZS_DECLARE_TYPEDEF_PTR(IConversationThreadForSlave, UseConversationThread)
 
+        ZS_DECLARE_STRUCT_PTR(MessageDeliveryState)
+
         enum ConversationThreadSlaveStates
         {
           ConversationThreadSlaveState_Pending,
@@ -115,10 +117,9 @@ namespace openpeer
         typedef thread::ThreadPtr ThreadPtr;
 
         typedef String MessageID;
-        typedef Time StateChangedTime;
         typedef IConversationThread::MessageDeliveryStates MessageDeliveryStates;
-        typedef std::pair<StateChangedTime, IConversationThread::MessageDeliveryStates> DeliveryStatePair;
-        typedef std::map<MessageID, DeliveryStatePair> MessageDeliveryStatesMap;
+
+        typedef std::map<MessageID, MessageDeliveryStatePtr> MessageDeliveryStatesMap;
 
         typedef String CallID;
         typedef std::map<CallID, UseCallPtr> CallHandlers;
@@ -294,6 +295,38 @@ namespace openpeer
                      bool publishSlavePermissionPublication
                      ) const;
 
+      public:
+        //---------------------------------------------------------------------
+        #pragma mark
+        #pragma mark ConversationThreadSlave::MessageDeliveryState
+        #pragma mark
+
+        struct MessageDeliveryState
+        {
+          MessageDeliveryStates mState;
+          Time                  mLastStateChanged;
+          Time                  mPushTime;
+
+          TimerPtr              mPushTimer;
+
+          ~MessageDeliveryState();
+
+          static MessageDeliveryStatePtr create(
+                                                ConversationThreadSlavePtr owner,
+                                                MessageDeliveryStates state
+                                                );
+
+          void setState(MessageDeliveryStates state);
+
+          bool shouldPush() const;
+
+        protected:
+          ConversationThreadSlaveWeakPtr mOuter;
+
+          MessageDeliveryState() {}
+          MessageDeliveryState(const MessageDeliveryState &) {}
+        };
+
       protected:
         //---------------------------------------------------------------------
         #pragma mark
@@ -320,7 +353,6 @@ namespace openpeer
         ThreadPtr mSlaveThread;
 
         IPeerSubscriptionPtr mHostSubscription;
-        TimerPtr mHostMessageDeliveryTimer;
 
         bool mConvertedToHostBecauseOriginalHostLikelyGoneForever;
 
