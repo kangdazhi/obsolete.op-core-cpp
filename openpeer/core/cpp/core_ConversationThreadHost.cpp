@@ -1270,7 +1270,7 @@ namespace openpeer
       {
         AutoRecursiveLock lock(getLock());
         if (subscription != mSlaveSubscription) {
-          ZS_LOG_WARNING(Detail, log("ignoring shutdown notification on obsolete slave peer subscription (probably okay)"))
+          ZS_LOG_WARNING(Trace, log("ignoring shutdown notification on obsolete slave peer subscription (probably okay)"))
           return;
         }
 
