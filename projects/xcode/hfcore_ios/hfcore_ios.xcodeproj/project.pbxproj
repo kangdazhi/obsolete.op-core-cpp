@@ -25,6 +25,8 @@
 		0063C12416CA9B6A00E6DB4D /* core_Logger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BF6616CA9B6900E6DB4D /* core_Logger.cpp */; };
 		0063C12516CA9B6A00E6DB4D /* core_MediaEngine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BF6716CA9B6900E6DB4D /* core_MediaEngine.cpp */; };
 		0063C12616CA9B6A00E6DB4D /* core_Stack.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BF6816CA9B6900E6DB4D /* core_Stack.cpp */; };
+		007B84ED1862AA8100BB1284 /* core_ConversationThreadHost_PeerContact.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 007B84EC1862AA8100BB1284 /* core_ConversationThreadHost_PeerContact.cpp */; };
+		007B84F01862AE1300BB1284 /* core_ConversationThreadHost_PeerLocation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 007B84EF1862AE1300BB1284 /* core_ConversationThreadHost_PeerLocation.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -91,6 +93,10 @@
 		0063BF8616CA9B6900E6DB4D /* types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = types.h; sourceTree = "<group>"; };
 		0063BF8716CA9B6900E6DB4D /* IStack.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IStack.h; sourceTree = "<group>"; };
 		0063BF8F16CA9B6900E6DB4D /* types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = types.h; sourceTree = "<group>"; };
+		007B84EC1862AA8100BB1284 /* core_ConversationThreadHost_PeerContact.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_ConversationThreadHost_PeerContact.cpp; sourceTree = "<group>"; };
+		007B84EE1862AA9300BB1284 /* core_ConversationThreadHost_PeerContact.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_ConversationThreadHost_PeerContact.h; sourceTree = "<group>"; };
+		007B84EF1862AE1300BB1284 /* core_ConversationThreadHost_PeerLocation.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_ConversationThreadHost_PeerLocation.cpp; sourceTree = "<group>"; };
+		007B84F11862AE2600BB1284 /* core_ConversationThreadHost_PeerLocation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_ConversationThreadHost_PeerLocation.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -163,6 +169,8 @@
 				0063BF5D16CA9B6900E6DB4D /* core_ConversationThread.cpp */,
 				0063BF5E16CA9B6900E6DB4D /* core_ConversationThreadDocumentFetcher.cpp */,
 				0063BF5F16CA9B6900E6DB4D /* core_ConversationThreadHost.cpp */,
+				007B84EC1862AA8100BB1284 /* core_ConversationThreadHost_PeerContact.cpp */,
+				007B84EF1862AE1300BB1284 /* core_ConversationThreadHost_PeerLocation.cpp */,
 				0063BF6016CA9B6900E6DB4D /* core_ConversationThreadSlave.cpp */,
 				0063BF6116CA9B6900E6DB4D /* core_Factory.cpp */,
 				0063BF6216CA9B6900E6DB4D /* core_Helper.cpp */,
@@ -189,6 +197,8 @@
 				0063BF7A16CA9B6900E6DB4D /* core_ConversationThread.h */,
 				0063BF7B16CA9B6900E6DB4D /* core_ConversationThreadDocumentFetcher.h */,
 				0063BF7C16CA9B6900E6DB4D /* core_ConversationThreadHost.h */,
+				007B84EE1862AA9300BB1284 /* core_ConversationThreadHost_PeerContact.h */,
+				007B84F11862AE2600BB1284 /* core_ConversationThreadHost_PeerLocation.h */,
 				0063BF7D16CA9B6900E6DB4D /* core_ConversationThreadSlave.h */,
 				0063BF7E16CA9B6900E6DB4D /* core_Factory.h */,
 				0063BF7F16CA9B6900E6DB4D /* core_Helper.h */,
@@ -259,6 +269,7 @@
 				0063C11816CA9B6A00E6DB4D /* core_CallTransport.cpp in Sources */,
 				0063C11916CA9B6A00E6DB4D /* core_Contact.cpp in Sources */,
 				0063C11B16CA9B6A00E6DB4D /* core_ConversationThread.cpp in Sources */,
+				007B84F01862AE1300BB1284 /* core_ConversationThreadHost_PeerLocation.cpp in Sources */,
 				0041DAB2185E6472004D4219 /* core_thread.cpp in Sources */,
 				0063C11C16CA9B6A00E6DB4D /* core_ConversationThreadDocumentFetcher.cpp in Sources */,
 				0063C11D16CA9B6A00E6DB4D /* core_ConversationThreadHost.cpp in Sources */,
@@ -267,6 +278,7 @@
 				0063C12016CA9B6A00E6DB4D /* core_Helper.cpp in Sources */,
 				0063C12216CA9B6A00E6DB4D /* core_Identity.cpp in Sources */,
 				0063C12316CA9B6A00E6DB4D /* core_IdentityLookup.cpp in Sources */,
+				007B84ED1862AA8100BB1284 /* core_ConversationThreadHost_PeerContact.cpp in Sources */,
 				0063C12416CA9B6A00E6DB4D /* core_Logger.cpp in Sources */,
 				0063C12516CA9B6A00E6DB4D /* core_MediaEngine.cpp in Sources */,
 				0063C12616CA9B6A00E6DB4D /* core_Stack.cpp in Sources */,

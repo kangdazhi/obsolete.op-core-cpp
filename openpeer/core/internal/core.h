@@ -38,6 +38,8 @@
 #include <openpeer/core/internal/core_Contact.h>
 #include <openpeer/core/internal/core_ConversationThread.h>
 #include <openpeer/core/internal/core_ConversationThreadHost.h>
+#include <openpeer/core/internal/core_ConversationThreadHost_PeerContact.h>
+#include <openpeer/core/internal/core_ConversationThreadHost_PeerLocation.h>
 #include <openpeer/core/internal/core_ConversationThreadSlave.h>
 #include <openpeer/core/internal/core_ConversationThreadDocumentFetcher.h>
 #include <openpeer/core/internal/core_Helper.h>
