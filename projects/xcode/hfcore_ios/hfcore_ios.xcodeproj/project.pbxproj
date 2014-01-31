@@ -27,6 +27,7 @@
 		0063C12616CA9B6A00E6DB4D /* core_Stack.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BF6816CA9B6900E6DB4D /* core_Stack.cpp */; };
 		007B84ED1862AA8100BB1284 /* core_ConversationThreadHost_PeerContact.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 007B84EC1862AA8100BB1284 /* core_ConversationThreadHost_PeerContact.cpp */; };
 		007B84F01862AE1300BB1284 /* core_ConversationThreadHost_PeerLocation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 007B84EF1862AE1300BB1284 /* core_ConversationThreadHost_PeerLocation.cpp */; };
+		00F11C38189B4BDC00EB33BB /* core_Settings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00F11C37189B4BDC00EB33BB /* core_Settings.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -97,6 +98,9 @@
 		007B84EE1862AA9300BB1284 /* core_ConversationThreadHost_PeerContact.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_ConversationThreadHost_PeerContact.h; sourceTree = "<group>"; };
 		007B84EF1862AE1300BB1284 /* core_ConversationThreadHost_PeerLocation.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_ConversationThreadHost_PeerLocation.cpp; sourceTree = "<group>"; };
 		007B84F11862AE2600BB1284 /* core_ConversationThreadHost_PeerLocation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_ConversationThreadHost_PeerLocation.h; sourceTree = "<group>"; };
+		00F11C36189B4BAB00EB33BB /* ISettings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ISettings.h; sourceTree = "<group>"; };
+		00F11C37189B4BDC00EB33BB /* core_Settings.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Settings.cpp; sourceTree = "<group>"; };
+		00F11C39189B4BEC00EB33BB /* core_Settings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_Settings.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -152,6 +156,7 @@
 				0063BF7016CA9B6900E6DB4D /* IIdentityLookup.h */,
 				0063BF7116CA9B6900E6DB4D /* ILogger.h */,
 				0063BF7216CA9B6900E6DB4D /* IMediaEngine.h */,
+				00F11C36189B4BAB00EB33BB /* ISettings.h */,
 				0063BF8716CA9B6900E6DB4D /* IStack.h */,
 			);
 			path = core;
@@ -178,6 +183,7 @@
 				0063BF6516CA9B6900E6DB4D /* core_IdentityLookup.cpp */,
 				0063BF6616CA9B6900E6DB4D /* core_Logger.cpp */,
 				0063BF6716CA9B6900E6DB4D /* core_MediaEngine.cpp */,
+				00F11C37189B4BDC00EB33BB /* core_Settings.cpp */,
 				0063BF6816CA9B6900E6DB4D /* core_Stack.cpp */,
 				0041DAB1185E6472004D4219 /* core_thread.cpp */,
 			);
@@ -207,6 +213,7 @@
 				0063BF8316CA9B6900E6DB4D /* core_Logger.h */,
 				0063BF8416CA9B6900E6DB4D /* core_MediaEngine.h */,
 				0063BF8516CA9B6900E6DB4D /* core_Stack.h */,
+				00F11C39189B4BEC00EB33BB /* core_Settings.h */,
 				0041DAB3185E6481004D4219 /* core_thread.h */,
 			);
 			path = internal;
@@ -265,6 +272,7 @@
 			files = (
 				0063C11516CA9B6A00E6DB4D /* core.cpp in Sources */,
 				0063C11616CA9B6A00E6DB4D /* core_Account.cpp in Sources */,
+				00F11C38189B4BDC00EB33BB /* core_Settings.cpp in Sources */,
 				0063C11716CA9B6A00E6DB4D /* core_Call.cpp in Sources */,
 				0063C11816CA9B6A00E6DB4D /* core_CallTransport.cpp in Sources */,
 				0063C11916CA9B6A00E6DB4D /* core_Contact.cpp in Sources */,

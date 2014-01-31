@@ -42,4 +42,5 @@
 #include <openpeer/core/IIdentityLookup.h>
 #include <openpeer/core/ILogger.h>
 #include <openpeer/core/IMediaEngine.h>
+#include <openpeer/core/ISettings.h>
 #include <openpeer/core/IStack.h>

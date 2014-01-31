@@ -47,6 +47,7 @@ namespace openpeer
   {
     using zsLib::PUID;
     using zsLib::WORD;
+    using zsLib::LONG;
     using zsLib::ULONG;
     using zsLib::Time;
     using zsLib::String;
@@ -170,6 +171,8 @@ namespace openpeer
     ZS_DECLARE_INTERACTION_PTR(IIdentityLookup)
     ZS_DECLARE_INTERACTION_PTR(ILoggerDelegate)
     ZS_DECLARE_INTERACTION_PTR(IMediaEngine)
+    ZS_DECLARE_INTERACTION_PTR(ISettings)
+    ZS_DECLARE_INTERACTION_PTR(ISettingsDelegate)
     ZS_DECLARE_INTERACTION_PTR(IStack)
     ZS_DECLARE_INTERACTION_PTR(IStackAutoCleanup)
     ZS_DECLARE_INTERACTION_PTR(IStackMessageQueue)
