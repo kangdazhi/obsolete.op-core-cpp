@@ -5,6 +5,7 @@ LOCAL_ARM_MODE := arm
 
 LOCAL_CFLAGS	:= -Wall \
 -W \
+-std=gnu++11 \
 -O2 \
 -pipe \
 -fPIC \
@@ -30,8 +31,8 @@ $(LOCAL_PATH)/../ortc-lib/libs/webrtc/webrtc \
 $(LOCAL_PATH)/../ortc-lib/libs/webrtc/webrtc/voice_engine/include \
 $(LOCAL_PATH)/../ortc-lib/libs/webrtc/webrtc/video_engine/include \
 $(LOCAL_PATH)/../ortc-lib/libs/webrtc/webrtc/modules/video_capture/include \
-$(ANDROIDNDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.4.3/include \
-$(ANDROIDNDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.4.3/libs/armeabi/include \
+$(ANDROIDNDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.7/include \
+$(ANDROIDNDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.7/libs/armeabi/include \
 
 SOURCE_PATH := openpeer/core/cpp
 
