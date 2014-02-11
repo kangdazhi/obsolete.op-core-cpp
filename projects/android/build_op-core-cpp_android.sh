@@ -52,7 +52,7 @@ mkdir -p ./../../../build/android/op-core-cpp
 rm -rf ./obj/*
 export ANDROIDNDK_PATH=$Input
 export NDK_PROJECT_PATH=`pwd`
-ndk-build APP_PLATFORM=android-9
+ndk-build APP_PLATFORM=android-9 V=1 NDK_LOG=1
 popd
 
 echo "-------- Installing op-core-cpp libs -----"
