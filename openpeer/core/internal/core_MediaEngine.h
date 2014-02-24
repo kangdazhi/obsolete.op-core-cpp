@@ -261,7 +261,9 @@ namespace openpeer
 
         void CallbackOnError(const int errCode, const int channel);
         void CallbackOnOutputAudioRouteChange(const OutputAudioRoute route);
-        
+        void CallbackOnAudioSessionInterruptionBegin();
+        void CallbackOnAudioSessionInterruptionEnd();
+
         //-----------------------------------------------------------------------
         #pragma mark
         #pragma mark MediaEngine => ViECaptureObserver

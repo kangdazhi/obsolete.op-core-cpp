@@ -127,6 +127,8 @@ namespace openpeer
       typedef IMediaEngine::OutputAudioRoutes OutputAudioRoutes;
 
       virtual void onMediaEngineAudioRouteChanged(OutputAudioRoutes audioRoute) = 0;
+      virtual void onMediaEngineAudioSessionInterruptionBegan() = 0;
+      virtual void onMediaEngineAudioSessionInterruptionEnded() = 0;
       virtual void onMediaEngineFaceDetected() = 0;
       virtual void onMediaEngineVideoCaptureRecordStopped() = 0;
     };
@@ -136,6 +138,8 @@ namespace openpeer
 ZS_DECLARE_PROXY_BEGIN(openpeer::core::IMediaEngineDelegate)
 ZS_DECLARE_PROXY_TYPEDEF(openpeer::core::IMediaEngine::OutputAudioRoutes, OutputAudioRoutes)
 ZS_DECLARE_PROXY_METHOD_1(onMediaEngineAudioRouteChanged, OutputAudioRoutes)
+ZS_DECLARE_PROXY_METHOD_0(onMediaEngineAudioSessionInterruptionBegan)
+ZS_DECLARE_PROXY_METHOD_0(onMediaEngineAudioSessionInterruptionEnded)
 ZS_DECLARE_PROXY_METHOD_0(onMediaEngineFaceDetected)
 ZS_DECLARE_PROXY_METHOD_0(onMediaEngineVideoCaptureRecordStopped)
 ZS_DECLARE_PROXY_END()

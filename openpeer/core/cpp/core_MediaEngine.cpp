@@ -1327,6 +1327,42 @@ namespace openpeer
       }
       
       //-----------------------------------------------------------------------
+      void MediaEngine::CallbackOnAudioSessionInterruptionBegin()
+      {
+        if (!mDelegate) {
+          ZS_LOG_WARNING(Detail, log("audio session interruption began callback igored as delegate was not specified"))
+          return;
+        }
+        
+        try {
+          if (mDelegate)
+            mDelegate->onMediaEngineAudioSessionInterruptionBegan();
+        } catch (IMediaEngineDelegateProxy::Exceptions::DelegateGone &) {
+          ZS_LOG_WARNING(Detail, log("delegate gone"))
+        }
+        
+        ZS_LOG_DEBUG(log("Audio session interruption began"))
+      }
+      
+      //-----------------------------------------------------------------------
+      void MediaEngine::CallbackOnAudioSessionInterruptionEnd()
+      {
+        if (!mDelegate) {
+          ZS_LOG_WARNING(Detail, log("audio session interruption ended callback igored as delegate was not specified"))
+          return;
+        }
+        
+        try {
+          if (mDelegate)
+            mDelegate->onMediaEngineAudioSessionInterruptionEnded();
+        } catch (IMediaEngineDelegateProxy::Exceptions::DelegateGone &) {
+          ZS_LOG_WARNING(Detail, log("delegate gone"))
+        }
+        
+        ZS_LOG_DEBUG(log("Audio session interruption ended"))
+      }
+
+      //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
