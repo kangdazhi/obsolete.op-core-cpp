@@ -120,6 +120,8 @@ namespace openpeer
 
       virtual int getVideoTransportStatistics(RtpRtcpStatistics &stat) = 0;
       virtual int getVoiceTransportStatistics(RtpRtcpStatistics &stat) = 0;
+        
+        virtual void pauseVoice(bool pause = true) = 0;
     };
 
     interaction IMediaEngineDelegate

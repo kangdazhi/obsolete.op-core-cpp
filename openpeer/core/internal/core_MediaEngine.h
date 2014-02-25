@@ -219,6 +219,7 @@ namespace openpeer
         virtual int getVideoTransportStatistics(RtpRtcpStatistics &stat);
         virtual int getVoiceTransportStatistics(RtpRtcpStatistics &stat);
 
+        virtual void pauseVoice(bool pause = true);
         //---------------------------------------------------------------------
         #pragma mark
         #pragma mark MediaEngine => IMediaEngineForStack
