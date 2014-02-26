@@ -396,7 +396,7 @@ namespace openpeer
 
         String authorizedAppId = services::ISettings::getString(OPENPEER_COMMON_SETTING_APPLICATION_AUTHORIZATION_ID);
 
-        if (!isAuthorizedApplicationExpiryWindowStillValid(authorizedAppId, Seconds(1))) {
+        if (!isAuthorizedApplicationIDExpiryWindowStillValid(authorizedAppId, Seconds(1))) {
           ZS_LOG_WARNING(Basic, slog("application id is not valid") + ZS_PARAM("authorized application id", authorizedAppId))
         }
 
@@ -459,34 +459,58 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      bool Stack::isAuthorizedApplicationExpiryWindowStillValid(
-                                                                const char *authorizedApplicationID,
-                                                                Duration minimumValidityWindowRequired
-                                                                )
+      Time Stack::getAuthorizedApplicationIDExpiry(
+                                                   const char *authorizedApplicationID,
+                                                   Duration *outRemainingDurationAvailable
+                                                   )
       {
         ZS_THROW_INVALID_ARGUMENT_IF(!authorizedApplicationID)
 
-        IHelper::SplitMap split;
+        if (outRemainingDurationAvailable) {
+          *outRemainingDurationAvailable = Seconds(0);
+        }
 
+        IHelper::SplitMap split;
         IHelper::split(authorizedApplicationID, split, '-');
 
         if (split.size() < 3) {
-          ZS_LOG_WARNING(Detail, slog("authorized application id is not in a valid format") + ZS_PARAM("authorized application id", authorizedApplicationID) + ZS_PARAM("window (s)", minimumValidityWindowRequired))
-          return false;
+          ZS_LOG_WARNING(Detail, slog("authorized application id is not in a valid format") + ZS_PARAM("authorized application id", authorizedApplicationID))
+          return Time();
         }
 
         String timeStr = (*(split.find(split.size()-1))).second;
 
         Time expires = IHelper::stringToTime(timeStr);
+        if (Time() == expires) {
+          ZS_LOG_WARNING(Detail, slog("authorized application id time segment is not in a valid format") + ZS_PARAM("authorized application id", authorizedApplicationID) + ZS_PARAM("time str", timeStr))
+          return Time();
+        }
 
         Time now = zsLib::now();
+        if (now < expires) {
+          if (outRemainingDurationAvailable) {
+            *outRemainingDurationAvailable = (expires - now);
+          }
+        }
 
-        if (now + minimumValidityWindowRequired > expires) {
-          ZS_LOG_BASIC(slog("authorized application id will expire") + ZS_PARAM("authorized application id", authorizedApplicationID) + ZS_PARAM("expires at", expires) + ZS_PARAM("now", now) + ZS_PARAM("window (s)", minimumValidityWindowRequired))
+        return expires;
+      }
+
+      //-----------------------------------------------------------------------
+      bool Stack::isAuthorizedApplicationIDExpiryWindowStillValid(
+                                                                  const char *authorizedApplicationID,
+                                                                  Duration minimumValidityWindowRequired
+                                                                  )
+      {
+        Duration available;
+        Time expires = getAuthorizedApplicationIDExpiry(authorizedApplicationID, &available);
+
+        if (available < minimumValidityWindowRequired) {
+          ZS_LOG_BASIC(slog("authorized application id will expire") + ZS_PARAM("authorized application id", authorizedApplicationID) + ZS_PARAM("expires at", expires) + ZS_PARAM("window (s)", minimumValidityWindowRequired) + ZS_PARAM("available (s)", available))
           return false;
         }
 
-        ZS_LOG_TRACE(slog("authorized application id is still valid") + ZS_PARAM("authorized application id", authorizedApplicationID) + ZS_PARAM("expires at", expires) + ZS_PARAM("now", now) + ZS_PARAM("window (s)", minimumValidityWindowRequired))
+        ZS_LOG_TRACE(slog("authorized application id is still valid") + ZS_PARAM("authorized application id", authorizedApplicationID) + ZS_PARAM("expires at", expires) + ZS_PARAM("window (s)", minimumValidityWindowRequired) + ZS_PARAM("available (s)", available))
         return true;
       }
 
@@ -721,12 +745,21 @@ namespace openpeer
     }
 
     //-------------------------------------------------------------------------
-    bool IStack::isAuthorizedApplicationExpiryWindowStillValid(
+    Time IStack::getAuthorizedApplicationIDExpiry(
+                                                  const char *authorizedApplicationID,
+                                                  Duration *outRemainingDurationAvailable
+                                                  )
+    {
+      return internal::Stack::getAuthorizedApplicationIDExpiry(authorizedApplicationID, outRemainingDurationAvailable);
+    }
+
+    //-------------------------------------------------------------------------
+    bool IStack::isAuthorizedApplicationIDExpiryWindowStillValid(
                                                                const char *authorizedApplicationID,
                                                                Duration minimumValidityWindowRequired
                                                                )
     {
-      return internal::Stack::isAuthorizedApplicationExpiryWindowStillValid(authorizedApplicationID, minimumValidityWindowRequired);
+      return internal::Stack::isAuthorizedApplicationIDExpiryWindowStillValid(authorizedApplicationID, minimumValidityWindowRequired);
     }
 
     //-------------------------------------------------------------------------

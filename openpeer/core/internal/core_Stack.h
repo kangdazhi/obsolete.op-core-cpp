@@ -127,10 +127,15 @@ namespace openpeer
                                                     Time expires
                                                     );
 
-        static bool isAuthorizedApplicationExpiryWindowStillValid(
-                                                                  const char *authorizedApplicationID,
-                                                                  Duration minimumValidityWindowRequired
-                                                                  );
+        static Time getAuthorizedApplicationIDExpiry(
+                                                     const char *authorizedApplicationID,
+                                                     Duration *outRemainingDurationAvailable = NULL
+                                                     );
+
+        static bool isAuthorizedApplicationIDExpiryWindowStillValid(
+                                                                    const char *authorizedApplicationID,
+                                                                    Duration minimumValidityWindowRequired
+                                                                    );
 
         //---------------------------------------------------------------------
         #pragma mark

@@ -80,6 +80,19 @@ namespace openpeer
                                                   );
 
       //-----------------------------------------------------------------------
+      // PURPOSE: Obtains the expiry time of an application ID and optionally
+      //          returns the duration of time remaining available.
+      // RETURN:  The time when the authorized application ID will expire or
+      //          Time() if the authorization ID is not valid.
+      //
+      //          If "outRemainingDurationAvailable" is specified, the duration
+      //          remaining is returned.
+      static Time getAuthorizedApplicationIDExpiry(
+                                                   const char *authorizedApplicationID,
+                                                   Duration *outRemainingDurationAvailable = NULL
+                                                   );
+
+      //-----------------------------------------------------------------------
       // PURPOSE: Check if the expiry window for the autorized application ID
       //          is still value.
       // RETURN:  true if the authroized application ID window is still valid
@@ -91,10 +104,10 @@ namespace openpeer
       //          in requests. If the window is too short, servers might
       //          reject the application ID as being not valid and a new
       //          authorized application ID needs to be generated.
-      static bool isAuthorizedApplicationExpiryWindowStillValid(
-                                                                const char *authorizedApplicationID,
-                                                                Duration minimumValidityWindowRequired
-                                                                );
+      static bool isAuthorizedApplicationIDExpiryWindowStillValid(
+                                                                  const char *authorizedApplicationID,
+                                                                  Duration minimumValidityWindowRequired
+                                                                  );
     };
 
     //-------------------------------------------------------------------------
