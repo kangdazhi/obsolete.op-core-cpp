@@ -55,15 +55,7 @@ namespace openpeer
       //          will funciton. Must be called from the GUI thread.
       virtual void setup(
                          IStackDelegatePtr stackDelegate,
-                         IMediaEngineDelegatePtr mediaEngineDelegate,
-                         const char *authorizedAppID, // organization assigned ID for the application e.g. "com.xyz123.app1-random-expires-validation"
-                         const char *appName,         // a branded human readable application name, e.g. "Hookflash"
-                         const char *appImageURL,     // an HTTPS downloadable branded image for the application
-                         const char *appURL,          // an HTTPS URL webpage / website that offers more information about application
-                         const char *userAgent,       // e.g. "hookflash/1.0.1001a (iOS/iPad)"
-                         const char *deviceID,        // e.g. uuid of device "7bff560b84328f161494eabcba5f8b47a316be8b"
-                         const char *os,              // e.g. "iOS 5.0.3
-                         const char *system           // e.g. "iPad 2"
+                         IMediaEngineDelegatePtr mediaEngineDelegate
                          ) = 0;
 
       //-----------------------------------------------------------------------
@@ -86,6 +78,23 @@ namespace openpeer
                                                   const char *applicationIDSharedSecret,
                                                   Time expires
                                                   );
+
+      //-----------------------------------------------------------------------
+      // PURPOSE: Check if the expiry window for the autorized application ID
+      //          is still value.
+      // RETURN:  true if the authroized application ID window is still valid
+      //          for the duration specified, otherwise false.
+      // WARNING:
+      //
+      //          This method should be used to check if your application ID
+      //          has enough of a buffered expiry time left to be used
+      //          in requests. If the window is too short, servers might
+      //          reject the application ID as being not valid and a new
+      //          authorized application ID needs to be generated.
+      static bool isAuthorizedApplicationExpiryWindowStillValid(
+                                                                const char *authorizedApplicationID,
+                                                                Duration minimumValidityWindowRequired
+                                                                );
     };
 
     //-------------------------------------------------------------------------

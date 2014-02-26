@@ -47,14 +47,29 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       #pragma mark
+      #pragma mark ISettingsForStack
+      #pragma mark
+
+      interaction ISettingsForStack
+      {
+        static void applyDefaultsIfNoDelegatePresent();
+      };
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
       #pragma mark Settings
       #pragma mark
 
       class Settings : public ISettings,
-                       public stack::ISettingsDelegate
+                       public stack::ISettingsDelegate,
+                       public ISettingsForStack
       {
       public:
         friend interaction ISettings;
+        friend interaction ISettingsForStack;
 
       protected:
         Settings();
@@ -76,9 +91,14 @@ namespace openpeer
 
         virtual void setup(ISettingsDelegatePtr delegate);
 
-        virtual bool apply(const char *jsonSettings);
-
         virtual void applyDefaults();
+
+        //---------------------------------------------------------------------
+        #pragma mark
+        #pragma mark Settings => ISettingsForStack
+        #pragma mark
+
+        virtual void applyDefaultsIfNoDelegatePresent();
 
         //---------------------------------------------------------------------
         #pragma mark

@@ -49,6 +49,33 @@ namespace openpeer
     {
       static void setup(ISettingsDelegatePtr delegate);
 
+      static void setString(
+                            const char *key,
+                            const char *value
+                            );
+      static void setInt(
+                         const char *key,
+                         LONG value
+                         );
+      static void setUInt(
+                          const char *key,
+                          ULONG value
+                          );
+      static void setBool(
+                          const char *key,
+                          bool value
+                          );
+      static void setFloat(
+                           const char *key,
+                           float value
+                           );
+      static void setDouble(
+                            const char *key,
+                            double value
+                            );
+
+      static void clear(const char *key);
+
       static bool apply(const char *jsonSettings);
       static void applyDefaults();
 

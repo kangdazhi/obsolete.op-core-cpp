@@ -53,6 +53,8 @@ namespace openpeer
     using zsLib::String;
     using zsLib::PTRNUMBER;
     typedef PTRNUMBER SubsystemID;
+    using zsLib::Duration;
+    using zsLib::Seconds;
 
     using zsLib::XML::Element;
     using zsLib::XML::ElementPtr;

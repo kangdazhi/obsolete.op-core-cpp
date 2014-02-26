@@ -63,10 +63,6 @@ namespace openpeer
 
       interaction IStackForInternal
       {
-        static const String &appID();
-        static const String &appName();
-        static const String &appImageURL();
-        static const String &appURL();
         static const String &userAgent();
         static const String &deviceID();
         static const String &os();
@@ -120,15 +116,7 @@ namespace openpeer
 
         virtual void setup(
                            IStackDelegatePtr stackDelegate,
-                           IMediaEngineDelegatePtr mediaEngineDelegate,
-                           const char *appID,
-                           const char *appName,
-                           const char *appImageURL,
-                           const char *appURL,
-                           const char *userAgent,
-                           const char *deviceID,
-                           const char *os,
-                           const char *system
+                           IMediaEngineDelegatePtr mediaEngineDelegate
                            );
 
         virtual void shutdown();
@@ -138,6 +126,11 @@ namespace openpeer
                                                     const char *applicationIDSharedSecret,
                                                     Time expires
                                                     );
+
+        static bool isAuthorizedApplicationExpiryWindowStillValid(
+                                                                  const char *authorizedApplicationID,
+                                                                  Duration minimumValidityWindowRequired
+                                                                  );
 
         //---------------------------------------------------------------------
         #pragma mark
@@ -162,22 +155,13 @@ namespace openpeer
         #pragma mark Stack => IStackForInternal
         #pragma mark
 
-        virtual const String &getAppID() const {return mAppID;}
-        virtual const String &getAppName() const {return mAppName;}
-        virtual const String &getAppImageURL() const {return mAppImageURL;}
-        virtual const String &getAppURL() const {return mAppURL;}
-        virtual const String &getUserAgent() const {return mUserAgent;}
-        virtual const String &getDeviceID() const {return mDeviceID;}
-        virtual const String &getOS() const {return mOS;}
-        virtual const String &getSystem() const {return mSystem;}
-
         virtual IMessageQueuePtr getQueueApplication() const;
         virtual IMessageQueuePtr getQueueCore() const;
         virtual IMessageQueuePtr getQueueMedia() const;
         virtual IMessageQueuePtr getQueueServices() const;
         virtual IMessageQueuePtr getQueueKeyGeneration() const;
 
-        virtual IMediaEngineDelegatePtr        getMediaEngineDelegate() const;
+        virtual IMediaEngineDelegatePtr getMediaEngineDelegate() const;
 
         virtual void finalShutdown();
 
@@ -211,15 +195,6 @@ namespace openpeer
         IMediaEngineDelegatePtr        mMediaEngineDelegate;
 
         IStackMessageQueueDelegatePtr  mStackMessageQueueDelegate;
-
-        String mAppID;
-        String mAppName;
-        String mAppImageURL;
-        String mAppURL;
-        String mUserAgent;
-        String mDeviceID;
-        String mOS;
-        String mSystem;
       };
     }
   }
