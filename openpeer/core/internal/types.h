@@ -134,6 +134,7 @@ namespace openpeer
       ZS_DECLARE_INTERACTION_PROXY(IShutdownCheckAgainDelegate)
 
       ZS_DECLARE_CLASS_PTR(Account)
+      ZS_DECLARE_CLASS_PTR(Backgrounding)
       ZS_DECLARE_CLASS_PTR(Cache)
       ZS_DECLARE_CLASS_PTR(Call)
       ZS_DECLARE_CLASS_PTR(CallTransport)

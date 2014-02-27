@@ -381,6 +381,8 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ElementPtr Contact::toDebug() const
       {
+        AutoRecursiveLock lock(getLock());
+
         ElementPtr resultEl = Element::create("core::Contact");
 
         IHelper::debugAppend(resultEl, "id", mID);

@@ -33,6 +33,7 @@
 
 #include <openpeer/core/types.h>
 #include <openpeer/core/IAccount.h>
+#include <openpeer/core/IBackgrounding.h>
 #include <openpeer/core/ICache.h>
 #include <openpeer/core/ICall.h>
 #include <openpeer/core/IConversationThread.h>
