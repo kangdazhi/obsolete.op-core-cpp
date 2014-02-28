@@ -478,7 +478,7 @@ namespace openpeer
           return Time();
         }
 
-        String timeStr = (*(split.find(split.size()-1))).second;
+        String timeStr = (*(split.find(split.size()-2))).second;
 
         Time expires = IHelper::stringToTime(timeStr);
         if (Time() == expires) {
