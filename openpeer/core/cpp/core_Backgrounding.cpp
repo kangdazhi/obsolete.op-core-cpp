@@ -93,7 +93,7 @@ namespace openpeer
       BackgroundingPtr Backgrounding::singleton()
       {
         AutoRecursiveLock lock(IHelper::getGlobalLock());
-        BackgroundingPtr pThis = IBackgroundingFactory::singleton().createForBackgrounding();
+        static BackgroundingPtr pThis = IBackgroundingFactory::singleton().createForBackgrounding();
         return pThis;
       }
 
