@@ -32,6 +32,7 @@
 #pragma once
 
 #include <openpeer/core/internal/core_Account.h>
+#include <openpeer/core/internal/core_Backgrounding.h>
 #include <openpeer/core/internal/core_Cache.h>
 #include <openpeer/core/internal/core_Call.h>
 #include <openpeer/core/internal/core_CallTransport.h>

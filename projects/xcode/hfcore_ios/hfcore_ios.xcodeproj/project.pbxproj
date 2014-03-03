@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0028818C18BF9257005C78F9 /* core_Backgrounding.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0028818B18BF9257005C78F9 /* core_Backgrounding.cpp */; };
 		0041DAB2185E6472004D4219 /* core_thread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0041DAB1185E6472004D4219 /* core_thread.cpp */; };
 		005F60B61756B7DB00BC3DD6 /* core_Cache.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 005F60B51756B7DB00BC3DD6 /* core_Cache.cpp */; };
 		0063C11516CA9B6A00E6DB4D /* core.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BF5716CA9B6900E6DB4D /* core.cpp */; };
@@ -43,6 +44,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0028818918BF8B96005C78F9 /* IBackgrounding.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IBackgrounding.h; sourceTree = "<group>"; };
+		0028818A18BF9249005C78F9 /* core_Backgrounding.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_Backgrounding.h; sourceTree = "<group>"; };
+		0028818B18BF9257005C78F9 /* core_Backgrounding.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Backgrounding.cpp; sourceTree = "<group>"; };
 		0041DAB1185E6472004D4219 /* core_thread.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_thread.cpp; sourceTree = "<group>"; };
 		0041DAB3185E6481004D4219 /* core_thread.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_thread.h; sourceTree = "<group>"; };
 		005F60B41756B7C500BC3DD6 /* ICache.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ICache.h; sourceTree = "<group>"; };
@@ -146,6 +150,7 @@
 				0063BF7316CA9B6900E6DB4D /* internal */,
 				0063BF8F16CA9B6900E6DB4D /* types.h */,
 				0063BF5516CA9B6900E6DB4D /* core.h */,
+				0028818918BF8B96005C78F9 /* IBackgrounding.h */,
 				0063BF6916CA9B6900E6DB4D /* IAccount.h */,
 				005F60B41756B7C500BC3DD6 /* ICache.h */,
 				0063BF6A16CA9B6900E6DB4D /* ICall.h */,
@@ -167,6 +172,7 @@
 			children = (
 				0063BF5716CA9B6900E6DB4D /* core.cpp */,
 				0063BF5816CA9B6900E6DB4D /* core_Account.cpp */,
+				0028818B18BF9257005C78F9 /* core_Backgrounding.cpp */,
 				005F60B51756B7DB00BC3DD6 /* core_Cache.cpp */,
 				0063BF5916CA9B6900E6DB4D /* core_Call.cpp */,
 				0063BF5A16CA9B6900E6DB4D /* core_CallTransport.cpp */,
@@ -196,6 +202,7 @@
 				0063BF8616CA9B6900E6DB4D /* types.h */,
 				0063BF7416CA9B6900E6DB4D /* core.h */,
 				0063BF7516CA9B6900E6DB4D /* core_Account.h */,
+				0028818A18BF9249005C78F9 /* core_Backgrounding.h */,
 				005F60B71756B7E300BC3DD6 /* core_Cache.h */,
 				0063BF7616CA9B6900E6DB4D /* core_Call.h */,
 				0063BF7716CA9B6900E6DB4D /* core_CallTransport.h */,
@@ -275,6 +282,7 @@
 				00F11C38189B4BDC00EB33BB /* core_Settings.cpp in Sources */,
 				0063C11716CA9B6A00E6DB4D /* core_Call.cpp in Sources */,
 				0063C11816CA9B6A00E6DB4D /* core_CallTransport.cpp in Sources */,
+				0028818C18BF9257005C78F9 /* core_Backgrounding.cpp in Sources */,
 				0063C11916CA9B6A00E6DB4D /* core_Contact.cpp in Sources */,
 				0063C11B16CA9B6A00E6DB4D /* core_ConversationThread.cpp in Sources */,
 				007B84F01862AE1300BB1284 /* core_ConversationThreadHost_PeerLocation.cpp in Sources */,
