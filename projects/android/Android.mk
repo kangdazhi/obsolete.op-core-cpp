@@ -19,6 +19,7 @@ LOCAL_EXPORT_C_INCLUDES:= $(LOCAL_PATH) \
 
 LOCAL_C_INCLUDES:= $(LOCAL_PATH) \
 $(LOCAL_PATH)/openpeer/core/internal \
+$(LOCAL_PATH)/openpeer/core/test \
 $(LOCAL_PATH)/../ortc-lib/libs/zsLib \
 $(LOCAL_PATH)/../ortc-lib/libs/zsLib/internal \
 $(LOCAL_PATH)/../ortc-lib/libs/op-services-cpp \
@@ -58,7 +59,9 @@ LOCAL_SRC_FILES := $(SOURCE_PATH)/core_Account.cpp \
 		   $(SOURCE_PATH)/core_Stack.cpp \
 		   $(SOURCE_PATH)/core.cpp \
 		   $(SOURCE_PATH)/core_thread.cpp \
-		   $(SOURCE_PATH)/core_MediaEngine.cpp
+		   $(SOURCE_PATH)/core_MediaEngine.cpp \
+		   $(SOURCE_PATH)/../test/TestMediaEngine.cpp \
+		   $(SOURCE_PATH)/../test/boost_replacement.cpp
 
 
 include $(BUILD_STATIC_LIBRARY)
