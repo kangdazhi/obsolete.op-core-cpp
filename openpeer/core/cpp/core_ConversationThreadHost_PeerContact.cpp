@@ -231,6 +231,7 @@ namespace openpeer
 
         if (mContact) {
           switch (mContact->getPeer()->getFindState()) {
+            case IPeer::PeerFindState_Pending:    return IConversationThread::ContactState_NotApplicable;
             case IPeer::PeerFindState_Idle:       return (mPeerLocations.size() > 0 ? IConversationThread::ContactState_Disconnected : IConversationThread::ContactState_NotApplicable);
             case IPeer::PeerFindState_Finding:    return IConversationThread::ContactState_Finding;
             case IPeer::PeerFindState_Completed:  return (mPeerLocations.size() > 0 ? IConversationThread::ContactState_Disconnected : IConversationThread::ContactState_NotApplicable);
@@ -731,7 +732,8 @@ namespace openpeer
               mMessageDeliveryStates[message->messageID()] = deliveryState;
             }
 
-            if (((IPeer::PeerFindState_Finding != state) &&
+            if (( ((IPeer::PeerFindState_Idle == state) ||
+                   (IPeer::PeerFindState_Completed == state)) &&
                  (peerLocations->size() < 1)) ||
                 (deliveryState->shouldPush())) {
               ZS_LOG_DEBUG(log("state must now be set to undeliverable") + ZS_PARAM("message", message->toDebug()) + ZS_PARAM("peer find state", IPeer::toString(state)))
