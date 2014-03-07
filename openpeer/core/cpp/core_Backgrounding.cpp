@@ -63,7 +63,8 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      Backgrounding::Backgrounding()
+      Backgrounding::Backgrounding() :
+        MessageQueueAssociator(IStackForInternal::queueCore())
       {
         ZS_LOG_DETAIL(log("created"))
       }

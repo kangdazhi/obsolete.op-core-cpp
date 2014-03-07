@@ -50,7 +50,8 @@ namespace openpeer
       #pragma mark Backgrounding
       #pragma mark
 
-      class Backgrounding : public IBackgrounding
+      class Backgrounding : public zsLib::MessageQueueAssociator,
+                            public IBackgrounding
       {
       public:
         friend interaction IBackgroundingFactory;
