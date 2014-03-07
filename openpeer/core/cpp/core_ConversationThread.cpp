@@ -263,6 +263,8 @@ namespace openpeer
 
         ConversationThreadPtr pThis(new ConversationThread(UseStack::queueCore(), account, NULL));
         pThis->mThisWeak = pThis;
+
+        AutoRecursiveLock lock(pThis->getLock());
         pThis->init();
 
         ZS_LOG_DEBUG(pThis->log("created for API caller"))
@@ -634,6 +636,8 @@ namespace openpeer
         ConversationThreadPtr pThis(new ConversationThread(UseStack::queueCore(), account, services::IHelper::get(split, OPENPEER_CONVERSATION_THREAD_BASE_THREAD_ID_INDEX)));
         pThis->mThisWeak = pThis;
         pThis->mMustNotifyAboutNewThread = true;
+
+        AutoRecursiveLock lock(pThis->getLock());
         pThis->init();
         pThis->notifyPublicationUpdated(peerLocation, metaData, split);
         if (pThis->mThreads.size() < 1) {

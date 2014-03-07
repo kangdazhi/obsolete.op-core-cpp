@@ -144,6 +144,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Identity::init()
       {
+        AutoRecursiveLock lock(mLock);
         ZS_LOG_DEBUG(log("init called") + ZS_PARAM("identity session id", mSession->getID()))
       }
 
@@ -203,6 +204,9 @@ namespace openpeer
 
         IdentityPtr pThis(new Identity(UseStack::queueCore()));
         pThis->mThisWeak = pThis;
+
+        AutoRecursiveLock lock(pThis->mLock);
+
         pThis->mDelegate = IIdentityDelegateProxy::createWeak(UseStack::queueApplication(), delegate);
 
         String identity(identityURI_or_identityBaseURI);

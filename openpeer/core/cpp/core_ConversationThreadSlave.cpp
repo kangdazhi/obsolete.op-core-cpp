@@ -134,6 +134,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadSlave::init()
       {
+        AutoRecursiveLock lock(getLock());
         mFetcher = IConversationThreadDocumentFetcher::create(mThisWeak.lock(), mAccount.lock()->getRepository());
       }
 
@@ -545,6 +546,8 @@ namespace openpeer
 
         ConversationThreadSlavePtr pThis(new ConversationThreadSlave(UseStack::queueCore(), account, peerLocation, baseThread, hostThreadID));
         pThis->mThisWeak = pThis;
+
+        AutoRecursiveLock lock(pThis->getLock());
         pThis->init();
         pThis->notifyPublicationUpdated(peerLocation, metaData, split);
         return pThis;

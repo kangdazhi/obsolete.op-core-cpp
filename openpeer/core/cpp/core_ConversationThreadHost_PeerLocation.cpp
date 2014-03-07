@@ -89,6 +89,8 @@ namespace openpeer
         PeerContactPtr outer = mOuter.lock();
         ZS_THROW_INVALID_ASSUMPTION_IF(!outer)
 
+        AutoRecursiveLock lock(getLock());
+
         IPublicationRepositoryPtr repo = outer->getRepository();
         if (repo) {
           mFetcher = IConversationThreadDocumentFetcher::create(mThisWeak.lock(), repo);

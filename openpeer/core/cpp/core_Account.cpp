@@ -207,6 +207,8 @@ namespace openpeer
         AccountPtr pThis(new Account(UseStack::queueCore(), delegate, conversationThreadDelegate, callDelegate));
         pThis->mThisWeak = pThis;
 
+        AutoRecursiveLock lock(pThis->getLock());
+
         String lockboxDomain(lockboxServiceDomain);
         IBootstrappedNetworkPtr lockboxNetwork = IBootstrappedNetwork::prepare(lockboxDomain);
         if (!lockboxNetwork) {
@@ -240,6 +242,8 @@ namespace openpeer
 
         AccountPtr pThis(new Account(UseStack::queueCore(), delegate, conversationThreadDelegate, callDelegate));
         pThis->mThisWeak = pThis;
+
+        AutoRecursiveLock lock(pThis->getLock());
 
         String lockboxDomain;
         String accountID;
@@ -1680,6 +1684,8 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Account::ContactSubscription::init(ILocationPtr peerLocation)
       {
+        AutoRecursiveLock lock(getLock());
+
         if (!peerLocation) {
           ZS_LOG_DEBUG(log("creating a contact subscription to a hinted location") + UseContact::toDebug(mContact))
 
@@ -2131,6 +2137,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Account::LocationSubscription::init()
       {
+        AutoRecursiveLock lock(getLock());
         step();
       }
 

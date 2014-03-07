@@ -890,6 +890,7 @@ namespace openpeer
       #pragma mark CallTransport::TransportSocket
       #pragma mark
 
+      //-----------------------------------------------------------------------
       CallTransport::TransportSocket::TransportSocket(
                                                       IMessageQueuePtr queue,
                                                       CallTransportPtr outer
