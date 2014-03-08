@@ -219,6 +219,7 @@ namespace openpeer
         virtual int getVideoTransportStatistics(RtpRtcpStatistics &stat);
         virtual int getVoiceTransportStatistics(RtpRtcpStatistics &stat);
 
+        virtual void pauseVoice(bool pause = true);
         //---------------------------------------------------------------------
         #pragma mark
         #pragma mark MediaEngine => IMediaEngineForStack
@@ -261,7 +262,9 @@ namespace openpeer
 
         void CallbackOnError(const int errCode, const int channel);
         void CallbackOnOutputAudioRouteChange(const OutputAudioRoute route);
-        
+        void CallbackOnAudioSessionInterruptionBegin();
+        void CallbackOnAudioSessionInterruptionEnd();
+
         //-----------------------------------------------------------------------
         #pragma mark
         #pragma mark MediaEngine => ViECaptureObserver

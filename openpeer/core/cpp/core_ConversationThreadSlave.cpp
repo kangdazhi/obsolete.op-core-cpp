@@ -134,6 +134,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadSlave::init()
       {
+        AutoRecursiveLock lock(getLock());
         mFetcher = IConversationThreadDocumentFetcher::create(mThisWeak.lock(), mAccount.lock()->getRepository());
       }
 
@@ -386,6 +387,7 @@ namespace openpeer
         }
 
         switch (hostContact->getPeer()->getFindState()) {
+          case IPeer::PeerFindState_Pending:    return IConversationThread::ContactState_NotApplicable;
           case IPeer::PeerFindState_Idle:       return (mPeerLocation ? IConversationThread::ContactState_Disconnected : IConversationThread::ContactState_NotApplicable);
           case IPeer::PeerFindState_Finding:    return IConversationThread::ContactState_Finding;
           case IPeer::PeerFindState_Completed:  return (mPeerLocation ? IConversationThread::ContactState_Disconnected : IConversationThread::ContactState_NotApplicable);
@@ -545,6 +547,8 @@ namespace openpeer
 
         ConversationThreadSlavePtr pThis(new ConversationThreadSlave(UseStack::queueCore(), account, peerLocation, baseThread, hostThreadID));
         pThis->mThisWeak = pThis;
+
+        AutoRecursiveLock lock(pThis->getLock());
         pThis->init();
         pThis->notifyPublicationUpdated(peerLocation, metaData, split);
         return pThis;
@@ -1316,7 +1320,8 @@ namespace openpeer
               mMessageDeliveryStates[message->messageID()] = deliveryState;
             }
 
-            if (((IPeer::PeerFindState_Finding != state) &&
+            if (( ((IPeer::PeerFindState_Completed == state) ||
+                   (IPeer::PeerFindState_Idle == state)) &&
                  (peerLocations->size() < 1)) ||
                 (deliveryState->shouldPush())) {
               ZS_LOG_TRACE(log("message develivery state must now be set to undeliverable") + message->toDebug() + ZS_PARAM("peer find state", IPeer::toString(state)) + ZS_PARAM("last state changed time", deliveryState->mLastStateChanged) + ZS_PARAM("current time", zsLib::now()))

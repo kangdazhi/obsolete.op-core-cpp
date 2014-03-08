@@ -31,6 +31,7 @@
 
 #include <openpeer/core/internal/core_Stack.h>
 #include <openpeer/core/internal/core_MediaEngine.h>
+#include <openpeer/core/internal/core_Settings.h>
 #include <openpeer/core/IConversationThread.h>
 #include <openpeer/core/ICall.h>
 
@@ -39,6 +40,7 @@
 
 #include <openpeer/services/IHelper.h>
 #include <openpeer/services/ILogger.h>
+#include <openpeer/services/ISettings.h>
 
 #include <zsLib/helpers.h>
 #include <zsLib/MessageQueueThread.h>
@@ -69,6 +71,8 @@ namespace openpeer
 {
   namespace core
   {
+    using services::IHelper;
+
     //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------
@@ -283,53 +287,6 @@ namespace openpeer
       #pragma mark IStackForInternal
       #pragma mark
 
-      //-----------------------------------------------------------------------
-      const String &IStackForInternal::appID()
-      {
-        return (Stack::singleton())->getAppID();
-      }
-
-      //-----------------------------------------------------------------------
-      const String &IStackForInternal::appName()
-      {
-        return (Stack::singleton())->getAppName();
-      }
-
-      //-----------------------------------------------------------------------
-      const String &IStackForInternal::appImageURL()
-      {
-        return (Stack::singleton())->getAppImageURL();
-      }
-
-      //-----------------------------------------------------------------------
-      const String &IStackForInternal::appURL()
-      {
-        return (Stack::singleton())->getAppURL();
-      }
-
-      //-----------------------------------------------------------------------
-      const String &IStackForInternal::userAgent()
-      {
-        return (Stack::singleton())->getUserAgent();
-      }
-
-      //-----------------------------------------------------------------------
-      const String &IStackForInternal::deviceID()
-      {
-        return (Stack::singleton())->getDeviceID();
-      }
-
-      //-----------------------------------------------------------------------
-      const String &IStackForInternal::os()
-      {
-        return (Stack::singleton())->getOS();
-      }
-
-      //-----------------------------------------------------------------------
-      const String &IStackForInternal::system()
-      {
-        return (Stack::singleton())->getSystem();
-      }
 
       //-----------------------------------------------------------------------
       IMessageQueuePtr IStackForInternal::queueApplication()
@@ -419,15 +376,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Stack::setup(
                         IStackDelegatePtr stackDelegate,
-                        IMediaEngineDelegatePtr mediaEngineDelegate,
-                        const char *appID,
-                        const char *appName,
-                        const char *appImageURL,
-                        const char *appURL,
-                        const char *userAgent,
-                        const char *deviceID,
-                        const char *os,
-                        const char *system
+                        IMediaEngineDelegatePtr mediaEngineDelegate
                         )
       {
         AutoRecursiveLock lock(mLock);
@@ -442,42 +391,16 @@ namespace openpeer
           mMediaEngineDelegate = IMediaEngineDelegateProxy::create(getQueueApplication(), mediaEngineDelegate);
           UseMediaEngine::setup(mMediaEngineDelegate);
         }
-        
-        if (appID) {
-          mAppID = appID;
-        }
-        if (appName) {
-          mAppName = appName;
-        }
-        if (appImageURL) {
-          mAppImageURL = appImageURL;
-        }
-        if (appURL) {
-          mAppURL = appURL;
-        }
-        if (userAgent) {
-          mUserAgent = String(userAgent);
-        }
-        if (deviceID) {
-          mDeviceID = String(deviceID);
-        }
-        if (os) {
-          mOS = String(os);
-        }
-        if (system) {
-          mSystem = String(system);
+
+        ISettingsForStack::applyDefaultsIfNoDelegatePresent();
+
+        String authorizedAppId = services::ISettings::getString(OPENPEER_COMMON_SETTING_APPLICATION_AUTHORIZATION_ID);
+
+        if (!isAuthorizedApplicationIDExpiryWindowStillValid(authorizedAppId, Seconds(1))) {
+          ZS_LOG_WARNING(Basic, slog("application id is not valid") + ZS_PARAM("authorized application id", authorizedAppId))
         }
 
-        ZS_THROW_INVALID_ARGUMENT_IF(mAppID.isEmpty())
-        ZS_THROW_INVALID_ARGUMENT_IF(mAppName.isEmpty())
-        ZS_THROW_INVALID_ARGUMENT_IF(mAppImageURL.isEmpty())
-        ZS_THROW_INVALID_ARGUMENT_IF(mAppURL.isEmpty())
-        ZS_THROW_INVALID_ARGUMENT_IF(mUserAgent.isEmpty())
-        ZS_THROW_INVALID_ARGUMENT_IF(mDeviceID.isEmpty())
-        ZS_THROW_INVALID_ARGUMENT_IF(mOS.isEmpty())
-        ZS_THROW_INVALID_ARGUMENT_IF(mSystem.isEmpty())
-
-        stack::IStack::setup(mApplicationThreadQueue, mCoreThreadQueue, mServicesThreadQueue, mKeyGenerationThreadQueue, mAppID, mAppName, mAppImageURL, mAppURL, mUserAgent, mDeviceID, mOS, mSystem);
+        stack::IStack::setup(mApplicationThreadQueue, mCoreThreadQueue, mServicesThreadQueue, mKeyGenerationThreadQueue);
       }
 
       //-----------------------------------------------------------------------
@@ -533,6 +456,62 @@ namespace openpeer
         ZS_LOG_WARNING(Basic, slog("method should only be called during development") + ZS_PARAM("authorized application ID", final))
 
         return final;
+      }
+
+      //-----------------------------------------------------------------------
+      Time Stack::getAuthorizedApplicationIDExpiry(
+                                                   const char *authorizedApplicationID,
+                                                   Duration *outRemainingDurationAvailable
+                                                   )
+      {
+        ZS_THROW_INVALID_ARGUMENT_IF(!authorizedApplicationID)
+
+        if (outRemainingDurationAvailable) {
+          *outRemainingDurationAvailable = Seconds(0);
+        }
+
+        IHelper::SplitMap split;
+        IHelper::split(authorizedApplicationID, split, '-');
+
+        if (split.size() < 3) {
+          ZS_LOG_WARNING(Detail, slog("authorized application id is not in a valid format") + ZS_PARAM("authorized application id", authorizedApplicationID))
+          return Time();
+        }
+
+        String timeStr = (*(split.find(split.size()-2))).second;
+
+        Time expires = IHelper::stringToTime(timeStr);
+        if (Time() == expires) {
+          ZS_LOG_WARNING(Detail, slog("authorized application id time segment is not in a valid format") + ZS_PARAM("authorized application id", authorizedApplicationID) + ZS_PARAM("time str", timeStr))
+          return Time();
+        }
+
+        Time now = zsLib::now();
+        if (now < expires) {
+          if (outRemainingDurationAvailable) {
+            *outRemainingDurationAvailable = (expires - now);
+          }
+        }
+
+        return expires;
+      }
+
+      //-----------------------------------------------------------------------
+      bool Stack::isAuthorizedApplicationIDExpiryWindowStillValid(
+                                                                  const char *authorizedApplicationID,
+                                                                  Duration minimumValidityWindowRequired
+                                                                  )
+      {
+        Duration available;
+        Time expires = getAuthorizedApplicationIDExpiry(authorizedApplicationID, &available);
+
+        if (available < minimumValidityWindowRequired) {
+          ZS_LOG_BASIC(slog("authorized application id will expire") + ZS_PARAM("authorized application id", authorizedApplicationID) + ZS_PARAM("expires at", expires) + ZS_PARAM("window (s)", minimumValidityWindowRequired) + ZS_PARAM("available (s)", available))
+          return false;
+        }
+
+        ZS_LOG_TRACE(slog("authorized application id is still valid") + ZS_PARAM("authorized application id", authorizedApplicationID) + ZS_PARAM("expires at", expires) + ZS_PARAM("window (s)", minimumValidityWindowRequired) + ZS_PARAM("available (s)", available))
+        return true;
       }
 
       //-----------------------------------------------------------------------
@@ -763,6 +742,24 @@ namespace openpeer
                                                  )
     {
       return internal::Stack::createAuthorizedApplicationID(applicationID, applicationIDSharedSecret, expires);
+    }
+
+    //-------------------------------------------------------------------------
+    Time IStack::getAuthorizedApplicationIDExpiry(
+                                                  const char *authorizedApplicationID,
+                                                  Duration *outRemainingDurationAvailable
+                                                  )
+    {
+      return internal::Stack::getAuthorizedApplicationIDExpiry(authorizedApplicationID, outRemainingDurationAvailable);
+    }
+
+    //-------------------------------------------------------------------------
+    bool IStack::isAuthorizedApplicationIDExpiryWindowStillValid(
+                                                               const char *authorizedApplicationID,
+                                                               Duration minimumValidityWindowRequired
+                                                               )
+    {
+      return internal::Stack::isAuthorizedApplicationIDExpiryWindowStillValid(authorizedApplicationID, minimumValidityWindowRequired);
     }
 
     //-------------------------------------------------------------------------

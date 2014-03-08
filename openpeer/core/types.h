@@ -53,6 +53,8 @@ namespace openpeer
     using zsLib::String;
     using zsLib::PTRNUMBER;
     typedef PTRNUMBER SubsystemID;
+    using zsLib::Duration;
+    using zsLib::Seconds;
 
     using zsLib::XML::Element;
     using zsLib::XML::ElementPtr;
@@ -162,6 +164,8 @@ namespace openpeer
     #pragma mark
 
     ZS_DECLARE_INTERACTION_PTR(IAccount)
+    ZS_DECLARE_INTERACTION_PTR(IBackgrounding)
+    ZS_DECLARE_INTERACTION_PTR(IBackgroundingQuery)
     ZS_DECLARE_INTERACTION_PTR(ICache)
     ZS_DECLARE_INTERACTION_PTR(ICacheDelegate)
     ZS_DECLARE_INTERACTION_PTR(ICall)
@@ -179,6 +183,7 @@ namespace openpeer
     ZS_DECLARE_INTERACTION_PTR(IStackMessageQueueDelegate)
 
     ZS_DECLARE_INTERACTION_PROXY(IAccountDelegate)
+    ZS_DECLARE_INTERACTION_PROXY(IBackgroundingCompletionDelegate)
     ZS_DECLARE_INTERACTION_PROXY(ICallDelegate)
     ZS_DECLARE_INTERACTION_PROXY(IConversationThreadDelegate)
     ZS_DECLARE_INTERACTION_PROXY(IContactPeerFilePublicLookupDelegate)

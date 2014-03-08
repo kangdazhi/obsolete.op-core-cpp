@@ -53,6 +53,7 @@ namespace openpeer
       using zsLib::UINT;
       using zsLib::DWORD;
       using zsLib::AutoPUID;
+      using zsLib::AutoBool;
       using zsLib::AutoLock;
       using zsLib::AutoRecursiveLock;
       using zsLib::Lock;
@@ -134,6 +135,7 @@ namespace openpeer
       ZS_DECLARE_INTERACTION_PROXY(IShutdownCheckAgainDelegate)
 
       ZS_DECLARE_CLASS_PTR(Account)
+      ZS_DECLARE_CLASS_PTR(Backgrounding)
       ZS_DECLARE_CLASS_PTR(Cache)
       ZS_DECLARE_CLASS_PTR(Call)
       ZS_DECLARE_CLASS_PTR(CallTransport)

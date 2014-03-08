@@ -50,6 +50,20 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       #pragma mark
+      #pragma mark ISettingsForStack
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      void ISettingsForStack::applyDefaultsIfNoDelegatePresent()
+      {
+        Settings::singleton()->applyDefaultsIfNoDelegatePresent();
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
       #pragma mark Settings
       #pragma mark
 
@@ -96,14 +110,49 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      bool Settings::apply(const char *jsonSettings)
+      void Settings::setup(ISettingsDelegatePtr delegate)
       {
-        return stack::ISettings::apply(jsonSettings);
-      }
+        {
+          AutoRecursiveLock lock(mLock);
+          mDelegate = delegate;
 
+          ZS_LOG_DEBUG(log("setup called") + ZS_PARAM("has delegate", (bool)delegate))
+        }
+
+        stack::ISettings::setup(delegate ? mThisWeak.lock() : stack::ISettingsDelegatePtr());
+      }
+      
       //-----------------------------------------------------------------------
       void Settings::applyDefaults()
       {
+        {
+          AutoRecursiveLock lock(mLock);
+          get(mAppliedDefaults) = true;
+        }
+
+        stack::ISettings::applyDefaults();
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark Settings => ISettingsForStack
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      void Settings::applyDefaultsIfNoDelegatePresent()
+      {
+        {
+          AutoRecursiveLock lock(mLock);
+          if (mDelegate) return;
+          if (mAppliedDefaults) return;
+        }
+
+        ZS_LOG_WARNING(Detail, log("To prevent issues with missing settings, the default settings are being applied. Recommend installing a settings delegate to fetch settings required from a externally."))
+
+        applyDefaults();
       }
 
       //-----------------------------------------------------------------------
@@ -113,17 +162,6 @@ namespace openpeer
       #pragma mark
       #pragma mark Settings => ISettingsDelegate
       #pragma mark
-
-      //-----------------------------------------------------------------------
-      void Settings::setup(ISettingsDelegatePtr delegate)
-      {
-        AutoRecursiveLock lock(mLock);
-        mDelegate = delegate;
-
-        ZS_LOG_DEBUG(log("setup called") + ZS_PARAM("has delegate", (bool)delegate))
-
-        stack::ISettings::setup(mThisWeak.lock());
-      }
 
       //-----------------------------------------------------------------------
       String Settings::getString(const char *key) const
@@ -345,9 +383,69 @@ namespace openpeer
     }
 
     //-------------------------------------------------------------------------
+    void ISettings::setString(
+                              const char *key,
+                              const char *value
+                              )
+    {
+      return stack::ISettings::setString(key, value);
+    }
+
+    //-------------------------------------------------------------------------
+    void ISettings::setInt(
+                           const char *key,
+                           LONG value
+                           )
+    {
+      return stack::ISettings::setInt(key, value);
+    }
+
+    //-------------------------------------------------------------------------
+    void ISettings::setUInt(
+                            const char *key,
+                            ULONG value
+                            )
+    {
+      return stack::ISettings::setUInt(key, value);
+    }
+
+    //-------------------------------------------------------------------------
+    void ISettings::setBool(
+                            const char *key,
+                            bool value
+                            )
+    {
+      return stack::ISettings::setBool(key, value);
+    }
+
+    //-------------------------------------------------------------------------
+    void ISettings::setFloat(
+                             const char *key,
+                             float value
+                             )
+    {
+      return stack::ISettings::setFloat(key, value);
+    }
+
+    //-------------------------------------------------------------------------
+    void ISettings::setDouble(
+                              const char *key,
+                              double value
+                              )
+    {
+      return stack::ISettings::setDouble(key, value);
+    }
+
+    //-------------------------------------------------------------------------
+    void ISettings::clear(const char *key)
+    {
+      return stack::ISettings::clear(key);
+    }
+
+    //-------------------------------------------------------------------------
     bool ISettings::apply(const char *jsonSettings)
     {
-      return internal::Settings::singleton()->apply(jsonSettings);
+      return stack::ISettings::apply(jsonSettings);
     }
 
     //-------------------------------------------------------------------------
@@ -355,6 +453,6 @@ namespace openpeer
     {
       internal::Settings::singleton()->applyDefaults();
     }
-
+    
   }
 }

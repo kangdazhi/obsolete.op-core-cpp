@@ -49,6 +49,7 @@ namespace openpeer
       #pragma mark
 
       class Factory : public IAccountFactory,
+                      public IBackgroundingFactory,
                       public ICallFactory,
                       public ICallTransportFactory,
                       public IContactFactory,

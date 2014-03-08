@@ -32,6 +32,16 @@ void MediaEngineDelegateWrapper::onMediaEngineAudioRouteChanged(IMediaEngine::Ou
   }
 }
 
+void MediaEngineDelegateWrapper::onMediaEngineAudioSessionInterruptionBegan()
+{
+  printf("Audio session interruption began\n");
+}
+
+void MediaEngineDelegateWrapper::onMediaEngineAudioSessionInterruptionEnded()
+{
+  printf("Audio session interruption ended\n");
+}
+
 void MediaEngineDelegateWrapper::onMediaEngineFaceDetected()
 {
   printf("******************* FACE DETECTED *******************\n");
