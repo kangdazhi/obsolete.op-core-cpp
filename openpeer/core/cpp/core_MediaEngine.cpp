@@ -1548,6 +1548,9 @@ namespace openpeer
           AutoRecursiveLock lock(mLock);
 
           ZS_LOG_DEBUG(log("start voice"))
+          
+          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
+                              "internalStartVoice - 1");
 
           mVoiceChannel = mVoiceBase->CreateChannel();
           if (mVoiceChannel < 0) {
@@ -1555,10 +1558,16 @@ namespace openpeer
             mVoiceChannel = OPENPEER_MEDIA_ENGINE_INVALID_CHANNEL;
             return;
           }
+          
+          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
+                              "internalStartVoice - 1.1");
 
           mError = registerVoiceTransport();
           if (mError != 0)
             return;
+          
+          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
+                              "internalStartVoice - 1.2");
 
           webrtc::EcModes ecMode = getEcMode();
           if (ecMode == webrtc::kEcUnchanged) {
@@ -1569,6 +1578,9 @@ namespace openpeer
             ZS_LOG_ERROR(Detail, log("failed to set acoustic echo canceller status") + ZS_PARAM("error", mVoiceBase->LastError()))
             return;
           }
+          
+          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
+                              "internalStartVoice - 1.3");
           if (ecMode == webrtc::kEcAecm && mEcEnabled) {
             mError = mVoiceAudioProcessing->SetAecmMode(webrtc::kAecmSpeakerphone);
             if (mError != 0) {
@@ -1576,16 +1588,25 @@ namespace openpeer
               return;
             }
           }
+          
+          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
+                              "internalStartVoice - 1.4");
           mError = mVoiceAudioProcessing->SetAgcStatus(mAgcEnabled, webrtc::kAgcAdaptiveDigital);
           if (mError != 0) {
             ZS_LOG_ERROR(Detail, log("failed to set automatic gain control status") + ZS_PARAM("error", mVoiceBase->LastError()))
             return;
           }
+          
+          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
+                              "internalStartVoice - 1.5");
           mError = mVoiceAudioProcessing->SetNsStatus(mNsEnabled, webrtc::kNsLowSuppression);
           if (mError != 0) {
             ZS_LOG_ERROR(Detail, log("failed to set noise suppression status") + ZS_PARAM("error", mVoiceBase->LastError()))
             return;
           }
+          
+          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
+                              "internalStartVoice - 2");
 
           mError = mVoiceVolumeControl->SetInputMute(-1, false);
           if (mError != 0) {
@@ -1639,6 +1660,9 @@ namespace openpeer
             }
 #endif
           }
+          
+          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
+                              "internalStartVoice - 3");
 
           webrtc::CodecInst cfinst;
           memset(&cfinst, 0, sizeof(webrtc::CodecInst));
@@ -1686,6 +1710,9 @@ namespace openpeer
             }
           }
         }
+        
+        __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
+                            "internalStartVoice - 4");
 
         {
           AutoRecursiveLock lock(mMediaEngineReadyLock);
@@ -1986,7 +2013,10 @@ namespace openpeer
           
           ZS_LOG_DEBUG(log("start video channel"))
           
-#if defined(TARGET_OS_IPHONE) || defined(__QNX__)
+          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
+                              "internalStartVideoChannel - 1");
+
+#if defined(TARGET_OS_IPHONE) || defined(__QNX__) || defined(_ANDROID)
           void *channelView = mChannelRenderView;
 #else
           void *channelView = NULL;
@@ -2017,6 +2047,9 @@ namespace openpeer
             ZS_LOG_ERROR(Detail, log("failed to connect capture device to video channel") + ZS_PARAM("error", mVideoBase->LastError()))
             return;
           }
+          
+          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
+                              "internalStartVideoChannel - 2");
 
           mError = mVideoRtpRtcp->SetRTCPStatus(mVideoChannel, webrtc::kRtcpCompound_RFC4585);
           if (0 != mError) {
@@ -2053,6 +2086,9 @@ namespace openpeer
             }
           }
 #endif
+          
+          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
+                              "internalStartVideoChannel - 3");
 
           mError = mVideoRender->AddRenderer(mVideoChannel, channelView, 0, 0.0F, 0.0F, 1.0F,
                                              1.0F);
@@ -2078,6 +2114,9 @@ namespace openpeer
               break;
             }
           }
+          
+          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
+                              "internalStartVideoChannel - 4");
 
           mError = setVideoCodecParameters();
           if (mError != 0) {
@@ -2105,6 +2144,9 @@ namespace openpeer
             return;
           }
         }
+        
+        __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
+                            "internalStartVideoChannel - 5");
 
         {
           AutoRecursiveLock lock(mMediaEngineReadyLock);
@@ -2617,7 +2659,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       webrtc::EcModes MediaEngine::getEcMode()
       {
-#ifdef TARGET_OS_IPHONE
+#if defined(TARGET_OS_IPHONE) || defined (_ANDROID)
         return webrtc::kEcAecm;
 #elif defined(__QNX__)
         return webrtc::kEcAec;

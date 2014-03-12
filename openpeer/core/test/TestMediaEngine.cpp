@@ -36,6 +36,8 @@
 
 #ifdef __QNX__
 extern char *__progname;
+#elif defined _ANDROID
+#include <android/log.h>
 #endif
 
 namespace openpeer { namespace core { namespace test { ZS_DECLARE_SUBSYSTEM(openpeer_core_test) } } }
@@ -229,10 +231,12 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void TestMediaEngine::Print(const webrtc::TraceLevel level, const char *traceString, const int length)
       {
-#ifndef __QNX__
-        printf("%s\n", traceString);
+#ifdef __QNX__
+        slog2f(mBufferHandle, 0, SLOG2_INFO, "%s", traceString);
+#elif defined _ANDROID
+        //__android_log_print(ANDROID_LOG_DEBUG, "TestMediaEngine", traceString);
 #else
-		slog2f(mBufferHandle, 0, SLOG2_INFO, "%s", traceString);
+        printf("%s\n", traceString);
 #endif
 
         MediaEngine::Print(level, traceString, length);
