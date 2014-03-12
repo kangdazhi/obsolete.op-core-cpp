@@ -71,6 +71,8 @@ namespace openpeer
     struct IdentityContact;
     struct RolodexContact;
 
+    ZS_DECLARE_USING_PTR(services, RecursiveLock)
+
     ZS_DECLARE_INTERACTION_PTR(IContact)
 
     //-------------------------------------------------------------------------

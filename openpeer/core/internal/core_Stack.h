@@ -160,9 +160,9 @@ namespace openpeer
         #pragma mark Stack => IStackForInternal
         #pragma mark
 
-        virtual IMessageQueuePtr getQueueApplication() const;
-        virtual IMessageQueuePtr getQueueCore() const;
-        virtual IMessageQueuePtr getQueueMedia() const;
+        virtual IMessageQueuePtr getQueueApplication();
+        virtual IMessageQueuePtr getQueueCore();
+        virtual IMessageQueuePtr getQueueMedia();
         virtual IMessageQueuePtr getQueueServices() const;
         virtual IMessageQueuePtr getQueueKeyGeneration() const;
 
@@ -178,6 +178,8 @@ namespace openpeer
 
         void makeReady();
 
+        static Log::Params slog(const char *message);
+
       protected:
         //---------------------------------------------------------------------
         #pragma mark
@@ -190,11 +192,9 @@ namespace openpeer
 
         IShutdownCheckAgainDelegatePtr mShutdownCheckAgainDelegate;
 
-        IMessageQueueThreadPtr mApplicationThreadQueue;
-        MessageQueueThreadPtr  mCoreThreadQueue;
-        MessageQueueThreadPtr  mMediaThreadQueue;
-        MessageQueueThreadPtr  mServicesThreadQueue;
-        MessageQueueThreadPtr  mKeyGenerationThreadQueue;
+        IMessageQueuePtr mApplicationQueue;
+        IMessageQueuePtr mCoreQueue;
+        IMessageQueuePtr mMediaQueue;
 
         IStackDelegatePtr              mStackDelegate;
         IMediaEngineDelegatePtr        mMediaEngineDelegate;

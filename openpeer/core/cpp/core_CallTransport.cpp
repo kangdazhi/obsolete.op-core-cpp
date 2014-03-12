@@ -412,6 +412,7 @@ namespace openpeer
         }
 
         UseMediaEnginePtr engine = UseMediaEngine::singleton();
+        if (!engine) return;
 
         if (SocketType_Audio == type) {
           if (isRTP) {
@@ -649,6 +650,7 @@ namespace openpeer
         }
 
         UseMediaEnginePtr engine = UseMediaEngine::singleton();
+        if (!engine) return;
 
         if (hasAudio) {
           ZS_LOG_DETAIL(log("registering audio media engine transports"))
@@ -695,6 +697,7 @@ namespace openpeer
         }
 
         UseMediaEnginePtr engine = UseMediaEngine::singleton();
+        if (!engine) return;
 
         if (hasVideo) {
           ZS_LOG_DETAIL(log("stopping media engine video"))

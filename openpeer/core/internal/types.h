@@ -62,6 +62,9 @@ namespace openpeer
       using zsLib::MessageQueueAssociator;
       using zsLib::Seconds;
       using zsLib::Socket;
+      using zsLib::PrivateGlobalLock;
+      using zsLib::Singleton;
+      using zsLib::SingletonLazySharedPtr;
 
       ZS_DECLARE_USING_PTR(zsLib, MessageQueue)
       ZS_DECLARE_USING_PTR(zsLib, IMessageQueue)

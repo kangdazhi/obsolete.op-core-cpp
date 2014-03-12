@@ -73,6 +73,8 @@ namespace openpeer
 
         static BackgroundingPtr singleton();
 
+        static QueryPtr createDeadQuery(IBackgroundingCompletionDelegatePtr readyDelegate);
+
       protected:
         //---------------------------------------------------------------------
         #pragma mark
@@ -96,6 +98,7 @@ namespace openpeer
         #pragma mark
 
         Log::Params log(const char *message) const;
+        static Log::Params slog(const char *message);
         Log::Params debug(const char *message) const;
 
         virtual ElementPtr toDebug() const;
@@ -130,13 +133,14 @@ namespace openpeer
           #pragma mark Backgrounding::Query => IBackgroundingQuery
           #pragma mark
 
-          virtual PUID getID() const {return mQuery->getID();}
+          virtual PUID getID() const {return mQuery ? mQuery->getID() : mID;}
 
-          virtual bool isReady() const {return mQuery->isReady();}
+          virtual bool isReady() const {return mQuery ? mQuery->isReady() : true;}
 
-          virtual size_t totalBackgroundingSubscribersStillPending() const {return mQuery->totalBackgroundingSubscribersStillPending();}
+          virtual size_t totalBackgroundingSubscribersStillPending() const {return mQuery ? mQuery->totalBackgroundingSubscribersStillPending() : 0;}
 
         protected:
+          AutoPUID mID;
           services::IBackgroundingQueryPtr mQuery;
         };
 

@@ -93,11 +93,34 @@ namespace openpeer
       //-----------------------------------------------------------------------
       BackgroundingPtr Backgrounding::singleton()
       {
-        AutoRecursiveLock lock(IHelper::getGlobalLock());
-        static BackgroundingPtr pThis = IBackgroundingFactory::singleton().createForBackgrounding();
-        return pThis;
+        static SingletonLazySharedPtr<Backgrounding> singleton(IBackgroundingFactory::singleton().createForBackgrounding());
+        BackgroundingPtr result = singleton.singleton();
+        if (!result) {
+          ZS_LOG_WARNING(Detail, slog("singleton gone"))
+        }
+        return result;
       }
 
+      //-----------------------------------------------------------------------
+      Backgrounding::QueryPtr Backgrounding::createDeadQuery(IBackgroundingCompletionDelegatePtr inReadyDelegate)
+      {
+        ZS_LOG_WARNING(Detail, slog("creating dead query") + ZS_PARAM("delegate", (bool)inReadyDelegate))
+
+        QueryPtr query = Query::create();
+
+        if (inReadyDelegate) {
+          IBackgroundingCompletionDelegatePtr delegate = IBackgroundingCompletionDelegateProxy::createWeak(IStackForInternal::queueApplication(), inReadyDelegate);
+
+          try {
+            delegate->onBackgroundingReady(query);
+          } catch(IBackgroundingCompletionDelegateProxy::Exceptions::DelegateGone &) {
+            ZS_LOG_WARNING(Detail, slog("delegate gone"))
+          }
+        }
+
+        return query;
+      }
+      
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -162,9 +185,15 @@ namespace openpeer
       //-----------------------------------------------------------------------
       Log::Params Backgrounding::log(const char *message) const
       {
-        ElementPtr objectEl = Element::create("services::Backgrounding");
+        ElementPtr objectEl = Element::create("core::Backgrounding");
         IHelper::debugAppend(objectEl, "id", mID);
         return Log::Params(message, objectEl);
+      }
+
+      //-----------------------------------------------------------------------
+      Log::Params Backgrounding::slog(const char *message)
+      {
+        return Log::Params(message, "core::Backgrounding");
       }
 
       //-----------------------------------------------------------------------
@@ -265,19 +294,23 @@ namespace openpeer
     //-------------------------------------------------------------------------
     IBackgroundingQueryPtr IBackgrounding::notifyGoingToBackground(IBackgroundingCompletionDelegatePtr readyDelegate)
     {
-      return internal::Backgrounding::singleton()->notifyGoingToBackground(readyDelegate);
+      internal::BackgroundingPtr singleton = internal::Backgrounding::singleton();
+      if (!singleton) return internal::Backgrounding::createDeadQuery(readyDelegate);
+      return singleton->notifyGoingToBackground(readyDelegate);
     }
 
     //-------------------------------------------------------------------------
     void IBackgrounding::notifyGoingToBackgroundNow()
     {
-      return internal::Backgrounding::singleton()->notifyGoingToBackgroundNow();
+      internal::BackgroundingPtr singleton = internal::Backgrounding::singleton();
+      singleton->notifyGoingToBackgroundNow();
     }
 
     //-------------------------------------------------------------------------
     void IBackgrounding::notifyReturningFromBackground()
     {
-      return internal::Backgrounding::singleton()->notifyReturningFromBackground();
+      internal::BackgroundingPtr singleton = internal::Backgrounding::singleton();
+      singleton->notifyReturningFromBackground();
     }
   }
 }
