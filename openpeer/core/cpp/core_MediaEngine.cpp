@@ -1916,6 +1916,10 @@ namespace openpeer
             ZS_LOG_ERROR(Detail, log("failed to get orientation from video capture device") + ZS_PARAM("error", mVideoBase->LastError()))
             return;
           }
+#elif defined(_ANDROID)
+          setVideoCaptureRotation();
+
+          webrtc::RotateCapturedFrame orientation = webrtc::RotateCapturedFrame_270;
 #else
           webrtc::RotateCapturedFrame orientation = webrtc::RotateCapturedFrame_0;
 #endif
@@ -2567,10 +2571,10 @@ namespace openpeer
           return -1;
         }
 #else
-        width = 180;
-        height = 320;
+        width = 480;
+        height = 640;
         maxFramerate = 15;
-        maxBitrate = 250;
+        maxBitrate = 400;
 #endif
         return 0;
       }
@@ -2579,11 +2583,17 @@ namespace openpeer
       int MediaEngine::setVideoCaptureRotation()
       {
         webrtc::RotateCapturedFrame orientation;
+#ifdef TARGET_OS_IPHONE
         mError = mVideoCapture->GetOrientation(mDeviceUniqueId, orientation);
         if (mError != 0) {
           ZS_LOG_ERROR(Detail, log("failed to get orientation from video capture device") + ZS_PARAM("error", mVideoBase->LastError()))
           return mError;
         }
+#elif defined(_ANDROID)
+        orientation = webrtc::RotateCapturedFrame_270;
+#else
+        orientation = webrtc::RotateCapturedFrame_0;
+#endif
         mError = mVideoCapture->SetRotateCapturedFrames(mCaptureId, orientation);
         if (mError != 0) {
           ZS_LOG_ERROR(Detail, log("failed to set rotation for video capture device") + ZS_PARAM("error", mVideoBase->LastError()))
