@@ -348,11 +348,10 @@ namespace openpeer
       IICESocketPtr CallTransport::getSocket(SocketTypes type) const
       {
         AutoRecursiveLock lock(getLock());
-        ZS_THROW_BAD_STATE_IF(mTotalCalls < 1)
 
         switch (type) {
-          case SocketType_Audio:  return mAudioSocket->getRTPSocket();
-          case SocketType_Video:  return mVideoSocket->getRTPSocket();
+          case SocketType_Audio:  return mAudioSocket ? mAudioSocket->getRTPSocket() : IICESocketPtr();
+          case SocketType_Video:  return mVideoSocket ? mVideoSocket->getRTPSocket() : IICESocketPtr();
         }
 
         ZS_THROW_INVALID_ASSUMPTION(log("what type of socket is this?"))
