@@ -251,6 +251,12 @@ namespace openpeer
         }
 
         //---------------------------------------------------------------------
+        virtual void setThreadPriority(zsLib::ThreadPriorities priority)
+        {
+          // no-op
+        }
+
+        //---------------------------------------------------------------------
         virtual void notifyMessagePosted()
         {
           IStackMessageQueueDelegatePtr delegate;
@@ -292,7 +298,9 @@ namespace openpeer
       IMessageQueuePtr IStackForInternal::queueApplication()
       {
         StackPtr singleton = Stack::singleton();
-        if (!singleton) return IMessageQueuePtr();
+        if (!singleton) {
+          return services::IMessageQueueManager::getMessageQueueForGUIThread();
+        }
         return singleton->getQueueApplication();
       }
 
@@ -300,7 +308,9 @@ namespace openpeer
       IMessageQueuePtr IStackForInternal::queueCore()
       {
         StackPtr singleton = Stack::singleton();
-        if (!singleton) return IMessageQueuePtr();
+        if (!singleton) {
+          return services::IMessageQueueManager::getMessageQueue(OPENPEER_CORE_STACK_CORE_THREAD_QUEUE_NAME);
+        }
         return singleton->getQueueCore();
       }
 
@@ -308,7 +318,9 @@ namespace openpeer
       IMessageQueuePtr IStackForInternal::queueMedia()
       {
         StackPtr singleton = Stack::singleton();
-        if (!singleton) return IMessageQueuePtr();
+        if (!singleton) {
+          return services::IMessageQueueManager::getMessageQueue(OPENPEER_CORE_STACK_MEDIA_THREAD_QUEUE_NAME);
+        }
         return singleton->getQueueMedia();
       }
 
@@ -316,7 +328,9 @@ namespace openpeer
       IMessageQueuePtr IStackForInternal::queueServices()
       {
         StackPtr singleton = Stack::singleton();
-        if (!singleton) return IMessageQueuePtr();
+        if (!singleton) {
+          return services::IHelper::getServiceQueue();
+        }
         return singleton->getQueueServices();
       }
 
@@ -324,7 +338,9 @@ namespace openpeer
       IMessageQueuePtr IStackForInternal::queueKeyGeneration()
       {
         StackPtr singleton = Stack::singleton();
-        if (!singleton) return IMessageQueuePtr();
+        if (!singleton) {
+          return stack::IStack::getKeyGenerationQueue();
+        }
         return singleton->getQueueKeyGeneration();
       }
 
@@ -397,7 +413,15 @@ namespace openpeer
                         IMediaEngineDelegatePtr mediaEngineDelegate
                         )
       {
+        services::IHelper::setSocketThreadPriority();
+        services::IHelper::setTimerThreadPriority();
+
         AutoRecursiveLock lock(mLock);
+
+        ISettingsForStack::applyDefaultsIfNoDelegatePresent();
+
+        IMessageQueueManager::registerMessageQueueThreadPriority(OPENPEER_CORE_STACK_CORE_THREAD_QUEUE_NAME, zsLib::threadPriorityFromString(services::ISettings::getString(OPENPEER_CORE_SETTING_STACK_CORE_THREAD_PRIORITY)));
+        IMessageQueueManager::registerMessageQueueThreadPriority(OPENPEER_CORE_STACK_MEDIA_THREAD_QUEUE_NAME, zsLib::threadPriorityFromString(services::ISettings::getString(OPENPEER_CORE_SETTING_STACK_MEDIA_THREAD_PRIORITY)));
 
         makeReady();
 
@@ -409,8 +433,6 @@ namespace openpeer
           mMediaEngineDelegate = IMediaEngineDelegateProxy::create(getQueueApplication(), mediaEngineDelegate);
           UseMediaEngine::setup(mMediaEngineDelegate);
         }
-
-        ISettingsForStack::applyDefaultsIfNoDelegatePresent();
 
         String authorizedAppId = services::ISettings::getString(OPENPEER_COMMON_SETTING_APPLICATION_AUTHORIZATION_ID);
 
@@ -455,6 +477,11 @@ namespace openpeer
 
         String fakeDomain = String(applicationID) + ".com";
 
+        String splitChar = services::ISettings::getString(OPENPEER_CORE_SETTING_STACK_AUTHORIZED_APPLICATION_ID_SPLIT_CHAR);
+        if (splitChar.isEmpty()) {
+          splitChar = ":";
+        }
+
         if (!services::IHelper::isValidDomain(fakeDomain)) {
           // if you are hitting this it's because your app ID value was set wrong
           ZS_LOG_WARNING(Basic, slog("illegal application ID value") + ZS_PARAM("application ID", applicationID))
@@ -465,11 +492,11 @@ namespace openpeer
         String random = services::IHelper::randomString(20);
         String time = services::IHelper::timeToString(expires);
 
-        String merged = appID + "-" + random + "-" + time;
+        String merged = appID + splitChar + random + splitChar + time;
 
         String hash = services::IHelper::convertToHex(*services::IHelper::hmac(*services::IHelper::convertToBuffer(applicationIDSharedSecret), merged));
 
-        String final = merged + "-" + hash;
+        String final = merged + splitChar + hash;
 
         ZS_LOG_WARNING(Basic, slog("method should only be called during development") + ZS_PARAM("authorized application ID", final))
 
@@ -488,8 +515,15 @@ namespace openpeer
           *outRemainingDurationAvailable = Seconds(0);
         }
 
+        String splitChar = services::ISettings::getString(OPENPEER_CORE_SETTING_STACK_AUTHORIZED_APPLICATION_ID_SPLIT_CHAR);
+        if (splitChar.isEmpty()) {
+          splitChar = ":";
+        }
+
+        char splitter = *splitChar.c_str();
+
         IHelper::SplitMap split;
-        IHelper::split(authorizedApplicationID, split, '-');
+        IHelper::split(authorizedApplicationID, split, splitter);
 
         if (split.size() < 3) {
           ZS_LOG_WARNING(Detail, slog("authorized application id is not in a valid format") + ZS_PARAM("authorized application id", authorizedApplicationID))
@@ -635,6 +669,7 @@ namespace openpeer
       IMessageQueuePtr Stack::getQueueCore()
       {
         AutoRecursiveLock lock(mLock);
+        ZS_THROW_INVALID_USAGE_IF(!mApplicationQueue) // set-up was not called
         if (!mCoreQueue) {
           mCoreQueue = IMessageQueueManager::getMessageQueue(OPENPEER_CORE_STACK_CORE_THREAD_QUEUE_NAME);
         }
@@ -645,8 +680,8 @@ namespace openpeer
       IMessageQueuePtr Stack::getQueueMedia()
       {
         AutoRecursiveLock lock(mLock);
+        ZS_THROW_INVALID_USAGE_IF(!mApplicationQueue) // set-up was not called
         if (!mMediaQueue) {
-          IMessageQueueManager::registerMessageQueueThreadPriority(OPENPEER_CORE_STACK_MEDIA_THREAD_QUEUE_NAME, zsLib::ThreadPriority_RealtimePriority);
           mMediaQueue = IMessageQueueManager::getMessageQueue(OPENPEER_CORE_STACK_MEDIA_THREAD_QUEUE_NAME);
         }
         return mMediaQueue;
@@ -708,7 +743,7 @@ namespace openpeer
         Socket::ignoreSIGPIPEOnThisThread();
 
         if (!mStackMessageQueueDelegate) {
-          queueApplication();
+          getQueueApplication();
         } else {
           mApplicationQueue = InterceptApplicationThread::create(mStackMessageQueueDelegate);
           mStackMessageQueueDelegate.reset();

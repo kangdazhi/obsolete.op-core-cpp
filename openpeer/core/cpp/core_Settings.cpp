@@ -31,6 +31,8 @@
 
 #include <openpeer/core/internal/core_Settings.h>
 
+#include <openpeer/core/internal/core.h>
+
 #include <openpeer/services/IHelper.h>
 
 #include <zsLib/XML.h>
@@ -135,6 +137,9 @@ namespace openpeer
           AutoRecursiveLock lock(mLock);
           get(mAppliedDefaults) = true;
         }
+
+        setString(OPENPEER_CORE_SETTING_STACK_CORE_THREAD_PRIORITY, "normal");
+        setString(OPENPEER_CORE_SETTING_STACK_MEDIA_THREAD_PRIORITY, "real-time");
 
         stack::ISettings::applyDefaults();
       }
