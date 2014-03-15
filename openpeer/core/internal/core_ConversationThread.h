@@ -109,6 +109,9 @@ namespace openpeer
                                            ) = 0;
 
         virtual void notifyPeerDisconnected(ILocationPtr peerLocation) = 0;
+
+        virtual void shutdown() = 0;
+        virtual bool isShutdown() const = 0;
       };
 
       //-------------------------------------------------------------------------
@@ -464,6 +467,9 @@ namespace openpeer
 
         virtual void notifyPeerDisconnected(ILocationPtr peerLocation);
 
+        virtual void shutdown();
+        // (duplicate) virtual bool isShutdown() const;
+
         //-----------------------------------------------------------------------
         #pragma mark
         #pragma mark ConversationThread => IConversationThreadForHostOrSlave
@@ -557,7 +563,7 @@ namespace openpeer
         bool isPending() const {return ConversationThreadState_Pending == mCurrentState;}
         bool isReady() const {return ConversationThreadState_Ready == mCurrentState;}
         bool isShuttingDown() const {return ConversationThreadState_ShuttingDown == mCurrentState;}
-        bool isShutdown() const {return ConversationThreadState_Shutdown == mCurrentState;}
+        virtual bool isShutdown() const {AutoRecursiveLock lock(getLock()); return ConversationThreadState_Shutdown == mCurrentState;}
 
         Log::Params log(const char *message) const;
 

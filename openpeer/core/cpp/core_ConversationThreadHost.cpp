@@ -869,6 +869,16 @@ namespace openpeer
         if (!mGracefulShutdownReference) mGracefulShutdownReference = mThisWeak.lock();
 
         setState(ConversationThreadHostState_ShuttingDown);
+
+        for (PeerContactMap::iterator iter_doNotUse = mPeerContacts.begin(); iter_doNotUse != mPeerContacts.end(); )
+        {
+          PeerContactMap::iterator current = iter_doNotUse;
+          ++iter_doNotUse;
+
+          PeerContactPtr peerContact = (*current).second;
+          peerContact->cancel();
+        }
+
         setState(ConversationThreadHostState_Shutdown);
 
         mGracefulShutdownReference.reset();
@@ -946,6 +956,12 @@ namespace openpeer
         ZS_LOG_BASIC(log("state changed") + ZS_PARAM("old state", toString(mCurrentState)) + ZS_PARAM("new state", toString(state)))
 
         mCurrentState = state;
+
+        UseAccountPtr account = mAccount.lock();
+        if (account) {
+          ZS_LOG_DEBUG(log("notifying account of conversation thread state change"))
+          account->notifyConversationThreadStateChanged();
+        }
       }
 
       //-----------------------------------------------------------------------

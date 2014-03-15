@@ -583,7 +583,7 @@ namespace openpeer
         PeerContactPtr outer = mOuter.lock();
         if (outer) {
           UseConversationThreadPtr baseThread = outer->getBaseThread();
-          if (!baseThread) {
+          if (baseThread) {
             for (CallHandlers::iterator iter = mIncomingCallHandlers.begin(); iter != mIncomingCallHandlers.end(); ++iter)
             {
               const CallID &callID = (*iter).first;

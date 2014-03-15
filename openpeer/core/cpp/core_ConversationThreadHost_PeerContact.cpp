@@ -580,10 +580,10 @@ namespace openpeer
         }
 
         // cancel all the locations
-        for (PeerLocationMap::iterator peerIter = mPeerLocations.begin(); peerIter != mPeerLocations.end(); )
+        for (PeerLocationMap::iterator peerIter_doNotUse = mPeerLocations.begin(); peerIter_doNotUse != mPeerLocations.end(); )
         {
-          PeerLocationMap::iterator current = peerIter;
-          ++peerIter;
+          PeerLocationMap::iterator current = peerIter_doNotUse;
+          ++peerIter_doNotUse;
 
           PeerLocationPtr &location = (*current).second;
           location->cancel();
