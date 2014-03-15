@@ -308,7 +308,7 @@ namespace openpeer
         bool isPending() const {return CallTransportState_Pending == mCurrentState;}
         bool isReady() const {return CallTransportState_Ready == mCurrentState;}
         bool isShuttingDown() const {return CallTransportState_ShuttingDown == mCurrentState;}
-        bool isShutdown() const {return CallTransportState_ShuttingDown == mCurrentState;}
+        bool isShutdown() const {return CallTransportState_Shutdown == mCurrentState;}
 
         void start();
         void stop();

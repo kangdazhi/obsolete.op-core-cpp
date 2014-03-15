@@ -861,7 +861,7 @@ namespace openpeer
           TransportSocketList::iterator current = obsoleteIter;
           ++obsoleteIter;
 
-          TransportSocketPtr &socket = (*current);
+          TransportSocketPtr socket = (*current);
 
           socket->shutdown();
 
