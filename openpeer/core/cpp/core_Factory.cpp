@@ -152,7 +152,7 @@ namespace openpeer
 
       //-----------------------------------------------------------------------
       CallPtr ICallFactory::placeCall(
-                                      IConversationThreadPtr conversationThread,
+                                      ConversationThreadPtr conversationThread,
                                       IContactPtr toContact,
                                       bool includeAudio,
                                       bool includeVideo
@@ -255,7 +255,7 @@ namespace openpeer
 
       //-----------------------------------------------------------------------
       ConversationThreadPtr IConversationThreadFactory::createConversationThread(
-                                                                                 IAccountPtr account,
+                                                                                 AccountPtr account,
                                                                                  ElementPtr profileBundleEl
                                                                                  )
       {

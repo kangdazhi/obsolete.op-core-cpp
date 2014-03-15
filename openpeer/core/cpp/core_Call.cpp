@@ -203,14 +203,16 @@ namespace openpeer
 
       //-----------------------------------------------------------------------
       Call::Call(
-                 UseAccountPtr account,
-                 UseConversationThreadPtr conversationThread,
+                 AccountPtr account,
+                 ConversationThreadPtr conversationThread,
                  ICallDelegatePtr delegate,
                  bool hasAudio,
                  bool hasVideo,
                  const char *callID
                  ) :
-        mID(zsLib::createPUID()),
+        mLock(*conversationThread),
+        mMediaLock(*(UseAccountPtr(account)->getCallTransport())),
+        mStepLock(SharedRecursiveLock::create()),
         mQueue(UseStack::queueCore()),
         mMediaQueue(UseStack::queueMedia()),
         mDelegate(delegate),
@@ -221,7 +223,7 @@ namespace openpeer
         mIncomingNotifiedThreadOfPreparing(false),
         mAccount(account),
         mConversationThread(conversationThread),
-        mTransport(account->getCallTransport()),
+        mTransport(UseAccountPtr(account)->getCallTransport()),
         mCurrentState(ICall::CallState_None),
         mClosedReason(ICall::CallClosedReason_None),
         mPlaceCall(false),
@@ -299,7 +301,7 @@ namespace openpeer
 
       //-----------------------------------------------------------------------
       CallPtr Call::placeCall(
-                              IConversationThreadPtr inConversationThread,
+                              ConversationThreadPtr inConversationThread,
                               IContactPtr toContact,
                               bool includeAudio,
                               bool includeVideo
@@ -308,14 +310,14 @@ namespace openpeer
         ZS_THROW_INVALID_ARGUMENT_IF(!inConversationThread)
         ZS_THROW_INVALID_ARGUMENT_IF(!toContact)
 
-        UseConversationThreadPtr conversationThread = ConversationThread::convert(inConversationThread);
+        UseConversationThreadPtr conversationThread(inConversationThread);
         UseAccountPtr account = conversationThread->getAccount();
         if (!account) {
           ZS_LOG_WARNING(Detail, slog("account object is gone thus cannot create call"))
           return CallPtr();
         }
 
-        CallPtr pThis(new Call(account,  conversationThread, account->getCallDelegate(), includeAudio, includeVideo, NULL));
+        CallPtr pThis(new Call(conversationThread->getAccount(), inConversationThread, account->getCallDelegate(), includeAudio, includeVideo, NULL));
         pThis->mThisWeakNoQueue = pThis;
         pThis->mCaller = account->getSelfContact();
         pThis->mCallee = Contact::convert(toContact);
@@ -345,6 +347,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       IConversationThreadPtr Call::getConversationThread() const
       {
+        // look ma - no lock
         return ConversationThread::convert(mConversationThread.lock());
       }
 
@@ -375,41 +378,41 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ICall::CallStates Call::getState() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(mLock);
         return mCurrentState;
       }
 
       ICall::CallClosedReasons Call::getClosedReason() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(mLock);
         return mClosedReason;
       }
 
       //-----------------------------------------------------------------------
       Time Call::getcreationTime() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(mLock);
         return mCreationTime;
       }
 
       //-----------------------------------------------------------------------
       Time Call::getRingTime() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(mLock);
         return mCreationTime;
       }
 
       //-----------------------------------------------------------------------
       Time Call::getAnswerTime() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(mLock);
         return mAnswerTime;
       }
 
       //-----------------------------------------------------------------------
       Time Call::getClosedTime() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(mLock);
         return mClosedTime;
       }
 
@@ -420,7 +423,7 @@ namespace openpeer
 
         ZS_LOG_DEBUG(log("ring called"))
 
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(mLock);
         mRingCalled = true;
 
         ZS_LOG_DEBUG(log("ring called thus invoking step"))
@@ -434,7 +437,7 @@ namespace openpeer
 
         ZS_LOG_DEBUG(log("answer called"))
 
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(mLock);
 
         mAnswerCalled = true;
 
@@ -447,7 +450,7 @@ namespace openpeer
       {
         ZS_LOG_DEBUG(log("hold called"))
 
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(mLock);
         mLocalOnHold = hold;
 
         ZS_LOG_DEBUG(log("hold called thus invoking step"))
@@ -459,7 +462,7 @@ namespace openpeer
       {
         ZS_LOG_DEBUG(log("hangup called") + ZS_PARAM("reason", ICall::toString(reason)))
 
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(mLock);
         setClosedReason(reason);
         ICallAsyncProxy::create(mThisCallAsyncNormalQueue)->onHangup();
       }
@@ -490,7 +493,7 @@ namespace openpeer
 
         // scope
         {
-          AutoRecursiveLock lock(getMediaLock());
+          AutoRecursiveLock lock(mMediaLock);
           callLocation = mPickedLocation;
 
           // NOTE: Intentionally disallow picking of the early location since
@@ -523,7 +526,7 @@ namespace openpeer
                                            const DialogPtr &remoteDialog
                                            )
       {
-        UseConversationThreadPtr conversationThread = inConversationThread;
+        UseConversationThreadPtr conversationThread(inConversationThread);
 
         ZS_THROW_INVALID_ARGUMENT_IF(!conversationThread)
         ZS_THROW_INVALID_ARGUMENT_IF(!callerContact)
@@ -559,7 +562,7 @@ namespace openpeer
           }
         }
 
-        CallPtr pThis(new Call(account,  conversationThread, account->getCallDelegate(), hasAudio, hasVideo, remoteDialog->dialogID()));
+        CallPtr pThis(new Call(conversationThread->getAccount(),  inConversationThread, account->getCallDelegate(), hasAudio, hasVideo, remoteDialog->dialogID()));
         pThis->mThisWeakNoQueue = pThis;
         pThis->mCaller = callerContact;
         pThis->mCallee = account->getSelfContact();
@@ -581,7 +584,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       DialogPtr Call::getDialog() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(mLock);
         return mDialog;
       }
 
@@ -624,7 +627,7 @@ namespace openpeer
         PUID focusLocationID = 0;
 
         {
-          AutoRecursiveLock lock(getMediaLock());
+          AutoRecursiveLock lock(mMediaLock);
           if (mPickedLocation) {
             focusLocationID = mPickedLocation->getID();
           } else if (mEarlyLocation) {
@@ -657,7 +660,7 @@ namespace openpeer
       {
         // scope
         {
-          AutoRecursiveLock lock(getMediaLock());
+          AutoRecursiveLock lock(mMediaLock);
 
           bool found = false;
           SocketTypes type = SocketType_Audio;
@@ -693,11 +696,13 @@ namespace openpeer
       #pragma mark
       #pragma mark Call => ITimerDelegate
       #pragma mark
+
+      //-----------------------------------------------------------------------
       void Call::onTimer(TimerPtr timer)
       {
         // scope: check out the timer in the context of a lock
         {
-          AutoRecursiveLock lock(getLock());
+          AutoRecursiveLock lock(mLock);
 
           if (timer == mPeerAliveTimer) {
             ZS_LOG_DEBUG(log("peer alive timer"))
@@ -750,7 +755,7 @@ namespace openpeer
       {
         // scope:
         {
-          AutoRecursiveLock lock(getMediaLock());
+          AutoRecursiveLock lock(mMediaLock);
           if (!mPickedLocation) {
             if (!mEarlyLocation) {
               ZS_LOG_WARNING(Trace, log("ignoring received RTP packet as no call location was chosen"))
@@ -778,7 +783,7 @@ namespace openpeer
         if (ICallLocation::CallLocationState_Closed == state) {
           // scope: object
           {
-            AutoRecursiveLock lock(getLock());
+            AutoRecursiveLock lock(mLock);
             CallLocationMap::iterator found = mCallLocations.find(location->getLocationID());
             if (found != mCallLocations.end()) {
               ZS_LOG_DEBUG(log("location shutdown") + ZS_PARAM("object ID", location->getID()) + ZS_PARAM("location ID", location->getLocationID()))
@@ -790,7 +795,7 @@ namespace openpeer
 
           // scope: media
           {
-            AutoRecursiveLock lock(getMediaLock());
+            AutoRecursiveLock lock(mMediaLock);
             if (mPickedLocation) {
               if (mPickedLocation->getLocationID() == location->getLocationID()) {
                 // the picked location is shutting down...
@@ -804,7 +809,7 @@ namespace openpeer
           if (pickedRemoved)
           {
             // scope: object
-            AutoRecursiveLock lock(getLock());
+            AutoRecursiveLock lock(mLock);
             setClosedReason(CallClosedReason_RequestTimeout);
           }
         }
@@ -825,24 +830,15 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      RecursiveLock &Call::getLock() const
+      const SharedRecursiveLock &Call::getLock() const
       {
-        UseConversationThreadPtr thread = mConversationThread.lock();
-        if (!thread) return mBogusLock;
-        return thread->getLock();
+        return mLock;
       }
 
       //-----------------------------------------------------------------------
-      RecursiveLock &Call::getMediaLock() const
+      const SharedRecursiveLock &Call::getMediaLock() const
       {
-        ZS_THROW_INVALID_ASSUMPTION_IF(!mTransport)
-        return mTransport->getLock();
-      }
-
-      //-----------------------------------------------------------------------
-      RecursiveLock &Call::getStepLock() const
-      {
-        return mStepLock;
+        return mMediaLock;
       }
 
       //-----------------------------------------------------------------------
@@ -877,7 +873,7 @@ namespace openpeer
 
         if (callData)
         {
-          AutoRecursiveLock lock(getLock());
+          AutoRecursiveLock lock(mLock);
 
           IHelper::debugAppend(resultEl, "state", ICall::toString(mCurrentState));
           IHelper::debugAppend(resultEl, "closed reason", ICall::toString(mClosedReason));
@@ -895,7 +891,7 @@ namespace openpeer
         }
         if (mediaData)
         {
-          AutoRecursiveLock lock(getMediaLock());
+          AutoRecursiveLock lock(mMediaLock);
 
           IHelper::debugAppend(resultEl, "media hold", mMediaHolding);
           IHelper::debugAppend(resultEl, "notified destroyed", mNotifiedCallTransportDestroyed);
@@ -907,14 +903,14 @@ namespace openpeer
       //-----------------------------------------------------------------------
       bool Call::isShuttingdown() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(mLock);
         return mCurrentState == ICall::CallState_Closing;
       }
 
       //-----------------------------------------------------------------------
       bool Call::isShutdown() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(mLock);
         return mCurrentState == ICall::CallState_Closed;
       }
 
@@ -931,7 +927,7 @@ namespace openpeer
 
         // scope: object
         {
-          AutoRecursiveLock lock(getLock());
+          AutoRecursiveLock lock(mLock);
           if (isShutdown()) {
             ZS_LOG_DEBUG(log("cancel called but call already shutdown"))
             return;
@@ -961,7 +957,7 @@ namespace openpeer
 
         // scope: media
         {
-          AutoRecursiveLock lock(getMediaLock());
+          AutoRecursiveLock lock(mMediaLock);
 
           mTransport->loseFocus(mID);
 
@@ -979,7 +975,7 @@ namespace openpeer
 
         // scope: final object shutdown
         {
-          AutoRecursiveLock lock(getLock());
+          AutoRecursiveLock lock(mLock);
 
           setCurrentState(ICall::CallState_Closed);
 
@@ -1013,7 +1009,7 @@ namespace openpeer
 
         // scope: final media shutdown
         {
-          AutoRecursiveLock lock(getMediaLock());
+          AutoRecursiveLock lock(mMediaLock);
 
           mPickedLocation.reset();
           mEarlyLocation.reset();
@@ -1175,7 +1171,7 @@ namespace openpeer
       {
         ZS_LOG_DEBUG(log("checking if media is ready"))
 
-        AutoRecursiveLock lock(getMediaLock());
+        AutoRecursiveLock lock(mMediaLock);
 
         // setup all the audio ICE socket subscriptions...
         IICESocketPtr socketAudioRTP = mTransport->getSocket(internal::convert(SocketType_Audio));
@@ -1265,7 +1261,7 @@ namespace openpeer
 
         ZS_LOG_DEBUG(log("preparing first time calls"))
 
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(mLock);
 
         if ((isShuttingdown()) ||
             (isShutdown())) {
@@ -1746,8 +1742,23 @@ namespace openpeer
 
           stack::IAccountPtr stackAccount = account->getStackAccount();
           if (!stackAccount) {
-            ZS_LOG_WARNING(Detail, log("stack account is gone"))
+            ZS_LOG_WARNING(Detail, log("stack account is not available"))
             return false;
+          }
+
+          switch (stackAccount->getState())
+          {
+            case stack::IAccount::AccountState_Pending:
+            case stack::IAccount::AccountState_Ready:
+            {
+              break;
+            }
+            case stack::IAccount::AccountState_ShuttingDown:
+            case stack::IAccount::AccountState_Shutdown:
+            {
+              ZS_LOG_WARNING(Detail, log("stack account is shutting down"))
+              return false;
+            }
           }
 
           ILocationPtr peerLocation = ILocation::getForPeer(remoteContact->getPeer(), usingLocation->getLocationID());
@@ -1812,7 +1823,7 @@ namespace openpeer
       {
         typedef Dialog::DialogStates DialogStates;
 
-        AutoRecursiveLock lock(getStepLock());
+        AutoRecursiveLock lock(mStepLock);
 
         CallLocationPtr picked;
         CallLocationPtr early;
@@ -1832,7 +1843,7 @@ namespace openpeer
 
         // scope: object
         {
-          AutoRecursiveLock lock(getLock());
+          AutoRecursiveLock lock(mLock);
           if ((isShuttingdown()) ||
               (isShutdown())) {
             ZS_LOG_DEBUG(log("step called but call is shutting down instead thus redirecting to cancel()"))
@@ -1858,7 +1869,7 @@ namespace openpeer
             return;
           }
 
-          AutoRecursiveLock lock(getMediaLock());
+          AutoRecursiveLock lock(mMediaLock);
 
           picked = mPickedLocation;
           early = mEarlyLocation;
@@ -1892,7 +1903,7 @@ namespace openpeer
 
         try
         {
-          AutoRecursiveLock lock(getLock());
+          AutoRecursiveLock lock(mLock);
           if ((isShuttingdown()) ||
               (isShutdown())) {
             ZS_THROW_CUSTOM(Exceptions::StepFailure, log("call unexpectedly shutdown mid step"))
@@ -1946,7 +1957,7 @@ namespace openpeer
 
         // scope: media
         {
-          AutoRecursiveLock lock(getMediaLock());
+          AutoRecursiveLock lock(mMediaLock);
           if (mediaHolding != mMediaHolding) {
             ZS_LOG_DEBUG(log("changing media holding state") + ZS_PARAM("now holding", mediaHolding))
             mMediaHolding = mediaHolding;
@@ -1986,7 +1997,7 @@ namespace openpeer
         typedef Dialog::DescriptionList DescriptionList;
         typedef Dialog::DialogStates DialogStates;
 
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(mLock);
 
         if (mLocalOnHold) {
           switch (state) {
@@ -2103,7 +2114,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Call::setClosedReason(CallClosedReasons reason)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(mLock);
         if (CallClosedReason_None == reason) {
           ZS_LOG_DEBUG(log("cannot set call closed reason to none"))
           return;
@@ -2187,7 +2198,8 @@ namespace openpeer
                                        ) :
         mQueue(queue),
         mMediaQueue(mediaQueue),
-        mID(zsLib::createPUID()),
+        mLock(outer->getLock()),
+        mMediaLock(outer->getMediaLock()),
         mOuter(outer),
         mLocationID(locationID ? String(locationID) : String()),
         mCurrentState(CallLocationState_Pending),
@@ -2321,21 +2333,21 @@ namespace openpeer
       //-----------------------------------------------------------------------
       Call::ICallLocation::CallLocationStates Call::CallLocation::getState() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(mLock);
         return mCurrentState;
       }
 
       //-----------------------------------------------------------------------
       DialogPtr Call::CallLocation::getRemoteDialog() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(mLock);
         return mRemoteDialog;
       }
 
       //-----------------------------------------------------------------------
       void Call::CallLocation::updateDialog(const DialogPtr &remoteDialog)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(mLock);
         mRemoteDialog = remoteDialog;
       }
 
@@ -2350,7 +2362,7 @@ namespace openpeer
 
         // scope: media
         {
-          AutoRecursiveLock lock(getMediaLock());
+          AutoRecursiveLock lock(mMediaLock);
 
           switch (type) {
             case SocketType_Audio: session = mAudioRTPSocketSession; break;
@@ -2381,7 +2393,7 @@ namespace openpeer
       {
         // scope: media
         {
-          AutoRecursiveLock lock(getMediaLock());
+          AutoRecursiveLock lock(mMediaLock);
           if (isClosed()) {
             ZS_LOG_WARNING(Detail, log("received notification of ICE socket change state but already closed (probably okay)"))
             return;
@@ -2433,7 +2445,7 @@ namespace openpeer
 
         // scope: media
         {
-          AutoRecursiveLock lock(getMediaLock());
+          AutoRecursiveLock lock(mMediaLock);
 
           if (isClosed()) {
             ZS_LOG_WARNING(Detail, log("received packet but already closed (probably okay)"))
@@ -2477,22 +2489,6 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      RecursiveLock &Call::CallLocation::getLock() const
-      {
-        CallPtr outer = mOuter.lock();
-        if (!outer) return mBogusLock;
-        return outer->getLock();
-      }
-
-      //-----------------------------------------------------------------------
-      RecursiveLock &Call::CallLocation::getMediaLock() const
-      {
-        CallPtr outer = mOuter.lock();
-        if (!outer) return mBogusLock;
-        return outer->getMediaLock();
-      }
-
-      //-----------------------------------------------------------------------
       Log::Params Call::CallLocation::log(const char *message) const
       {
         ElementPtr objectEl = Element::create("core::Call::CallLocation");
@@ -2515,12 +2511,12 @@ namespace openpeer
 
         if (normal)
         {
-          AutoRecursiveLock lock(getLock());
+          AutoRecursiveLock lock(mLock);
           IHelper::debugAppend(resultEl, Dialog::toDebug(mRemoteDialog));
         }
         if (media)
         {
-          AutoRecursiveLock lock(getMediaLock());
+          AutoRecursiveLock lock(mMediaLock);
           IHelper::debugAppend(resultEl, "audio rtp socket session", mAudioRTPSocketSession ? mAudioRTPSocketSession->getID() : 0);
           IHelper::debugAppend(resultEl, "video rtp socket session", mVideoRTPSocketSession ? mVideoRTPSocketSession->getID() : 0);
         }
@@ -2535,7 +2531,7 @@ namespace openpeer
 
         // scope: object
         {
-          AutoRecursiveLock lock(getLock());
+          AutoRecursiveLock lock(mLock);
           if (isClosed()) {
             ZS_LOG_DEBUG(log("cancel called but call already shutdown"))
             return;
@@ -2546,7 +2542,7 @@ namespace openpeer
 
         // scope: media
         {
-          AutoRecursiveLock lock(getMediaLock());
+          AutoRecursiveLock lock(mMediaLock);
 
           ZS_LOG_DEBUG(log("shutting down audio/video socket sessions"))
 
@@ -2562,12 +2558,12 @@ namespace openpeer
 
         // scope: final object shutdown
         {
-          AutoRecursiveLock lock(getLock());
+          AutoRecursiveLock lock(mLock);
         }
 
         // scope: final media shutdown
         {
-          AutoRecursiveLock lock(getMediaLock());
+          AutoRecursiveLock lock(mMediaLock);
         }
       }
 
@@ -2576,7 +2572,7 @@ namespace openpeer
       {
         // scope: object
         {
-          AutoRecursiveLock lock(getLock());
+          AutoRecursiveLock lock(mLock);
           if (isClosed()) {
             ZS_LOG_DEBUG(log("step called by call location is closed thus redirecting to cancel()"))
             goto cancel;
@@ -2585,7 +2581,7 @@ namespace openpeer
 
         // scope: media
         {
-          AutoRecursiveLock lock(getMediaLock());
+          AutoRecursiveLock lock(mMediaLock);
 
           ZS_LOG_DEBUG(log("checking to see if media is setup"))
 
@@ -2635,7 +2631,7 @@ namespace openpeer
       {
         // scope: object
         {
-          AutoRecursiveLock lock(getLock());
+          AutoRecursiveLock lock(mLock);
           if (state <= mCurrentState) return;
 
           ZS_LOG_DETAIL(log("state changed") + ZS_PARAM("old state", toString(mCurrentState)) + ZS_PARAM("new state", toString(state)))
@@ -2724,7 +2720,7 @@ namespace openpeer
                               bool includeVideo
                               )
     {
-      return internal::ICallFactory::singleton().placeCall(conversationThread, toContact, includeAudio, includeVideo);
+      return internal::ICallFactory::singleton().placeCall(internal::ConversationThread::convert(conversationThread), toContact, includeAudio, includeVideo);
     }
 
     //-------------------------------------------------------------------------

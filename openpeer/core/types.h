@@ -56,15 +56,16 @@ namespace openpeer
     using zsLib::Duration;
     using zsLib::Seconds;
 
-    using zsLib::XML::Element;
-    using zsLib::XML::ElementPtr;
+    ZS_DECLARE_USING_PTR(zsLib::XML, Element)
 
-    using openpeer::stack::SecureByteBlock;
-    using openpeer::stack::SecureByteBlockPtr;
-    using openpeer::stack::message::IMessageHelper;
+    using openpeer::services::SharedRecursiveLock;
+    using openpeer::services::LockedValue;
 
-    using openpeer::stack::IPeerFilePublic;
-    using openpeer::stack::IPeerFilePublicPtr;
+    ZS_DECLARE_USING_PTR(openpeer::services, SecureByteBlock)
+
+    ZS_DECLARE_USING_PTR(openpeer::stack, IPeerFilePublic)
+
+    ZS_DECLARE_USING_PTR(openpeer::stack::message, IMessageHelper)
 
     // other types
     struct ContactProfileInfo;

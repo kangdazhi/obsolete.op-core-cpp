@@ -201,14 +201,20 @@ namespace openpeer
 
       protected:
         Call(
-             UseAccountPtr account,
-             UseConversationThreadPtr conversationThread,
+             AccountPtr account,
+             ConversationThreadPtr conversationThread,
              ICallDelegatePtr delegate,
              bool hasAudio,
              bool hasVideo,
              const char *callID
              );
-        Call(Noop) : Noop(true) {}
+
+        Call(Noop) :
+          Noop(true),
+          mLock(SharedRecursiveLock::create()),
+          mMediaLock(SharedRecursiveLock::create()),
+          mStepLock(SharedRecursiveLock::create())
+        {}
 
         void init();
 
@@ -228,7 +234,7 @@ namespace openpeer
         static ElementPtr toDebug(ICallPtr call);
 
         static CallPtr placeCall(
-                                 IConversationThreadPtr conversationThread,
+                                 ConversationThreadPtr conversationThread,
                                  IContactPtr toContact,
                                  bool includeAudio,
                                  bool includeVideo
@@ -336,8 +342,8 @@ namespace openpeer
 
         // (duplicate) virtual PUID getID() const;
 
-        // (duplicate) RecursiveLock &getLock() const;
-        // (duplicate) RecursiveLock &getMediaLock() const;
+        // (duplicate) const SharedRecursiveLock &getLock() const;
+        // (duplicate) const SharedRecursiveLock &getMediaLock() const;
 
         virtual void notifyReceivedRTPPacket(
                                              PUID locationID,
@@ -359,9 +365,8 @@ namespace openpeer
         #pragma mark Call => (internal)
         #pragma mark
 
-        RecursiveLock &getLock() const;
-        RecursiveLock &getMediaLock() const;
-        RecursiveLock &getStepLock() const;
+        const SharedRecursiveLock &getLock() const;
+        const SharedRecursiveLock &getMediaLock() const;
 
         IMessageQueuePtr getQueue() const {return mQueue;}
         IMessageQueuePtr getMediaQueue() const {return mMediaQueue;}
@@ -575,9 +580,6 @@ namespace openpeer
           #pragma mark Call::CallLocation => (internal)
           #pragma mark
 
-          RecursiveLock &getLock() const;
-          RecursiveLock &getMediaLock() const;
-
           Log::Params log(const char *message) const;
           virtual ElementPtr toDebug(bool normal, bool media) const;
 
@@ -608,8 +610,10 @@ namespace openpeer
           #pragma mark Call::CallLocation => (data)
           #pragma mark
 
-          PUID mID;
-          mutable RecursiveLock mBogusLock;
+          AutoPUID mID;
+          SharedRecursiveLock mLock;
+          SharedRecursiveLock mMediaLock;
+
           CallLocationWeakPtr mThisWeakNoQueue;
 
           IWakeDelegatePtr mThisWakeDelegate;
@@ -641,8 +645,11 @@ namespace openpeer
         #pragma mark Call => (data)
         #pragma mark
 
-        PUID mID;
-        mutable RecursiveLock mBogusLock;
+        AutoPUID mID;
+        SharedRecursiveLock mLock;
+        SharedRecursiveLock mMediaLock;
+        SharedRecursiveLock mStepLock;
+
         CallWeakPtr mThisWeakNoQueue;
         CallPtr mGracefulShutdownReference;
 
@@ -651,8 +658,6 @@ namespace openpeer
         ICallAsyncPtr mThisCallAsyncMediaQueue;
         IICESocketDelegatePtr mThisICESocketDelegate;
         ITimerDelegatePtr mThisTimerDelegate;
-
-        mutable RecursiveLock mStepLock;
 
         IMessageQueuePtr mQueue;
         IMessageQueuePtr mMediaQueue;
@@ -729,7 +734,7 @@ namespace openpeer
         static ICallFactory &singleton();
 
         virtual CallPtr placeCall(
-                                  IConversationThreadPtr conversationThread,
+                                  ConversationThreadPtr conversationThread,
                                   IContactPtr toContact,
                                   bool includeAudio,
                                   bool includeVideo

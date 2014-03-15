@@ -55,6 +55,7 @@ namespace openpeer
         #pragma mark
 
         class LocationSubscription : public MessageQueueAssociator,
+                                     public SharedRecursiveLock,
                                      public IPublicationSubscriptionDelegate
         {
         public:
@@ -136,7 +137,6 @@ namespace openpeer
           bool isShutdown() const {return LocationSubscriptionState_Shutdown == mCurrentState;}
 
         private:
-          RecursiveLock &getLock() const;
           virtual PUID getID() const {return mID;}
 
           Log::Params log(const char *message) const;
@@ -159,8 +159,7 @@ namespace openpeer
           #pragma mark Account::LocationSubscription => (data)
           #pragma mark
 
-          mutable RecursiveLock mBogusLock;
-          PUID mID;
+          AutoPUID mID;
           LocationSubscriptionWeakPtr mThisWeak;
           LocationSubscriptionPtr mGracefulShutdownReference;
 

@@ -87,6 +87,7 @@ namespace openpeer
 
       class ConversationThreadSlave  : public Noop,
                                        public MessageQueueAssociator,
+                                       public SharedRecursiveLock,
                                        public IConversationThreadSlaveForConversationThread,
                                        public IConversationThreadDocumentFetcherDelegate,
                                        public IWakeDelegate,
@@ -127,13 +128,17 @@ namespace openpeer
       protected:
         ConversationThreadSlave(
                                 IMessageQueuePtr queue,
-                                UseAccountPtr account,
+                                AccountPtr account,
                                 ILocationPtr peerLocation,
-                                UseConversationThreadPtr baseThread,
+                                ConversationThreadPtr baseThread,
                                 const char *threadID
                                 );
         
-        ConversationThreadSlave(Noop) : Noop(true), MessageQueueAssociator(IMessageQueuePtr()) {};
+        ConversationThreadSlave(Noop) :
+          Noop(true),
+          MessageQueueAssociator(IMessageQueuePtr()),
+          SharedRecursiveLock(SharedRecursiveLock::create())
+        {}
 
         void init();
 
@@ -276,13 +281,11 @@ namespace openpeer
         bool isPending() const {return ConversationThreadSlaveState_Pending == mCurrentState;}
         bool isReady() const {return ConversationThreadSlaveState_Ready == mCurrentState;}
         bool isShuttingDown() const {return ConversationThreadSlaveState_ShuttingDown == mCurrentState;}
-        virtual bool isShutdown() const {AutoRecursiveLock lock(getLock()); return ConversationThreadSlaveState_Shutdown == mCurrentState;}
+        virtual bool isShutdown() const {AutoRecursiveLock lock(*this); return ConversationThreadSlaveState_Shutdown == mCurrentState;}
 
         Log::Params log(const char *message) const;
 
         virtual ElementPtr toDebug() const;
-
-        RecursiveLock &getLock() const;
 
         void cancel();
         void step();
@@ -333,8 +336,7 @@ namespace openpeer
         #pragma mark ConversationThreadSlave => (data)
         #pragma mark
 
-        mutable RecursiveLock mBogusLock;
-        PUID mID;
+        AutoPUID mID;
         ConversationThreadSlaveWeakPtr mThisWeak;
         ConversationThreadSlavePtr mGracefulShutdownReference;
         ConversationThreadSlavePtr mSelfHoldingStartupReferenceUntilPublicationFetchCompletes;

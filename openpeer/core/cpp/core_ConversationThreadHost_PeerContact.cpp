@@ -84,7 +84,7 @@ namespace openpeer
                                                        ElementPtr profileBundleEl
                                                        ) :
         MessageQueueAssociator(queue),
-        mID(zsLib::createPUID()),
+        SharedRecursiveLock(*host),
         mCurrentState(PeerContactState_Pending),
         mOuter(host),
         mContact(contact),
@@ -144,7 +144,7 @@ namespace openpeer
                                                                          const SplitMap &split
                                                                          )
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if (isShutdown()) {
           ZS_LOG_WARNING(Detail, log("received publication update notification after shutdown"))
           return;
@@ -171,7 +171,7 @@ namespace openpeer
                                                                       const SplitMap &split
                                                                       )
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if (isShutdown()) {
           ZS_LOG_WARNING(Detail, log("received publication gone notification after shutdown"))
           return;
@@ -187,7 +187,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::PeerContact::notifyPeerDisconnected(ILocationPtr peerLocation)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if (isShutdown()) {
           ZS_LOG_WARNING(Detail, log("received notification of peer disconnection after shutdown"))
           return;
@@ -204,21 +204,21 @@ namespace openpeer
       //-----------------------------------------------------------------------
       UseContactPtr ConversationThreadHost::PeerContact::getContact() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         return mContact;
       }
 
       //-----------------------------------------------------------------------
       const ElementPtr &ConversationThreadHost::PeerContact::getProfileBundle() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         return mProfileBundleEl;
       }
 
       //-----------------------------------------------------------------------
       IConversationThread::ContactStates ConversationThreadHost::PeerContact::getContactState() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         // first check to see if any locations are connected...
         for (PeerLocationMap::const_iterator iter = mPeerLocations.begin(); iter != mPeerLocations.end(); ++iter)
@@ -244,7 +244,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::PeerContact::gatherMessageReceipts(MessageReceiptMap &receipts) const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         for (PeerLocationMap::const_iterator iter = mPeerLocations.begin(); iter != mPeerLocations.end(); ++iter)
         {
           const PeerLocationPtr &peerLocation = (*iter).second;
@@ -255,7 +255,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::PeerContact::gatherContactsToAdd(ThreadContactMap &contacts) const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if (!isStillPartOfCurrentConversation(mContact)) {
           ZS_LOG_WARNING(Debug, log("ignoring request to add contacts as peer contact is not part of current conversation"))
           return;
@@ -271,7 +271,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::PeerContact::gatherContactsToRemove(ContactURIList &contacts) const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if (!isStillPartOfCurrentConversation(mContact)) {
           ZS_LOG_WARNING(Debug, log("ignoring request to remove contacts as peer contact is not part of current conversation"))
           return;
@@ -290,7 +290,7 @@ namespace openpeer
                                                                     LocationDialogMap &outDialogs
                                                                     ) const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         for (PeerLocationMap::const_iterator iter = mPeerLocations.begin(); iter != mPeerLocations.end(); ++iter)
         {
           const PeerLocationPtr &peerLocation = (*iter).second;
@@ -306,7 +306,7 @@ namespace openpeer
           return;
         }
 
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         step();
       }
 
@@ -321,7 +321,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::PeerContact::onPeerSubscriptionShutdown(IPeerSubscriptionPtr subscription)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if (subscription != mSlaveSubscription) {
           ZS_LOG_WARNING(Trace, log("ignoring shutdown notification on obsolete slave peer subscription (probably okay)"))
           return;
@@ -338,7 +338,7 @@ namespace openpeer
                                                                                    PeerFindStates state
                                                                                    )
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if (subscription != mSlaveSubscription) {
           ZS_LOG_WARNING(Detail, log("notified of subscription state from obsolete subscription (probably okay)"))
           return;
@@ -354,7 +354,7 @@ namespace openpeer
                                                                                                  LocationConnectionStates state
                                                                                                  )
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         step();
       }
 
@@ -393,14 +393,14 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ConversationThreadHostPtr ConversationThreadHost::PeerContact::getOuter() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         return mOuter.lock();
       }
 
       //-----------------------------------------------------------------------
       UseConversationThreadPtr ConversationThreadHost::PeerContact::getBaseThread() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         ConversationThreadHostPtr outer = mOuter.lock();
         if (!outer) {
           ZS_LOG_WARNING(Detail, log("failed to obtain conversation thread because conversation thread host object is gone"))
@@ -412,7 +412,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ThreadPtr ConversationThreadHost::PeerContact::getHostThread() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         ConversationThreadHostPtr outer = mOuter.lock();
         if (!outer) {
           ZS_LOG_WARNING(Detail, log("failed to obtain repository because conversation thread host object is gone"))
@@ -424,7 +424,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       UseAccountPtr ConversationThreadHost::PeerContact::getAccount() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         ConversationThreadHostPtr outer = mOuter.lock();
         if (!outer) return AccountPtr();
         return outer->getAccount();
@@ -433,7 +433,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       IPublicationRepositoryPtr ConversationThreadHost::PeerContact::getRepository() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         ConversationThreadHostPtr outer = mOuter.lock();
         if (!outer) {
           ZS_LOG_WARNING(Detail, log("failed to obtain repository because conversation thread host object is gone"))
@@ -445,7 +445,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::PeerContact::notifyMessagesReceived(const MessageList &messages)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         ConversationThreadHostPtr outer = mOuter.lock();
         if (!outer) {
           ZS_LOG_DEBUG(log("unable to notify of messages received since conversation thread host object is gone"))
@@ -460,7 +460,7 @@ namespace openpeer
                                                                                   IConversationThread::MessageDeliveryStates state
                                                                                   )
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         ConversationThreadHostPtr outer = mOuter.lock();
         if (!outer) {
@@ -487,7 +487,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::PeerContact::notifyStateChanged(PeerLocationPtr peerLocation)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         ConversationThreadHostPtr outer = mOuter.lock();
         if (!outer) {
           ZS_LOG_DEBUG(log("unable to notify conversation thread host of state change"))
@@ -499,7 +499,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::PeerContact::notifyPeerLocationShutdown(PeerLocationPtr location)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         ZS_LOG_DEBUG(log("notified peer location shutdown") + UseContact::toDebug(mContact) + PeerLocation::toDebug(location))
 
@@ -524,14 +524,6 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      RecursiveLock &ConversationThreadHost::PeerContact::getLock() const
-      {
-        ConversationThreadHostPtr outer = mOuter.lock();
-        if (!outer) return mBogusLock;
-        return outer->getLock();
-      }
-
-      //-----------------------------------------------------------------------
       Log::Params ConversationThreadHost::PeerContact::log(const char *message) const
       {
         String peerURI;
@@ -548,7 +540,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ElementPtr ConversationThreadHost::PeerContact::toDebug() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         ElementPtr resultEl = Element::create("core::ConversationThreadHost::PeerContact");
 
@@ -566,7 +558,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::PeerContact::cancel()
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         if (isShutdown()) return;
 
@@ -585,7 +577,7 @@ namespace openpeer
           PeerLocationMap::iterator current = peerIter_doNotUse;
           ++peerIter_doNotUse;
 
-          PeerLocationPtr &location = (*current).second;
+          PeerLocationPtr location = (*current).second;
           location->cancel();
         }
 
@@ -604,9 +596,13 @@ namespace openpeer
       {
         ZS_LOG_TRACE(log("step"))
 
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if ((isShuttingDown()) ||
-            (isShutdown())) {cancel();}
+            (isShutdown())) {
+          ZS_LOG_DEBUG(log("step forwarding to cancel"))
+          cancel();
+          return;
+        }
 
         // check to see if there are any undelivered messages
         ConversationThreadHostPtr outer = mOuter.lock();
@@ -762,7 +758,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ConversationThreadHost::PeerLocationPtr ConversationThreadHost::PeerContact::findPeerLocation(ILocationPtr peerLocation) const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         PeerLocationMap::const_iterator found = mPeerLocations.find(peerLocation->getLocationID());
         if (found == mPeerLocations.end()) return PeerLocationPtr();
         const PeerLocationPtr &location = (*found).second;

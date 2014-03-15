@@ -73,7 +73,7 @@ namespace openpeer
                                                         UseContactPtr contact
                                                         ) :
         MessageQueueAssociator(outer->getAssociatedMessageQueue()),
-        mID(zsLib::createPUID()),
+        SharedRecursiveLock(*outer),
         mOuter(outer),
         mContact(contact),
         mCurrentState(ContactSubscriptionState_Pending)
@@ -85,7 +85,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Account::ContactSubscription::init(ILocationPtr peerLocation)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         if (!peerLocation) {
           ZS_LOG_DEBUG(log("creating a contact subscription to a hinted location") + UseContact::toDebug(mContact))
@@ -241,7 +241,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Account::ContactSubscription::onWake()
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         step();
       }
 
@@ -256,7 +256,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Account::ContactSubscription::onPeerSubscriptionShutdown(IPeerSubscriptionPtr subscription)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if (mPeerSubscription != subscription) {
           ZS_LOG_DEBUG(log("ignoring peer subscription shutdown for obslete subscription"))
           return;
@@ -275,7 +275,7 @@ namespace openpeer
                                                                             PeerFindStates state
                                                                             )
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         ZS_LOG_DEBUG(log("peer subscription find state changed") + ZS_PARAM("state", IPeer::toString(state)) + IPeer::toDebug(peer))
         step();
       }
@@ -287,7 +287,7 @@ namespace openpeer
                                                                                           LocationConnectionStates state
                                                                                           )
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if (mPeerSubscription != subscription) {
           ZS_LOG_DEBUG(log("ignoring peer subscription shutdown for obslete subscription"))
           return;
@@ -317,7 +317,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Account::ContactSubscription::onTimer(TimerPtr timer)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if (timer != mPeerSubscriptionAutoCloseTimer) return;
 
         ZS_LOG_DEBUG(log("timer fired") + IPeerSubscription::toDebug(mPeerSubscription))
@@ -344,14 +344,14 @@ namespace openpeer
       //-----------------------------------------------------------------------
       AccountPtr Account::ContactSubscription::getOuter() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         return mOuter.lock();
       }
 
       //-----------------------------------------------------------------------
       void Account::ContactSubscription::notifyLocationShutdown(const String &locationID)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         LocationSubscriptionMap::iterator found = mLocations.find(locationID);
         if (found == mLocations.end()) {
@@ -374,14 +374,6 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      RecursiveLock &Account::ContactSubscription::getLock() const
-      {
-        AccountPtr outer = mOuter.lock();
-        if (!outer) return mBogusLock;
-        return outer->getLock();
-      }
-
-      //-----------------------------------------------------------------------
       Log::Params Account::ContactSubscription::log(const char *message) const
       {
         ElementPtr objectEl = Element::create("Account::ContactSubscription");
@@ -393,7 +385,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ElementPtr Account::ContactSubscription::toDebug() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         ElementPtr resultEl = Element::create("core::Account::ContactSubscription");
 

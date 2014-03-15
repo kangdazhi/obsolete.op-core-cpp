@@ -95,8 +95,6 @@ namespace openpeer
       {
         ZS_DECLARE_TYPEDEF_PTR(IAccountForContact, ForContact)
 
-        virtual RecursiveLock &getLock() const = 0;
-
         virtual ContactPtr getSelfContact() const = 0;
 
         virtual stack::IAccountPtr getStackAccount() const = 0;
@@ -127,8 +125,6 @@ namespace openpeer
                                                  WORD *outErrorCode = NULL,
                                                  String *outErrorReason = NULL
                                                  ) const = 0;
-
-        virtual RecursiveLock &getLock() const = 0;
 
         virtual ContactPtr getSelfContact() const = 0;
         virtual ILocationPtr getSelfLocation() const = 0;
@@ -179,8 +175,6 @@ namespace openpeer
       {
         ZS_DECLARE_TYPEDEF_PTR(IAccountForIdentityLookup, ForIdentityLookup)
 
-        virtual RecursiveLock &getLock() const = 0;
-
         virtual ContactPtr findContact(const char *peerURI) const = 0;
       };
 
@@ -194,6 +188,7 @@ namespace openpeer
 
       class Account : public Noop,
                       public MessageQueueAssociator,
+                      public SharedRecursiveLock,
                       public IAccount,
                       public IAccountForCall,
                       public IAccountForContact,
@@ -246,7 +241,11 @@ namespace openpeer
                 ICallDelegatePtr callDelegate
                 );
         
-        Account(Noop) : Noop(true), MessageQueueAssociator(IMessageQueuePtr()) {};
+        Account(Noop) :
+          Noop(true),
+          MessageQueueAssociator(IMessageQueuePtr()),
+          SharedRecursiveLock(SharedRecursiveLock::create())
+        {}
 
         void init();
 
@@ -334,8 +333,6 @@ namespace openpeer
         #pragma mark Account => IAccountForContact
         #pragma mark
 
-        // (duplicate) virtual RecursiveLock &getLock() const;
-
         // (duplicate) virtual ContactPtr getSelfContact() const;
         // (duplicate) virtual stack::IAccountPtr getStackAccount() const;
 
@@ -357,8 +354,6 @@ namespace openpeer
         //                                                      WORD *outErrorCode,
         //                                                      String *outErrorReason
         //                                                      ) const = 0;
-
-        virtual RecursiveLock &getLock() const {return mLock;}
 
         virtual ContactPtr getSelfContact() const;
         virtual ILocationPtr getSelfLocation() const;
@@ -392,8 +387,6 @@ namespace openpeer
         #pragma mark
         #pragma mark Account => IAccountForIdentityLookup
         #pragma mark
-
-        // (duplicate) virtual RecursiveLock &getLock() const;
 
         // (duplicate) virtual ContactPtr findContact(const char *peerURI) const;
 
@@ -550,8 +543,7 @@ namespace openpeer
         #pragma mark Account => (data)
         #pragma mark
 
-        mutable RecursiveLock mLock;
-        PUID mID;
+        AutoPUID mID;
         AccountWeakPtr mThisWeak;
         AccountPtr mGracefulShutdownReference;
 
@@ -561,15 +553,15 @@ namespace openpeer
 
         IAccountDelegatePtr mDelegate;
 
-        IConversationThreadDelegatePtr mConversationThreadDelegate;
-        ICallDelegatePtr mCallDelegate;
+        IConversationThreadDelegatePtr mConversationThreadDelegate;   // NOTE: if set, never unset and never changes
+        ICallDelegatePtr mCallDelegate;                               // NOTE: if set, never unset and never changes
 
-        stack::IAccountPtr mStackAccount;
+        LockedValue<stack::IAccountPtr, true> mStackAccount;          // NOTE: once set, never unset and never changes
 
-        IServiceNamespaceGrantSessionPtr mGrantSession;
+        IServiceNamespaceGrantSessionPtr mGrantSession;               // NOTE: must always be set, never unset, never changes
 
-        IServiceLockboxSessionPtr mLockboxSession;
-        IServiceLockboxPtr mLockboxService;
+        LockedValue<IServiceLockboxSessionPtr, true> mLockboxSession; // NOTE: once set, never unset and never changes
+        IServiceLockboxPtr mLockboxService;                           // NOTE: must always be set, never unset, never changes
         bool mLockboxForceCreateNewAccount;
 
         mutable IdentityMap mIdentities;
@@ -583,7 +575,7 @@ namespace openpeer
 
         ConversationThreadMap mConversationThreads;
 
-        UseCallTransportPtr mCallTransport;
+        LockedValue<UseCallTransportPtr, true> mCallTransport;        // NOTE: once set, never unset and never changes
 
         IPublicationPtr mSubscribersPermissionDocument;
       };

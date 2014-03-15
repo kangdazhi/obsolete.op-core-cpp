@@ -73,6 +73,7 @@ namespace openpeer
 
       class IdentityLookup : public Noop,
                              public MessageQueueAssociator,
+                             public SharedRecursiveLock,
                              public IIdentityLookup,
                              public IBootstrappedNetworkDelegate,
                              public IMessageMonitorResultDelegate<IdentityLookupCheckResult>,
@@ -111,12 +112,16 @@ namespace openpeer
       protected:
         IdentityLookup(
                        IMessageQueuePtr queue,
-                       UseAccountPtr account,
+                       AccountPtr account,
                        IIdentityLookupDelegatePtr delegate,
                        const char *identityServiceDomain
                        );
 
-        IdentityLookup(Noop) : Noop(true), MessageQueueAssociator(IMessageQueuePtr()) {};
+        IdentityLookup(Noop) :
+          Noop(true),
+          MessageQueueAssociator(IMessageQueuePtr()),
+          SharedRecursiveLock(SharedRecursiveLock::create())
+        {}
 
         void init(const IdentityLookupInfoList &identities);
 
@@ -204,8 +209,6 @@ namespace openpeer
 
         virtual ElementPtr toDebug() const;
 
-        RecursiveLock &getLock() const;
-
         void prepareIdentity(
                              const String &domain,
                              const String &type,
@@ -227,7 +230,7 @@ namespace openpeer
         #pragma mark IdentityLookup => (data)
         #pragma mark
 
-        PUID mID;
+        AutoPUID mID;
         IdentityLookupWeakPtr mThisWeak;
 
         UseAccountPtr mAccount;

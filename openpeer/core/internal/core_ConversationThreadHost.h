@@ -87,6 +87,7 @@ namespace openpeer
 
       class ConversationThreadHost  : public Noop,
                                       public MessageQueueAssociator,
+                                      public SharedRecursiveLock,
                                       public IConversationThreadHostForConversationThread,
                                       public IWakeDelegate
       {
@@ -123,12 +124,16 @@ namespace openpeer
       protected:
         ConversationThreadHost(
                                IMessageQueuePtr queue,
-                               UseAccountPtr account,
-                               UseConversationThreadPtr baseThread,
+                               AccountPtr account,
+                               ConversationThreadPtr baseThread,
                                const char *threadID
                                );
-        
-        ConversationThreadHost(Noop) : Noop(true), MessageQueueAssociator(IMessageQueuePtr()) {};
+
+        ConversationThreadHost(Noop) :
+          Noop(true),
+          MessageQueueAssociator(IMessageQueuePtr()),
+          SharedRecursiveLock(SharedRecursiveLock::create())
+        {}
 
         void init(thread::Details::ConversationThreadStates state);
 
@@ -220,8 +225,6 @@ namespace openpeer
         #pragma mark ConversationThreadHost => friend PeerContact
         #pragma mark
 
-        // (duplicate) RecursiveLock &getLock() const;
-
         ThreadPtr getHostThread() const;
         UseAccountPtr getAccount() const;
         IPublicationRepositoryPtr getRepository() const;
@@ -254,14 +257,11 @@ namespace openpeer
         bool isPending() const {return ConversationThreadHostState_Pending == mCurrentState;}
         bool isReady() const {return ConversationThreadHostState_Ready == mCurrentState;}
         bool isShuttingDown() const {return ConversationThreadHostState_ShuttingDown == mCurrentState;}
-        virtual bool isShutdown() const {AutoRecursiveLock(getLock()); return ConversationThreadHostState_Shutdown == mCurrentState;}
+        virtual bool isShutdown() const {AutoRecursiveLock(*this); return ConversationThreadHostState_Shutdown == mCurrentState;}
 
         Log::Params log(const char *message) const;
 
         virtual ElementPtr toDebug() const;
-
-      protected:
-        RecursiveLock &getLock() const;
 
       private:
         void cancel();
@@ -297,8 +297,7 @@ namespace openpeer
         #pragma mark ConversationThreadHost => (data)
         #pragma mark
 
-        mutable RecursiveLock mBogusLock;
-        PUID mID;
+        AutoPUID mID;
         ConversationThreadHostWeakPtr mThisWeak;
         ConversationThreadHostPtr mGracefulShutdownReference;
 

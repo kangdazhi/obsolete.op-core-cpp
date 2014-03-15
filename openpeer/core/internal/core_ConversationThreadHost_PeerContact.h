@@ -54,6 +54,7 @@ namespace openpeer
         #pragma mark
 
         class PeerContact : public MessageQueueAssociator,
+                            public SharedRecursiveLock,
                             public IPeerSubscriptionDelegate,
                             public IWakeDelegate,
                             public ITimerDelegate
@@ -186,8 +187,6 @@ namespace openpeer
           #pragma mark ConversationThreadHost::PeerContact => friend ConversationThreadHost::PeerLocation
           #pragma mark
 
-          // (duplicate) RecursiveLock &getLock() const;
-
           ConversationThreadHostPtr getOuter() const;
           UseConversationThreadPtr getBaseThread() const;
           ThreadPtr getHostThread() const;
@@ -242,7 +241,6 @@ namespace openpeer
           #pragma mark ConversationThreadHost::PeerContact => (internal)
           #pragma mark
 
-          RecursiveLock &getLock() const;
           PUID getID() const {return mID;}
 
           Log::Params log(const char *message) const;
@@ -268,8 +266,7 @@ namespace openpeer
           #pragma mark ConversationThreadHost::PeerContact => (data)
           #pragma mark
 
-          PUID mID;
-          mutable RecursiveLock mBogusLock;
+          AutoPUID mID;
           PeerContactWeakPtr mThisWeak;
           PeerContactPtr mGracefulShutdownReference;
           ConversationThreadHostWeakPtr mOuter;

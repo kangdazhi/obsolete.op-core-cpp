@@ -53,6 +53,7 @@ namespace openpeer
         #pragma mark
 
         class ContactSubscription : public MessageQueueAssociator,
+                                    public SharedRecursiveLock,
                                     public IWakeDelegate,
                                     public IPeerSubscriptionDelegate,
                                     public ITimerDelegate
@@ -151,7 +152,6 @@ namespace openpeer
           #pragma mark Account::ContactSubscription => friend LocationSubscription
           #pragma mark
 
-          // (duplicate) RecursiveLock &getLock() const;
           AccountPtr getOuter() const;
 
           UseContactPtr getContact() const {return mContact;}
@@ -173,9 +173,6 @@ namespace openpeer
         private:
           virtual PUID getID() const {return mID;}
 
-        protected:
-          RecursiveLock &getLock() const;
-
         private:
           Log::Params log(const char *message) const;
 
@@ -191,8 +188,7 @@ namespace openpeer
           #pragma mark Account::ContactSubscription => (data)
           #pragma mark
 
-          mutable RecursiveLock mBogusLock;
-          PUID mID;
+          AutoPUID mID;
           ContactSubscriptionWeakPtr mThisWeak;
           ContactSubscriptionPtr mGracefulShutdownReference;
 

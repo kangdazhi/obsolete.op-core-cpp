@@ -137,7 +137,7 @@ namespace openpeer
                                    const IICESocket::STUNServerInfoList &stunServers
                                    ) :
         MessageQueueAssociator(queue),
-        mID(zsLib::createPUID()),
+        SharedRecursiveLock(SharedRecursiveLock::create()),
         mDelegate(ICallTransportDelegateProxy::createWeak(queue, delegate)),
         mTURNServers(turnServers),
         mSTUNServers(stunServers),
@@ -211,14 +211,14 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void CallTransport::shutdown()
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         cancel();
       }
 
       //-----------------------------------------------------------------------
       ICallTransport::CallTransportStates CallTransport::getState() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         return mCurrentState;
       }
 
@@ -231,15 +231,9 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      RecursiveLock &CallTransport::getLock() const
-      {
-        return mLock;
-      }
-
-      //-----------------------------------------------------------------------
       void CallTransport::notifyCallCreation(PUID idCall)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if ((isShuttingDown()) ||
             (isShutdown())) {
           ZS_LOG_WARNING(Detail, log("told about a new call during call transport shutdown"))
@@ -253,7 +247,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void CallTransport::notifyCallDestruction(PUID idCall)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if ((isShuttingDown()) ||
             (isShutdown())) {
           ZS_LOG_DEBUG(log("ignoring call destructionn during shutdown"))
@@ -283,7 +277,7 @@ namespace openpeer
 
         // scope: do not want to call notifyLostFocus from inside a lock (possible deadlock)
         {
-          AutoRecursiveLock lock(getLock());
+          AutoRecursiveLock lock(*this);
           ZS_THROW_BAD_STATE_IF(mTotalCalls < 1)
 
           if (call) {
@@ -329,7 +323,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void CallTransport::loseFocus(PUID callID)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         if (0 == mFocusCallID) {
           ZS_LOG_DEBUG(log("no call has focus (ignoring request to lose focus)") + ZS_PARAM("lose focus ID", callID))
@@ -347,7 +341,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       IICESocketPtr CallTransport::getSocket(SocketTypes type) const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         switch (type) {
           case SocketType_Audio:  return mAudioSocket ? mAudioSocket->getRTPSocket() : IICESocketPtr();
@@ -379,7 +373,7 @@ namespace openpeer
 
         // scope - get locked variable
         {
-          AutoRecursiveLock lock(getLock());
+          AutoRecursiveLock lock(*this);
 
           if (0 != mBlockUntilStartStopCompleted) {
             ZS_LOG_WARNING(Debug, log("ignoring RTP/RTCP packet as media is blocked until the start/stop routine complete") + ZS_PARAM("blocked count", mBlockUntilStartStopCompleted))
@@ -438,7 +432,7 @@ namespace openpeer
       {
         ZS_LOG_DEBUG(log("on timer") + ZS_PARAM("timer id", timer->getID()))
 
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if (timer != mSocketCleanupTimer) {
           ZS_LOG_WARNING(Detail, log("notification from obsolete timer") + ZS_PARAM("timer id", timer->getID()))
           return;
@@ -505,7 +499,7 @@ namespace openpeer
 
         // scope - find the call
         {
-          AutoRecursiveLock lock(getLock());
+          AutoRecursiveLock lock(*this);
 
           if (0 != mBlockUntilStartStopCompleted) {
             ZS_LOG_WARNING(Debug, log("ignoring request to send RTP packet as media is blocked until the start/stop routine complete") + ZS_PARAM("blocked count", mBlockUntilStartStopCompleted))
@@ -554,7 +548,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ElementPtr CallTransport::toDebug() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         ElementPtr resultEl = Element::create("core::CallTransport");
 
@@ -581,36 +575,35 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      class CallTransport_EnsureDecrementOnReturn
+      class CallTransport_EnsureDecrementOnReturn : public SharedRecursiveLock
       {
       public:
         typedef zsLib::ULONG size_type;
         typedef zsLib::RecursiveLock RecursiveLock;
 
         CallTransport_EnsureDecrementOnReturn(
-                                              RecursiveLock &lock,
+                                              const SharedRecursiveLock &lock,
                                               size_type &refCount
                                               ) :
-          mLock(lock),
+          SharedRecursiveLock(lock),
           mRefCount(refCount)
         {
         }
 
         ~CallTransport_EnsureDecrementOnReturn()
         {
-          AutoRecursiveLock lock(mLock);
+          AutoRecursiveLock lock(*this);
           --mRefCount;
         }
 
       private:
-        RecursiveLock &mLock;
         size_type &mRefCount;
       };
 
       //-----------------------------------------------------------------------
       void CallTransport::start()
       {
-        CallTransport_EnsureDecrementOnReturn(mLock, mBlockUntilStartStopCompleted);
+        CallTransport_EnsureDecrementOnReturn(*this, mBlockUntilStartStopCompleted);
 
         bool hasAudio = false;
         bool hasVideo = false;
@@ -619,7 +612,7 @@ namespace openpeer
 
         // scope: media engine can't be called from within our lock or it might deadlock
         {
-          AutoRecursiveLock lock(mLock);
+          AutoRecursiveLock lock(*this);
 
           if (mStarted) {
             ZS_LOG_DEBUG(log("must stop existing media before starting a new focus") + ZS_PARAM("block count", mBlockUntilStartStopCompleted))
@@ -662,7 +655,7 @@ namespace openpeer
         }
 
         {
-          AutoRecursiveLock lock(mLock);
+          AutoRecursiveLock lock(*this);
           if (hasAudio) {
             engine->startVoice();
           }
@@ -675,14 +668,14 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void CallTransport::stop()
       {
-        CallTransport_EnsureDecrementOnReturn(mLock, mBlockUntilStartStopCompleted);
+        CallTransport_EnsureDecrementOnReturn(*this, mBlockUntilStartStopCompleted);
 
         bool hasAudio = false;
         bool hasVideo = false;
 
         // scope: media engine can't be called from within our lock or it might deadlock
         {
-          AutoRecursiveLock lock(mLock);
+          AutoRecursiveLock lock(*this);
           if (!mStarted) return;
 
           hasAudio = mHasAudio;
@@ -721,7 +714,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void CallTransport::cancel()
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         if (isShutdown()) {
           ZS_LOG_DEBUG(log("cancel called but already shutdown"))
@@ -766,7 +759,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void CallTransport::step()
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         ZS_LOG_DEBUG(log("step called"))
 
         cleanObsoleteSockets();
@@ -783,7 +776,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void CallTransport::setState(CallTransportStates state)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         if (state == mCurrentState) return;
 

@@ -55,9 +55,7 @@ namespace openpeer
       using zsLib::AutoPUID;
       using zsLib::AutoBool;
       using zsLib::AutoLock;
-      using zsLib::AutoRecursiveLock;
       using zsLib::Lock;
-      using zsLib::RecursiveLock;
       using zsLib::Log;
       using zsLib::MessageQueueAssociator;
       using zsLib::Seconds;
@@ -65,6 +63,9 @@ namespace openpeer
       using zsLib::PrivateGlobalLock;
       using zsLib::Singleton;
       using zsLib::SingletonLazySharedPtr;
+
+      ZS_DECLARE_TYPEDEF_PTR(zsLib::RecursiveLock, RecursiveLock)
+      ZS_DECLARE_TYPEDEF_PTR(zsLib::AutoRecursiveLock, AutoRecursiveLock)
 
       ZS_DECLARE_USING_PTR(zsLib, MessageQueue)
       ZS_DECLARE_USING_PTR(zsLib, IMessageQueue)
@@ -82,7 +83,6 @@ namespace openpeer
       using stack::Candidate;
       using stack::CandidateList;
 
-      ZS_DECLARE_USING_PTR(stack, AutoRecursiveLock)
       ZS_DECLARE_USING_PTR(stack, IBootstrappedNetwork)
       ZS_DECLARE_USING_PTR(stack, IBootstrappedNetworkDelegate)
       ZS_DECLARE_USING_PTR(stack, ILocation)

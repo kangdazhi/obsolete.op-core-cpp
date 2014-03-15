@@ -129,17 +129,17 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ConversationThreadHost::ConversationThreadHost(
                                                      IMessageQueuePtr queue,
-                                                     UseAccountPtr account,
-                                                     UseConversationThreadPtr baseThread,
+                                                     AccountPtr account,
+                                                     ConversationThreadPtr baseThread,
                                                      const char *threadID
                                                      ) :
         MessageQueueAssociator(queue),
-        mID(zsLib::createPUID()),
+        SharedRecursiveLock(*baseThread),
         mThreadID(threadID ? String(threadID) : services::IHelper::randomString(32)),
         mBaseThread(baseThread),
         mCurrentState(ConversationThreadHostState_Pending),
         mAccount(account),
-        mSelfContact(account->getSelfContact())
+        mSelfContact(UseAccountPtr(account)->getSelfContact())
       {
         ZS_LOG_BASIC(log("created"))
       }
@@ -150,7 +150,7 @@ namespace openpeer
         UseAccountPtr account = mAccount.lock();
         ZS_THROW_INVALID_ASSUMPTION_IF(!account)
 
-        AutoRecursiveLock lock(account->getLock());
+        AutoRecursiveLock lock(*this);
 
         UseConversationThreadPtr baseThread = mBaseThread.lock();
 
@@ -207,7 +207,7 @@ namespace openpeer
           return ConversationThreadHostPtr();
         }
 
-        ConversationThreadHostPtr pThis(new ConversationThreadHost(UseStack::queueCore(), account, baseThread, NULL));
+        ConversationThreadHostPtr pThis(new ConversationThreadHost(UseStack::queueCore(), account, inBaseThread, NULL));
         pThis->mThisWeak = pThis;
         pThis->init(state);
         return pThis;
@@ -216,14 +216,14 @@ namespace openpeer
       //-----------------------------------------------------------------------
       String ConversationThreadHost::getThreadID() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         return mThreadID;
       }
 
       //-----------------------------------------------------------------------
       void ConversationThreadHost::shutdown()
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         cancel();
       }
 
@@ -242,7 +242,7 @@ namespace openpeer
                                                             const SplitMap &split
                                                             )
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if ((isShutdown()) ||
             (isShuttingDown())) {
           ZS_LOG_WARNING(Detail, log("notification of an updated document after shutdown") + IPublicationMetaData::toDebug(metaData))
@@ -265,7 +265,7 @@ namespace openpeer
                                                          const SplitMap &split
                                                          )
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if ((isShutdown()) ||
             (isShuttingDown())) {
           ZS_LOG_DEBUG(log("notification of a document gone after shutdown") + IPublicationMetaData::toDebug(metaData))
@@ -284,7 +284,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::notifyPeerDisconnected(ILocationPtr peerLocation)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if ((isShutdown()) ||
             (isShuttingDown())) {
           ZS_LOG_DEBUG(log("notification of a peer shutdown") + ILocation::toDebug(peerLocation))
@@ -303,7 +303,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       bool ConversationThreadHost::sendMessages(const MessageList &messages)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         if ((isShutdown()) ||
             (isShuttingDown())) {
@@ -324,7 +324,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       Time ConversationThreadHost::getHostCreationTime() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if (!mHostThread) return Time();
         return mHostThread->details()->created();
       }
@@ -332,7 +332,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       bool ConversationThreadHost::safeToChangeContacts() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if ((isShutdown()) ||
             (isShuttingDown())) {
           ZS_LOG_DEBUG(log("cannot change contacts during shutdown"))
@@ -365,7 +365,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::getContacts(ThreadContactMap &outContacts) const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if (!mHostThread) {
           ZS_LOG_DEBUG(log("cannot get contacts without a host thread"))
           return;
@@ -377,7 +377,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       bool ConversationThreadHost::inConversation(UseContactPtr contact) const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if (!mHostThread) {
           ZS_LOG_DEBUG(log("cannot check if contact is in conversation without a host thread"))
           return false;
@@ -391,7 +391,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::addContacts(const ContactProfileInfoList &contacts)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         ZS_THROW_INVALID_ASSUMPTION_IF(!safeToChangeContacts())
 
         bool foundSelf = false;
@@ -441,7 +441,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::removeContacts(const ContactList &contacts)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         ZS_THROW_INVALID_ASSUMPTION_IF(!safeToChangeContacts())
 
@@ -469,7 +469,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       IConversationThread::ContactStates ConversationThreadHost::getContactState(UseContactPtr contact) const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         PeerContactMap::const_iterator found = mPeerContacts.find(contact->getPeerURI());
         if (found == mPeerContacts.end()) {
@@ -518,7 +518,7 @@ namespace openpeer
           return false;
         }
 
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if (!mHostThread) {
           ZS_LOG_DEBUG(log("no host thread to clean call from..."))
           return false;
@@ -554,7 +554,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::notifyCallStateChanged(UseCallPtr call)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         if (!mHostThread) {
           ZS_LOG_DEBUG(log("no host thread to clean call from..."))
@@ -583,7 +583,7 @@ namespace openpeer
       {
         ZS_LOG_DEBUG(log("call cleanup called") + ZS_PARAM("call ID", UseCall::toDebug(call)))
 
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         if (!mHostThread) {
           ZS_LOG_DEBUG(log("no host thread to clean call from..."))
@@ -615,7 +615,7 @@ namespace openpeer
                                                        LocationDialogMap &outDialogs
                                                        ) const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         for (PeerContactMap::const_iterator iter = mPeerContacts.begin(); iter != mPeerContacts.end(); ++iter)
         {
           const PeerContactPtr &peerContact = (*iter).second;
@@ -634,7 +634,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::close()
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if ((isShutdown()) ||
             (isShuttingDown())) {
           ZS_LOG_DEBUG(log("cannot close as already shutting down"))
@@ -659,14 +659,14 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ThreadPtr ConversationThreadHost::getHostThread() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         return mHostThread;
       }
 
       //-----------------------------------------------------------------------
       UseAccountPtr ConversationThreadHost::getAccount() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         return mAccount.lock();
       }
 
@@ -685,14 +685,14 @@ namespace openpeer
       //-----------------------------------------------------------------------
       UseConversationThreadPtr ConversationThreadHost::getBaseThread() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         return mBaseThread.lock();
       }
 
       //-----------------------------------------------------------------------
       void ConversationThreadHost::notifyMessagesReceived(const MessageList &messages)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         UseConversationThreadPtr baseThread = mBaseThread.lock();
         if (!baseThread) {
@@ -727,7 +727,7 @@ namespace openpeer
                                                                      IConversationThread::MessageDeliveryStates state
                                                                      )
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         MessageDeliveryStatesMap::iterator found = mMessageDeliveryStates.find(messageID);
         if (found != mMessageDeliveryStates.end()) {
@@ -754,7 +754,7 @@ namespace openpeer
                                                      UseContactPtr toContact
                                                      )
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         UseConversationThreadPtr baseThread = mBaseThread.lock();
         if (!baseThread) {
           ZS_LOG_WARNING(Detail, log("unable to notify about pushed message as base is gone"))
@@ -766,7 +766,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::notifyStateChanged(PeerContactPtr peerContact)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         step();
       }
 
@@ -776,7 +776,7 @@ namespace openpeer
                                                       ContactStates state
                                                       )
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         UseConversationThreadPtr baseThread = mBaseThread.lock();
         if (!baseThread) {
           ZS_LOG_WARNING(Detail, log("unable to notify about contact state as base is gone"))
@@ -790,7 +790,7 @@ namespace openpeer
       {
         ZS_LOG_TRACE(log("checking for calls placed to") + UseContact::toDebug(toContact))
 
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         ZS_THROW_INVALID_ASSUMPTION_IF(!mHostThread)
 
@@ -836,7 +836,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ElementPtr ConversationThreadHost::toDebug() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         UseConversationThreadPtr base = mBaseThread.lock();
 
         ElementPtr resultEl = Element::create("core::ConversationThreadHost");
@@ -853,17 +853,9 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      RecursiveLock &ConversationThreadHost::getLock() const
-      {
-        UseAccountPtr account = mAccount.lock();
-        if (!account) return mBogusLock;
-        return account->getLock();
-      }
-
-      //-----------------------------------------------------------------------
       void ConversationThreadHost::cancel()
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if (isShutdown()) return;
 
         if (!mGracefulShutdownReference) mGracefulShutdownReference = mThisWeak.lock();
@@ -891,8 +883,13 @@ namespace openpeer
       {
         ZS_LOG_TRACE(log("step") + toDebug())
 
-        AutoRecursiveLock lock(getLock());
-        if ((isShuttingDown()) || (isShutdown())) {cancel();}
+        AutoRecursiveLock lock(*this);
+        if ((isShuttingDown()) ||
+            (isShutdown())) {
+          ZS_LOG_DEBUG(log("step forwarding to cancel"))
+          cancel();
+          return;
+        }
 
         if (!mHostThread) {
           ZS_LOG_WARNING(Detail, log("host thread object is NULL thus shutting down"))
@@ -950,7 +947,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::setState(ConversationThreadHostStates state)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if (state == mCurrentState) return;
 
         ZS_LOG_BASIC(log("state changed") + ZS_PARAM("old state", toString(mCurrentState)) + ZS_PARAM("new state", toString(state)))
@@ -970,7 +967,7 @@ namespace openpeer
                                             bool publishHostPermissionPublication
                                             ) const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         UseAccountPtr account = mAccount.lock();
         if (!account) {
@@ -1003,7 +1000,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::removeContacts(const ContactURIList &contacts)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         ZS_THROW_INVALID_ASSUMPTION_IF(!safeToChangeContacts())
 
         ThreadContactMap contactMap;

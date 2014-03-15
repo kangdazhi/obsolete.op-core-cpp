@@ -129,7 +129,6 @@ namespace openpeer
         typedef String LocationID;
         typedef std::map<LocationID, DialogPtr> LocationDialogMap;
 
-        virtual RecursiveLock &getLock() const = 0;
         virtual AccountPtr getAccount() const = 0;
 
         virtual bool placeCall(CallPtr call) = 0;
@@ -316,6 +315,7 @@ namespace openpeer
 
       class ConversationThread  : public Noop,
                                   public MessageQueueAssociator,
+                                  public SharedRecursiveLock,
                                   public IConversationThread,
                                   public IConversationThreadForAccount,
                                   public IConversationThreadForCall,
@@ -366,11 +366,15 @@ namespace openpeer
       protected:
         ConversationThread(
                            IMessageQueuePtr queue,
-                           UseAccountPtr account,
+                           AccountPtr account,
                            const char *threadID
                            );
         
-        ConversationThread(Noop) : Noop(true), MessageQueueAssociator(IMessageQueuePtr()) {};
+        ConversationThread(Noop) :
+          Noop(true),
+          MessageQueueAssociator(IMessageQueuePtr()),
+          SharedRecursiveLock(SharedRecursiveLock::create())
+        {}
 
         void init();
 
@@ -393,7 +397,7 @@ namespace openpeer
         static ElementPtr toDebug(IConversationThreadPtr thread);
 
         static ConversationThreadPtr create(
-                                            IAccountPtr account,
+                                            AccountPtr account,
                                             ElementPtr profileBundleEl
                                             );
 
@@ -446,7 +450,7 @@ namespace openpeer
         #pragma mark
 
         static ConversationThreadPtr create(
-                                            UseAccountPtr account,
+                                            AccountPtr account,
                                             ILocationPtr peerLocation,
                                             IPublicationMetaDataPtr metaData,
                                             const SplitMap &split
@@ -536,7 +540,6 @@ namespace openpeer
         #pragma mark
 
         // (duplicate) virtual IConversationThreadPtr convertIConversationThread() const;
-        // (duplicate) virtual RecursiveLock &getLock() const;
         // (duplicate) virtual IAccountForConversationThreadPtr getAccount() const;
         virtual bool placeCall(CallPtr call);
         virtual void notifyCallStateChanged(CallPtr call);
@@ -563,13 +566,11 @@ namespace openpeer
         bool isPending() const {return ConversationThreadState_Pending == mCurrentState;}
         bool isReady() const {return ConversationThreadState_Ready == mCurrentState;}
         bool isShuttingDown() const {return ConversationThreadState_ShuttingDown == mCurrentState;}
-        virtual bool isShutdown() const {AutoRecursiveLock lock(getLock()); return ConversationThreadState_Shutdown == mCurrentState;}
+        virtual bool isShutdown() const {AutoRecursiveLock lock(*this); return ConversationThreadState_Shutdown == mCurrentState;}
 
         Log::Params log(const char *message) const;
 
         virtual ElementPtr toDebug() const;
-
-        RecursiveLock &getLock() const;
 
         void cancel();
         void step();
@@ -585,8 +586,7 @@ namespace openpeer
         #pragma mark ConversationThread => (data)
         #pragma mark
 
-        mutable RecursiveLock mBogusLock;
-        PUID mID;
+        AutoPUID mID;
         ConversationThreadWeakPtr mThisWeak;
         ConversationThreadPtr mGracefulShutdownReference;
 
@@ -633,7 +633,7 @@ namespace openpeer
         static IConversationThreadFactory &singleton();
 
         virtual ConversationThreadPtr createConversationThread(
-                                                               IAccountPtr account,
+                                                               AccountPtr account,
                                                                ElementPtr profileBundleEl
                                                                );
         virtual ConversationThreadPtr createConversationThread(

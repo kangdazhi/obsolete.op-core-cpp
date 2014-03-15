@@ -98,12 +98,12 @@ namespace openpeer
       //-----------------------------------------------------------------------
       IdentityLookup::IdentityLookup(
                                      IMessageQueuePtr queue,
-                                     UseAccountPtr account,
+                                     AccountPtr account,
                                      IIdentityLookupDelegatePtr delegate,
                                      const char *identityServiceDomain
                                      ) :
         MessageQueueAssociator(queue),
-        mID(zsLib::createPUID()),
+        SharedRecursiveLock(*account),
         mAccount(account),
         mDelegate(IIdentityLookupDelegateProxy::createWeak(UseStack::queueApplication(), delegate)),
         mErrorCode(0),
@@ -116,7 +116,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void IdentityLookup::init(const IdentityLookupInfoList &identities)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         for (IdentityLookupInfoList::const_iterator iter = identities.begin(); iter != identities.end(); ++iter) {
           const String &identityURI = (*iter).mIdentityURI;
@@ -243,7 +243,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       bool IdentityLookup::isComplete() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         return !mDelegate;
       }
 
@@ -253,14 +253,14 @@ namespace openpeer
                                          String *outErrorReason
                                          ) const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         return 0 == mErrorCode;
       }
 
       //-----------------------------------------------------------------------
       void IdentityLookup::cancel()
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         IdentityLookupPtr pThis = mThisWeak.lock();
 
@@ -294,7 +294,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       IdentityContactListPtr IdentityLookup::getUpdatedIdentities() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         IdentityContactListPtr result(new IdentityContactList);
 
         for (IdentityContactList::const_iterator iter = mResults.begin(); iter != mResults.end(); ++iter)
@@ -310,7 +310,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       IdentityLookup::IdentityLookupInfoListPtr IdentityLookup::getUnchangedIdentities() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         IdentityLookupInfoListPtr result(new IdentityLookupInfoList);
 
         for (IdentityLookupInfoList::const_iterator iter = mUnchangedResults.begin(); iter != mUnchangedResults.end(); ++iter)
@@ -326,7 +326,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       IdentityLookup::IdentityLookupInfoListPtr IdentityLookup::getInvalidIdentities() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         IdentityLookupInfoListPtr result(new IdentityLookupInfoList);
 
         for (IdentityLookupInfoList::const_iterator iter = mInvalidResults.begin(); iter != mInvalidResults.end(); ++iter)
@@ -350,7 +350,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void IdentityLookup::onBootstrappedNetworkPreparationCompleted(IBootstrappedNetworkPtr network)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         ZS_LOG_DEBUG(log("bootstrapped network prepared notification") + IBootstrappedNetwork::toDebug(network))
 
@@ -515,7 +515,7 @@ namespace openpeer
         typedef IdentityLookupCheckRequest::Provider Provider;
         typedef IdentityLookupCheckRequest::ProviderList ProviderList;
 
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         MonitorMap::iterator found = mMonitors.find(monitor->getID());
         if (found == mMonitors.end()) {
@@ -664,7 +664,7 @@ namespace openpeer
                                                                    MessageResultPtr result
                                                                    )
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         MonitorMap::iterator found = mMonitors.find(monitor->getID());
         if (found == mMonitors.end()) {
@@ -695,7 +695,7 @@ namespace openpeer
       {
         typedef IdentityLookupRequest::ProviderList ProviderList;
 
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         MonitorMap::iterator found = mMonitors.find(monitor->getID());
         if (found == mMonitors.end()) {
@@ -762,7 +762,7 @@ namespace openpeer
                                                                    MessageResultPtr result
                                                                    )
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         MonitorMap::iterator found = mMonitors.find(monitor->getID());
         if (found == mMonitors.end()) {
@@ -802,7 +802,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ElementPtr IdentityLookup::toDebug() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         ElementPtr resultEl = Element::create("core::IdentityLookup");
 
@@ -820,12 +820,6 @@ namespace openpeer
         IHelper::debugAppend(resultEl, "results", mResults.size());
 
         return resultEl;
-      }
-
-      //-----------------------------------------------------------------------
-      RecursiveLock &IdentityLookup::getLock() const
-      {
-        return mAccount->getLock();
       }
 
       //-----------------------------------------------------------------------

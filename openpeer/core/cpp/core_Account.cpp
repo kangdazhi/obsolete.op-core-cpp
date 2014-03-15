@@ -101,7 +101,7 @@ namespace openpeer
                        ICallDelegatePtr callDelegate
                        ) :
         MessageQueueAssociator(queue),
-        mID(zsLib::createPUID()),
+        SharedRecursiveLock(SharedRecursiveLock::create()),
         mDelegate(IAccountDelegateProxy::createWeak(UseStack::queueApplication(), delegate)),
         mConversationThreadDelegate(IConversationThreadDelegateProxy::createWeak(UseStack::queueApplication(), conversationThreadDelegate)),
         mCallDelegate(ICallDelegateProxy::createWeak(UseStack::queueApplication(), callDelegate)),
@@ -125,7 +125,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Account::init()
       {
-        AutoRecursiveLock lock(mLock);
+        AutoRecursiveLock lock(*this);
         step();
       }
 
@@ -198,7 +198,7 @@ namespace openpeer
         AccountPtr pThis(new Account(UseStack::queueCore(), delegate, conversationThreadDelegate, callDelegate));
         pThis->mThisWeak = pThis;
 
-        AutoRecursiveLock lock(pThis->getLock());
+        AutoRecursiveLock lock(*pThis);
 
         String lockboxDomain(lockboxServiceDomain);
         IBootstrappedNetworkPtr lockboxNetwork = IBootstrappedNetwork::prepare(lockboxDomain);
@@ -234,7 +234,7 @@ namespace openpeer
         AccountPtr pThis(new Account(UseStack::queueCore(), delegate, conversationThreadDelegate, callDelegate));
         pThis->mThisWeak = pThis;
 
-        AutoRecursiveLock lock(pThis->getLock());
+        AutoRecursiveLock lock(*pThis);
 
         String lockboxDomain;
         String accountID;
@@ -269,10 +269,10 @@ namespace openpeer
 
         pThis->mLockboxForceCreateNewAccount = false;
 
-        pThis->mLockboxSession = IServiceLockboxSession::relogin(pThis, pThis->mLockboxService, pThis->mGrantSession, accountID, *lockboxKey);
+        pThis->mLockboxSession.set(IServiceLockboxSession::relogin(pThis, pThis->mLockboxService, pThis->mGrantSession, accountID, *lockboxKey));
         pThis->init();
 
-        if (!pThis->mLockboxSession) {
+        if (!pThis->mLockboxSession.get()) {
           ZS_LOG_ERROR(Detail, pThis->log("failed to create lockbox session from relogin information"))
           return AccountPtr();
         }
@@ -285,7 +285,7 @@ namespace openpeer
                                                 String *outErrorReason
                                                 ) const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         if (outErrorCode) *outErrorCode = mLastErrorCode;
         if (outErrorReason) *outErrorReason = mLastErrorReason;
@@ -298,12 +298,9 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ElementPtr Account::getReloginInformation() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
-        if (!mLockboxService) {
-          ZS_LOG_WARNING(Detail, log("missing lockbox domain information"))
-          return ElementPtr();
-        }
+        ZS_THROW_BAD_STATE_IF(!mLockboxService)
 
         String lockboxDomain = mLockboxService->getBootstrappedNetwork()->getDomain();
         if (lockboxDomain.isEmpty()) {
@@ -311,29 +308,25 @@ namespace openpeer
           return ElementPtr();
         }
 
-        if (!mGrantSession) {
-          ZS_LOG_WARNING(Detail, log("missing namespace grant information"))
-          return ElementPtr();
-        }
-
-        if (!mLockboxSession) {
+        if (!mLockboxSession.get()) {
           ZS_LOG_WARNING(Detail, log("missing lockbox session information"))
           return ElementPtr();
         }
 
-        String accountID = mLockboxSession->getAccountID();
+        String accountID = mLockboxSession.get()->getAccountID();
         if (accountID.isEmpty()) {
           ZS_LOG_WARNING(Detail, log("missing account ID information"))
           return ElementPtr();
         }
 
+        ZS_THROW_BAD_STATE_IF(!mGrantSession)
         String grantID = mGrantSession->getGrantID();
         if (grantID.isEmpty()) {
           ZS_LOG_WARNING(Detail, log("missing grant ID information"))
           return ElementPtr();
         }
 
-        SecureByteBlockPtr lockboxKey = mLockboxSession->getLockboxKey();
+        SecureByteBlockPtr lockboxKey = mLockboxSession.get()->getLockboxKey();
 
         if (!lockboxKey) {
           ZS_LOG_WARNING(Detail, log("missing lockbox key information"))
@@ -353,18 +346,16 @@ namespace openpeer
       //-----------------------------------------------------------------------
       String Account::getStableID() const
       {
-        AutoRecursiveLock lock(getLock());
-        if (!mLockboxSession) return String();
-        return mLockboxSession->getStableID();
+        if (!mLockboxSession.get()) return String();
+        return mLockboxSession.get()->getStableID();
       }
 
       //-----------------------------------------------------------------------
       String Account::getLocationID() const
       {
-        AutoRecursiveLock lock(getLock());
-        if (!mStackAccount) return String();
+        if (!mStackAccount.get()) return String();
 
-        ILocationPtr self(ILocation::getForLocal(mStackAccount));
+        ILocationPtr self(ILocation::getForLocal(mStackAccount.get()));
         if (!self) {
           ZS_LOG_WARNING(Detail, debug("location ID is not available yet"))
           return String();
@@ -377,7 +368,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Account::shutdown()
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         ZS_LOG_DEBUG(debug("shutdown called"))
         cancel();
       }
@@ -385,10 +376,11 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ElementPtr Account::savePeerFilePrivate() const
       {
-        AutoRecursiveLock lock(getLock());
-        if (!mLockboxSession) return ElementPtr();
+        // look ma - no lock
 
-        IPeerFilesPtr peerFiles = mLockboxSession->getPeerFiles();
+        if (!mLockboxSession.get()) return ElementPtr();
+
+        IPeerFilesPtr peerFiles = mLockboxSession.get()->getPeerFiles();
         if (!peerFiles) {
           ZS_LOG_WARNING(Detail, debug("peer files are not available"))
           return ElementPtr();
@@ -400,10 +392,11 @@ namespace openpeer
       //-----------------------------------------------------------------------
       SecureByteBlockPtr Account::getPeerFilePrivateSecret() const
       {
-        AutoRecursiveLock lock(getLock());
-        if (!mLockboxSession) return SecureByteBlockPtr();
+        // look ma - no lock
 
-        IPeerFilesPtr peerFiles = mLockboxSession->getPeerFiles();
+        if (!mLockboxSession.get()) return SecureByteBlockPtr();
+
+        IPeerFilesPtr peerFiles = mLockboxSession.get()->getPeerFiles();
         if (!peerFiles) {
           ZS_LOG_WARNING(Detail, debug("peer files are not available"))
           return SecureByteBlockPtr();
@@ -416,7 +409,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       IdentityListPtr Account::getAssociatedIdentities() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         IdentityListPtr result(new IdentityList);
 
@@ -426,7 +419,7 @@ namespace openpeer
           return result;
         }
 
-        ServiceIdentitySessionListPtr identities = mLockboxSession->getAssociatedIdentities();
+        ServiceIdentitySessionListPtr identities = mLockboxSession.get()->getAssociatedIdentities();
         ZS_THROW_BAD_STATE_IF(!identities)
 
         for (ServiceIdentitySessionList::iterator iter = identities->begin(); iter != identities->end(); ++iter)
@@ -454,7 +447,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Account::removeIdentities(const IdentityList &identitiesToRemove)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         if ((isShuttingDown()) ||
             (isShutdown())) {
@@ -462,7 +455,7 @@ namespace openpeer
           return;
         }
 
-        if (!mLockboxSession) {
+        if (!mLockboxSession.get()) {
           ZS_LOG_WARNING(Detail, log("lockbox session has not yet been created"))
           return;
         }
@@ -477,50 +470,36 @@ namespace openpeer
           remove.push_back(identity->getSession());
         }
 
-        mLockboxSession->associateIdentities(add, remove);
+        mLockboxSession.get()->associateIdentities(add, remove);
       }
 
       //-----------------------------------------------------------------------
       String Account::getInnerBrowserWindowFrameURL() const
       {
-        AutoRecursiveLock lock(getLock());
-        if (!mGrantSession) {
-          ZS_LOG_WARNING(Detail, log("lockbox session has not yet been created"))
-          return String();
-        }
+        ZS_THROW_BAD_STATE_IF(!mGrantSession)
         return mGrantSession->getInnerBrowserWindowFrameURL();
       }
 
       //-----------------------------------------------------------------------
       void Account::notifyBrowserWindowVisible()
       {
-        AutoRecursiveLock lock(getLock());
-        if (!mGrantSession) {
-          ZS_LOG_WARNING(Detail, log("lockbox session has not yet been created"))
-          return;
-        }
+        ZS_THROW_BAD_STATE_IF(!mGrantSession)
         mGrantSession->notifyBrowserWindowVisible();
       }
 
       //-----------------------------------------------------------------------
       void Account::notifyBrowserWindowClosed()
       {
-        AutoRecursiveLock lock(getLock());
-        if (!mGrantSession) {
-          ZS_LOG_WARNING(Detail, log("lockbox session has not yet been created"))
-          return;
-        }
+        ZS_THROW_BAD_STATE_IF(!mGrantSession)
         mGrantSession->notifyBrowserWindowClosed();
       }
 
       //-----------------------------------------------------------------------
       ElementPtr Account::getNextMessageForInnerBrowerWindowFrame()
       {
-        AutoRecursiveLock lock(getLock());
-        if (!mGrantSession) {
-          ZS_LOG_WARNING(Detail, log("lockbox session has not yet been created"))
-          return ElementPtr();
-        }
+        AutoRecursiveLock lock(*this);
+        ZS_THROW_BAD_STATE_IF(!mGrantSession)
+
         DocumentPtr doc = mGrantSession->getNextMessageForInnerBrowerWindowFrame();
         if (!doc) {
           ZS_LOG_WARNING(Detail, log("lockbox has no message pending for inner browser window frame"))
@@ -537,11 +516,8 @@ namespace openpeer
       {
         ZS_THROW_INVALID_ARGUMENT_IF(!unparsedMessage)
 
-        AutoRecursiveLock lock(getLock());
-        if (!mGrantSession) {
-          ZS_LOG_WARNING(Detail, log("lockbox session has not yet been created"))
-          return;
-        }
+        ZS_THROW_BAD_STATE_IF(!mGrantSession)
+
         DocumentPtr doc = Document::create();
         doc->adoptAsLastChild(unparsedMessage);
         mGrantSession->handleMessageFromInnerBrowserWindowFrame(doc);
@@ -558,14 +534,14 @@ namespace openpeer
       //-----------------------------------------------------------------------
       CallTransportPtr Account::getCallTransport() const
       {
-        AutoRecursiveLock lock(mLock);
-        return CallTransport::convert(mCallTransport);
+        // look ma - no lock
+        return CallTransport::convert(mCallTransport.get());
       }
 
       //-----------------------------------------------------------------------
       ICallDelegatePtr Account::getCallDelegate() const
       {
-        AutoRecursiveLock lock(mLock);
+        // look ma - no lock
         return mCallDelegate;
       }
 
@@ -582,7 +558,7 @@ namespace openpeer
       {
         ZS_THROW_INVALID_ARGUMENT_IF(!peerURI)
 
-        AutoRecursiveLock lock(mLock);
+        AutoRecursiveLock lock(*this);
         ContactMap::const_iterator found = mContacts.find(peerURI);
         if (found == mContacts.end()) {
           ZS_LOG_DEBUG(log("contact was not found for peer URI") + ZS_PARAM("uri", peerURI))
@@ -599,7 +575,7 @@ namespace openpeer
 
         ZS_THROW_INVALID_ARGUMENT_IF(!contact)
 
-        AutoRecursiveLock lock(mLock);
+        AutoRecursiveLock lock(*this);
         String peerURI = contact->getPeerURI();
         mContacts[peerURI] = contact;
       }
@@ -615,7 +591,7 @@ namespace openpeer
         ZS_THROW_INVALID_ARGUMENT_IF(!contact)
         ZS_THROW_INVALID_ARGUMENT_IF(!locationID)
 
-        AutoRecursiveLock lock(mLock);
+        AutoRecursiveLock lock(*this);
 
         ContactSubscriptionMap::iterator found = mContactSubscriptions.find(contact->getPeerURI());
         if (found != mContactSubscriptions.end()) {
@@ -638,7 +614,7 @@ namespace openpeer
 
         // We need to hint about the contact location to the stack just in case
         // the stack does not know about this location.
-        if (mStackAccount) {
+        if (mStackAccount.get()) {
           ILocationPtr location = ILocation::getForPeer(contact->getPeer(), locationID);
           ZS_THROW_BAD_STATE_IF(!location)
           location->hintNowAvailable();
@@ -656,50 +632,51 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ContactPtr Account::getSelfContact() const
       {
-        AutoRecursiveLock lock(mLock);
+        AutoRecursiveLock lock(*this);
         return Contact::convert(mSelfContact);
       }
 
       //-----------------------------------------------------------------------
       ILocationPtr Account::getSelfLocation() const
       {
-        AutoRecursiveLock lock(mLock);
-        if (!mStackAccount) return ILocationPtr();
+        // look ma - no lock
+        if (!mStackAccount.get()) return ILocationPtr();
 
-        return ILocation::getForLocal(mStackAccount);
+        return ILocation::getForLocal(mStackAccount.get());
       }
 
       //-----------------------------------------------------------------------
       stack::IAccountPtr Account::getStackAccount() const
       {
-        AutoRecursiveLock lock(mLock);
-        return mStackAccount;
+        // look ma - no lock
+        return mStackAccount.get();
       }
 
       //-----------------------------------------------------------------------
       IPublicationRepositoryPtr Account::getRepository() const
       {
-        AutoRecursiveLock lock(mLock);
-        if (!mStackAccount) return IPublicationRepositoryPtr();
-        return IPublicationRepository::getFromAccount(mStackAccount);
+        // look ma - no lock
+        if (!mStackAccount.get()) return IPublicationRepositoryPtr();
+        return IPublicationRepository::getFromAccount(mStackAccount.get());
       }
 
       //-----------------------------------------------------------------------
       IPeerFilesPtr Account::getPeerFiles() const
       {
-        AutoRecursiveLock lock(mLock);
-        if (!mLockboxSession) {
+        // look ma - no lock
+
+        if (!mLockboxSession.get()) {
           ZS_LOG_WARNING(Detail, log("lockbox is not created yet thus peer files are not available yet"))
           return IPeerFilesPtr();
         }
 
-        return mLockboxSession->getPeerFiles();
+        return mLockboxSession.get()->getPeerFiles();
       }
 
       //-----------------------------------------------------------------------
       IConversationThreadDelegatePtr Account::getConversationThreadDelegate() const
       {
-        AutoRecursiveLock lock(mLock);
+        // look ma - no lock
         return mConversationThreadDelegate;
       }
 
@@ -709,7 +686,7 @@ namespace openpeer
         UseConversationThreadPtr thread = inThread;
 
         ZS_THROW_INVALID_ARGUMENT_IF(!thread)
-        AutoRecursiveLock lock(mLock);
+        AutoRecursiveLock lock(*this);
 
         if ((isShuttingDown()) ||
             (isShutdown())) {
@@ -730,7 +707,7 @@ namespace openpeer
       ConversationThreadPtr Account::getConversationThreadByID(const char *threadID) const
       {
         ZS_THROW_INVALID_ARGUMENT_IF(!threadID)
-        AutoRecursiveLock lock(mLock);
+        AutoRecursiveLock lock(*this);
 
         ConversationThreadMap::const_iterator found = mConversationThreads.find(threadID);
         if (found == mConversationThreads.end()) return ConversationThreadPtr();
@@ -741,7 +718,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Account::getConversationThreads(ConversationThreadList &outConversationThreads) const
       {
-        AutoRecursiveLock lock(mLock);
+        AutoRecursiveLock lock(*this);
 
         for (ConversationThreadMap::const_iterator iter = mConversationThreads.begin(); iter != mConversationThreads.end(); ++iter)
         {
@@ -753,7 +730,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Account::notifyConversationThreadStateChanged()
       {
-        AutoRecursiveLock lock(mLock);
+        AutoRecursiveLock lock(*this);
 
         ZS_LOG_DEBUG(log("notified conversation thread state changed"))
 
@@ -771,15 +748,13 @@ namespace openpeer
       //-----------------------------------------------------------------------
       stack::IServiceNamespaceGrantSessionPtr Account::getNamespaceGrantSession() const
       {
-        AutoRecursiveLock lock(mLock);
         return mGrantSession;
       }
 
       //-----------------------------------------------------------------------
       stack::IServiceLockboxSessionPtr Account::getLockboxSession() const
       {
-        AutoRecursiveLock lock(mLock);
-        return mLockboxSession;
+        return mLockboxSession.get();
       }
 
       //-----------------------------------------------------------------------
@@ -791,13 +766,13 @@ namespace openpeer
 
         ZS_LOG_DEBUG(log("associating identity to account/lockbox"))
 
-        AutoRecursiveLock lock(mLock);
+        AutoRecursiveLock lock(*this);
 
         mIdentities[identity->getSession()->getID()] = identity;
 
-        if (!mLockboxSession) {
+        if (!mLockboxSession.get()) {
           ZS_LOG_DEBUG(log("creating lockbox session"))
-          mLockboxSession = IServiceLockboxSession::login(mThisWeak.lock(), mLockboxService, mGrantSession, identity->getSession(), mLockboxForceCreateNewAccount);
+          mLockboxSession.set(IServiceLockboxSession::login(mThisWeak.lock(), mLockboxService, mGrantSession, identity->getSession(), mLockboxForceCreateNewAccount));
         } else {
           ZS_LOG_DEBUG(log("associating to existing lockbox session"))
           ServiceIdentitySessionList add;
@@ -805,7 +780,7 @@ namespace openpeer
 
           add.push_back(identity->getSession());
 
-          mLockboxSession->associateIdentities(add, remove);
+          mLockboxSession.get()->associateIdentities(add, remove);
         }
 
         IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
@@ -835,7 +810,7 @@ namespace openpeer
       {
         ZS_LOG_DEBUG(log("notified call transport state changed"))
 
-        AutoRecursiveLock lock(mLock);
+        AutoRecursiveLock lock(*this);
         step();
       }
 
@@ -853,7 +828,7 @@ namespace openpeer
                                           stack::IAccount::AccountStates state
                                           )
       {
-        AutoRecursiveLock lock(mLock);
+        AutoRecursiveLock lock(*this);
         step();
       }
 
@@ -868,7 +843,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Account::onPeerSubscriptionShutdown(IPeerSubscriptionPtr subscription)
       {
-        AutoRecursiveLock lock(mLock);
+        AutoRecursiveLock lock(*this);
         if (subscription != mPeerSubscription) {
           ZS_LOG_WARNING(Detail, log("notified about obsolete subscription"))
           return;
@@ -895,7 +870,7 @@ namespace openpeer
                                                                      LocationConnectionStates state
                                                                      )
       {
-        AutoRecursiveLock lock(mLock);
+        AutoRecursiveLock lock(*this);
 
         if (subscription != mPeerSubscription) {
           ZS_LOG_WARNING(Detail, log("notified about obsolete subscription (thus ignoring)") + ZS_PARAM("subscription ID", subscription->getID()))
@@ -983,17 +958,17 @@ namespace openpeer
                                                         LockboxSessionStates state
                                                         )
       {
-        AutoRecursiveLock lock(mLock);
+        AutoRecursiveLock lock(*this);
         step();
       }
 
       //-----------------------------------------------------------------------
       void Account::onServiceLockboxSessionAssociatedIdentitiesChanged(IServiceLockboxSessionPtr session)
       {
-        AutoRecursiveLock lock(mLock);
+        AutoRecursiveLock lock(*this);
 
-        if (session != mLockboxSession) {
-          ZS_LOG_WARNING(Detail, log("notified about obsolete peer contact session"))
+        if (session != mLockboxSession.get()) {
+          ZS_LOG_WARNING(Detail, log("notified about unknown lockbox session"))
           return;
         }
 
@@ -1028,19 +1003,16 @@ namespace openpeer
                                                                GrantSessionStates state
                                                                )
       {
-        AutoRecursiveLock lock(mLock);
+        AutoRecursiveLock lock(*this);
         step();
       }
 
       //-----------------------------------------------------------------------
       void Account::onServiceNamespaceGrantSessionPendingMessageForInnerBrowserWindowFrame(IServiceNamespaceGrantSessionPtr session)
       {
-        AutoRecursiveLock lock(mLock);
+        AutoRecursiveLock lock(*this);
 
-        if (session != mGrantSession) {
-          ZS_LOG_WARNING(Detail, log("notified about obsolete namespace grant session"))
-          return;
-        }
+        ZS_THROW_UNEXPECTED_ERROR_IF(session != mGrantSession)
 
         if ((isShuttingDown()) ||
             (isShutdown())) {
@@ -1070,7 +1042,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Account::onWake()
       {
-        AutoRecursiveLock lock(mLock);
+        AutoRecursiveLock lock(*this);
         ZS_LOG_DEBUG(log("on wake"))
         step();
       }
@@ -1086,7 +1058,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Account::notifyContactSubscriptionShutdown(const String &peerURI)
       {
-        AutoRecursiveLock lock(mLock);
+        AutoRecursiveLock lock(*this);
         ContactSubscriptionMap::iterator found = mContactSubscriptions.find(peerURI);
         if (found == mContactSubscriptions.end()) return;
 
@@ -1190,7 +1162,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ElementPtr Account::toDebug() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         ElementPtr resultEl = Element::create("core::Account");
 
@@ -1201,9 +1173,9 @@ namespace openpeer
         IHelper::debugAppend(resultEl, "delegate", (bool)mDelegate);
         IHelper::debugAppend(resultEl, "conversation thread delegate", (bool)mConversationThreadDelegate);
         IHelper::debugAppend(resultEl, "call delegate", (bool)mCallDelegate);
-        IHelper::debugAppend(resultEl, stack::IAccount::toDebug(mStackAccount));
+        IHelper::debugAppend(resultEl, stack::IAccount::toDebug(mStackAccount.get()));
         IHelper::debugAppend(resultEl, stack::IServiceNamespaceGrantSession::toDebug(mGrantSession));
-        IHelper::debugAppend(resultEl, stack::IServiceLockboxSession::toDebug(mLockboxSession));
+        IHelper::debugAppend(resultEl, stack::IServiceLockboxSession::toDebug(mLockboxSession.get()));
         IHelper::debugAppend(resultEl, "force new lockbox account", mLockboxForceCreateNewAccount ? String("true") : String());
         IHelper::debugAppend(resultEl, "identities", mIdentities.size());
         IHelper::debugAppend(resultEl, stack::IPeerSubscription::toDebug(mPeerSubscription));
@@ -1211,7 +1183,7 @@ namespace openpeer
         IHelper::debugAppend(resultEl, "contacts", mContacts.size());
         IHelper::debugAppend(resultEl, "contact subscription", mContactSubscriptions.size());
         IHelper::debugAppend(resultEl, "conversations", mConversationThreads.size());
-        IHelper::debugAppend(resultEl, "call transport", (bool)mCallTransport);
+        IHelper::debugAppend(resultEl, "call transport", (bool)mCallTransport.get());
         IHelper::debugAppend(resultEl, "subscribers permission document", (bool)mSubscribersPermissionDocument);
 
         return resultEl;
@@ -1220,7 +1192,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Account::cancel()
       {
-        AutoRecursiveLock lock(mLock);  // just in case
+        AutoRecursiveLock lock(*this);  // just in case
 
         ZS_LOG_DEBUG(debug("cancel called"))
 
@@ -1229,14 +1201,14 @@ namespace openpeer
 
         setState(AccountState_ShuttingDown);
 
-        if (mCallTransport) {
+        if (mCallTransport.get()) {
           ZS_LOG_DEBUG(log("shutting down call transport"))
-          mCallTransport->shutdown();
+          mCallTransport.get()->shutdown();
         }
 
-        if (mStackAccount) {
+        if (mStackAccount.get()) {
           ZS_LOG_DEBUG(log("shutting down stack account"))
-          mStackAccount->shutdown();
+          mStackAccount.get()->shutdown();  // do not reset
         }
 
         if (mPeerSubscription) {
@@ -1244,33 +1216,36 @@ namespace openpeer
           mPeerSubscription.reset();
         }
 
-        for (ConversationThreadMap::iterator iter = mConversationThreads.begin(); iter != mConversationThreads.end(); ++iter)
+        for (ConversationThreadMap::iterator iter_doNotUse = mConversationThreads.begin(); iter_doNotUse != mConversationThreads.end(); )
         {
-          UseConversationThreadPtr thread = (*iter).second;
+          ConversationThreadMap::iterator current = iter_doNotUse; ++iter_doNotUse;
+          UseConversationThreadPtr thread = (*current).second;
           thread->shutdown();
         }
 
         if (mGracefulShutdownReference) {
 
-          for (ConversationThreadMap::iterator iter = mConversationThreads.begin(); iter != mConversationThreads.end(); ++iter)
+          for (ConversationThreadMap::iterator iter_doNotUse = mConversationThreads.begin(); iter_doNotUse != mConversationThreads.end(); )
           {
-            const BaseThreadID &threadI = (*iter).first;
-            UseConversationThreadPtr thread = (*iter).second;
+            ConversationThreadMap::iterator current = iter_doNotUse; ++iter_doNotUse;
+            const BaseThreadID &threadI = (*current).first;
+            UseConversationThreadPtr thread = (*current).second;
+
             if (!thread->isShutdown()) {
               ZS_LOG_DEBUG(log("waiting for conversation thread to shutdown") + ZS_PARAM("base thread id", threadI))
               return;
             }
           }
 
-          if (mStackAccount) {
-            if (stack::IAccount::AccountState_Shutdown != mStackAccount->getState()) {
+          if (mStackAccount.get()) {
+            if (stack::IAccount::AccountState_Shutdown != mStackAccount.get()->getState()) {
               ZS_LOG_DEBUG(log("waiting for stack account to shutdown"))
               return;
             }
           }
 
-          if (mCallTransport) {
-            if (ICallTransport::CallTransportState_Shutdown != mCallTransport->getState()) {
+          if (mCallTransport.get()) {
+            if (ICallTransport::CallTransportState_Shutdown != mCallTransport.get()->getState()) {
               ZS_LOG_DEBUG(log("waiting for call transport to shutdown"))
               return;
             }
@@ -1283,18 +1258,13 @@ namespace openpeer
           mGrantSession->cancel();    // do not reset
         }
 
-        if (mLockboxSession) {
-          mLockboxSession->cancel();  // do not reset
+        if (mLockboxSession.get()) {
+          mLockboxSession.get()->cancel();  // do not reset
         }
 
         mGracefulShutdownReference.reset();
 
         mDelegate.reset();
-        mConversationThreadDelegate.reset();
-        mCallDelegate.reset();
-
-        mStackAccount.reset();
-        mCallTransport.reset();
 
         mConversationThreads.clear();
 
@@ -1333,7 +1303,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       bool Account::stepLoginIdentityAssociated()
       {
-        if (mLockboxSession) {
+        if (mLockboxSession.get()) {
           ZS_LOG_DEBUG(log("lockbox is already created thus login identity associate is not needed"))
           return true;
         }
@@ -1350,7 +1320,7 @@ namespace openpeer
         WORD errorCode = 0;
         String reason;
 
-        IServiceLockboxSession::SessionStates state = mLockboxSession->getState(&errorCode, &reason);
+        IServiceLockboxSession::SessionStates state = mLockboxSession.get()->getState(&errorCode, &reason);
         if (IServiceLockboxSession::SessionState_Shutdown == state) {
           ZS_LOG_ERROR(Detail, log("lockbox session shutdown"))
           setError(errorCode, reason);
@@ -1414,27 +1384,27 @@ namespace openpeer
       //-----------------------------------------------------------------------
       bool Account::stepStackAccountCreation()
       {
-        ZS_THROW_BAD_STATE_IF(!mLockboxSession)
+        ZS_THROW_BAD_STATE_IF(!mLockboxSession.get())
 
-        if (mStackAccount) {
+        if (mStackAccount.get()) {
           ZS_LOG_TRACE(log("stack account already created"))
           return true;
         }
 
         ZS_LOG_DEBUG(log("creating stack account"))
-        mStackAccount = stack::IAccount::create(mThisWeak.lock(), mLockboxSession);
+        mStackAccount.set(stack::IAccount::create(mThisWeak.lock(), mLockboxSession.get()));
         return true;
       }
 
       //-----------------------------------------------------------------------
       bool Account::stepLockboxSession()
       {
-        ZS_THROW_BAD_STATE_IF(!mLockboxSession)
+        ZS_THROW_BAD_STATE_IF(!mLockboxSession.get())
 
         WORD errorCode = 0;
         String reason;
 
-        IServiceLockboxSession::SessionStates state = mLockboxSession->getState(&errorCode, &reason);
+        IServiceLockboxSession::SessionStates state = mLockboxSession.get()->getState(&errorCode, &reason);
 
         switch (state) {
           case IServiceLockboxSession::SessionState_Pending:
@@ -1468,13 +1438,13 @@ namespace openpeer
       //-----------------------------------------------------------------------
       bool Account::stepStackAccount()
       {
-        ZS_THROW_BAD_STATE_IF(!mLockboxSession)
-        ZS_THROW_BAD_STATE_IF(!mStackAccount)
+        ZS_THROW_BAD_STATE_IF(!mLockboxSession.get())
+        ZS_THROW_BAD_STATE_IF(!mStackAccount.get())
 
         WORD errorCode = 0;
         String reason;
 
-        stack::IAccount::AccountStates state = mStackAccount->getState(&errorCode, &reason);
+        stack::IAccount::AccountStates state = mStackAccount.get()->getState(&errorCode, &reason);
 
         if (stack::IAccount::AccountState_Ready == state) {
           ZS_LOG_DEBUG(log("step peer contact completed"))
@@ -1501,7 +1471,7 @@ namespace openpeer
           return true;
         }
 
-        ILocationPtr selfLocation = ILocation::getForLocal(mStackAccount);
+        ILocationPtr selfLocation = ILocation::getForLocal(mStackAccount.get());
         if (!selfLocation) {
           ZS_LOG_ERROR(Detail, log("could not obtain self location"))
           setError(IHTTP::HTTPStatusCode_InternalServerError, "Could not obtain location for self");
@@ -1517,8 +1487,8 @@ namespace openpeer
       //-----------------------------------------------------------------------
       bool Account::stepCallTransportSetup()
       {
-        if (mCallTransport) {
-          ICallTransportForAccount::CallTransportStates state = mCallTransport->getState();
+        if (mCallTransport.get()) {
+          ICallTransportForAccount::CallTransportStates state = mCallTransport.get()->getState();
           if ((ICallTransport::CallTransportState_ShuttingDown == state) ||
               (ICallTransport::CallTransportState_Shutdown == state)){
             ZS_LOG_ERROR(Detail, log("premature shutdown of transport object (something is wrong)"))
@@ -1533,11 +1503,11 @@ namespace openpeer
 
         IICESocket::TURNServerInfoList turnServers;
         IICESocket::STUNServerInfoList stunServers;
-        mStackAccount->getNATServers(turnServers, stunServers);
+        mStackAccount.get()->getNATServers(turnServers, stunServers);
 
-        mCallTransport = ICallTransportForAccount::create(mThisWeak.lock(), turnServers, stunServers);
+        mCallTransport.set(ICallTransportForAccount::create(mThisWeak.lock(), turnServers, stunServers));
 
-        if (!mCallTransport) {
+        if (!mCallTransport.get()) {
           ZS_LOG_ERROR(Detail, log("failed to create call transport object thus shutting down"))
           setError(IHTTP::HTTPStatusCode_InternalServerError, "Call transport failed to create");
           cancel();
@@ -1567,7 +1537,7 @@ namespace openpeer
         IPublication::RelationshipList relationships;
         relationships.push_back(mSelfContact->getPeerURI());
 
-        ILocationPtr selfLocation = ILocation::getForLocal(mStackAccount);
+        ILocationPtr selfLocation = ILocation::getForLocal(mStackAccount.get());
 
         stack::IPublicationMetaData::PublishToRelationshipsMap empty;
         mSubscribersPermissionDocument = stack::IPublication::create(selfLocation, "/threads/1.0/subscribers/permissions", "text/x-json-openpeer-permissions", relationships, empty, selfLocation);
@@ -1597,7 +1567,7 @@ namespace openpeer
           return true;
         }
 
-        mPeerSubscription = IPeerSubscription::subscribeAll(mStackAccount, mThisWeak.lock());
+        mPeerSubscription = IPeerSubscription::subscribeAll(mStackAccount.get(), mThisWeak.lock());
 
         if (!mPeerSubscription) {
           ZS_LOG_ERROR(Detail, log("unable to create a subscription to all connections"))
@@ -1613,7 +1583,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       bool Account::stepCallTransportFinalize()
       {
-        if (ICallTransport::CallTransportState_Ready == mCallTransport->getState()) {
+        if (ICallTransport::CallTransportState_Ready == mCallTransport.get()->getState()) {
           ZS_LOG_DEBUG(log("call transport is finalized"))
           return true;
         }

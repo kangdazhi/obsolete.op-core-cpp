@@ -72,7 +72,7 @@ namespace openpeer
                                                           ILocationPtr peerLocation
                                                           ) :
         MessageQueueAssociator(outer->getAssociatedMessageQueue()),
-        mID(zsLib::createPUID()),
+        SharedRecursiveLock(*outer),
         mOuter(outer),
         mPeerLocation(peerLocation),
         mCurrentState(LocationSubscriptionState_Pending)
@@ -82,7 +82,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Account::LocationSubscription::init()
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         step();
       }
 
@@ -136,7 +136,7 @@ namespace openpeer
                                                                                 PublicationSubscriptionStates state
                                                                                 )
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if (subscription != mPublicationSubscription) {
           ZS_LOG_DEBUG(log("ignoring publication subscription state change for obsolete subscription"))
           return;
@@ -163,7 +163,7 @@ namespace openpeer
       {
         ZS_THROW_INVALID_ARGUMENT_IF(!metaData)
 
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if (subscription != mPublicationSubscription) {
           ZS_LOG_DEBUG(log("ignoring publication notification on obsolete publication subscription"))
           return;
@@ -218,7 +218,7 @@ namespace openpeer
       {
         ZS_THROW_INVALID_ARGUMENT_IF(!metaData)
 
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if (subscription != mPublicationSubscription) {
           ZS_LOG_DEBUG(log("ignoring publication notification on obsolete publication subscription"))
           return;
@@ -258,14 +258,6 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      RecursiveLock &Account::LocationSubscription::getLock() const
-      {
-        ContactSubscriptionPtr outer = mOuter.lock();
-        if (!outer) return mBogusLock;
-        return outer->getLock();
-      }
-
-      //-----------------------------------------------------------------------
       Log::Params Account::LocationSubscription::log(const char *message) const
       {
         ElementPtr objectEl = Element::create("core::Account::LocationSubscription");
@@ -278,7 +270,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ElementPtr Account::LocationSubscription::toDebug() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         ElementPtr resultEl = Element::create("core::Account::LocationSubscription");
 

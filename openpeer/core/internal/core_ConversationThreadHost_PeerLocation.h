@@ -55,6 +55,7 @@ namespace openpeer
         #pragma mark
 
         class PeerLocation : public MessageQueueAssociator,
+                             public SharedRecursiveLock,
                              public IConversationThreadDocumentFetcherDelegate
         {
         public:
@@ -154,8 +155,6 @@ namespace openpeer
           bool isShutdown() {return mShutdown;}
 
         protected:
-          RecursiveLock &getLock() const;
-
           virtual ElementPtr toDebug() const;
 
           void cancel();
@@ -167,8 +166,7 @@ namespace openpeer
           #pragma mark ConversationThreadHost::PeerLocation => (data)
           #pragma mark
 
-          PUID mID;
-          mutable RecursiveLock mBogusLock;
+          AutoPUID mID;
           PeerLocationWeakPtr mThisWeak;
           PeerContactWeakPtr mOuter;
           bool mShutdown;
@@ -183,8 +181,8 @@ namespace openpeer
 
           CallHandlers mIncomingCallHandlers;
         };
-#if 0
 
+#if 0
       }
     }
   }

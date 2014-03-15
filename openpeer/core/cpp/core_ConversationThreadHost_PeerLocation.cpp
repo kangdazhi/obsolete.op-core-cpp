@@ -75,7 +75,7 @@ namespace openpeer
                                                          ILocationPtr peerLocation
                                                          ) :
         MessageQueueAssociator(queue),
-        mID(zsLib::createPUID()),
+        SharedRecursiveLock(*peerContact),
         mOuter(peerContact),
         mShutdown(false),
         mPeerLocation(peerLocation)
@@ -89,7 +89,7 @@ namespace openpeer
         PeerContactPtr outer = mOuter.lock();
         ZS_THROW_INVALID_ASSUMPTION_IF(!outer)
 
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         IPublicationRepositoryPtr repo = outer->getRepository();
         if (repo) {
@@ -140,14 +140,14 @@ namespace openpeer
       //-----------------------------------------------------------------------
       String ConversationThreadHost::PeerLocation::getLocationID() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         return mPeerLocation->getLocationID();
       }
 
       //-----------------------------------------------------------------------
       bool ConversationThreadHost::PeerLocation::isConnected() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if (!mPeerLocation) return false;
 
         return mPeerLocation->isConnected();
@@ -160,7 +160,7 @@ namespace openpeer
                                                                           const SplitMap &split
                                                                           )
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         if (isShutdown()) {
           ZS_LOG_WARNING(Detail, log("notification of an updated document after shutdown") + IPublicationMetaData::toDebug(metaData))
@@ -176,7 +176,7 @@ namespace openpeer
                                                                        const SplitMap &split
                                                                        )
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if (isShutdown()) {
           ZS_LOG_WARNING(Detail, log("notification that publication is gone after shutdown") + IPublicationMetaData::toDebug(metaData))
           return;
@@ -187,7 +187,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::PeerLocation::notifyPeerDisconnected(ILocationPtr peerLocation)
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if (isShutdown()) {
           ZS_LOG_DEBUG(log("notification of a peer shutdown") + ILocation::toDebug(peerLocation))
           return;
@@ -205,7 +205,7 @@ namespace openpeer
       {
         typedef zsLib::Time Time;
 
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if (!mSlaveThread) {
           ZS_LOG_WARNING(Detail, log("unable to gather message receipts as there is no slave thread object"))
           return;
@@ -228,7 +228,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::PeerLocation::gatherContactsToAdd(ThreadContactMap &contacts) const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if (!mSlaveThread) {
           ZS_LOG_WARNING(Detail, log("unable to gather contacts to add as there is no slave thread object"))
           return;
@@ -246,7 +246,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::PeerLocation::gatherContactsToRemove(ContactURIList &contacts) const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         if (!mSlaveThread) {
           ZS_LOG_WARNING(Detail, log("unable to gather contacts to remove as there is no slave thread object"))
           return;
@@ -266,7 +266,7 @@ namespace openpeer
                                                                      LocationDialogMap &outDialogs
                                                                      ) const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         ZS_THROW_INVALID_ASSUMPTION_IF(!mPeerLocation)
 
         if (!mSlaveThread) {
@@ -299,7 +299,7 @@ namespace openpeer
       {
         ZS_THROW_INVALID_ARGUMENT_IF(!publication)
 
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         ZS_LOG_DEBUG(log("publication was updated notification received") + ZS_PARAM("name", publication->getName()))
 
@@ -510,7 +510,7 @@ namespace openpeer
                                                                                                     IPublicationMetaDataPtr metaData
                                                                                                     )
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
         //*********************************************************************
         //*********************************************************************
         //*********************************************************************
@@ -544,7 +544,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ElementPtr ConversationThreadHost::PeerLocation::toDebug() const
       {
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         ElementPtr resultEl = Element::create("core::ConversationThreadHost::PeerLocation");
 
@@ -559,19 +559,11 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      RecursiveLock &ConversationThreadHost::PeerLocation::getLock() const
-      {
-        PeerContactPtr outer = mOuter.lock();
-        if (!outer) return mBogusLock;
-        return outer->getLock();
-      }
-
-      //-----------------------------------------------------------------------
       void ConversationThreadHost::PeerLocation::cancel()
       {
         ZS_LOG_DEBUG(log("cancel called"))
 
-        AutoRecursiveLock lock(getLock());
+        AutoRecursiveLock lock(*this);
 
         if (isShutdown()) {
           ZS_LOG_DEBUG(log("already shutdown"))
@@ -616,8 +608,12 @@ namespace openpeer
       {
         ZS_LOG_TRACE(log("step"))
 
-        AutoRecursiveLock lock(getLock());
-        if (isShutdown()) {cancel();}
+        AutoRecursiveLock lock(*this);
+        if (isShutdown()) {
+          ZS_LOG_DEBUG(log("step forwarind go cancel"))
+          cancel();
+          return;
+        }
 
       }
 
