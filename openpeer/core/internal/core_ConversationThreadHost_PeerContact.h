@@ -241,7 +241,7 @@ namespace openpeer
 
             void setState(MessageDeliveryStates state);
 
-            bool shouldPush() const;
+            bool shouldPush(bool backgroundingNow) const;
 
           protected:
             PeerContactWeakPtr mOuter;
@@ -293,6 +293,7 @@ namespace openpeer
 
           IBackgroundingSubscriptionPtr mBackgroundingSubscription;
           IBackgroundingNotifierPtr mBackgroundingNotifier;
+          AutoBool mBackgroundingNow;
 
           IPeerSubscriptionPtr mSlaveSubscription;
 

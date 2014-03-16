@@ -392,6 +392,7 @@ namespace openpeer
         AutoRecursiveLock lock(*this);
 
         mBackgroundingNotifier = notifier;
+        get(mBackgroundingNow) = false;
         step();
       }
 
@@ -401,6 +402,11 @@ namespace openpeer
         ZS_LOG_DEBUG(log("notified going to background now") + ZS_PARAM("subscription id", subscription->getID()))
 
         AutoRecursiveLock lock(*this);
+
+        get(mBackgroundingNow) = true;
+        step();
+
+        mBackgroundingNotifier.reset();
       }
 
       //-----------------------------------------------------------------------
@@ -409,6 +415,11 @@ namespace openpeer
         ZS_LOG_DEBUG(log("notified returning from background now") + ZS_PARAM("subscription id", subscription->getID()))
 
         AutoRecursiveLock lock(*this);
+
+        mBackgroundingNotifier.reset();
+
+        get(mBackgroundingNow) = false;
+        step();
       }
 
       //-----------------------------------------------------------------------
@@ -617,6 +628,7 @@ namespace openpeer
 
         IHelper::debugAppend(resultEl, "backgrounding subsscription id", mBackgroundingSubscription ? mBackgroundingSubscription->getID() : 0);
         IHelper::debugAppend(resultEl, "backgrounding notifier id", mBackgroundingNotifier ? mBackgroundingNotifier->getID() : 0);
+        IHelper::debugAppend(resultEl, "backgrounding now", mBackgroundingNow);
 
         IHelper::debugAppend(resultEl, IPeerSubscription::toDebug(mSlaveSubscription));
 
@@ -821,7 +833,7 @@ namespace openpeer
             if (( ((IPeer::PeerFindState_Idle == state) ||
                    (IPeer::PeerFindState_Completed == state)) &&
                  (peerLocations->size() < 1)) ||
-                (deliveryState->shouldPush())) {
+                (deliveryState->shouldPush(mBackgroundingNow))) {
               ZS_LOG_DEBUG(log("state must now be set to undeliverable") + ZS_PARAM("message", message->toDebug()) + ZS_PARAM("peer find state", IPeer::toString(state)))
               deliveryState->setState(IConversationThread::MessageDeliveryState_UserNotAvailable);
               outer->notifyMessageDeliveryStateChanged(message->messageID(), IConversationThread::MessageDeliveryState_UserNotAvailable);
@@ -939,10 +951,11 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      bool ConversationThreadHost::PeerContact::MessageDeliveryState::shouldPush() const
+      bool ConversationThreadHost::PeerContact::MessageDeliveryState::shouldPush(bool backgroundingNow) const
       {
         if (IConversationThread::MessageDeliveryState_Discovering != mState) return false;
         if (Time() == mPushTime) return false;
+        if (backgroundingNow) return true;
 
         return (zsLib::now() >= mPushTime);
       }
