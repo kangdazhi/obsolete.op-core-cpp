@@ -117,11 +117,16 @@ namespace openpeer
 
       ZS_DECLARE_USING_PTR(stack::message, IdentityInfo)
 
+      ZS_DECLARE_USING_PTR(services, IBackgrounding)
+      ZS_DECLARE_USING_PTR(services, IBackgroundingSubscription)
+      ZS_DECLARE_USING_PTR(services, IBackgroundingNotifier)
+
       ZS_DECLARE_USING_PTR(services, IICESocket)
       ZS_DECLARE_USING_PTR(services, IICESocketSession)
       ZS_DECLARE_USING_PTR(services, IICESocketSubscription)
       ZS_DECLARE_USING_PTR(services, IHTTP)
 
+      ZS_DECLARE_USING_PROXY(services, IBackgroundingDelegate)
       ZS_DECLARE_USING_PROXY(services, IICESocketDelegate)
       ZS_DECLARE_USING_PROXY(services, IICESocketSessionDelegate)
       ZS_DECLARE_USING_PROXY(services, IWakeDelegate)

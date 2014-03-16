@@ -55,7 +55,7 @@ namespace openpeer
       {
       public:
         friend interaction IBackgroundingFactory;
-        friend interaction IBackgrounding;
+        friend interaction core::IBackgrounding;
 
         ZS_DECLARE_CLASS_PTR(Query)
         ZS_DECLARE_CLASS_PTR(Completion)

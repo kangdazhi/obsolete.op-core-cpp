@@ -38,6 +38,7 @@
 
 #include <openpeer/stack/IPeerSubscription.h>
 
+#include <openpeer/services/IBackgrounding.h>
 #include <openpeer/services/IWakeDelegate.h>
 
 #include <zsLib/MessageQueueAssociator.h>

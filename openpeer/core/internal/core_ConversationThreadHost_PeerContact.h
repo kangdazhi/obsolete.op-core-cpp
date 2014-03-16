@@ -56,6 +56,7 @@ namespace openpeer
         class PeerContact : public MessageQueueAssociator,
                             public SharedRecursiveLock,
                             public IPeerSubscriptionDelegate,
+                            public IBackgroundingDelegate,
                             public IWakeDelegate,
                             public ITimerDelegate
         {
@@ -170,10 +171,24 @@ namespace openpeer
 
           //-------------------------------------------------------------------
           #pragma mark
+          #pragma mark ConversationThreadHost::PeerContact => IBackgroundingDelegate
+          #pragma mark
+
+          virtual void onBackgroundingGoingToBackground(
+                                                        IBackgroundingSubscriptionPtr subscription,
+                                                        IBackgroundingNotifierPtr notifier
+                                                        );
+
+          virtual void onBackgroundingGoingToBackgroundNow(IBackgroundingSubscriptionPtr subscription);
+
+          virtual void onBackgroundingReturningFromBackground(IBackgroundingSubscriptionPtr subscription);
+
+          //-------------------------------------------------------------------
+          #pragma mark
           #pragma mark ConversationThreadHost::PeerContact => IWakeDelegate
           #pragma mark
 
-          virtual void onWake() {step();}
+          virtual void onWake();
 
           //-------------------------------------------------------------------
           #pragma mark
@@ -275,6 +290,9 @@ namespace openpeer
 
           UseContactPtr mContact;
           ElementPtr mProfileBundleEl;
+
+          IBackgroundingSubscriptionPtr mBackgroundingSubscription;
+          IBackgroundingNotifierPtr mBackgroundingNotifier;
 
           IPeerSubscriptionPtr mSlaveSubscription;
 

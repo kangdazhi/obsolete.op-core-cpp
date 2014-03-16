@@ -44,6 +44,8 @@
 
 #define OPENPEER_CONVERSATION_THREAD_MAX_WAIT_DELIVERY_TIME_BEFORE_PUSH_IN_SECONDS (30)
 
+#define OPENPEER_CORE_SETTINGS_CONVERSATION_THREAD_HOST_BACKGROUNDING_PHASE "openpeer/core/backgrounding-phase-conversation-thread"
+
 namespace openpeer
 {
   namespace core
