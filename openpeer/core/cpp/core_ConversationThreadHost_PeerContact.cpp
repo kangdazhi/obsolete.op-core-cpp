@@ -763,7 +763,7 @@ namespace openpeer
           }
         }
 
-        if (requiresSubscription) {
+        if (!requiresSubscription) {
           ZS_LOG_DEBUG(log("no outstanding undelivered messages thus no need to prevent backgrounding") + ZS_PARAM("notifier", mBackgroundingNotifier ? mBackgroundingNotifier->getID() : 0))
           mBackgroundingNotifier.reset();
         }
