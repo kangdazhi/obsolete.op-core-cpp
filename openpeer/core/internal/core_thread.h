@@ -352,8 +352,12 @@ namespace openpeer
             String mICEUsernameFrag;
             String mICEPassword;
             CandidateList mCandidates;
+            bool mFinal;
 
-            Description() : mVersion(0), mSSRC(0) {}
+            Description() :
+              mVersion(0),
+              mSSRC(0),
+              mFinal(false) {}
 
             ElementPtr toDebug() const;
           };
