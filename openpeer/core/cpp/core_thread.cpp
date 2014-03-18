@@ -1026,11 +1026,6 @@ namespace openpeer
               }
             }
 
-            if (description->mFinal) {
-              ElementPtr finalEl = createElementWithNumber("final", "true");
-              candidatesEl->adoptAsFirstChild(finalEl);
-            }
-
             securityEl->adoptAsLastChild(saltEl);
             securityEl->adoptAsLastChild(secretEl);
 
@@ -1039,6 +1034,11 @@ namespace openpeer
             descriptionEl->adoptAsLastChild(codecsEl);
             descriptionEl->adoptAsLastChild(iceUsernameFragEl);
             descriptionEl->adoptAsLastChild(icePasswordEl);
+            if (description->mFinal) {
+              ElementPtr finalEl = createElementWithNumber("final", "true");
+              descriptionEl->adoptAsLastChild(finalEl);
+            }
+
             descriptionEl->adoptAsLastChild(candidatesEl);
 
             descriptionsEl->adoptAsLastChild(descriptionEl);
@@ -1138,10 +1138,19 @@ namespace openpeer
 
               description->mICEUsernameFrag = IMessageHelper::getElementTextAndDecode(descriptionEl->findFirstChildElementChecked("iceUsernameFrag"));
               description->mICEPassword = IMessageHelper::getElementTextAndDecode(descriptionEl->findFirstChildElementChecked("icePassword"));
+              ElementPtr finalEl = descriptionEl->findFirstChildElement("final");
+
+              description->mFinal = false;
+              if (finalEl) {
+                try {
+                  description->mFinal = Numeric<bool>(finalEl->getText());
+                } catch (Numeric<bool>::ValueOutOfRange &) {
+                  ZS_LOG_WARNING(Debug, pThis->log("final value could not be interpreted"))
+                }
+              }
 
               ElementPtr candidatesEl = descriptionEl->findFirstChildElement("candidates");
               ElementPtr candidateEl = candidatesEl->findFirstChildElement("candidate");
-              ElementPtr finalEl = candidatesEl ? candidatesEl->findFirstChildElement("final") : ElementPtr();
 
               while (candidateEl)
               {
@@ -1151,15 +1160,6 @@ namespace openpeer
                 }
 
                 candidateEl = candidateEl->findNextSiblingElement("candidate");
-              }
-
-              description->mFinal = false;
-              if (finalEl) {
-                try {
-                  description->mFinal = Numeric<bool>(finalEl->getText());
-                } catch (Numeric<bool>::ValueOutOfRange &) {
-                  ZS_LOG_WARNING(Debug, pThis->log("final value could not be interpreted"))
-                }
               }
 
               pThis->mDescriptions.push_back(description);
