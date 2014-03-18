@@ -1184,7 +1184,7 @@ namespace openpeer
           mVideoSocket.get()->wakeup();
         }
 
-        ZS_LOG_DEBUG(log("audio and/or video sockets are all told to wake") + ZS_PARAM("has audio", hasAudio()) + ZS_PARAM("has video", hasVideo()))
+        ZS_LOG_TRACE(log("audio and/or video sockets are all told to wake") + ZS_PARAM("has audio", hasAudio()) + ZS_PARAM("has video", hasVideo()))
 
         return true;
       }
@@ -1196,7 +1196,7 @@ namespace openpeer
         typedef Dialog::DescriptionPtr DescriptionPtr;
         typedef Dialog::DescriptionList DescriptionList;
 
-        ZS_LOG_DEBUG(log("preparing first time calls"))
+        ZS_LOG_TRACE(log("preparing first time calls"))
 
         AutoRecursiveLock lock(mLock);
 
@@ -1228,7 +1228,7 @@ namespace openpeer
                                           CallLocationList &outLocationsToClose
                                           ) throw (Exceptions::CallClosed)
       {
-        ZS_LOG_DEBUG(log("preparing call locations"))
+        ZS_LOG_TRACE(log("preparing call locations"))
 
         Time tick = zsLib::now();
 
@@ -1267,7 +1267,7 @@ namespace openpeer
 
           CallLocationMap::iterator found = mCallLocations.find(locationID);
           if (found != mCallLocations.end()) {
-            ZS_LOG_DEBUG(log("updating an existing call location") + ZS_PARAM("remote location ID", locationID))
+            ZS_LOG_TRACE(log("updating an existing call location") + ZS_PARAM("remote location ID", locationID))
             CallLocationPtr &callLocation = (*found).second;
             callLocation->updateRemoteDialog(remoteDialog);
 
@@ -1415,11 +1415,11 @@ namespace openpeer
             return false;
           }
 
-          ZS_LOG_DEBUG(log("location already picked (no need to try and pick one)"))
+          ZS_LOG_TRACE(log("location already picked (no need to try and pick one)"))
           return true;
         }
 
-        ZS_LOG_DEBUG(log("do not have a picked location yet for placed call (thus will attempt to pick one)"))
+        ZS_LOG_TRACE(log("do not have a picked location yet for placed call (thus will attempt to pick one)"))
 
         checkLegalWhenNotPicked();
 
@@ -1534,7 +1534,7 @@ namespace openpeer
         CallLocationPtr picked = mPickedLocation.get();
 
         if (!picked) {
-          ZS_LOG_DEBUG(log("location is not picked yet"))
+          ZS_LOG_TRACE(log("location is not picked yet"))
           return true;
         }
 
@@ -1543,7 +1543,7 @@ namespace openpeer
 
         ICallLocation::CallLocationStates pickedLocationState = picked->getState();
 
-        ZS_LOG_DEBUG(log("picked call state logic") + CallLocation::toDebug(picked, true, false) + toDebug(true) + Dialog::toDebug(pickedRemoteDialog))
+        ZS_LOG_TRACE(log("picked call state logic") + CallLocation::toDebug(picked, true, false) + toDebug(true) + Dialog::toDebug(pickedRemoteDialog))
 
         // if the picked location is now gone then we must shutdown the object...
         checkLegalWhenPicked(mCurrentState, true);
@@ -1566,7 +1566,7 @@ namespace openpeer
           }
           case ICallLocation::CallLocationState_Ready: {
             if (!mIncomingCall) {
-              ZS_LOG_DEBUG(log("now ready to go into open state"))
+              ZS_LOG_TRACE(log("now ready to go into open state"))
               mMediaHolding.set(mLocalOnHold || (ICall::CallState_Hold == internal::convert(pickedRemoteDialog->dialogState())));
               setCurrentState(ICall::CallState_Open);
               break;
@@ -1627,17 +1627,17 @@ namespace openpeer
 
           if (ICall::CallState_Hold != mCurrentState) {
             // this call must be in focus...
-            ZS_LOG_DEBUG(log("setting focus to this call?") + ZS_PARAM("focus", !mMediaHolding.get()))
+            ZS_LOG_TRACE(log("setting focus to this call?") + ZS_PARAM("focus", !mMediaHolding.get()))
             ICallAsyncProxy::create(mThisCallAsyncMediaQueue)->onSetFocus(!mMediaHolding.get());
           } else {
-            ZS_LOG_DEBUG(log("this call state is holding thus it should not have focus"))
+            ZS_LOG_TRACE(log("this call state is holding thus it should not have focus"))
             ICallAsyncProxy::create(mThisCallAsyncMediaQueue)->onSetFocus(false);
           }
 
           return true;
         }
 
-        ZS_LOG_DEBUG(log("this call does not have any picked remote locatio thus it should not have focus"))
+        ZS_LOG_TRACE(log("this call does not have any picked remote location thus it should not have focus"))
         ICallAsyncProxy::create(mThisCallAsyncMediaQueue)->onSetFocus(false);
 
         if (mPeerAliveTimer) {
@@ -1732,7 +1732,7 @@ namespace openpeer
         try
         {
           if (!stepIsMediaReady()) {
-            ZS_LOG_DEBUG(log("waiting for media to be ready"))
+            ZS_LOG_TRACE(log("waiting for media to be ready"))
             return;
           }
 
@@ -1759,12 +1759,12 @@ namespace openpeer
           goto call_closed_exception;
         }
 
-        ZS_LOG_DEBUG(log("gathering dialog replies"))
+        ZS_LOG_TRACE(log("gathering dialog replies"))
 
         // examine what is going on in the conversation thread...
         thread->gatherDialogReplies(mCallID, locationDialogMap);
 
-        ZS_LOG_DEBUG(log("gathering dialog replies has completed") + ZS_PARAM("total found", locationDialogMap.size()))
+        ZS_LOG_TRACE(log("gathering dialog replies has completed") + ZS_PARAM("total found", locationDialogMap.size()))
 
         try
         {
@@ -1781,27 +1781,27 @@ namespace openpeer
           }
 
           if (!stepPrepareCallLocations(locationDialogMap, locationsToClose)) {
-            ZS_LOG_DEBUG(log("preparing call locations caused call to close"))
+            ZS_LOG_WARNING(Detail, log("preparing call locations caused call to close"))
             goto call_closed_exception;
           }
 
           if (!stepVerifyCallState()) {
-            ZS_LOG_DEBUG(log("verifying call state caused call to close"))
+            ZS_LOG_WARNING(Detail, log("verifying call state caused call to close"))
             goto call_closed_exception;
           }
 
           if (!stepTryToPickALocation(locationsToClose)) {
-            ZS_LOG_DEBUG(log("trying to pick a location caused the call to close"))
+            ZS_LOG_WARNING(Detail, log("trying to pick a location caused the call to close"))
             goto call_closed_exception;
           }
 
           if (!stepHandlePickedLocation()) {
-            ZS_LOG_DEBUG(log("handling picked call location caused call to close"))
+            ZS_LOG_WARNING(Detail, log("handling picked call location caused call to close"))
             goto call_closed_exception;
           }
 
           if (!stepFixCallInProgressStates()) {
-            ZS_LOG_DEBUG(log("fix call in progress state caused call to close"))
+            ZS_LOG_WARNING(Detail, log("fix call in progress state caused call to close"))
             goto call_closed_exception;
           }
 
@@ -1844,7 +1844,7 @@ namespace openpeer
         }
 
         if (!stepCloseLocations(locationsToClose)) {
-          ZS_LOG_DEBUG(log("closing locations caused the call to close"))
+          ZS_LOG_WARNING(Detail, log("closing locations caused the call to close"))
           goto call_closed_exception;
         }
 
@@ -2315,6 +2315,7 @@ namespace openpeer
       {
         AutoRecursiveLock lock(mLock);
         if (remoteDialog != mRemoteDialog) {
+          ZS_LOG_DEBUG(log("remote dialog changed"))
           get(mChangedRemoteDialog) = true;
         }
         mRemoteDialog = remoteDialog;
