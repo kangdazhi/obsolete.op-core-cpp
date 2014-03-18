@@ -2030,6 +2030,8 @@ namespace openpeer
 
           if (socket->getLocalCandidatesVersion() == (*useVersion)) continue; // no change
 
+          bool final = (IICESocket::ICESocketState_Ready == socket->getState());
+
           IICESocket::CandidateList tempCandidates;
           socket->getLocalCandidates(tempCandidates, useVersion);
 
@@ -2037,6 +2039,7 @@ namespace openpeer
           stack::IHelper::convert(tempCandidates, candidates);
 
           desc->mCandidates = candidates;
+          desc->mFinal = final;
         }
 
         String remoteLocationID;
