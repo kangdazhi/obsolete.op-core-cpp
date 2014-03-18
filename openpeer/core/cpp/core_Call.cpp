@@ -2030,10 +2030,8 @@ namespace openpeer
 
           if (socket->getLocalCandidatesVersion() == (*useVersion)) continue; // no change
 
-          String actualVersion;
-
           IICESocket::CandidateList tempCandidates;
-          socket->getLocalCandidates(tempCandidates, &actualVersion);
+          socket->getLocalCandidates(tempCandidates, useVersion);
 
           CandidateList candidates;
           stack::IHelper::convert(tempCandidates, candidates);
