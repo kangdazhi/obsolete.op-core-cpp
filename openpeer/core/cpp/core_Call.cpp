@@ -54,7 +54,8 @@
 #define OPENPEER_CALL_RTCP_ICE_KEEP_ALIVE_INDICATIONS_SENT_IN_SECONDS (20)
 #define OPENPEER_CALL_RTCP_ICE_EXPECTING_DATA_WITHIN_IN_SECONDS (45)
 
-namespace openpeer { namespace core { ZS_DECLARE_SUBSYSTEM(openpeer_media) } }
+namespace openpeer { namespace core { ZS_DECLARE_SUBSYSTEM(openpeer_core) } }
+namespace openpeer { namespace core { ZS_DECLARE_FORWARD_SUBSYSTEM(openpeer_media) } }
 
 namespace openpeer
 {
@@ -81,6 +82,12 @@ namespace openpeer
       #pragma mark
       #pragma mark (helpers)
       #pragma mark
+
+      //-----------------------------------------------------------------------
+      static zsLib::Subsystem &mediaSubsystem()
+      {
+        return ZS_GET_OTHER_SUBSYSTEM(openpeer::core, openpeer_media);
+      }
 
       //-----------------------------------------------------------------------
       static Log::Params slog(const char *message)
@@ -499,11 +506,11 @@ namespace openpeer
         CallLocationPtr callLocation = mPickedLocation.get();
 
         if (!callLocation) {
-          ZS_LOG_WARNING(Trace, log("unable to send RTP packet as there is no picked/early location to communicate"))
+          ZS_LOG_SUBSYSTEM_WARNING(mediaSubsystem(), Trace, log("unable to send RTP packet as there is no picked/early location to communicate"))
           return false;
         }
         if (callLocation->getID() != toLocationID) {
-          ZS_LOG_WARNING(Trace, log("unable to send RTP packet as the picked/early location does not match the to location"))
+          ZS_LOG_SUBSYSTEM_WARNING(mediaSubsystem(), Trace, log("unable to send RTP packet as the picked/early location does not match the to location"))
           return false;
         }
         return callLocation->sendRTPPacket(type, packet, packetLengthInBytes);
@@ -755,15 +762,15 @@ namespace openpeer
 
           if (!picked) {
             if (!early) {
-              ZS_LOG_WARNING(Trace, log("ignoring received RTP packet as no call location was chosen"))
+              ZS_LOG_SUBSYSTEM_WARNING(mediaSubsystem(), Trace, log("ignoring received RTP packet as no call location was chosen"))
               return;
             }
             if (early->getID() != locationID) {
-              ZS_LOG_WARNING(Trace, log("ignoring received RTP packet as packet did not come from chosen early location"))
+              ZS_LOG_SUBSYSTEM_WARNING(mediaSubsystem(), Trace, log("ignoring received RTP packet as packet did not come from chosen early location"))
               return;
             }
           } else if (picked->getID() != locationID) {
-            ZS_LOG_WARNING(Trace, log("ignoring received RTP packet as location specified is not chosen location") + ZS_PARAM("chosen", mPickedLocation.get()->getID()) + ZS_PARAM("specified", locationID))
+            ZS_LOG_SUBSYSTEM_WARNING(mediaSubsystem(), Trace, log("ignoring received RTP packet as location specified is not chosen location") + ZS_PARAM("chosen", mPickedLocation.get()->getID()) + ZS_PARAM("specified", locationID))
             return;
           }
         }
@@ -2096,7 +2103,7 @@ namespace openpeer
         if (outIsRTP) *outIsRTP = true;
 
         if (!socket) {
-          ZS_LOG_WARNING(Detail, log("received request to find a NULL socket"))
+          ZS_LOG_SUBSYSTEM_WARNING(mediaSubsystem(), Detail, log("received request to find a NULL socket"))
           return bogus;
         }
 
@@ -2113,7 +2120,7 @@ namespace openpeer
           }
         }
 
-        ZS_LOG_WARNING(Detail, log("did not find socket subscription for socket") + ZS_PARAM("socket ID", socket->getID()))
+        ZS_LOG_SUBSYSTEM_WARNING(mediaSubsystem(), Detail, log("did not find socket subscription for socket") + ZS_PARAM("socket ID", socket->getID()))
 
         outFound = false;
         if (outType) *outType = SocketType_Audio;
@@ -2235,7 +2242,9 @@ namespace openpeer
 
         ZS_LOG_DEBUG(log("init completed") +
                      ZS_PARAM("audio RTP session ID", mAudioRTPSocketSession.get() ? mAudioRTPSocketSession.get()->getID() : 0) +
-                     ZS_PARAM("video RTP session ID", mVideoRTPSocketSession.get() ? mVideoRTPSocketSession.get()->getID() : 0))
+                     ZS_PARAM("video RTP session ID", mVideoRTPSocketSession.get() ? mVideoRTPSocketSession.get()->getID() : 0) +
+                     ZS_PARAM("audio final", audioFinal) +
+                     ZS_PARAM("video final", videoFinal))
       }
 
       //-----------------------------------------------------------------------
@@ -2333,7 +2342,7 @@ namespace openpeer
         }
 
         if (!session) {
-          ZS_LOG_WARNING(Trace, log("unable to send RTP packet as there is no ICE session object"))
+          ZS_LOG_SUBSYSTEM_WARNING(mediaSubsystem(), Trace, log("unable to send RTP packet as there is no ICE session object"))
           return false;
         }
         return session->sendPacket(packet, packetLengthInBytes);
@@ -2396,7 +2405,7 @@ namespace openpeer
         CallPtr outer = mOuter.lock();
 
         if (!outer) {
-          ZS_LOG_WARNING(Trace, log("ignoring ICE socket packet as call object is gone"))
+          ZS_LOG_SUBSYSTEM_WARNING(mediaSubsystem(), Trace, log("ignoring ICE socket packet as call object is gone"))
           return;
         }
 
@@ -2407,13 +2416,13 @@ namespace openpeer
         // scope: media
         {
           if (isClosed()) {
-            ZS_LOG_WARNING(Detail, log("received packet but already closed (probably okay)"))
+            ZS_LOG_SUBSYSTEM_WARNING(mediaSubsystem(), Detail, log("received packet but already closed (probably okay)"))
             return;
           }
 
           findSession(inSession, found, &type, &wasRTP);
           if (!found) {
-            ZS_LOG_WARNING(Trace, log("ignoring ICE socket packet from obsolete session"))
+            ZS_LOG_SUBSYSTEM_WARNING(mediaSubsystem(), Trace, log("ignoring ICE socket packet from obsolete session"))
             return;
           }
         }
@@ -2593,6 +2602,8 @@ namespace openpeer
             IICESocket::CandidateList tempCandidates;
             stack::IHelper::convert(audioCandidates, tempCandidates);
 
+            ZS_LOG_DEBUG(log("updating remote audio candidates") + ZS_PARAM("size", tempCandidates.size()) + ZS_PARAM("final", audioFinal))
+
             mAudioRTPSocketSession.get()->updateRemoteCandidates(tempCandidates);
             if (audioFinal) {
               mAudioRTPSocketSession.get()->endOfRemoteCandidates();
@@ -2602,6 +2613,8 @@ namespace openpeer
           if (hasVideo()) {
             IICESocket::CandidateList tempCandidates;
             stack::IHelper::convert(videoCandidates, tempCandidates);
+
+            ZS_LOG_DEBUG(log("updating remote video candidates") + ZS_PARAM("size", tempCandidates.size()) + ZS_PARAM("final", videoFinal))
 
             mVideoRTPSocketSession.get()->updateRemoteCandidates(tempCandidates);
             if (videoFinal) {
@@ -2696,7 +2709,7 @@ namespace openpeer
           }
         }
 
-        ZS_LOG_WARNING(Trace, log("did not find socket session thus returning bogus session") + ZS_PARAM("socket session ID", session->getID()))
+        ZS_LOG_SUBSYSTEM_WARNING(mediaSubsystem(), Trace, log("did not find socket session thus returning bogus session") + ZS_PARAM("socket session ID", session->getID()))
 
         outFound = false;
         if (outType) *outType = SocketType_Audio;
