@@ -265,10 +265,7 @@ namespace openpeer
       void MediaEngine::init()
       {
         AutoRecursiveLock lock(mLock);
-
-        __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                            "init - 1");
-                              
+        
         ZS_LOG_DEBUG(log("init media engine"))
 
         mVoiceEngine = webrtc::VoiceEngine::Create();
@@ -316,46 +313,25 @@ namespace openpeer
           ZS_LOG_ERROR(Detail, log("failed to get interface for voice file"))
           return;
         }
-        
-        __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                            "init - 2");
 
         mError = mVoiceBase->Init();
-        
-        __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                            "init - 2.1");
         if (mError < 0) {
           ZS_LOG_ERROR(Detail, log("failed to initialize voice base") + ZS_PARAM("error", mVideoBase->LastError()))
-          
-          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                              "init - 2.2");
           return;
         } else if (mVoiceBase->LastError() > 0) {
           ZS_LOG_WARNING(Detail, log("an error has occured during voice base init") + ZS_PARAM("error", mVoiceBase->LastError()))
-          
-          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                              "init - 2.3");
         }
-        
-        __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                            "init - 2.4");
         mError = mVoiceBase->RegisterVoiceEngineObserver(*this);
         if (mError < 0) {
           ZS_LOG_ERROR(Detail, log("failed to register voice engine observer") + ZS_PARAM("error", mVoiceBase->LastError()))
           return;
         }
-        
-        __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                            "init - 2.5");
 
         mVideoEngine = webrtc::VideoEngine::Create();
         if (mVideoEngine == NULL) {
           ZS_LOG_ERROR(Detail, log("failed to create video engine"))
           return;
         }
-        
-        __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                            "init - 3");
 
         mVideoBase = webrtc::ViEBase::GetInterface(mVideoEngine);
         if (mVideoBase == NULL) {
@@ -392,9 +368,6 @@ namespace openpeer
           ZS_LOG_ERROR(Detail, log("failed to get interface for video file"))
           return;
         }
-        
-        __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                            "init - 4");
 
         mError = mVideoBase->Init();
         if (mError < 0) {
@@ -435,9 +408,6 @@ namespace openpeer
             traceFilter = webrtc::kTraceNone;
             break;
         }
-        
-        __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                            "init - 5");
 
         if (logLevel != Log::None) {
           mError = mVoiceEngine->SetTraceFilter(traceFilter);
@@ -461,9 +431,6 @@ namespace openpeer
             return;
           }
         }
-        
-        __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                            "init - 6");
       }
       
       //-----------------------------------------------------------------------
@@ -1548,9 +1515,6 @@ namespace openpeer
           AutoRecursiveLock lock(mLock);
 
           ZS_LOG_DEBUG(log("start voice"))
-          
-          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                              "internalStartVoice - 1");
 
           mVoiceChannel = mVoiceBase->CreateChannel();
           if (mVoiceChannel < 0) {
@@ -1558,16 +1522,10 @@ namespace openpeer
             mVoiceChannel = OPENPEER_MEDIA_ENGINE_INVALID_CHANNEL;
             return;
           }
-          
-          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                              "internalStartVoice - 1.1");
 
           mError = registerVoiceTransport();
           if (mError != 0)
             return;
-          
-          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                              "internalStartVoice - 1.2");
 
           webrtc::EcModes ecMode = getEcMode();
           if (ecMode == webrtc::kEcUnchanged) {
@@ -1578,9 +1536,6 @@ namespace openpeer
             ZS_LOG_ERROR(Detail, log("failed to set acoustic echo canceller status") + ZS_PARAM("error", mVoiceBase->LastError()))
             return;
           }
-          
-          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                              "internalStartVoice - 1.3");
           if (ecMode == webrtc::kEcAecm && mEcEnabled) {
             mError = mVoiceAudioProcessing->SetAecmMode(webrtc::kAecmSpeakerphone);
             if (mError != 0) {
@@ -1589,25 +1544,18 @@ namespace openpeer
             }
           }
           
-          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                              "internalStartVoice - 1.4");
           mError = mVoiceAudioProcessing->SetAgcStatus(mAgcEnabled, webrtc::kAgcAdaptiveDigital);
           if (mError != 0) {
             ZS_LOG_ERROR(Detail, log("failed to set automatic gain control status") + ZS_PARAM("error", mVoiceBase->LastError()))
             return;
           }
           
-          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                              "internalStartVoice - 1.5");
           mError = mVoiceAudioProcessing->SetNsStatus(mNsEnabled, webrtc::kNsLowSuppression);
           if (mError != 0) {
             ZS_LOG_ERROR(Detail, log("failed to set noise suppression status") + ZS_PARAM("error", mVoiceBase->LastError()))
             return;
           }
           
-          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                              "internalStartVoice - 2");
-
           mError = mVoiceVolumeControl->SetInputMute(-1, false);
           if (mError != 0) {
             ZS_LOG_ERROR(Detail, log("failed to set microphone mute") + ZS_PARAM("error", mVoiceBase->LastError()))
@@ -1661,9 +1609,6 @@ namespace openpeer
 #endif
           }
           
-          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                              "internalStartVoice - 3");
-
           webrtc::CodecInst cfinst;
           memset(&cfinst, 0, sizeof(webrtc::CodecInst));
           for (int idx = 0; idx < mVoiceCodec->NumOfCodecs(); idx++) {
@@ -1711,9 +1656,6 @@ namespace openpeer
           }
         }
         
-        __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                            "internalStartVoice - 4");
-
         {
           AutoRecursiveLock lock(mMediaEngineReadyLock);
           mVoiceEngineReady = true;
@@ -1798,9 +1740,6 @@ namespace openpeer
       void MediaEngine::internalStartVideoCapture()
       {
         {
-          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                              "internalStartVideoCapture - 1");
-          
           AutoRecursiveLock lock(mLock);
           
           ZS_LOG_DEBUG(log("start video capture") + ZS_PARAM("camera type", mCameraType == CameraType_Back ? "back" : "front"))
@@ -1812,9 +1751,6 @@ namespace openpeer
           char uniqueId[KMaxUniqueIdLength];
           memset(uniqueId, 0, KMaxUniqueIdLength);
           uint32_t captureIdx;
-          
-          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                              "internalStartVideoCapture - 2");
 
           if (mCameraType == CameraType_Back)
           {
@@ -1841,9 +1777,7 @@ namespace openpeer
             return;
           }
 #endif
-          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                              "internalStartVideoCapture - 3");
-
+          
           webrtc::VideoCaptureModule::DeviceInfo *devInfo = webrtc::VideoCaptureFactory::CreateDeviceInfo(0);
           if (devInfo == NULL) {
             ZS_LOG_ERROR(Detail, log("failed to create video capture device info"))
@@ -1879,9 +1813,6 @@ namespace openpeer
             ZS_LOG_ERROR(Detail, log("failed to register video capture observer") + ZS_PARAM("error", mVideoBase->LastError()))
             return;
           }
-          
-          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                              "internalStartVideoCapture - 4");
           
 #ifdef TARGET_OS_IPHONE
           webrtc::CapturedFrameOrientation defaultOrientation;
@@ -1940,9 +1871,6 @@ namespace openpeer
             ZS_LOG_ERROR(Detail, log("failed to start capturing") + ZS_PARAM("error", mVideoBase->LastError()))
             return;
           }
-          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                              "internalStartVideoCapture - 5");
-          
 
 #if !defined(__QNX__) && !defined(_ANDROID)
           mError = mVideoRender->AddRenderer(mCaptureId, captureView, 0, 0.0F, 0.0F, 1.0F,
@@ -1959,9 +1887,6 @@ namespace openpeer
           }
 #endif
         }
-        __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                            "internalStartVideoCapture - 6");
-        
       }
       
       //-----------------------------------------------------------------------
@@ -1972,7 +1897,7 @@ namespace openpeer
           
           ZS_LOG_DEBUG(log("stop video capture"))
 
-#ifndef __QNX__
+#if !defined(__QNX__) && !defined(_ANDROID)
           mError = mVideoRender->StopRender(mCaptureId);
           if (mError != 0) {
             ZS_LOG_ERROR(Detail, log("failed to stop rendering video capture") + ZS_PARAM("error", mVideoBase->LastError()))
@@ -2016,9 +1941,6 @@ namespace openpeer
           AutoRecursiveLock lock(mLock);
           
           ZS_LOG_DEBUG(log("start video channel"))
-          
-          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                              "internalStartVideoChannel - 1");
 
 #if defined(TARGET_OS_IPHONE) || defined(__QNX__) || defined(_ANDROID)
           void *channelView = mChannelRenderView;
@@ -2052,9 +1974,6 @@ namespace openpeer
             return;
           }
           
-          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                              "internalStartVideoChannel - 2");
-
           mError = mVideoRtpRtcp->SetRTCPStatus(mVideoChannel, webrtc::kRtcpCompound_RFC4585);
           if (0 != mError) {
             ZS_LOG_ERROR(Detail, log("failed to set video RTCP status") + ZS_PARAM("error", mVideoBase->LastError()))
@@ -2090,9 +2009,6 @@ namespace openpeer
             }
           }
 #endif
-          
-          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                              "internalStartVideoChannel - 3");
 
           mError = mVideoRender->AddRenderer(mVideoChannel, channelView, 0, 0.0F, 0.0F, 1.0F,
                                              1.0F);
@@ -2119,9 +2035,6 @@ namespace openpeer
             }
           }
           
-          __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                              "internalStartVideoChannel - 4");
-
           mError = setVideoCodecParameters();
           if (mError != 0) {
             return;
@@ -2149,9 +2062,6 @@ namespace openpeer
           }
         }
         
-        __android_log_print(ANDROID_LOG_DEBUG, "MediaEngine",
-                            "internalStartVideoChannel - 5");
-
         {
           AutoRecursiveLock lock(mMediaEngineReadyLock);
           mVideoEngineReady = true;
