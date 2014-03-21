@@ -429,6 +429,14 @@ namespace openpeer
       internal::BackgroundingPtr singleton = internal::Backgrounding::singleton();
       singleton->notifyReturningFromBackground();
     }
+
+    //-------------------------------------------------------------------------
+    IBackgroundingSubscriptionPtr IBackgrounding::subscribe(
+                                                            IBackgroundingDelegatePtr delegate,
+                                                            ULONG phase
+                                                            )
+    {
+      return internal::Backgrounding::subscribe(delegate, phase);
+    }
   }
 }
-
