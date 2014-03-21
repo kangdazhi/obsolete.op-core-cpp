@@ -125,6 +125,9 @@ namespace openpeer
         typedef String CallID;
         typedef std::map<CallID, UseCallPtr> CallHandlers;
 
+        typedef String ContactURI;
+        typedef std::map<ContactURI, bool> ContactFetchedMap;
+
       protected:
         ConversationThreadSlave(
                                 IMessageQueuePtr queue,
@@ -295,8 +298,9 @@ namespace openpeer
         UseContactPtr getHostContact() const;
         void publish(
                      bool publishSlavePublication,
-                     bool publishSlavePermissionPublication
-                     ) const;
+                     bool publishSlavePermissionPublication,
+                     bool publishContacts
+                     );
 
       public:
         //---------------------------------------------------------------------
@@ -361,6 +365,8 @@ namespace openpeer
         MessageDeliveryStatesMap mMessageDeliveryStates;
 
         CallHandlers mIncomingCallHandlers;
+
+        ContactFetchedMap mPreviouslyFetchedContacts;
       };
 
       //-----------------------------------------------------------------------

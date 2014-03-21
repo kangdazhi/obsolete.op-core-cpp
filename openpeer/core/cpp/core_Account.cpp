@@ -126,6 +126,13 @@ namespace openpeer
       void Account::init()
       {
         AutoRecursiveLock lock(*this);
+
+        mDelegateFilter = DelegateFilter::create(mThisWeak.lock(), mConversationThreadDelegate, mCallDelegate);
+
+        // replace conversation thread delegate / call delegate with intercepted delegate
+        mConversationThreadDelegate = IConversationThreadDelegateProxy::create(mDelegateFilter);
+        mCallDelegate = ICallDelegateProxy::create(mDelegateFilter);
+
         step();
       }
 
@@ -681,7 +688,10 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      void Account::notifyConversationThreadCreated(ConversationThreadPtr inThread)
+      void Account::notifyConversationThreadCreated(
+                                                    ConversationThreadPtr inThread,
+                                                    bool notifyDelegate
+                                                    )
       {
         UseConversationThreadPtr thread = inThread;
 
@@ -695,6 +705,11 @@ namespace openpeer
         }
 
         mConversationThreads[thread->getThreadID()] = thread;
+
+        if (!notifyDelegate) {
+          ZS_LOG_DEBUG(log("no need to notifify delegate"))
+          return;
+        }
 
         try {
           mConversationThreadDelegate->onConversationThreadNew(ConversationThread::convert(thread));

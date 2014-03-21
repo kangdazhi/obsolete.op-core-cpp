@@ -90,7 +90,7 @@ namespace openpeer
                       IMessageQueuePtr queue,
                       ConversationThreadHostPtr host,
                       UseContactPtr contact,
-                      ElementPtr profileBundleEl
+                      const IdentityContactList &identityContacts
                       );
 
           void init();
@@ -110,7 +110,7 @@ namespace openpeer
                                        IMessageQueuePtr queue,
                                        ConversationThreadHostPtr host,
                                        UseContactPtr contact,
-                                       ElementPtr profileBundleEL
+                                       const IdentityContactList &identityContacts
                                        );
 
           void notifyPublicationUpdated(
@@ -126,7 +126,7 @@ namespace openpeer
           void notifyPeerDisconnected(ILocationPtr peerLocation);
 
           UseContactPtr getContact() const;
-          const ElementPtr &getProfileBundle() const;
+          const IdentityContactList &getIdentityContacts() const;
 
           ContactStates getContactState() const;
 
@@ -274,13 +274,15 @@ namespace openpeer
           PeerContactStates mCurrentState;
 
           UseContactPtr mContact;
-          ElementPtr mProfileBundleEl;
+          IdentityContactList mIdentityContacts;
 
           IPeerSubscriptionPtr mSlaveSubscription;
 
           PeerLocationMap mPeerLocations;
 
           MessageDeliveryStatesMap mMessageDeliveryStates;
+
+          TimerPtr mAutoFindTimer;
         };
 #if 0
 

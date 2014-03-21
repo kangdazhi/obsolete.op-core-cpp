@@ -382,7 +382,7 @@ namespace openpeer
           relationships["/threads/1.0/subscribers/permissions"] = IPublicationMetaData::PermissionAndPeerURIListPair(stack::IPublicationMetaData::Permission_All, empty);
 
           ZS_LOG_DEBUG(log("subscribing to peer thread publications"))
-          mPublicationSubscription = repository->subscribe(mThisWeak.lock(), mPeerLocation, "/threads/1.0/", relationships);
+          mPublicationSubscription = repository->subscribe(mThisWeak.lock(), mPeerLocation, "^\\/threads\\/1\\.0\\/.*$", relationships);
         }
 
         if (!mPublicationSubscription) {

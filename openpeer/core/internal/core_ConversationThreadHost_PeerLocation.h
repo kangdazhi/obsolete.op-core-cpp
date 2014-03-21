@@ -69,6 +69,9 @@ namespace openpeer
 
           friend class PeerContact;
 
+          typedef String ContactURI;
+          typedef std::map<ContactURI, bool> ContactFetchedMap;
+
 
         protected:
           PeerLocation(
@@ -180,6 +183,8 @@ namespace openpeer
           MessageDeliveryStatesMap mMessageDeliveryStates;
 
           CallHandlers mIncomingCallHandlers;
+
+          ContactFetchedMap mPreviouslyFetchedContacts;
         };
 
 #if 0

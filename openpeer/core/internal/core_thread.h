@@ -76,6 +76,8 @@ namespace openpeer
         typedef std::list<ContactURI> ContactURIList;
         typedef std::map<ContactURI, ThreadContactPtr> ThreadContactMap;
 
+        typedef std::map<ContactURI, IPublicationPtr> ContactPublicationMap;
+
         typedef stack::CandidateList CandidateList;
 
         typedef String DialogID;
@@ -108,9 +110,12 @@ namespace openpeer
                                    IPeerFilesPtr signer
                                    );
 
-          static MessagePtr create(ElementPtr messageBundleEl);
+          static MessagePtr create(
+                                   UseAccountPtr account,
+                                   ElementPtr messageBundleEl
+                                   );
 
-          const ElementPtr &messageBundleElement() const {return mBundleEl;}
+          ElementPtr messageBundleElement() const;
 
           const String &messageID() const         {return mMessageID;}
           const String &fromPeerURI() const       {return mFromPeerURI;}
@@ -122,6 +127,8 @@ namespace openpeer
 
         protected:
           Log::Params log(const char *message) const;
+
+          ElementPtr constructBundleElement(IPeerFilesPtr signer) const;
 
         protected:
           MessageWeakPtr mThisWeak;
@@ -155,7 +162,7 @@ namespace openpeer
 
           static MessageReceiptsPtr create(ElementPtr messageReceiptsEl);
 
-          ElementPtr receiptsElement() const          {return mReceiptsEl;}
+          ElementPtr receiptsElement() const          {return constructReceiptsElement();}
 
           UINT version() const                        {return mVersion;}
           const MessageReceiptMap &receipts() const  {return mReceipts;}
@@ -165,11 +172,12 @@ namespace openpeer
         protected:
           Log::Params log(const char *message) const;
 
+          ElementPtr constructReceiptsElement() const;
+
         protected:
           MessageReceiptsWeakPtr mThisWeak;
 
           AutoPUID mID;
-          ElementPtr mReceiptsEl;
 
           UINT mVersion;
           MessageReceiptMap mReceipts;
@@ -190,18 +198,28 @@ namespace openpeer
 
           static ThreadContactPtr create(
                                          UseContactPtr contact,
-                                         ElementPtr profileBundleEl
+                                         const IdentityContactList &identityContacts
                                          );
 
-          UseContactPtr contact() const           {return mContact;}
-          ElementPtr profileBundleElement() const {return mProfileBundleEl;}
+          static ThreadContactPtr create(
+                                         UseAccountPtr account,
+                                         ElementPtr contactEl
+                                         );
+
+          UseContactPtr contact() const                       {return mContact;}
+          const IdentityContactList &identityContacts() const {return mIdentityContacts;}
+
+          ElementPtr contactElement() const                   {return constructContactElement();}
 
           ElementPtr toDebug() const;
 
         protected:
+          ElementPtr constructContactElement() const;
+
+        protected:
           AutoPUID mID;
           UseContactPtr mContact;
-          ElementPtr mProfileBundleEl;
+          IdentityContactList mIdentityContacts;
         };
 
         //---------------------------------------------------------------------
@@ -589,12 +607,17 @@ namespace openpeer
           const ChangedDescriptionMap &descriptionsChanged() const  {return mDescriptionsChanged;}
           const DescriptionIDList &descriptionsRemoved() const      {return mDescriptionsRemoved;}
 
+          void getContactPublicationsToPublish(ContactPublicationMap &outContactPublications);
+
+          String getContactDocumentName(UseContactPtr contact) const;
+
           ElementPtr toDebug() const;
 
         protected:
-          void resetChanged();
-
           Log::Params log(const char *message) const;
+
+          void resetChanged();
+          void publishContact(UseContactPtr contact);
 
         protected:
           AutoPUID mID;
@@ -605,6 +628,7 @@ namespace openpeer
 
           IPublicationPtr mPublication;
           IPublicationPtr mPermissionPublication;
+          ContactPublicationMap mContactPublications;
 
           DetailsPtr mDetails;
           ThreadContactsPtr mContacts;

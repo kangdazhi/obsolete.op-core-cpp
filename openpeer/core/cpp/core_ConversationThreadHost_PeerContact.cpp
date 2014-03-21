@@ -34,7 +34,9 @@
 #include <openpeer/core/internal/core_ConversationThread.h>
 #include <openpeer/core/internal/core_Account.h>
 #include <openpeer/core/internal/core_Contact.h>
+
 #include <openpeer/services/IHelper.h>
+#include <openpeer/services/ISettings.h>
 
 #include <zsLib/XML.h>
 
@@ -81,14 +83,14 @@ namespace openpeer
                                                        IMessageQueuePtr queue,
                                                        ConversationThreadHostPtr host,
                                                        UseContactPtr contact,
-                                                       ElementPtr profileBundleEl
+                                                       const IdentityContactList &identityContacts
                                                        ) :
         MessageQueueAssociator(queue),
         SharedRecursiveLock(*host),
         mCurrentState(PeerContactState_Pending),
         mOuter(host),
         mContact(contact),
-        mProfileBundleEl(profileBundleEl)
+        mIdentityContacts(identityContacts)
       {
         ZS_LOG_DETAIL(log("created") + UseContact::toDebug(contact))
       }
@@ -96,6 +98,15 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::PeerContact::init()
       {
+        AutoRecursiveLock lock(*this);
+
+        ULONG autoFindSeconds = services::ISettings::getUInt(OPENPEER_CORE_SETTING_CONVERSATION_THREAD_HOST_PEER_CONTACT);
+
+        if (0 != autoFindSeconds) {
+          Duration timeout = Seconds(autoFindSeconds);
+          ZS_LOG_DEBUG(log("will perform autofind") + ZS_PARAM("duration (s)", timeout))
+          mAutoFindTimer = Timer::create(mThisWeak.lock(), timeout, false);
+        }
       }
 
       //-----------------------------------------------------------------------
@@ -126,12 +137,12 @@ namespace openpeer
                                                                                          IMessageQueuePtr queue,
                                                                                          ConversationThreadHostPtr host,
                                                                                          UseContactPtr contact,
-                                                                                         ElementPtr profileBundleEl
+                                                                                         const IdentityContactList &identityContacts
                                                                                          )
       {
         ZS_THROW_INVALID_ARGUMENT_IF(!host)
         ZS_THROW_INVALID_ARGUMENT_IF(!contact)
-        PeerContactPtr pThis(new PeerContact(queue, host, contact, profileBundleEl));
+        PeerContactPtr pThis(new PeerContact(queue, host, contact, identityContacts));
         pThis->mThisWeak = pThis;
         pThis->init();
         return pThis;
@@ -209,10 +220,10 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      const ElementPtr &ConversationThreadHost::PeerContact::getProfileBundle() const
+      const IdentityContactList &ConversationThreadHost::PeerContact::getIdentityContacts() const
       {
         AutoRecursiveLock lock(*this);
-        return mProfileBundleEl;
+        return mIdentityContacts;
       }
 
       //-----------------------------------------------------------------------
@@ -379,6 +390,16 @@ namespace openpeer
       void ConversationThreadHost::PeerContact::onTimer(TimerPtr timer)
       {
         ZS_LOG_DEBUG(log("timer"))
+
+        AutoRecursiveLock lock(*this);
+
+        if (timer == mAutoFindTimer) {
+          ZS_LOG_DEBUG(log("auto find timer is no longer needed"))
+
+          mAutoFindTimer->cancel();
+          mAutoFindTimer.reset();
+        }
+
         step();
       }
 
@@ -546,11 +567,17 @@ namespace openpeer
 
         IHelper::debugAppend(resultEl, "id", mID);
         IHelper::debugAppend(resultEl, "state", toString(mCurrentState));
+
         IHelper::debugAppend(resultEl, UseContact::toDebug(mContact));
-        IHelper::debugAppend(resultEl, "profile bundle", (bool)mProfileBundleEl);
+        IHelper::debugAppend(resultEl, "identity contacts", mIdentityContacts.size());
+
         IHelper::debugAppend(resultEl, IPeerSubscription::toDebug(mSlaveSubscription));
+
         IHelper::debugAppend(resultEl, "locations", mPeerLocations.size());
+
         IHelper::debugAppend(resultEl, "delivery states", mMessageDeliveryStates.size());
+
+        IHelper::debugAppend(resultEl, "auto find timer", (bool)mAutoFindTimer);
 
         return resultEl;
       }
@@ -644,7 +671,7 @@ namespace openpeer
         }
 
         // check to see if there are outstanding messages needing to be delivered to this contact
-        bool requiresSubscription = false;
+        bool requiresSubscription = (bool)mAutoFindTimer;
 
         // check to see if there are undelivered messages, if so we will need a subscription...
         const MessageList &messages = hostThread->messages();

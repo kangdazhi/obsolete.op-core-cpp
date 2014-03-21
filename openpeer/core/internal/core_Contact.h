@@ -81,10 +81,10 @@ namespace openpeer
 
         static ElementPtr toDebug(ForConversationThreadPtr contact);
 
-        static ForConversationThreadPtr createFromPeerFilePublic(
-                                                                 AccountPtr account,
-                                                                 IPeerFilePublicPtr peerFilePublic
-                                                                 );
+        static ForConversationThreadPtr createFromPeerURI(
+                                                          AccountPtr account,
+                                                          const char *peerURI
+                                                          );
 
         virtual String getPeerURI() const = 0;
         virtual IPeerPtr getPeer() const = 0;

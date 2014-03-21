@@ -36,11 +36,12 @@
 #include <openpeer/core/internal/core_Call.h>
 #include <openpeer/core/internal/core_Contact.h>
 
-
+#include <openpeer/stack/IPeerFilePublic.h>
 #include <openpeer/stack/IPublication.h>
 
 #include <openpeer/services/IHelper.h>
 
+#include <zsLib/RegEx.h>
 #include <zsLib/XML.h>
 
 namespace openpeer { namespace core { ZS_DECLARE_SUBSYSTEM(openpeer_core) } }
@@ -52,10 +53,10 @@ namespace openpeer
   {
     namespace internal
     {
+      ZS_DECLARE_USING_PTR(stack, IPeerFilePublic)
+
       ZS_DECLARE_TYPEDEF_PTR(ConversationThreadHost::UseAccount, UseAccount)
-//      ZS_DECLARE_TYPEDEF_PTR(ConversationThreadHost::UseContact, UseContact)
-//      ZS_DECLARE_TYPEDEF_PTR(ConversationThreadHost::UseConversationThread, UseConversationThread)
-//
+
       using services::IHelper;
 
       using namespace core::internal::thread;
@@ -332,6 +333,38 @@ namespace openpeer
           return;
         }
 
+        // check to see the type of publication
+        zsLib::RegEx e("^\\/contacts\\/1\\.0\\/.*$");
+        if (e.hasMatch(publication->getName())) {
+          // this it a public peer file document to process
+          AutoRecursiveLockPtr locker;
+          DocumentPtr doc = publication->getJSON(locker);
+          if (!doc) {
+            ZS_LOG_WARNING(Detail, log("failed to get peer file contact") + IPublication::toDebug(publication))
+            return;
+          }
+          ElementPtr peerEl = doc->getFirstChildElement();
+          if (!peerEl) {
+            ZS_LOG_WARNING(Detail, log("failed to get peer element from contact file") + IPublication::toDebug(publication))
+            return;
+          }
+
+          IPeerFilePublicPtr peerFilePublic = IPeerFilePublic::loadFromElement(peerEl);
+          if (!peerFilePublic) {
+            ZS_LOG_WARNING(Detail, log("failed to create peer file public") +IPublication::toDebug(publication))
+            return;
+          }
+
+          IPeerPtr tempPeer = IPeer::create(account->getStackAccount(), peerFilePublic);
+          if (!tempPeer) {
+            ZS_LOG_WARNING(Detail, log("failed to peer temporary peer element") + IPublication::toDebug(publication))
+            return;
+          }
+
+          ZS_LOG_DEBUG(log("successfully loaded peer contact") + IPublication::toDebug(publication))
+          return;
+        }
+
         if (!mSlaveThread) {
           mSlaveThread = Thread::create(Account::convert(account), publication);
           if (!mSlaveThread) {
@@ -346,6 +379,46 @@ namespace openpeer
         // NOTE: We don't need to check contact changes because the outer will
         //       automatically gather up all the contacts to add/remove.
 
+        //.......................................................................
+        // scope: ensure all peer files are fetched for each contact
+        {
+          const ThreadContactMap &contacts = mSlaveThread->contacts()->contacts();
+          for (ThreadContactMap::const_iterator iter = contacts.begin(); iter != contacts.end(); ++iter)
+          {
+            const ThreadContactPtr &threadContact = (*iter).second;
+            UseContactPtr contact = threadContact->contact();
+
+            bool hasPeerFilePulic = (bool)contact->getPeerFilePublic();
+            if (hasPeerFilePulic) {
+              ZS_LOG_TRACE(log("peer file public is found for contact") + UseContact::toDebug(contact))
+              continue;
+            }
+
+            if (mPreviouslyFetchedContacts.end() != mPreviouslyFetchedContacts.find(contact->getPeerURI())) {
+              ZS_LOG_TRACE(log("already attempted to fetch this contact") + UseContact::toDebug(contact))
+              continue;
+            }
+
+            ZS_LOG_WARNING(Detail, log("peer file public is missing for contact") + UseContact::toDebug(contact))
+
+            IPublicationMetaData::PublishToRelationshipsMap empty;
+            IPublicationMetaDataPtr contactMetaData = IPublicationMetaData::create(
+                                                                                   0, 0, 0,
+                                                                                   publication->getCreatorLocation(),
+                                                                                   mSlaveThread->getContactDocumentName(contact),
+                                                                                   publication->getMimeType(),
+                                                                                   publication->getEncoding(),
+                                                                                   empty,
+                                                                                   publication->getPublishedLocation()
+                                                                                   );
+
+            // singal to the fetcher it's been updated so the fetcher will download the document immediately
+            mFetcher->notifyPublicationUpdated(mPeerLocation, contactMetaData);
+
+            mPreviouslyFetchedContacts[contact->getPeerURI()] = true;
+          }
+        }
+        
         //.......................................................................
         // check for incoming calls that are gone...
 
@@ -549,11 +622,18 @@ namespace openpeer
         ElementPtr resultEl = Element::create("core::ConversationThreadHost::PeerLocation");
 
         IHelper::debugAppend(resultEl, "id", mID);
+
         IHelper::debugAppend(resultEl, ILocation::toDebug(mPeerLocation));
+
         IHelper::debugAppend(resultEl, Thread::toDebug(mSlaveThread));
+
         IHelper::debugAppend(resultEl, IConversationThreadDocumentFetcher::toDebug(mFetcher));
+
         IHelper::debugAppend(resultEl, "message delivery states", mMessageDeliveryStates.size());
+
         IHelper::debugAppend(resultEl, "incoming call handlers", mIncomingCallHandlers.size());
+
+        IHelper::debugAppend(resultEl, "previously fetched contacts", mPreviouslyFetchedContacts.size());
 
         return resultEl;
       }

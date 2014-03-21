@@ -96,7 +96,7 @@ namespace openpeer
           const ThreadContactPtr &contact = (*iter).second;
           ContactProfileInfo info;
           info.mContact = Contact::convert(contact->contact());
-          info.mProfileBundleEl = contact->profileBundleElement();
+          info.mIdentityContacts = contact->identityContacts();
           output.push_back(info);
         }
       }
@@ -254,7 +254,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ConversationThreadPtr ConversationThread::create(
                                                        AccountPtr inAccount,
-                                                       ElementPtr profileElementEl
+                                                       const IdentityContactList &identityContacts
                                                        )
       {
         ZS_THROW_INVALID_ARGUMENT_IF(!inAccount)
@@ -273,12 +273,12 @@ namespace openpeer
         ContactProfileInfoList contacts;
         ContactProfileInfo info;
         info.mContact = account->getSelfContact();
-        info.mProfileBundleEl = profileElementEl;
+        info.mIdentityContacts = identityContacts;
         contacts.push_back(info);
 
         pThis->addContacts(contacts);
 
-        account->notifyConversationThreadCreated(pThis); // safe to use mLock() weak pointer because account object must still be valid
+        account->notifyConversationThreadCreated(pThis, false);
         pThis->handleContactsChanged();
         return pThis;
       }
@@ -354,15 +354,17 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      ElementPtr ConversationThread::getProfileBundle(IContactPtr contact) const
+      IdentityContactListPtr ConversationThread::getIdentityContactList(IContactPtr contact) const
       {
         ZS_THROW_INVALID_ARGUMENT_IF(!contact)
+
+        IdentityContactListPtr result(new IdentityContactList);
 
         AutoRecursiveLock lock(*this);
 
         if (!mLastOpenThread) {
-          ZS_LOG_WARNING(Detail, log("cannot get profile bundle no contacts have been added to this conversation thread"))
-          return ElementPtr();
+          ZS_LOG_WARNING(Detail, log("cannot get identity contacts as no contacts have been added to this conversation thread"))
+          return result;
         }
 
         ThreadContactMap contacts;
@@ -370,11 +372,13 @@ namespace openpeer
 
         ThreadContactMap::iterator found = contacts.find(contact->getPeerURI());
         if (found == contacts.end()) {
-          ZS_LOG_WARNING(Detail, log("cannot get profile bundle as contact was not found") + IContact::toDebug(contact))
-          return ElementPtr();
+          ZS_LOG_WARNING(Detail, log("cannot get identity contacts as contact was not found") + IContact::toDebug(contact))
+          return result;
         }
         const ThreadContactPtr &threadContact = (*found).second;
-        return threadContact->profileBundleElement();
+
+        (*result) = threadContact->identityContacts();
+        return result;
       }
 
       //-----------------------------------------------------------------------
@@ -397,23 +401,12 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThread::addContacts(const ContactProfileInfoList &inputContacts)
       {
-        ContactProfileInfoList contacts;
-        for (ContactProfileInfoList::const_iterator iter = inputContacts.begin(); iter != inputContacts.end(); ++iter)
-        {
-          const ContactProfileInfo &sourceInfo = (*iter);
-
-          ContactProfileInfo destInfo;
-          destInfo.mContact = sourceInfo.mContact;
-          if (sourceInfo.mProfileBundleEl) {
-            destInfo.mProfileBundleEl = sourceInfo.mProfileBundleEl->clone()->toElement();
-          }
-          contacts.push_back(destInfo);
-        }
-
-        if (contacts.size() < 1) {
+        if (inputContacts.size() < 1) {
           ZS_LOG_WARNING(Debug, log("called add contacts method but did not specify any contacts to add"))
           return;
         }
+
+        ContactProfileInfoList contacts = inputContacts;
 
         AutoRecursiveLock lock(*this);
 
@@ -521,7 +514,8 @@ namespace openpeer
       void ConversationThread::sendMessage(
                                            const char *messageID,
                                            const char *messageType,
-                                           const char *body
+                                           const char *body,
+                                           bool signMessage
                                            )
       {
         ZS_THROW_INVALID_ARGUMENT_IF(!messageID)
@@ -545,7 +539,7 @@ namespace openpeer
           return;
         }
 
-        MessagePtr message = Message::create(messageID, UseContactPtr(account->getSelfContact())->getPeerURI(), messageType, body, zsLib::now(), peerFiles);
+        MessagePtr message = Message::create(messageID, UseContactPtr(account->getSelfContact())->getPeerURI(), messageType, body, zsLib::now(), signMessage ? peerFiles : IPeerFilesPtr());
         if (!message) {
           ZS_LOG_ERROR(Detail, log("failed to create message object") + ZS_PARAM("message ID", messageID))
           return;
@@ -556,7 +550,6 @@ namespace openpeer
 
         step();
       }
-
 
       //-----------------------------------------------------------------------
       bool ConversationThread::getMessage(
@@ -1047,7 +1040,7 @@ namespace openpeer
           mLastOpenThread = slave;
         }
 
-        account->notifyConversationThreadCreated(mThisWeak.lock());
+        account->notifyConversationThreadCreated(mThisWeak.lock(), true);
         mMustNotifyAboutNewThread = false;
 
         handleLastOpenThreadChanged();
@@ -1632,10 +1625,10 @@ namespace openpeer
     //-----------------------------------------------------------------------
     IConversationThreadPtr IConversationThread::create(
                                                        IAccountPtr account,
-                                                       ElementPtr profileBundleEl
+                                                       const IdentityContactList &identityContacts
                                                        )
     {
-      return internal::IConversationThreadFactory::singleton().createConversationThread(internal::Account::convert(account), profileBundleEl);
+      return internal::IConversationThreadFactory::singleton().createConversationThread(internal::Account::convert(account), identityContacts);
     }
 
     //-----------------------------------------------------------------------

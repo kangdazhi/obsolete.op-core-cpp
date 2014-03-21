@@ -81,22 +81,6 @@ namespace openpeer
     //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------
     #pragma mark
-    #pragma mark ContactProfileInfo
-    #pragma mark
-
-    struct ContactProfileInfo
-    {
-      IContactPtr mContact;
-      ElementPtr mProfileBundleEl;
-
-      bool hasData() const;
-    };
-
-    //-------------------------------------------------------------------------
-    //-------------------------------------------------------------------------
-    //-------------------------------------------------------------------------
-    //-------------------------------------------------------------------------
-    #pragma mark
     #pragma mark RolodexContact
     #pragma mark
 
@@ -158,6 +142,24 @@ namespace openpeer
       bool hasData() const;
     };
 
+    ZS_DECLARE_TYPEDEF_PTR(std::list<IdentityContact>, IdentityContactList)
+
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    #pragma mark
+    #pragma mark ContactProfileInfo
+    #pragma mark
+
+    struct ContactProfileInfo
+    {
+      IContactPtr mContact;
+      IdentityContactList mIdentityContacts;
+
+      bool hasData() const;
+    };
+
     //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------
@@ -199,7 +201,6 @@ namespace openpeer
     ZS_DECLARE_TYPEDEF_PTR(std::list<ContactProfileInfo>, ContactProfileInfoList)
     ZS_DECLARE_TYPEDEF_PTR(std::list<IConversationThreadPtr>, ConversationThreadList)
     ZS_DECLARE_TYPEDEF_PTR(std::list<IIdentityPtr>, IdentityList)
-    ZS_DECLARE_TYPEDEF_PTR(std::list<IdentityContact>, IdentityContactList)
     ZS_DECLARE_TYPEDEF_PTR(std::list<RolodexContact>, RolodexContactList)
   }
 }

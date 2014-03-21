@@ -44,6 +44,8 @@
 #include <zsLib/String.h>
 #include <zsLib/Timer.h>
 
+#define OPENPEER_CORE_SETTING_CONVERSATION_THREAD_HOST_PEER_CONTACT "openpeer/core/auto-find-peers-added-to-conversation-in-seconds"
+
 namespace openpeer
 {
   namespace core
@@ -271,8 +273,9 @@ namespace openpeer
 
         void publish(
                      bool publishHostPublication,
-                     bool publishHostPermissionPublication
-                     ) const;
+                     bool publishHostPermissionPublication,
+                     bool publishContacts
+                     );
 
         void removeContacts(const ContactURIList &contacts);
 

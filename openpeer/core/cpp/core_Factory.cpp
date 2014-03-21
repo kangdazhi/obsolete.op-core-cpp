@@ -256,11 +256,11 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ConversationThreadPtr IConversationThreadFactory::createConversationThread(
                                                                                  AccountPtr account,
-                                                                                 ElementPtr profileBundleEl
+                                                                                 const IdentityContactList &identityContacts
                                                                                  )
       {
         if (this) {}
-        return ConversationThread::create(account, profileBundleEl);
+        return ConversationThread::create(account, identityContacts);
       }
 
       //-----------------------------------------------------------------------

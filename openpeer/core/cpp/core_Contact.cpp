@@ -110,12 +110,29 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      ForConversationThreadPtr IContactForConversationThread::createFromPeerFilePublic(
-                                                                                       AccountPtr account,
-                                                                                       IPeerFilePublicPtr peerFilePublic
-                                                                                       )
+      ForConversationThreadPtr IContactForConversationThread::createFromPeerURI(
+                                                                                AccountPtr inAccount,
+                                                                                const char *inPeerURI
+                                                                                )
       {
-        return IContactFactory::singleton().createFromPeerFilePublic(account, peerFilePublic);
+        Contact::UseAccountPtr account(inAccount);
+
+        String peerURI(inPeerURI);
+
+        stack::IAccountPtr stackAcount = account->getStackAccount();
+
+        if (!stackAcount) {
+          ZS_LOG_ERROR(Detail, slog("stack account is not ready"))
+          return ContactPtr();
+        }
+
+        IPeerPtr peer = IPeer::create(stackAcount, peerURI);
+        if (!peer) {
+          ZS_LOG_ERROR(Detail, slog("failed to create peer object"))
+          return ContactPtr();
+        }
+
+        return IContactFactory::singleton().createFromPeer(inAccount, peer);
       }
 
       //-----------------------------------------------------------------------

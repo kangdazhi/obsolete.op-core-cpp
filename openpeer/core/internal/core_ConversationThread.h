@@ -64,16 +64,19 @@ namespace openpeer
       using thread::ContactURIList;
 
       // host publishes these documents:
-      // /threads/1.0/host/base-thread-id/host-thread-id/state       - current state of the thread (includes list of all participants)
-      // /threads/1.0/host/base-thread-id/host-thread-id/permissions - all participant peer URIs that are part of the conversation thread
 
-      // /threads/1.0/subscribers/permissions                        - peer URI of the slave added to this document
+      // /threads/1.0/host/base-thread-id/host-thread-id/state          - current state of the thread (includes list of all participants)
+      // /threads/1.0/host/base-thread-id/host-thread-id/permissions    - all participant peer URIs that are part of the conversation thread
+
+      // /threads/1.0/subscribers/permissions                           - peer URI of the self added to this document (only allow subscriber to fetch documents published by ourself)
+
 
       // slaves publishes these documents to their own machine:
-      // /threads/1.0/slave/base-thread-id/host-thread-id/state
-      // /threads/1.0/slave/base-thread-id/host-thread-id/permissions     - all who can receive this document (i.e. at minimal the current host)
 
-      // /threads/1.0/subscribers/permissions
+      // /threads/1.0/slave/base-thread-id/host-thread-id/state
+      // /threads/1.0/slave/base-thread-id/host-thread-id/permissions   - all who can receive this document (i.e. at minimal the current host)
+
+      // /threads/1.0/subscribers/permissions                           - peer URI of the self added to this document (only allow subscriber to fetch documents published by ourself)
 
       //-------------------------------------------------------------------------
       //-------------------------------------------------------------------------
@@ -398,7 +401,7 @@ namespace openpeer
 
         static ConversationThreadPtr create(
                                             AccountPtr account,
-                                            ElementPtr profileBundleEl
+                                            const IdentityContactList &identityContacts
                                             );
 
         static ConversationThreadListPtr getConversationThreads(IAccountPtr account);
@@ -416,7 +419,7 @@ namespace openpeer
 
         virtual ContactListPtr getContacts() const;
 
-        virtual ElementPtr getProfileBundle(IContactPtr contact) const;
+        virtual IdentityContactListPtr getIdentityContactList(IContactPtr contact) const;
         virtual ContactStates getContactState(IContactPtr contact) const;
 
         virtual void addContacts(const ContactProfileInfoList &contactProfileInfos);
@@ -426,7 +429,8 @@ namespace openpeer
         virtual void sendMessage(
                                  const char *messageID,
                                  const char *messageType,
-                                 const char *message
+                                 const char *message,
+                                 bool signMessage
                                  );
 
         // returns false if the message ID is not known
@@ -634,7 +638,7 @@ namespace openpeer
 
         virtual ConversationThreadPtr createConversationThread(
                                                                AccountPtr account,
-                                                               ElementPtr profileBundleEl
+                                                               const IdentityContactList &identityContacts
                                                                );
         virtual ConversationThreadPtr createConversationThread(
                                                                AccountPtr account,

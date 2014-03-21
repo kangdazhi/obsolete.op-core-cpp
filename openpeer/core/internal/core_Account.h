@@ -35,6 +35,8 @@
 #include <openpeer/core/internal/core_CallTransport.h>
 
 #include <openpeer/core/IAccount.h>
+#include <openpeer/core/IConversationThread.h>
+#include <openpeer/core/ICall.h>
 
 #include <openpeer/stack/IAccount.h>
 #include <openpeer/stack/IPeerSubscription.h>
@@ -135,7 +137,10 @@ namespace openpeer
         virtual IPeerFilesPtr getPeerFiles() const = 0;
 
         virtual IConversationThreadDelegatePtr getConversationThreadDelegate() const = 0;
-        virtual void notifyConversationThreadCreated(ConversationThreadPtr thread) = 0;
+        virtual void notifyConversationThreadCreated(
+                                                     ConversationThreadPtr thread,
+                                                     bool notifyDelegate
+                                                     ) = 0;
 
         virtual ConversationThreadPtr getConversationThreadByID(const char *threadID) const = 0;
         virtual void getConversationThreads(ConversationThreadList &outConversationThreads) const = 0;
@@ -211,6 +216,7 @@ namespace openpeer
 
         ZS_DECLARE_CLASS_PTR(ContactSubscription)
         ZS_DECLARE_CLASS_PTR(LocationSubscription)
+        ZS_DECLARE_CLASS_PTR(DelegateFilter)
 
         friend class ContactSubscription;
         friend class LocationSubscription;
@@ -364,7 +370,10 @@ namespace openpeer
         virtual IPeerFilesPtr getPeerFiles() const;
 
         virtual IConversationThreadDelegatePtr getConversationThreadDelegate() const;
-        virtual void notifyConversationThreadCreated(ConversationThreadPtr thread);
+        virtual void notifyConversationThreadCreated(
+                                                     ConversationThreadPtr thread,
+                                                     bool notifyDelegate
+                                                     );
 
         virtual ConversationThreadPtr getConversationThreadByID(const char *threadID) const;
         virtual void getConversationThreads(ConversationThreadList &outConversationThreads) const;
@@ -532,6 +541,10 @@ namespace openpeer
 #include <openpeer/core/internal/core_Account_LocationSubscription.h>
 #undef OPENPEER_CORE_ACCOUNT_INCLUDE_LOCATION_SUBSCRIPTION
 
+#define OPENPEER_CORE_ACCOUNT_INCLUDE_DELEGATE_FILTER
+#include <openpeer/core/internal/core_Account_DelegateFilter.h>
+#undef OPENPEER_CORE_ACCOUNT_INCLUDE_DELEGATE_FILTER
+
       private:
         //---------------------------------------------------------------------
         //---------------------------------------------------------------------
@@ -576,6 +589,8 @@ namespace openpeer
         LockedValue<UseCallTransportPtr, true> mCallTransport;        // NOTE: once set, never unset and never changes
 
         IPublicationPtr mSubscribersPermissionDocument;
+
+        DelegateFilterPtr mDelegateFilter;
       };
 
       //-----------------------------------------------------------------------
