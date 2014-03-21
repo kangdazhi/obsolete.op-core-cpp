@@ -78,8 +78,6 @@ namespace openpeer
         virtual ContactPtr getSelfContact() const = 0;
         virtual ILocationPtr getSelfLocation() const = 0;
 
-        virtual stack::IAccountPtr getStackAccount() const = 0;
-
         virtual IPeerFilesPtr getPeerFiles() const = 0;
       };
 

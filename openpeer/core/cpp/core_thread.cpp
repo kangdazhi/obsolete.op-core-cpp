@@ -1002,9 +1002,9 @@ namespace openpeer
               ElementPtr codecEl = createElement("codec", string(codec.mCodecID));
 
               ElementPtr nameEl = createElementWithText("name", codec.mName);
-              ElementPtr pTimeEl = createElementWithText("ptime", string(codec.mPTime));
-              ElementPtr rateEl = createElementWithText("rate", string(codec.mRate));
-              ElementPtr channelsEl = createElementWithText("channels", string(codec.mChannels));
+              ElementPtr pTimeEl = createElementWithNumber("ptime", string(codec.mPTime));
+              ElementPtr rateEl = createElementWithNumber("rate", string(codec.mRate));
+              ElementPtr channelsEl = createElementWithNumber("channels", string(codec.mChannels));
 
               codecEl->adoptAsLastChild(nameEl);
               codecEl->adoptAsLastChild(pTimeEl);
@@ -1034,6 +1034,11 @@ namespace openpeer
             descriptionEl->adoptAsLastChild(codecsEl);
             descriptionEl->adoptAsLastChild(iceUsernameFragEl);
             descriptionEl->adoptAsLastChild(icePasswordEl);
+            if (description->mFinal) {
+              ElementPtr finalEl = createElementWithNumber("final", "true");
+              descriptionEl->adoptAsLastChild(finalEl);
+            }
+
             descriptionEl->adoptAsLastChild(candidatesEl);
 
             descriptionsEl->adoptAsLastChild(descriptionEl);
@@ -1133,6 +1138,16 @@ namespace openpeer
 
               description->mICEUsernameFrag = IMessageHelper::getElementTextAndDecode(descriptionEl->findFirstChildElementChecked("iceUsernameFrag"));
               description->mICEPassword = IMessageHelper::getElementTextAndDecode(descriptionEl->findFirstChildElementChecked("icePassword"));
+              ElementPtr finalEl = descriptionEl->findFirstChildElement("final");
+
+              description->mFinal = false;
+              if (finalEl) {
+                try {
+                  description->mFinal = Numeric<bool>(finalEl->getText());
+                } catch (Numeric<bool>::ValueOutOfRange &) {
+                  ZS_LOG_WARNING(Debug, pThis->log("final value could not be interpreted"))
+                }
+              }
 
               ElementPtr candidatesEl = descriptionEl->findFirstChildElement("candidates");
               ElementPtr candidateEl = candidatesEl->findFirstChildElement("candidate");
@@ -1247,6 +1262,7 @@ namespace openpeer
           IHelper::debugAppend(resultEl, "salt", mSecuritySalt);
           IHelper::debugAppend(resultEl, "codecs", mCodecs.size());
           IHelper::debugAppend(resultEl, "candidates", mCandidates.size());
+          IHelper::debugAppend(resultEl, "final", mFinal);
 
           return resultEl;
         }

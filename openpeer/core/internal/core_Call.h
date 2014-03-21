@@ -206,13 +206,14 @@ namespace openpeer
              ICallDelegatePtr delegate,
              bool hasAudio,
              bool hasVideo,
-             const char *callID
+             const char *callID,
+             ILocationPtr selfLocation,
+             IPeerFilesPtr peerFiles
              );
 
         Call(Noop) :
           Noop(true),
           mLock(SharedRecursiveLock::create()),
-          mMediaLock(SharedRecursiveLock::create()),
           mStepLock(SharedRecursiveLock::create())
         {}
 
@@ -343,7 +344,6 @@ namespace openpeer
         // (duplicate) virtual PUID getID() const;
 
         // (duplicate) const SharedRecursiveLock &getLock() const;
-        // (duplicate) const SharedRecursiveLock &getMediaLock() const;
 
         virtual void notifyReceivedRTPPacket(
                                              PUID locationID,
@@ -366,7 +366,6 @@ namespace openpeer
         #pragma mark
 
         const SharedRecursiveLock &getLock() const;
-        const SharedRecursiveLock &getMediaLock() const;
 
         IMessageQueuePtr getQueue() const {return mQueue;}
         IMessageQueuePtr getMediaQueue() const {return mMediaQueue;}
@@ -375,10 +374,7 @@ namespace openpeer
         static Log::Params slog(const char *message);
         Log::Params log(const char *message) const;
 
-        virtual ElementPtr toDebug(
-                                   bool callData,
-                                   bool mediaData
-                                   ) const;
+        virtual ElementPtr toDebug(bool callData) const;
 
         bool isShuttingdown() const;
         bool isShutdown() const;
@@ -402,55 +398,27 @@ namespace openpeer
 
         bool isLockedToAnotherLocation(const DialogPtr &remoteDialog) const;
 
-        bool stepIsMediaReady(
-                              bool needCandidates,
-                              String &outAudioICEUsernameFrag,
-                              String &outAudioICEPassword,
-                              CandidateList &outAudioRTPCandidates,
-                              String &outVideoICEUsernameFrag,
-                              String &outVideoICEPassword,
-                              CandidateList &outVideoRTPCandidates
-                              ) throw (Exceptions::StepFailure);
+        bool stepIsMediaReady() throw (Exceptions::StepFailure);
 
-        bool stepPrepareCallFirstTime(
-                                      CallLocationPtr &picked,
-                                      const String &audioICEUsernameFrag,
-                                      const String &audioICEPassword,
-                                      const CandidateList &audioRTPCandidates,
-                                      const String &videoICEUsernameFrag,
-                                      const String &videoICEPassword,
-                                      const CandidateList &videoRTPCandidates
-                                      ) throw (Exceptions::StepFailure);
+        bool stepPrepareCallFirstTime() throw (Exceptions::StepFailure);
 
         bool stepPrepareCallLocations(
-                                      CallLocationPtr &picked,
                                       const LocationDialogMap locationDialogMap,
                                       CallLocationList &outLocationsToClose
                                       ) throw (Exceptions::CallClosed);
 
-        bool stepVerifyCallState(CallLocationPtr &picked) throw (
-                                                                 Exceptions::IllegalState,
-                                                                 Exceptions::CallClosed
-                                                                 );
+        bool stepVerifyCallState() throw (
+                                          Exceptions::IllegalState,
+                                          Exceptions::CallClosed
+                                          );
 
-        bool stepTryToPickALocation(
-                                    UseAccountPtr &account,
-                                    CallLocationPtr &ioEarly,
-                                    CallLocationPtr &ioPicked,
-                                    CallLocationList &outLocationsToClose
-                                    );
+        bool stepTryToPickALocation(CallLocationList &outLocationsToClose);
 
-        bool stepHandlePickedLocation(
-                                      bool &ioMediaHolding,
-                                      CallLocationPtr &picked
-                                      ) throw (Exceptions::IllegalState);
+        bool stepHandlePickedLocation() throw (Exceptions::IllegalState);
 
-        bool stepFixCallInProgressStates(
-                                         UseAccountPtr &account,
-                                         bool mediaHolding,
-                                         CallLocationPtr &early,
-                                         CallLocationPtr &picked
-                                         );
+        bool stepFixCallInProgressStates();
+
+        bool stepFixCandidates();
 
         bool stepCloseLocations(CallLocationList &locationsToClose);
 
@@ -460,14 +428,16 @@ namespace openpeer
                              bool forceOverride = false
                              );
 
+        void updateDialog();
+
         void setClosedReason(CallClosedReasons reason);
 
-        IICESocketSubscriptionPtr &findSubscription(
-                                                    IICESocketPtr socket,
-                                                    bool &outFound,
-                                                    SocketTypes *outType = NULL,
-                                                    bool *outIsRTP = NULL
-                                                    );
+        IICESocketSubscriptionPtr findSubscription(
+                                                   IICESocketPtr socket,
+                                                   bool &outFound,
+                                                   SocketTypes *outType = NULL,
+                                                   bool *outIsRTP = NULL
+                                                   );
         bool placeCallWithConversationThread();
 
       public:
@@ -493,8 +463,8 @@ namespace openpeer
                        CallPtr outer,
                        const char *locationID,
                        const DialogPtr &remoteDialog,
-                       bool hasAudio,
-                       bool hasVideo
+                       IICESocketPtr audioSocket,
+                       IICESocketPtr videoSocket
                        );
 
           void init(UseCallTransportPtr tranasport);
@@ -520,8 +490,8 @@ namespace openpeer
                                         UseCallTransportPtr transport,
                                         const char *locationID,
                                         const DialogPtr &remoteDialog,
-                                        bool hasAudio,
-                                        bool hasVideo
+                                        IICESocketPtr audioSocket,
+                                        IICESocketPtr videoSocket
                                         );
 
           PUID getID() const {return mID;}
@@ -532,7 +502,7 @@ namespace openpeer
           CallLocationStates getState() const;
           DialogPtr getRemoteDialog() const;
 
-          void updateDialog(const DialogPtr &remoteDialog);
+          void updateRemoteDialog(const DialogPtr &remoteDialog);
 
           bool sendRTPPacket(
                              SocketTypes type,
@@ -583,9 +553,9 @@ namespace openpeer
           Log::Params log(const char *message) const;
           virtual ElementPtr toDebug(bool normal, bool media) const;
 
-          bool isPending() const  {return CallLocationState_Pending == mCurrentState;}
-          bool isReady() const    {return CallLocationState_Ready == mCurrentState;}
-          bool isClosed() const   {return CallLocationState_Closed == mCurrentState;}
+          bool isPending() const  {return CallLocationState_Pending == mCurrentState.get();}
+          bool isReady() const    {return CallLocationState_Ready == mCurrentState.get();}
+          bool isClosed() const   {return CallLocationState_Closed == mCurrentState.get();}
 
           bool hasAudio() const   {return mHasAudio;}
           bool hasVideo() const   {return mHasVideo;}
@@ -597,12 +567,12 @@ namespace openpeer
           void step();
           void setState(CallLocationStates state);
 
-          IICESocketSessionPtr &findSession(
-                                            IICESocketSessionPtr session,
-                                            bool &outFound,
-                                            SocketTypes *outType = NULL,
-                                            bool *outIsRTP = NULL
-                                            );
+          IICESocketSessionPtr findSession(
+                                           IICESocketSessionPtr session,
+                                           bool &outFound,
+                                           SocketTypes *outType = NULL,
+                                           bool *outIsRTP = NULL
+                                           );
 
         private:
           //-------------------------------------------------------------------
@@ -612,14 +582,13 @@ namespace openpeer
 
           AutoPUID mID;
           SharedRecursiveLock mLock;
-          SharedRecursiveLock mMediaLock;
 
           CallLocationWeakPtr mThisWeakNoQueue;
 
           IWakeDelegatePtr mThisWakeDelegate;
           IICESocketSessionDelegatePtr mThisICESocketSessionDelegate;
 
-          CallLocationStates mCurrentState;
+          LockedValue<CallLocationStates> mCurrentState;
 
           CallWeakPtr mOuter;
           IMessageQueuePtr mQueue;
@@ -629,14 +598,19 @@ namespace openpeer
           bool mHasAudio;
           bool mHasVideo;
 
+          IICESocketPtr mAudioSocket;
+          IICESocketPtr mVideoSocket;
+          
           //-------------------------------------------------------------------
           // variables protected with object lock
           DialogPtr mRemoteDialog;
+          AutoBool mChangedRemoteDialog;
 
           //-------------------------------------------------------------------
-          // variables protected with media lock
-          IICESocketSessionPtr mAudioRTPSocketSession;
-          IICESocketSessionPtr mVideoRTPSocketSession;
+          // variables protected with independent locks
+
+          LockedValue<IICESocketSessionPtr, true> mAudioRTPSocketSession;
+          LockedValue<IICESocketSessionPtr, true> mVideoRTPSocketSession;
         };
 
       private:
@@ -647,7 +621,6 @@ namespace openpeer
 
         AutoPUID mID;
         SharedRecursiveLock mLock;
-        SharedRecursiveLock mMediaLock;
         SharedRecursiveLock mStepLock;
 
         CallWeakPtr mThisWeakNoQueue;
@@ -679,6 +652,9 @@ namespace openpeer
         UseContactPtr mCaller;
         UseContactPtr mCallee;
 
+        ILocationPtr mSelfLocation;
+        IPeerFilesPtr mPeerFiles;
+
         //---------------------------------------------------------------------
         // variables protected with object lock
 
@@ -708,17 +684,23 @@ namespace openpeer
 
         TimerPtr mFirstClosedRemoteCallTimer;
 
+        String mAudioCandidateVersion;
+        String mVideoCandidateVersion;
+
         //---------------------------------------------------------------------
-        // variables protected with media lock
+        // variables protected with independent locks
 
-        IICESocketSubscriptionPtr mAudioRTPSocketSubscription;
-        IICESocketSubscriptionPtr mVideoRTPSocketSubscription;
+        LockedValue<IICESocketPtr, true> mAudioSocket;
+        LockedValue<IICESocketPtr, true> mVideoSocket;
 
-        bool mMediaHolding;
-        CallLocationPtr mPickedLocation;
-        CallLocationPtr mEarlyLocation;
+        LockedValue<IICESocketSubscriptionPtr, true> mAudioRTPSocketSubscription;
+        LockedValue<IICESocketSubscriptionPtr, true> mVideoRTPSocketSubscription;
 
-        bool mNotifiedCallTransportDestroyed;
+        LockedValue<bool> mMediaHolding;
+        LockedValue<CallLocationPtr> mPickedLocation;
+        LockedValue<CallLocationPtr> mEarlyLocation;
+
+        LockedValue<bool> mNotifiedCallTransportDestroyed;
       };
 
       //-----------------------------------------------------------------------

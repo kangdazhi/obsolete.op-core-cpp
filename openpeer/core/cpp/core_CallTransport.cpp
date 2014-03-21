@@ -44,7 +44,8 @@
 
 #define OPENPEER_CALLTRANSPORT_CLOSE_UNUSED_SOCKETS_AFTER_IN_SECONDS (90)
 
-namespace openpeer { namespace core { ZS_DECLARE_SUBSYSTEM(openpeer_media) } }
+namespace openpeer { namespace core { ZS_DECLARE_SUBSYSTEM(openpeer_core) } }
+namespace openpeer { namespace core { ZS_DECLARE_FORWARD_SUBSYSTEM(openpeer_media) } }
 
 namespace openpeer
 {
@@ -58,6 +59,20 @@ namespace openpeer
       typedef ICallTransportForAccount::ForAccountPtr ForAccountPtr;
 
       using services::IHelper;
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark (helpers)
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      static zsLib::Subsystem &mediaSubsystem()
+      {
+        return ZS_GET_OTHER_SUBSYSTEM(openpeer::core, openpeer_media);
+      }
 
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -369,14 +384,14 @@ namespace openpeer
         BYTE filterType = (payloadType & 0x7F);
         bool isRTP = ((filterType < 64) || (filterType > 96));
 
-        ZS_LOG_TRACE(log("notified of packet") + ZS_PARAM("type", (isRTP ? "RTP" : "RTCP")) + ZS_PARAM("from call ID", callID) + ZS_PARAM("from location ID", locationID) + ZS_PARAM("socket type", ICallTransportForCall::toString(type)) + ZS_PARAM("payload type", payloadType) + ZS_PARAM("length", bufferLengthInBytes))
+        ZS_LOG_SUBSYSTEM_TRACE(mediaSubsystem(), log("notified of packet") + ZS_PARAM("type", (isRTP ? "RTP" : "RTCP")) + ZS_PARAM("from call ID", callID) + ZS_PARAM("from location ID", locationID) + ZS_PARAM("socket type", ICallTransportForCall::toString(type)) + ZS_PARAM("payload type", payloadType) + ZS_PARAM("length", bufferLengthInBytes))
 
         // scope - get locked variable
         {
           AutoRecursiveLock lock(*this);
 
           if (0 != mBlockUntilStartStopCompleted) {
-            ZS_LOG_WARNING(Debug, log("ignoring RTP/RTCP packet as media is blocked until the start/stop routine complete") + ZS_PARAM("blocked count", mBlockUntilStartStopCompleted))
+            ZS_LOG_SUBSYSTEM_WARNING(mediaSubsystem(), Debug, log("ignoring RTP/RTCP packet as media is blocked until the start/stop routine complete") + ZS_PARAM("blocked count", mBlockUntilStartStopCompleted))
             return;
           }
 
@@ -387,19 +402,19 @@ namespace openpeer
 
           if ((callID != mFocusCallID) ||
               (locationID != mFocusLocationID)) {
-            ZS_LOG_TRACE(log("ignoring RTP/RTCP packet as not from call/location ID in focus") + ZS_PARAM("focus call ID", mFocusCallID) + ZS_PARAM("focus location ID", mFocusLocationID))
+            ZS_LOG_SUBSYSTEM_TRACE(mediaSubsystem(), log("ignoring RTP/RTCP packet as not from call/location ID in focus") + ZS_PARAM("focus call ID", mFocusCallID) + ZS_PARAM("focus location ID", mFocusLocationID))
             return;
           }
 
           if ((SocketType_Audio == type) &&
               (!mHasAudio)) {
-            ZS_LOG_TRACE(log("ignoring RTP/RTCP packet as audio was not started for this call"))
+            ZS_LOG_SUBSYSTEM_TRACE(mediaSubsystem(), log("ignoring RTP/RTCP packet as audio was not started for this call"))
             return;
           }
 
           if ((SocketType_Video == type) &&
               (!mHasVideo)) {
-            ZS_LOG_TRACE(log("ignoring RTP/RTCP packet as video was not started for this call"))
+            ZS_LOG_SUBSYSTEM_TRACE(mediaSubsystem(), log("ignoring RTP/RTCP packet as video was not started for this call"))
             return;
           }
         }
@@ -502,20 +517,20 @@ namespace openpeer
           AutoRecursiveLock lock(*this);
 
           if (0 != mBlockUntilStartStopCompleted) {
-            ZS_LOG_WARNING(Debug, log("ignoring request to send RTP packet as media is blocked until the start/stop routine complete") + ZS_PARAM("blocked count", mBlockUntilStartStopCompleted))
+            ZS_LOG_SUBSYSTEM_WARNING(mediaSubsystem(), Debug, log("ignoring request to send RTP packet as media is blocked until the start/stop routine complete") + ZS_PARAM("blocked count", mBlockUntilStartStopCompleted))
             return 0;
           }
 
           if ((0 == mFocusCallID) ||
               (!mStarted)) {
-            ZS_LOG_WARNING(Trace, log("unable to send RTP packet media isn't start or there is no focus object") + ZS_PARAM("started", mStarted) + ZS_PARAM("focus ID", mFocusCallID))
+            ZS_LOG_SUBSYSTEM_WARNING(mediaSubsystem(), Trace, log("unable to send RTP packet media isn't start or there is no focus object") + ZS_PARAM("started", mStarted) + ZS_PARAM("focus ID", mFocusCallID))
             return 0;
           }
 
           call = mFocus.lock();
           locationID = mFocusLocationID;
           if (!call) {
-            ZS_LOG_WARNING(Trace, log("unable to send RTP packet as focused call object is gone"))
+            ZS_LOG_SUBSYSTEM_WARNING(mediaSubsystem(), Trace, log("unable to send RTP packet as focused call object is gone"))
             return 0;
           }
 
@@ -1024,11 +1039,11 @@ namespace openpeer
         if (len < (sizeof(BYTE)*2)) return 0;
 
         BYTE payloadType = ((const BYTE *)data)[1];
-        ZS_LOG_TRACE(log("request to send RTP packet") + ZS_PARAM("payload type", payloadType) + ZS_PARAM("length", len))
+        ZS_LOG_SUBSYSTEM_TRACE(mediaSubsystem(), log("request to send RTP packet") + ZS_PARAM("payload type", payloadType) + ZS_PARAM("length", len))
 
         CallTransportPtr outer = mOuter.lock();
         if (!outer) {
-          ZS_LOG_TRACE(log("cannot send RTP packet because call transport object is gone"))
+          ZS_LOG_SUBSYSTEM_TRACE(mediaSubsystem(), log("cannot send RTP packet because call transport object is gone"))
           return 0;
         }
 
@@ -1041,11 +1056,11 @@ namespace openpeer
         if (len < (sizeof(BYTE)*2)) return 0;
 
         BYTE payloadType = ((const BYTE *)data)[1];
-        ZS_LOG_TRACE(log("request to send RTCP packet") + ZS_PARAM("payload type", payloadType) + ZS_PARAM("length", len))
+        ZS_LOG_SUBSYSTEM_TRACE(mediaSubsystem(), log("request to send RTCP packet") + ZS_PARAM("payload type", payloadType) + ZS_PARAM("length", len))
 
         CallTransportPtr outer = mOuter.lock();
         if (!outer) {
-          ZS_LOG_WARNING(Trace, log("cannot send RTCP packet because call transport object is gone"))
+          ZS_LOG_SUBSYSTEM_WARNING(mediaSubsystem(), Trace, log("cannot send RTCP packet because call transport object is gone"))
           return 0;
         }
 
