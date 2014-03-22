@@ -2543,7 +2543,10 @@ namespace openpeer
           return mError;
         }
 #elif defined(_ANDROID)
-        orientation = webrtc::RotateCapturedFrame_270;
+        if (mCameraType == CameraType_Back)
+          orientation = webrtc::RotateCapturedFrame_90;
+        else if (mCameraType == CameraType_Front)
+          orientation = webrtc::RotateCapturedFrame_270;
 #else
         orientation = webrtc::RotateCapturedFrame_0;
 #endif
