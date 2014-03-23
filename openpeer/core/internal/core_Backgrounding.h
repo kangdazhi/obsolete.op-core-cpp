@@ -242,6 +242,8 @@ namespace openpeer
 
           virtual void onBackgroundingReturningFromBackground(services::IBackgroundingSubscriptionPtr subscription);
 
+          virtual void onBackgroundingApplicationWillQuit(services::IBackgroundingSubscriptionPtr subscription);
+
         public:
           class Notifier : public core::IBackgroundingNotifier
           {

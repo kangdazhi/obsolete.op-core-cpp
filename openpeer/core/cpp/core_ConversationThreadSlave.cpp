@@ -978,6 +978,12 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      void ConversationThreadSlave::onBackgroundingApplicationWillQuit(IBackgroundingSubscriptionPtr subscription)
+      {
+        ZS_LOG_DEBUG(log("notified application will quit") + ZS_PARAM("subscription id", subscription->getID()))
+      }
+
+      //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------

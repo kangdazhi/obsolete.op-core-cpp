@@ -149,6 +149,13 @@ namespace openpeer
       virtual void onBackgroundingReturningFromBackground(
                                                           IBackgroundingSubscriptionPtr subscription
                                                           ) = 0;
+
+      //-----------------------------------------------------------------------
+      // PURPOSE: This notification tells the subscriber the application will
+      //          quit.
+      virtual void onBackgroundingApplicationWillQuit(
+                                                      IBackgroundingSubscriptionPtr subscription
+                                                      ) = 0;
     };
 
     //-------------------------------------------------------------------------
@@ -195,4 +202,5 @@ ZS_DECLARE_PROXY_TYPEDEF(openpeer::core::IBackgroundingNotifierPtr, IBackgroundi
 ZS_DECLARE_PROXY_METHOD_2(onBackgroundingGoingToBackground, IBackgroundingSubscriptionPtr, IBackgroundingNotifierPtr)
 ZS_DECLARE_PROXY_METHOD_1(onBackgroundingGoingToBackgroundNow, IBackgroundingSubscriptionPtr)
 ZS_DECLARE_PROXY_METHOD_1(onBackgroundingReturningFromBackground, IBackgroundingSubscriptionPtr)
+ZS_DECLARE_PROXY_METHOD_1(onBackgroundingApplicationWillQuit, IBackgroundingSubscriptionPtr)
 ZS_DECLARE_PROXY_END()

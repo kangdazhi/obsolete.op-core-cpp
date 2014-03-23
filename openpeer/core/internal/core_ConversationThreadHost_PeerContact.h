@@ -183,6 +183,8 @@ namespace openpeer
 
           virtual void onBackgroundingReturningFromBackground(IBackgroundingSubscriptionPtr subscription);
 
+          virtual void onBackgroundingApplicationWillQuit(IBackgroundingSubscriptionPtr subscription);
+
           //-------------------------------------------------------------------
           #pragma mark
           #pragma mark ConversationThreadHost::PeerContact => IWakeDelegate

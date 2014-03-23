@@ -293,9 +293,10 @@ namespace openpeer
         // scope: do not want to call notifyLostFocus from inside a lock (possible deadlock)
         {
           AutoRecursiveLock lock(*this);
-          ZS_THROW_BAD_STATE_IF(mTotalCalls < 1)
 
           if (call) {
+            ZS_THROW_BAD_STATE_IF(mTotalCalls < 1)
+
             if (mFocusCallID != call->getID()) {
               // focus has changed...
 

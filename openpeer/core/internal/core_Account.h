@@ -42,10 +42,13 @@
 #include <openpeer/stack/IServiceLockbox.h>
 #include <openpeer/stack/IServiceNamespaceGrant.h>
 
+#include <openpeer/services/IBackgrounding.h>
 #include <openpeer/services/IHelper.h>
 #include <openpeer/services/IWakeDelegate.h>
 
 #include <zsLib/MessageQueueAssociator.h>
+
+#define OPENPEER_CORE_SETTING_ACCOUNT_BACKGROUNDING_PHASE "openpeer/core/backgrounding-phase-account"
 
 namespace openpeer
 {
@@ -198,6 +201,7 @@ namespace openpeer
                       public IPeerSubscriptionDelegate,
                       public IServiceLockboxSessionDelegate,
                       public IServiceNamespaceGrantSessionDelegate,
+                      public IBackgroundingDelegate,
                       public IWakeDelegate
       {
       public:
@@ -456,6 +460,22 @@ namespace openpeer
 
         //---------------------------------------------------------------------
         #pragma mark
+        #pragma mark Account => IBackgroundingDelegate
+        #pragma mark
+
+        virtual void onBackgroundingGoingToBackground(
+                                                      IBackgroundingSubscriptionPtr subscription,
+                                                      IBackgroundingNotifierPtr notifier
+                                                      );
+
+        virtual void onBackgroundingGoingToBackgroundNow(IBackgroundingSubscriptionPtr subscription);
+
+        virtual void onBackgroundingReturningFromBackground(IBackgroundingSubscriptionPtr subscription);
+
+        virtual void onBackgroundingApplicationWillQuit(IBackgroundingSubscriptionPtr subscription);
+
+        //---------------------------------------------------------------------
+        #pragma mark
         #pragma mark Account => IWakeDelegate
         #pragma mark
 
@@ -553,6 +573,8 @@ namespace openpeer
 
         IConversationThreadDelegatePtr mConversationThreadDelegate;   // NOTE: if set, never unset and never changes
         ICallDelegatePtr mCallDelegate;                               // NOTE: if set, never unset and never changes
+
+        IBackgroundingSubscriptionPtr mBackgroundingSubscription;
 
         LockedValue<stack::IAccountPtr, true> mStackAccount;          // NOTE: once set, never unset and never changes
 

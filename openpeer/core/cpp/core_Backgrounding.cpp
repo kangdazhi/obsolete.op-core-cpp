@@ -377,6 +377,16 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      void Backgrounding::Subscription::onBackgroundingApplicationWillQuit(services::IBackgroundingSubscriptionPtr subscription)
+      {
+        try {
+          mDelegate->onBackgroundingApplicationWillQuit(mThisWeak.lock());
+        } catch(core::IBackgroundingDelegateProxy::Exceptions::DelegateGone &) {
+          ZS_LOG_WARNING(Detail, log("delegate gone"))
+        }
+      }
+
+      //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------

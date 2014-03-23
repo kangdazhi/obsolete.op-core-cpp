@@ -219,12 +219,7 @@ namespace openpeer
         //---------------------------------------------------------------------
         virtual void post(IMessageQueueMessagePtr message)
         {
-          MessageQueuePtr queue;
-          {
-            AutoLock lock(mLock);
-            queue = mQueue;
-          }
-          queue->post(message);
+          mQueue->post(message);
         }
 
         //---------------------------------------------------------------------
@@ -238,15 +233,12 @@ namespace openpeer
         virtual void waitForShutdown()
         {
           IStackMessageQueueDelegatePtr delegate;
-          MessageQueuePtr queue;
 
           {
             AutoLock lock(mLock);
             delegate = mDelegate;
-            queue = mQueue;
 
             mDelegate.reset();
-            mQueue.reset();
           }
         }
 
@@ -257,6 +249,12 @@ namespace openpeer
         }
 
         //---------------------------------------------------------------------
+        virtual void processMessagesFromThread()
+        {
+          mQueue->process();
+        }
+
+        //---------------------------------------------------------------------
         virtual void notifyMessagePosted()
         {
           IStackMessageQueueDelegatePtr delegate;
@@ -264,18 +262,16 @@ namespace openpeer
             AutoLock lock(mLock);
             delegate = mDelegate;
           }
+
+          ZS_THROW_CUSTOM_MSG_IF(IMessageQueue::Exceptions::MessageQueueGone, !delegate, "message posted to message queue after queue was deleted.")
+
           delegate->onStackMessageQueueWakeUpCustomThreadAndProcessOnCustomThread();
         }
 
         //---------------------------------------------------------------------
         void processMessage()
         {
-          MessageQueuePtr queue;
-          {
-            AutoLock lock(mLock);
-            queue = mQueue;
-          }
-          queue->processOnlyOneMessage();
+          mQueue->processOnlyOneMessage();
         }
 
       protected:
@@ -642,9 +638,7 @@ namespace openpeer
         services::ILogger::uninstallTelnetLogger();
 
         // at this point all proxies to delegates should be completely destroyed - if they are not then someone forgot to do some clean-up!
-        ULONG totalProxiesCreated = zsLib::proxyGetTotalConstructed();
         zsLib::proxyDump();
-        ZS_THROW_BAD_STATE_IF(totalProxiesCreated > 0)  // DO NOT COMMENT THIS LINE AS A SOLUTION INSTEAD OF FINDING OUT WHERE YOU DID NOT SHUTDOWN/CLEANUP PROPERLY
       }
 
       //-----------------------------------------------------------------------
