@@ -38,6 +38,7 @@
 
 #include <openpeer/stack/IPeerSubscription.h>
 
+#include <openpeer/services/IBackgrounding.h>
 #include <openpeer/services/IWakeDelegate.h>
 
 #include <zsLib/MessageQueueAssociator.h>
@@ -90,6 +91,7 @@ namespace openpeer
                                        public SharedRecursiveLock,
                                        public IConversationThreadSlaveForConversationThread,
                                        public IConversationThreadDocumentFetcherDelegate,
+                                       public IBackgroundingDelegate,
                                        public IWakeDelegate,
                                        public ITimerDelegate,
                                        public IPeerSubscriptionDelegate
@@ -237,6 +239,22 @@ namespace openpeer
                                                                         IPublicationMetaDataPtr metaData
                                                                         );
 
+        //-------------------------------------------------------------------
+        #pragma mark
+        #pragma mark ConversationThreadSlave => IBackgroundingDelegate
+        #pragma mark
+
+        virtual void onBackgroundingGoingToBackground(
+                                                      IBackgroundingSubscriptionPtr subscription,
+                                                      IBackgroundingNotifierPtr notifier
+                                                      );
+
+        virtual void onBackgroundingGoingToBackgroundNow(IBackgroundingSubscriptionPtr subscription);
+
+        virtual void onBackgroundingReturningFromBackground(IBackgroundingSubscriptionPtr subscription);
+
+        virtual void onBackgroundingApplicationWillQuit(IBackgroundingSubscriptionPtr subscription);
+
         //---------------------------------------------------------------------
         #pragma mark
         #pragma mark ConversationThreadSlave => IWakeDelegate
@@ -325,7 +343,7 @@ namespace openpeer
 
           void setState(MessageDeliveryStates state);
 
-          bool shouldPush() const;
+          bool shouldPush(bool backgroundingNow) const;
 
         protected:
           ConversationThreadSlaveWeakPtr mOuter;
@@ -357,6 +375,10 @@ namespace openpeer
 
         ThreadPtr mHostThread;
         ThreadPtr mSlaveThread;
+
+        IBackgroundingSubscriptionPtr mBackgroundingSubscription;
+        IBackgroundingNotifierPtr mBackgroundingNotifier;
+        AutoBool mBackgroundingNow;
 
         IPeerSubscriptionPtr mHostSubscription;
 

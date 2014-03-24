@@ -56,6 +56,7 @@ namespace openpeer
         class PeerContact : public MessageQueueAssociator,
                             public SharedRecursiveLock,
                             public IPeerSubscriptionDelegate,
+                            public IBackgroundingDelegate,
                             public IWakeDelegate,
                             public ITimerDelegate
         {
@@ -170,10 +171,26 @@ namespace openpeer
 
           //-------------------------------------------------------------------
           #pragma mark
+          #pragma mark ConversationThreadHost::PeerContact => IBackgroundingDelegate
+          #pragma mark
+
+          virtual void onBackgroundingGoingToBackground(
+                                                        IBackgroundingSubscriptionPtr subscription,
+                                                        IBackgroundingNotifierPtr notifier
+                                                        );
+
+          virtual void onBackgroundingGoingToBackgroundNow(IBackgroundingSubscriptionPtr subscription);
+
+          virtual void onBackgroundingReturningFromBackground(IBackgroundingSubscriptionPtr subscription);
+
+          virtual void onBackgroundingApplicationWillQuit(IBackgroundingSubscriptionPtr subscription);
+
+          //-------------------------------------------------------------------
+          #pragma mark
           #pragma mark ConversationThreadHost::PeerContact => IWakeDelegate
           #pragma mark
 
-          virtual void onWake() {step();}
+          virtual void onWake();
 
           //-------------------------------------------------------------------
           #pragma mark
@@ -226,7 +243,7 @@ namespace openpeer
 
             void setState(MessageDeliveryStates state);
 
-            bool shouldPush() const;
+            bool shouldPush(bool backgroundingNow) const;
 
           protected:
             PeerContactWeakPtr mOuter;
@@ -275,6 +292,10 @@ namespace openpeer
 
           UseContactPtr mContact;
           IdentityContactList mIdentityContacts;
+
+          IBackgroundingSubscriptionPtr mBackgroundingSubscription;
+          IBackgroundingNotifierPtr mBackgroundingNotifier;
+          AutoBool mBackgroundingNow;
 
           IPeerSubscriptionPtr mSlaveSubscription;
 

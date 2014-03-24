@@ -40,8 +40,8 @@
 
 #include <zsLib/XML.h>
 
-namespace openpeer { namespace core { ZS_DECLARE_SUBSYSTEM(openpeer_core) } }
 
+namespace openpeer { namespace core { ZS_DECLARE_SUBSYSTEM(openpeer_core) } }
 
 namespace openpeer
 {
@@ -54,6 +54,7 @@ namespace openpeer
       ZS_DECLARE_TYPEDEF_PTR(ConversationThreadHost::UseConversationThread, UseConversationThread)
 
       using services::IHelper;
+      ZS_DECLARE_TYPEDEF_PTR(services::ISettings, UseSettings)
 
       using namespace core::internal::thread;
 
@@ -99,6 +100,8 @@ namespace openpeer
       void ConversationThreadHost::PeerContact::init()
       {
         AutoRecursiveLock lock(*this);
+
+        mBackgroundingSubscription = IBackgrounding::subscribe(mThisWeak.lock(), UseSettings::getUInt(OPENPEER_CORE_SETTINGS_CONVERSATION_THREAD_HOST_BACKGROUNDING_PHASE));
 
         ULONG autoFindSeconds = services::ISettings::getUInt(OPENPEER_CORE_SETTING_CONVERSATION_THREAD_HOST_PEER_CONTACT);
 
@@ -383,6 +386,76 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       #pragma mark
+      #pragma mark ConversationThreadHost::PeerContact => IBackgroundingDelegate
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      void ConversationThreadHost::PeerContact::onBackgroundingGoingToBackground(
+                                                                                 IBackgroundingSubscriptionPtr subscription,
+                                                                                 IBackgroundingNotifierPtr notifier
+                                                                                 )
+      {
+        ZS_LOG_DEBUG(log("notified going to background") + ZS_PARAM("subscription id", subscription->getID()) + ZS_PARAM("notifier", notifier->getID()))
+
+        AutoRecursiveLock lock(*this);
+
+        mBackgroundingNotifier = notifier;
+        get(mBackgroundingNow) = false;
+        step();
+      }
+
+      //-----------------------------------------------------------------------
+      void ConversationThreadHost::PeerContact::onBackgroundingGoingToBackgroundNow(IBackgroundingSubscriptionPtr subscription)
+      {
+        ZS_LOG_DEBUG(log("notified going to background now") + ZS_PARAM("subscription id", subscription->getID()))
+
+        AutoRecursiveLock lock(*this);
+
+        get(mBackgroundingNow) = true;
+        step();
+
+        mBackgroundingNotifier.reset();
+      }
+
+      //-----------------------------------------------------------------------
+      void ConversationThreadHost::PeerContact::onBackgroundingReturningFromBackground(IBackgroundingSubscriptionPtr subscription)
+      {
+        ZS_LOG_DEBUG(log("notified returning from background now") + ZS_PARAM("subscription id", subscription->getID()))
+
+        AutoRecursiveLock lock(*this);
+
+        mBackgroundingNotifier.reset();
+
+        get(mBackgroundingNow) = false;
+        step();
+      }
+
+      //-----------------------------------------------------------------------
+      void ConversationThreadHost::PeerContact::onBackgroundingApplicationWillQuit(IBackgroundingSubscriptionPtr subscription)
+      {
+        ZS_LOG_DEBUG(log("notified application will quit") + ZS_PARAM("subscription id", subscription->getID()))
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark ConversationThreadHost::PeerContact => IWakeDelegate
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      void ConversationThreadHost::PeerContact::onWake()
+      {
+        ZS_LOG_DEBUG(log("on wake"))
+        step();
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
       #pragma mark ConversationThreadHost::PeerContact => ITimerDelegate
       #pragma mark
 
@@ -481,6 +554,8 @@ namespace openpeer
                                                                                   IConversationThread::MessageDeliveryStates state
                                                                                   )
       {
+        ZS_LOG_DEBUG(log("notified delivery state changed") + ZS_PARAM("message id", messageID) + ZS_PARAM("state", IConversationThread::toString(state)))
+
         AutoRecursiveLock lock(*this);
 
         ConversationThreadHostPtr outer = mOuter.lock();
@@ -501,6 +576,9 @@ namespace openpeer
         } else {
           mMessageDeliveryStates[messageID] = MessageDeliveryState::create(mThisWeak.lock(), state);
         }
+
+        // cause step to happen to ensure peer subscription is proper
+        IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
 
         return outer->notifyMessageDeliveryStateChanged(messageID, state);
       }
@@ -566,10 +644,16 @@ namespace openpeer
         ElementPtr resultEl = Element::create("core::ConversationThreadHost::PeerContact");
 
         IHelper::debugAppend(resultEl, "id", mID);
+
         IHelper::debugAppend(resultEl, "state", toString(mCurrentState));
 
         IHelper::debugAppend(resultEl, UseContact::toDebug(mContact));
+
         IHelper::debugAppend(resultEl, "identity contacts", mIdentityContacts.size());
+
+        IHelper::debugAppend(resultEl, "backgrounding subsscription id", mBackgroundingSubscription ? mBackgroundingSubscription->getID() : 0);
+        IHelper::debugAppend(resultEl, "backgrounding notifier id", mBackgroundingNotifier ? mBackgroundingNotifier->getID() : 0);
+        IHelper::debugAppend(resultEl, "backgrounding now", mBackgroundingNow);
 
         IHelper::debugAppend(resultEl, IPeerSubscription::toDebug(mSlaveSubscription));
 
@@ -587,7 +671,12 @@ namespace openpeer
       {
         AutoRecursiveLock lock(*this);
 
-        if (isShutdown()) return;
+        ZS_LOG_DEBUG(log("cancel called"))
+
+        if (isShutdown()) {
+          ZS_LOG_DEBUG(log("already shutdown"))
+          return;
+        }
 
         if (!mGracefulShutdownReference) mGracefulShutdownReference = mThisWeak.lock();
 
@@ -597,6 +686,13 @@ namespace openpeer
           mSlaveSubscription->cancel();
           mSlaveSubscription.reset();
         }
+
+        if (mBackgroundingSubscription) {
+          mBackgroundingSubscription->cancel();
+          mBackgroundingSubscription.reset();
+        }
+
+        mBackgroundingNotifier.reset();
 
         // cancel all the locations
         for (PeerLocationMap::iterator peerIter_doNotUse = mPeerLocations.begin(); peerIter_doNotUse != mPeerLocations.end(); )
@@ -621,9 +717,10 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::PeerContact::step()
       {
-        ZS_LOG_TRACE(log("step"))
-
         AutoRecursiveLock lock(*this);
+
+        ZS_LOG_TRACE(log("step") + toDebug())
+
         if ((isShuttingDown()) ||
             (isShutdown())) {
           ZS_LOG_DEBUG(log("step forwarding to cancel"))
@@ -693,6 +790,11 @@ namespace openpeer
           }
         }
 
+        if (!requiresSubscription) {
+          ZS_LOG_DEBUG(log("no outstanding undelivered messages thus no need to prevent backgrounding") + ZS_PARAM("notifier", mBackgroundingNotifier ? mBackgroundingNotifier->getID() : 0))
+          mBackgroundingNotifier.reset();
+        }
+
         if (outer->hasCallPlacedTo(mContact)) {
           ZS_LOG_DEBUG(log("calls are being placed to this slave contact thus subscription is required"))
           // as there is a call being placed to this contact thus a subscription is required
@@ -758,7 +860,7 @@ namespace openpeer
             if (( ((IPeer::PeerFindState_Idle == state) ||
                    (IPeer::PeerFindState_Completed == state)) &&
                  (peerLocations->size() < 1)) ||
-                (deliveryState->shouldPush())) {
+                (deliveryState->shouldPush(mBackgroundingNow))) {
               ZS_LOG_DEBUG(log("state must now be set to undeliverable") + ZS_PARAM("message", message->toDebug()) + ZS_PARAM("peer find state", IPeer::toString(state)))
               deliveryState->setState(IConversationThread::MessageDeliveryState_UserNotAvailable);
               outer->notifyMessageDeliveryStateChanged(message->messageID(), IConversationThread::MessageDeliveryState_UserNotAvailable);
@@ -876,10 +978,11 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      bool ConversationThreadHost::PeerContact::MessageDeliveryState::shouldPush() const
+      bool ConversationThreadHost::PeerContact::MessageDeliveryState::shouldPush(bool backgroundingNow) const
       {
         if (IConversationThread::MessageDeliveryState_Discovering != mState) return false;
         if (Time() == mPushTime) return false;
+        if (backgroundingNow) return true;
 
         return (zsLib::now() >= mPushTime);
       }

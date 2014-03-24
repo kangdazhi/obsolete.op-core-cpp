@@ -138,6 +138,8 @@ namespace openpeer
           get(mAppliedDefaults) = true;
         }
 
+        setUInt(OPENPEER_CORE_SETTING_ACCOUNT_BACKGROUNDING_PHASE, 1);
+
         setString(OPENPEER_CORE_SETTING_STACK_CORE_THREAD_PRIORITY, "normal");
         setString(OPENPEER_CORE_SETTING_STACK_MEDIA_THREAD_PRIORITY, "real-time");
 

@@ -42,6 +42,8 @@
 #include <openpeer/stack/IPublication.h>
 #include <openpeer/stack/message/IMessageHelper.h>
 
+#include <openpeer/services/ISettings.h>
+
 #include <zsLib/XML.h>
 
 namespace openpeer { namespace core { ZS_DECLARE_SUBSYSTEM(openpeer_core) } }
@@ -132,6 +134,8 @@ namespace openpeer
         // replace conversation thread delegate / call delegate with intercepted delegate
         mConversationThreadDelegate = IConversationThreadDelegateProxy::create(mDelegateFilter);
         mCallDelegate = ICallDelegateProxy::create(mDelegateFilter);
+
+        mBackgroundingSubscription = IBackgrounding::subscribe(mThisWeak.lock(), services::ISettings::getUInt(OPENPEER_CORE_SETTING_ACCOUNT_BACKGROUNDING_PHASE));
 
         step();
       }
@@ -1051,6 +1055,46 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       #pragma mark
+      #pragma mark Account => IBackgroundingDelegate
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      void Account::onBackgroundingGoingToBackground(
+                                                     IBackgroundingSubscriptionPtr subscription,
+                                                     IBackgroundingNotifierPtr notifier
+                                                     )
+      {
+        ZS_LOG_DEBUG(log("going to background"))
+      }
+
+      //-----------------------------------------------------------------------
+      void Account::onBackgroundingGoingToBackgroundNow(IBackgroundingSubscriptionPtr subscription)
+      {
+        ZS_LOG_DEBUG(log("going to background now"))
+      }
+
+      //-----------------------------------------------------------------------
+      void Account::onBackgroundingReturningFromBackground(IBackgroundingSubscriptionPtr subscription)
+      {
+        ZS_LOG_DEBUG(log("returning from background"))
+      }
+
+      //-----------------------------------------------------------------------
+      void Account::onBackgroundingApplicationWillQuit(IBackgroundingSubscriptionPtr subscription)
+      {
+        ZS_LOG_DEBUG(log("application will quit"))
+
+        AutoRecursiveLock lock(*this);
+
+        setError(IHTTP::HTTPStatusCode_ClientClosedRequest, "application is quitting");
+        cancel();
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
       #pragma mark Account => IWakeDelegate
       #pragma mark
 
@@ -1185,20 +1229,33 @@ namespace openpeer
         IHelper::debugAppend(resultEl, "state", toString(mCurrentState));
         IHelper::debugAppend(resultEl, "error code", mLastErrorCode);
         IHelper::debugAppend(resultEl, "error reason", mLastErrorReason);
+
         IHelper::debugAppend(resultEl, "delegate", (bool)mDelegate);
+
         IHelper::debugAppend(resultEl, "conversation thread delegate", (bool)mConversationThreadDelegate);
         IHelper::debugAppend(resultEl, "call delegate", (bool)mCallDelegate);
+
+        IHelper::debugAppend(resultEl, "backgrounding subscription", mBackgroundingSubscription ? mBackgroundingSubscription->getID() : 0);
+
         IHelper::debugAppend(resultEl, stack::IAccount::toDebug(mStackAccount.get()));
+
         IHelper::debugAppend(resultEl, stack::IServiceNamespaceGrantSession::toDebug(mGrantSession));
+
         IHelper::debugAppend(resultEl, stack::IServiceLockboxSession::toDebug(mLockboxSession.get()));
         IHelper::debugAppend(resultEl, "force new lockbox account", mLockboxForceCreateNewAccount ? String("true") : String());
         IHelper::debugAppend(resultEl, "identities", mIdentities.size());
+
         IHelper::debugAppend(resultEl, stack::IPeerSubscription::toDebug(mPeerSubscription));
+
         IHelper::debugAppend(resultEl, UseContact::toDebug(mSelfContact));
+
         IHelper::debugAppend(resultEl, "contacts", mContacts.size());
         IHelper::debugAppend(resultEl, "contact subscription", mContactSubscriptions.size());
+
         IHelper::debugAppend(resultEl, "conversations", mConversationThreads.size());
+
         IHelper::debugAppend(resultEl, "call transport", (bool)mCallTransport.get());
+
         IHelper::debugAppend(resultEl, "subscribers permission document", (bool)mSubscribersPermissionDocument);
 
         return resultEl;
@@ -1268,6 +1325,11 @@ namespace openpeer
         }
 
         setState(AccountState_Shutdown);
+
+        if (mBackgroundingSubscription) {
+          mBackgroundingSubscription->cancel();
+          mBackgroundingSubscription.reset();
+        }
 
         if (mGrantSession) {
           mGrantSession->cancel();    // do not reset
