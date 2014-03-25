@@ -562,6 +562,8 @@ namespace openpeer
           ThreadContactPtr pThis(new ThreadContact);
           pThis->mContact = contact;
 
+          IdentityContactList filtered;
+
           for (IdentityContactList::const_iterator iter = identityContacts.begin(); iter != identityContacts.end(); ++iter)
           {
             const IdentityContact &sourceIdentityContact = (*iter);
@@ -585,8 +587,10 @@ namespace openpeer
             identityContact.mLastUpdated = sourceIdentityContact.mLastUpdated;
             identityContact.mExpires = sourceIdentityContact.mExpires;
 
-            pThis->mIdentityContacts = identityContacts;
+            filtered.push_back(identityContact);
           }
+
+          pThis->mIdentityContacts = filtered;
           return pThis;
         }
 
