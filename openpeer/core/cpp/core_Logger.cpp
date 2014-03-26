@@ -118,14 +118,19 @@ namespace openpeer
         //---------------------------------------------------------------------
         static CustomLoggerPtr create() {
           CustomLoggerPtr pThis = CustomLoggerPtr(new CustomLogger);
-          (Log::singleton())->addListener(pThis);
+          Log::addListener(pThis);
           return pThis;
         }
 
+        //---------------------------------------------------------------------
         static CustomLoggerPtr singleton()
         {
-          static CustomLoggerPtr singleton = create();
-          return singleton;
+          static SingletonLazySharedPtr<CustomLogger> singleton(create());
+          CustomLoggerPtr result = singleton.singleton();
+          if (!result) {
+            ZS_LOG_WARNING(Detail, slog("singleton gone"))
+          }
+          return result;
         }
 
         //---------------------------------------------------------------------
@@ -199,6 +204,11 @@ namespace openpeer
                           );
         }
 
+        static Log::Params slog(const char *message)
+        {
+          return Log::Params(message, "core::CustomLogger");
+        }
+
       protected:
         RecursiveLock      mLock;
         SubsystemMap       mSubsystems;
@@ -250,6 +260,7 @@ namespace openpeer
     void ILogger::installCustomLogger(ILoggerDelegatePtr delegate)
     {
       internal::CustomLoggerPtr logger = internal::CustomLogger::singleton();
+      if (!logger) return;
       logger->installLogger(delegate);
     }
 
@@ -358,16 +369,15 @@ namespace openpeer
                       ULONG lineNumber
                       )
     {
-      LogPtr log = zsLib::Log::singleton();
-      log->log(
-               *(((Subsystem *)subsystemUniqueID)),
-               internal::severityToSeverity(severity),
-               internal::levelToLevel(level),
-               String(message),
-               function,
-               filePath,
-               lineNumber
-               );
+      zsLib::Log::log(
+                      *(((Subsystem *)subsystemUniqueID)),
+                      internal::severityToSeverity(severity),
+                      internal::levelToLevel(level),
+                      String(message),
+                      function,
+                      filePath,
+                      lineNumber
+                      );
     }
   }
 }

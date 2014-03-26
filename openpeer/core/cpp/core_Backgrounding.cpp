@@ -93,9 +93,43 @@ namespace openpeer
       //-----------------------------------------------------------------------
       BackgroundingPtr Backgrounding::singleton()
       {
-        AutoRecursiveLock lock(IHelper::getGlobalLock());
-        static BackgroundingPtr pThis = IBackgroundingFactory::singleton().createForBackgrounding();
-        return pThis;
+        static SingletonLazySharedPtr<Backgrounding> singleton(IBackgroundingFactory::singleton().createForBackgrounding());
+        BackgroundingPtr result = singleton.singleton();
+        if (!result) {
+          ZS_LOG_WARNING(Detail, slog("singleton gone"))
+        }
+        return result;
+      }
+
+      //-----------------------------------------------------------------------
+      Backgrounding::QueryPtr Backgrounding::createDeadQuery(IBackgroundingCompletionDelegatePtr inReadyDelegate)
+      {
+        ZS_LOG_WARNING(Detail, slog("creating dead query") + ZS_PARAM("delegate", (bool)inReadyDelegate))
+
+        QueryPtr query = Query::create();
+
+        if (inReadyDelegate) {
+          core::IBackgroundingCompletionDelegatePtr delegate = core::IBackgroundingCompletionDelegateProxy::createWeak(IStackForInternal::queueApplication(), inReadyDelegate);
+
+          try {
+            delegate->onBackgroundingReady(query);
+          } catch(core::IBackgroundingCompletionDelegateProxy::Exceptions::DelegateGone &) {
+            ZS_LOG_WARNING(Detail, slog("delegate gone"))
+          }
+        }
+
+        return query;
+      }
+      
+      //-----------------------------------------------------------------------
+      Backgrounding::SubscriptionPtr Backgrounding::subscribe(
+                                                              core::IBackgroundingDelegatePtr inDelegate,
+                                                              ULONG phase
+                                                              )
+      {
+        SubscriptionPtr subscription = Subscription::create(core::IBackgroundingDelegateProxy::createWeak(IStackForInternal::queueApplication(), inDelegate));
+        subscription->subscribe(services::IBackgrounding::subscribe(subscription, phase));
+        return subscription;
       }
 
       //-----------------------------------------------------------------------
@@ -110,9 +144,7 @@ namespace openpeer
       ElementPtr Backgrounding::toDebug(BackgroundingPtr backgrounding)
       {
         if (!backgrounding) return ElementPtr();
-
-        BackgroundingPtr pThis = Backgrounding::convert(backgrounding);
-        return pThis->toDebug();
+        return backgrounding->toDebug();
       }
 
       //-----------------------------------------------------------------------
@@ -162,9 +194,15 @@ namespace openpeer
       //-----------------------------------------------------------------------
       Log::Params Backgrounding::log(const char *message) const
       {
-        ElementPtr objectEl = Element::create("services::Backgrounding");
+        ElementPtr objectEl = Element::create("core::Backgrounding");
         IHelper::debugAppend(objectEl, "id", mID);
         return Log::Params(message, objectEl);
+      }
+
+      //-----------------------------------------------------------------------
+      Log::Params Backgrounding::slog(const char *message)
+      {
+        return Log::Params(message, "core::Backgrounding");
       }
 
       //-----------------------------------------------------------------------
@@ -187,28 +225,16 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       #pragma mark
-      #pragma mark Backgrounding::Query
-      #pragma mark
-
-      //-----------------------------------------------------------------------
-      Backgrounding::QueryPtr Backgrounding::Query::create()
-      {
-        return QueryPtr(new Query());
-      }
-
-      //-----------------------------------------------------------------------
-      //-----------------------------------------------------------------------
-      //-----------------------------------------------------------------------
-      //-----------------------------------------------------------------------
-      #pragma mark
       #pragma mark Backgrounding::Completion
       #pragma mark
 
       //-----------------------------------------------------------------------
       Backgrounding::Completion::Completion(
+                                            IMessageQueuePtr queue,
                                             QueryPtr query,
-                                            IBackgroundingCompletionDelegatePtr delegate
+                                            core::IBackgroundingCompletionDelegatePtr delegate
                                             ) :
+        MessageQueueAssociator(queue),
         mQuery(query),
         mDelegate(delegate)
       {
@@ -217,10 +243,10 @@ namespace openpeer
       //-----------------------------------------------------------------------
       Backgrounding::CompletionPtr Backgrounding::Completion::create(
                                                                      QueryPtr query,
-                                                                     IBackgroundingCompletionDelegatePtr delegate
+                                                                     core::IBackgroundingCompletionDelegatePtr delegate
                                                                      )
       {
-        CompletionPtr pThis = CompletionPtr(new Completion(query, delegate));
+        CompletionPtr pThis = CompletionPtr(new Completion(IStackForInternal::queueCore(), query, delegate));
         pThis->mThis = pThis;
         return pThis;
       }
@@ -239,11 +265,141 @@ namespace openpeer
         try {
           mDelegate->onBackgroundingReady(mQuery);
         } catch(IBackgroundingCompletionDelegateProxy::Exceptions::DelegateGone &) {
+          ZS_LOG_WARNING(Detail, log("delegate gone"))
         }
 
         mQuery.reset();
         mDelegate.reset();
         mThis.reset();
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark Backgrounding::Completion => (internal)
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      Log::Params Backgrounding::Completion::log(const char *message) const
+      {
+        ElementPtr objectEl = Element::create("core::Backgrounding::Completion");
+        IHelper::debugAppend(objectEl, "id", mID);
+        return Log::Params(message, objectEl);
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark Backgrounding::Subscription
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      Backgrounding::Subscription::Subscription(
+                                                IMessageQueuePtr queue,
+                                                core::IBackgroundingDelegatePtr delegate
+                                                ) :
+        MessageQueueAssociator(queue),
+        mDelegate(delegate)
+      {
+      }
+
+      //-----------------------------------------------------------------------
+      Backgrounding::SubscriptionPtr Backgrounding::Subscription::create(core::IBackgroundingDelegatePtr delegate)
+      {
+        SubscriptionPtr pThis(new Subscription(IStackForInternal::queueCore(), delegate));
+        pThis->mThisWeak = pThis;
+        return pThis;
+      }
+
+      //-----------------------------------------------------------------------
+      void Backgrounding::Subscription::subscribe(services::IBackgroundingSubscriptionPtr subscription)
+      {
+        mSubscription = subscription;
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark Backgrounding::Subscription => IBackgroundingSubscription
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      void Backgrounding::Subscription::cancel()
+      {
+        mSubscription->cancel();
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark Backgrounding::Subscription => IBackgroundingSubscription
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      void Backgrounding::Subscription::onBackgroundingGoingToBackground(
+                                                                         services::IBackgroundingSubscriptionPtr subscription,
+                                                                         services::IBackgroundingNotifierPtr notifier
+                                                                         )
+      {
+        try {
+          mDelegate->onBackgroundingGoingToBackground(mThisWeak.lock(), Notifier::create(notifier));
+        } catch(core::IBackgroundingDelegateProxy::Exceptions::DelegateGone &) {
+          ZS_LOG_WARNING(Detail, log("delegate gone"))
+        }
+      }
+
+      //-----------------------------------------------------------------------
+      void Backgrounding::Subscription::onBackgroundingGoingToBackgroundNow(services::IBackgroundingSubscriptionPtr subscription)
+      {
+        try {
+          mDelegate->onBackgroundingGoingToBackgroundNow(mThisWeak.lock());
+        } catch(core::IBackgroundingDelegateProxy::Exceptions::DelegateGone &) {
+          ZS_LOG_WARNING(Detail, log("delegate gone"))
+        }
+      }
+
+      //-----------------------------------------------------------------------
+      void Backgrounding::Subscription::onBackgroundingReturningFromBackground(services::IBackgroundingSubscriptionPtr subscription)
+      {
+        try {
+          mDelegate->onBackgroundingReturningFromBackground(mThisWeak.lock());
+        } catch(core::IBackgroundingDelegateProxy::Exceptions::DelegateGone &) {
+          ZS_LOG_WARNING(Detail, log("delegate gone"))
+        }
+      }
+
+      //-----------------------------------------------------------------------
+      void Backgrounding::Subscription::onBackgroundingApplicationWillQuit(services::IBackgroundingSubscriptionPtr subscription)
+      {
+        try {
+          mDelegate->onBackgroundingApplicationWillQuit(mThisWeak.lock());
+        } catch(core::IBackgroundingDelegateProxy::Exceptions::DelegateGone &) {
+          ZS_LOG_WARNING(Detail, log("delegate gone"))
+        }
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark Backgrounding::Subscription => (internal)
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      Log::Params Backgrounding::Subscription::log(const char *message) const
+      {
+        ElementPtr objectEl = Element::create("core::Backgrounding::Subscription");
+        IHelper::debugAppend(objectEl, "id", mID);
+        return Log::Params(message, objectEl);
       }
 
     }
@@ -265,20 +421,32 @@ namespace openpeer
     //-------------------------------------------------------------------------
     IBackgroundingQueryPtr IBackgrounding::notifyGoingToBackground(IBackgroundingCompletionDelegatePtr readyDelegate)
     {
-      return internal::Backgrounding::singleton()->notifyGoingToBackground(readyDelegate);
+      internal::BackgroundingPtr singleton = internal::Backgrounding::singleton();
+      if (!singleton) return internal::Backgrounding::createDeadQuery(readyDelegate);
+      return singleton->notifyGoingToBackground(readyDelegate);
     }
 
     //-------------------------------------------------------------------------
     void IBackgrounding::notifyGoingToBackgroundNow()
     {
-      return internal::Backgrounding::singleton()->notifyGoingToBackgroundNow();
+      internal::BackgroundingPtr singleton = internal::Backgrounding::singleton();
+      singleton->notifyGoingToBackgroundNow();
     }
 
     //-------------------------------------------------------------------------
     void IBackgrounding::notifyReturningFromBackground()
     {
-      return internal::Backgrounding::singleton()->notifyReturningFromBackground();
+      internal::BackgroundingPtr singleton = internal::Backgrounding::singleton();
+      singleton->notifyReturningFromBackground();
+    }
+
+    //-------------------------------------------------------------------------
+    IBackgroundingSubscriptionPtr IBackgrounding::subscribe(
+                                                            IBackgroundingDelegatePtr delegate,
+                                                            ULONG phase
+                                                            )
+    {
+      return internal::Backgrounding::subscribe(delegate, phase);
     }
   }
 }
-

@@ -41,10 +41,14 @@
 #include <openpeer/services/IHelper.h>
 #include <openpeer/services/ILogger.h>
 #include <openpeer/services/ISettings.h>
+#include <openpeer/services/IMessageQueueManager.h>
 
 #include <zsLib/helpers.h>
 #include <zsLib/MessageQueueThread.h>
 #include <zsLib/Socket.h>
+
+#define OPENPEER_CORE_STACK_CORE_THREAD_QUEUE_NAME  "org.openpeer.core.coreThread"
+#define OPENPEER_CORE_STACK_MEDIA_THREAD_QUEUE_NAME "org.openpeer.core.mediaThread"
 
 
 namespace openpeer { namespace core { ZS_DECLARE_SUBSYSTEM(openpeer_core) } }
@@ -72,6 +76,7 @@ namespace openpeer
   namespace core
   {
     using services::IHelper;
+    using services::IMessageQueueManager;
 
     //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------
@@ -104,11 +109,6 @@ namespace openpeer
       #pragma mark (helpers)
       #pragma mark
 
-      static Log::Params slog(const char *message)
-      {
-        return Log::Params(message, "core::Stack");
-      }
-      
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -219,12 +219,7 @@ namespace openpeer
         //---------------------------------------------------------------------
         virtual void post(IMessageQueueMessagePtr message)
         {
-          MessageQueuePtr queue;
-          {
-            AutoLock lock(mLock);
-            queue = mQueue;
-          }
-          queue->post(message);
+          mQueue->post(message);
         }
 
         //---------------------------------------------------------------------
@@ -238,16 +233,25 @@ namespace openpeer
         virtual void waitForShutdown()
         {
           IStackMessageQueueDelegatePtr delegate;
-          MessageQueuePtr queue;
 
           {
             AutoLock lock(mLock);
             delegate = mDelegate;
-            queue = mQueue;
 
             mDelegate.reset();
-            mQueue.reset();
           }
+        }
+
+        //---------------------------------------------------------------------
+        virtual void setThreadPriority(zsLib::ThreadPriorities priority)
+        {
+          // no-op
+        }
+
+        //---------------------------------------------------------------------
+        virtual void processMessagesFromThread()
+        {
+          mQueue->process();
         }
 
         //---------------------------------------------------------------------
@@ -258,18 +262,16 @@ namespace openpeer
             AutoLock lock(mLock);
             delegate = mDelegate;
           }
+
+          ZS_THROW_CUSTOM_MSG_IF(IMessageQueue::Exceptions::MessageQueueGone, !delegate, "message posted to message queue after queue was deleted.")
+
           delegate->onStackMessageQueueWakeUpCustomThreadAndProcessOnCustomThread();
         }
 
         //---------------------------------------------------------------------
         void processMessage()
         {
-          MessageQueuePtr queue;
-          {
-            AutoLock lock(mLock);
-            queue = mQueue;
-          }
-          queue->processOnlyOneMessage();
+          mQueue->processOnlyOneMessage();
         }
 
       protected:
@@ -291,43 +293,67 @@ namespace openpeer
       //-----------------------------------------------------------------------
       IMessageQueuePtr IStackForInternal::queueApplication()
       {
-        return (Stack::singleton())->getQueueApplication();
+        StackPtr singleton = Stack::singleton();
+        if (!singleton) {
+          return services::IMessageQueueManager::getMessageQueueForGUIThread();
+        }
+        return singleton->getQueueApplication();
       }
 
       //-----------------------------------------------------------------------
       IMessageQueuePtr IStackForInternal::queueCore()
       {
-        return (Stack::singleton())->getQueueCore();
+        StackPtr singleton = Stack::singleton();
+        if (!singleton) {
+          return services::IMessageQueueManager::getMessageQueue(OPENPEER_CORE_STACK_CORE_THREAD_QUEUE_NAME);
+        }
+        return singleton->getQueueCore();
       }
 
       //-----------------------------------------------------------------------
       IMessageQueuePtr IStackForInternal::queueMedia()
       {
-        return (Stack::singleton())->getQueueMedia();
+        StackPtr singleton = Stack::singleton();
+        if (!singleton) {
+          return services::IMessageQueueManager::getMessageQueue(OPENPEER_CORE_STACK_MEDIA_THREAD_QUEUE_NAME);
+        }
+        return singleton->getQueueMedia();
       }
 
       //-----------------------------------------------------------------------
       IMessageQueuePtr IStackForInternal::queueServices()
       {
-        return (Stack::singleton())->getQueueServices();
+        StackPtr singleton = Stack::singleton();
+        if (!singleton) {
+          return services::IHelper::getServiceQueue();
+        }
+        return singleton->getQueueServices();
       }
 
       //-----------------------------------------------------------------------
       IMessageQueuePtr IStackForInternal::queueKeyGeneration()
       {
-        return (Stack::singleton())->getQueueKeyGeneration();
+        StackPtr singleton = Stack::singleton();
+        if (!singleton) {
+          return stack::IStack::getKeyGenerationQueue();
+        }
+        return singleton->getQueueKeyGeneration();
       }
 
       //-----------------------------------------------------------------------
       IMediaEngineDelegatePtr IStackForInternal::mediaEngineDelegate()
       {
-        return (Stack::singleton())->getMediaEngineDelegate();
+        StackPtr singleton = Stack::singleton();
+        if (!singleton) return IMediaEngineDelegatePtr();
+        return singleton->getMediaEngineDelegate();
       }
 
       //-----------------------------------------------------------------------
       void IStackForInternal::finalShutdown()
       {
-        return (Stack::singleton())->finalShutdown();
+        StackPtr singleton = Stack::singleton();
+        if (!singleton) return;
+        return singleton->finalShutdown();
       }
 
       //-----------------------------------------------------------------------
@@ -369,8 +395,12 @@ namespace openpeer
       //-----------------------------------------------------------------------
       StackPtr Stack::singleton()
       {
-        static StackPtr singleton = Stack::create();
-        return singleton;
+        static SingletonLazySharedPtr<Stack> singleton(create());
+        StackPtr result = singleton.singleton();
+        if (!result) {
+          ZS_LOG_WARNING(Detail, slog("singleton gone"))
+        }
+        return result;
       }
 
       //-----------------------------------------------------------------------
@@ -379,7 +409,15 @@ namespace openpeer
                         IMediaEngineDelegatePtr mediaEngineDelegate
                         )
       {
+        services::IHelper::setSocketThreadPriority();
+        services::IHelper::setTimerThreadPriority();
+
         AutoRecursiveLock lock(mLock);
+
+        ISettingsForStack::applyDefaultsIfNoDelegatePresent();
+
+        IMessageQueueManager::registerMessageQueueThreadPriority(OPENPEER_CORE_STACK_CORE_THREAD_QUEUE_NAME, zsLib::threadPriorityFromString(services::ISettings::getString(OPENPEER_CORE_SETTING_STACK_CORE_THREAD_PRIORITY)));
+        IMessageQueueManager::registerMessageQueueThreadPriority(OPENPEER_CORE_STACK_MEDIA_THREAD_QUEUE_NAME, zsLib::threadPriorityFromString(services::ISettings::getString(OPENPEER_CORE_SETTING_STACK_MEDIA_THREAD_PRIORITY)));
 
         makeReady();
 
@@ -392,15 +430,13 @@ namespace openpeer
           UseMediaEngine::setup(mMediaEngineDelegate);
         }
 
-        ISettingsForStack::applyDefaultsIfNoDelegatePresent();
-
         String authorizedAppId = services::ISettings::getString(OPENPEER_COMMON_SETTING_APPLICATION_AUTHORIZATION_ID);
 
         if (!isAuthorizedApplicationIDExpiryWindowStillValid(authorizedAppId, Seconds(1))) {
           ZS_LOG_WARNING(Basic, slog("application id is not valid") + ZS_PARAM("authorized application id", authorizedAppId))
         }
 
-        stack::IStack::setup(mApplicationThreadQueue, mCoreThreadQueue, mServicesThreadQueue, mKeyGenerationThreadQueue);
+        stack::IStack::setup(queueApplication());
       }
 
       //-----------------------------------------------------------------------
@@ -408,7 +444,7 @@ namespace openpeer
       {
         AutoRecursiveLock lock(mLock);
 
-        if (!mApplicationThreadQueue) {
+        if (!mApplicationQueue) {
           // already shutdown...
           return;
         }
@@ -437,6 +473,11 @@ namespace openpeer
 
         String fakeDomain = String(applicationID) + ".com";
 
+        String splitChar = services::ISettings::getString(OPENPEER_CORE_SETTING_STACK_AUTHORIZED_APPLICATION_ID_SPLIT_CHAR);
+        if (splitChar.isEmpty()) {
+          splitChar = ":";
+        }
+
         if (!services::IHelper::isValidDomain(fakeDomain)) {
           // if you are hitting this it's because your app ID value was set wrong
           ZS_LOG_WARNING(Basic, slog("illegal application ID value") + ZS_PARAM("application ID", applicationID))
@@ -447,11 +488,11 @@ namespace openpeer
         String random = services::IHelper::randomString(20);
         String time = services::IHelper::timeToString(expires);
 
-        String merged = appID + "-" + random + "-" + time;
+        String merged = appID + splitChar + random + splitChar + time;
 
         String hash = services::IHelper::convertToHex(*services::IHelper::hmac(*services::IHelper::convertToBuffer(applicationIDSharedSecret), merged));
 
-        String final = merged + "-" + hash;
+        String final = merged + splitChar + hash;
 
         ZS_LOG_WARNING(Basic, slog("method should only be called during development") + ZS_PARAM("authorized application ID", final))
 
@@ -470,8 +511,15 @@ namespace openpeer
           *outRemainingDurationAvailable = Seconds(0);
         }
 
+        String splitChar = services::ISettings::getString(OPENPEER_CORE_SETTING_STACK_AUTHORIZED_APPLICATION_ID_SPLIT_CHAR);
+        if (splitChar.isEmpty()) {
+          splitChar = ":";
+        }
+
+        char splitter = *splitChar.c_str();
+
         IHelper::SplitMap split;
-        IHelper::split(authorizedApplicationID, split, '-');
+        IHelper::split(authorizedApplicationID, split, splitter);
 
         if (split.size() < 3) {
           ZS_LOG_WARNING(Detail, slog("authorized application id is not in a valid format") + ZS_PARAM("authorized application id", authorizedApplicationID))
@@ -525,7 +573,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Stack::interceptProcessing(IStackMessageQueueDelegatePtr delegate)
       {
-        ZS_THROW_INVALID_USAGE_IF(mApplicationThreadQueue)
+        ZS_THROW_INVALID_USAGE_IF(mApplicationQueue)
         mStackMessageQueueDelegate = delegate;
       }
 
@@ -535,7 +583,7 @@ namespace openpeer
         InterceptApplicationThreadPtr thread;
         {
           AutoRecursiveLock lock(mLock);
-          thread = dynamic_pointer_cast<InterceptApplicationThread>(mApplicationThreadQueue);
+          thread = dynamic_pointer_cast<InterceptApplicationThread>(mApplicationQueue);
           ZS_THROW_INVALID_USAGE_IF(!thread)  // you can only call this method if you specified a delegate upon setup and have not already finalized the shutdown
         }
 
@@ -559,13 +607,7 @@ namespace openpeer
 
         ZS_THROW_BAD_STATE_IF(!mShutdownCheckAgainDelegate)
 
-        IMessageQueue::size_type total = 0;
-
-        total = mApplicationThreadQueue->getTotalUnprocessedMessages() +
-                mCoreThreadQueue->getTotalUnprocessedMessages() +
-                mMediaThreadQueue->getTotalUnprocessedMessages() +
-                mServicesThreadQueue->getTotalUnprocessedMessages() +
-                mKeyGenerationThreadQueue->getTotalUnprocessedMessages();
+        size_t total = IMessageQueueManager::getTotalUnprocessedMessages();
 
         if (total > 0) {
           mShutdownCheckAgainDelegate->onShutdownCheckAgain();
@@ -576,11 +618,7 @@ namespace openpeer
         mMediaEngineDelegate.reset();
 
         // cleaning the delegates could cause more activity to start
-        total = mApplicationThreadQueue->getTotalUnprocessedMessages() +
-                mCoreThreadQueue->getTotalUnprocessedMessages() +
-                mMediaThreadQueue->getTotalUnprocessedMessages() +
-                mServicesThreadQueue->getTotalUnprocessedMessages() +
-                mKeyGenerationThreadQueue->getTotalUnprocessedMessages();
+        total = IMessageQueueManager::getTotalUnprocessedMessages();
 
         if (total > 0) {
           mShutdownCheckAgainDelegate->onShutdownCheckAgain();
@@ -600,9 +638,7 @@ namespace openpeer
         services::ILogger::uninstallTelnetLogger();
 
         // at this point all proxies to delegates should be completely destroyed - if they are not then someone forgot to do some clean-up!
-        ULONG totalProxiesCreated = zsLib::proxyGetTotalConstructed();
         zsLib::proxyDump();
-        ZS_THROW_BAD_STATE_IF(totalProxiesCreated > 0)  // DO NOT COMMENT THIS LINE AS A SOLUTION INSTEAD OF FINDING OUT WHERE YOU DID NOT SHUTDOWN/CLEANUP PROPERLY
       }
 
       //-----------------------------------------------------------------------
@@ -614,38 +650,49 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      IMessageQueuePtr Stack::getQueueApplication() const
+      IMessageQueuePtr Stack::getQueueApplication()
       {
         AutoRecursiveLock lock(mLock);
-        return mApplicationThreadQueue;
+        if (!mApplicationQueue) {
+          mApplicationQueue = IMessageQueueManager::getMessageQueueForGUIThread();
+        }
+        return mApplicationQueue;
       }
 
       //-----------------------------------------------------------------------
-      IMessageQueuePtr Stack::getQueueCore() const
+      IMessageQueuePtr Stack::getQueueCore()
       {
         AutoRecursiveLock lock(mLock);
-        return mCoreThreadQueue;
+        ZS_THROW_INVALID_USAGE_IF(!mApplicationQueue) // set-up was not called
+        if (!mCoreQueue) {
+          mCoreQueue = IMessageQueueManager::getMessageQueue(OPENPEER_CORE_STACK_CORE_THREAD_QUEUE_NAME);
+        }
+        return mCoreQueue;
       }
 
       //-----------------------------------------------------------------------
-      IMessageQueuePtr Stack::getQueueMedia() const
+      IMessageQueuePtr Stack::getQueueMedia()
       {
         AutoRecursiveLock lock(mLock);
-        return mMediaThreadQueue;
+        ZS_THROW_INVALID_USAGE_IF(!mApplicationQueue) // set-up was not called
+        if (!mMediaQueue) {
+          mMediaQueue = IMessageQueueManager::getMessageQueue(OPENPEER_CORE_STACK_MEDIA_THREAD_QUEUE_NAME);
+        }
+        return mMediaQueue;
       }
 
       //-----------------------------------------------------------------------
       IMessageQueuePtr Stack::getQueueServices() const
       {
         AutoRecursiveLock lock(mLock);
-        return mServicesThreadQueue;
+        return services::IHelper::getServiceQueue();
       }
 
       //-----------------------------------------------------------------------
       IMessageQueuePtr Stack::getQueueKeyGeneration() const
       {
         AutoRecursiveLock lock(mLock);
-        return mKeyGenerationThreadQueue;
+        return stack::IStack::getKeyGenerationQueue();
       }
 
       //-----------------------------------------------------------------------
@@ -667,27 +714,9 @@ namespace openpeer
 
         {
           AutoRecursiveLock lock(mLock);
-          applicationThread = mApplicationThreadQueue;
-          coreThread = mCoreThreadQueue;
-          mediaThread = mMediaThreadQueue;
-          servicesThread = mServicesThreadQueue;
-          stackMessage = mStackMessageQueueDelegate;
-          keyGenerationThread = mKeyGenerationThreadQueue;
-        }
-
-        applicationThread->waitForShutdown();
-        coreThread->waitForShutdown();
-        mediaThread->waitForShutdown();
-        servicesThread->waitForShutdown();
-        keyGenerationThread->waitForShutdown();
-
-        {
-          AutoRecursiveLock lock(mLock);
-          mApplicationThreadQueue.reset();
-          mCoreThreadQueue.reset();
-          mMediaThreadQueue.reset();
-          mServicesThreadQueue.reset();
-          mKeyGenerationThreadQueue.reset();
+          mApplicationQueue.reset();
+          mCoreQueue.reset();
+          mMediaQueue.reset();
           mStackMessageQueueDelegate.reset();
         }
       }
@@ -703,20 +732,22 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Stack::makeReady()
       {
-        if (mCoreThreadQueue) return;
+        if (mApplicationQueue) return;
 
         Socket::ignoreSIGPIPEOnThisThread();
 
-        mCoreThreadQueue = MessageQueueThread::createBasic("org.openpeer.core.mainThread");
-        mMediaThreadQueue = MessageQueueThread::createBasic("org.openpeer.core.mediaThread", zsLib::ThreadPriority_RealtimePriority);
-        mServicesThreadQueue = MessageQueueThread::createBasic("org.openpeer.core.servicesThread", zsLib::ThreadPriority_HighPriority);
-        mKeyGenerationThreadQueue = MessageQueueThread::createBasic("org.openpeer.core.keyGenerationThread", zsLib::ThreadPriority_LowPriority);
         if (!mStackMessageQueueDelegate) {
-          mApplicationThreadQueue = MessageQueueThread::singletonUsingCurrentGUIThreadsMessageQueue();
+          getQueueApplication();
         } else {
-          mApplicationThreadQueue = InterceptApplicationThread::create(mStackMessageQueueDelegate);
+          mApplicationQueue = InterceptApplicationThread::create(mStackMessageQueueDelegate);
           mStackMessageQueueDelegate.reset();
         }
+      }
+
+      //-----------------------------------------------------------------------
+      Log::Params Stack::slog(const char *message)
+      {
+        return Log::Params(message, "core::Stack");
       }
     }
 

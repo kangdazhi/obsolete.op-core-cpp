@@ -69,7 +69,7 @@ namespace openpeer
 
       static IConversationThreadPtr create(
                                            IAccountPtr account,
-                                           ElementPtr profileBundleEl
+                                           const IdentityContactList &identityContacts
                                            );
 
       static ConversationThreadListPtr getConversationThreads(IAccountPtr account);
@@ -87,7 +87,7 @@ namespace openpeer
 
       virtual ContactListPtr getContacts() const = 0;
 
-      virtual ElementPtr getProfileBundle(IContactPtr contact) const = 0;
+      virtual IdentityContactListPtr getIdentityContactList(IContactPtr contact) const = 0;
       virtual ContactStates getContactState(IContactPtr contact) const = 0;
 
       virtual void addContacts(const ContactProfileInfoList &contactProfileInfos) = 0;
@@ -97,7 +97,8 @@ namespace openpeer
       virtual void sendMessage(
                                const char *messageID,
                                const char *messageType,
-                               const char *message
+                               const char *message,
+                               bool signMessage
                                ) = 0;
 
       // returns false if the message ID is not known

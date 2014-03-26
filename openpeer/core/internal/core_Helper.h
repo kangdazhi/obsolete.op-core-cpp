@@ -69,6 +69,11 @@ namespace openpeer
                             const IdentityInfo &source,
                             IdentityContact &outContact
                             );
+
+        static void convert(
+                            const IdentityContact &source,
+                            IdentityInfo &outContact
+                            );
       };
     }
   }

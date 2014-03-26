@@ -55,6 +55,7 @@ namespace openpeer
         #pragma mark
 
         class PeerLocation : public MessageQueueAssociator,
+                             public SharedRecursiveLock,
                              public IConversationThreadDocumentFetcherDelegate
         {
         public:
@@ -67,6 +68,9 @@ namespace openpeer
           typedef std::map<CallID, UseCallPtr> CallHandlers;
 
           friend class PeerContact;
+
+          typedef String ContactURI;
+          typedef std::map<ContactURI, bool> ContactFetchedMap;
 
 
         protected:
@@ -154,8 +158,6 @@ namespace openpeer
           bool isShutdown() {return mShutdown;}
 
         protected:
-          RecursiveLock &getLock() const;
-
           virtual ElementPtr toDebug() const;
 
           void cancel();
@@ -167,8 +169,7 @@ namespace openpeer
           #pragma mark ConversationThreadHost::PeerLocation => (data)
           #pragma mark
 
-          PUID mID;
-          mutable RecursiveLock mBogusLock;
+          AutoPUID mID;
           PeerLocationWeakPtr mThisWeak;
           PeerContactWeakPtr mOuter;
           bool mShutdown;
@@ -182,9 +183,11 @@ namespace openpeer
           MessageDeliveryStatesMap mMessageDeliveryStates;
 
           CallHandlers mIncomingCallHandlers;
-        };
-#if 0
 
+          ContactFetchedMap mPreviouslyFetchedContacts;
+        };
+
+#if 0
       }
     }
   }

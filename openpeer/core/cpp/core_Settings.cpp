@@ -31,6 +31,8 @@
 
 #include <openpeer/core/internal/core_Settings.h>
 
+#include <openpeer/core/internal/core.h>
+
 #include <openpeer/services/IHelper.h>
 
 #include <zsLib/XML.h>
@@ -56,7 +58,9 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ISettingsForStack::applyDefaultsIfNoDelegatePresent()
       {
-        Settings::singleton()->applyDefaultsIfNoDelegatePresent();
+        SettingsPtr singleton = Settings::singleton();
+        if (!singleton) return;
+        singleton->applyDefaultsIfNoDelegatePresent();
       }
 
       //-----------------------------------------------------------------------
@@ -97,8 +101,12 @@ namespace openpeer
       //-----------------------------------------------------------------------
       SettingsPtr Settings::singleton()
       {
-        static SettingsPtr singleton = Settings::create();
-        return singleton;
+        static SingletonLazySharedPtr<Settings> singleton(Settings::create());
+        SettingsPtr result = singleton.singleton();
+        if (!result) {
+          ZS_LOG_WARNING(Detail, slog("singleton gone"))
+        }
+        return result;
       }
       
       //-----------------------------------------------------------------------
@@ -129,6 +137,11 @@ namespace openpeer
           AutoRecursiveLock lock(mLock);
           get(mAppliedDefaults) = true;
         }
+
+        setUInt(OPENPEER_CORE_SETTING_ACCOUNT_BACKGROUNDING_PHASE, 1);
+
+        setString(OPENPEER_CORE_SETTING_STACK_CORE_THREAD_PRIORITY, "normal");
+        setString(OPENPEER_CORE_SETTING_STACK_MEDIA_THREAD_PRIORITY, "real-time");
 
         stack::ISettings::applyDefaults();
       }
@@ -366,6 +379,12 @@ namespace openpeer
         return Log::Params(message, objectEl);
       }
 
+      //-----------------------------------------------------------------------
+      Log::Params Settings::slog(const char *message)
+      {
+        return Log::Params(message, "core::Settings");
+      }
+
     }
 
     //-------------------------------------------------------------------------
@@ -379,7 +398,9 @@ namespace openpeer
     //-------------------------------------------------------------------------
     void ISettings::setup(ISettingsDelegatePtr delegate)
     {
-      internal::Settings::singleton()->setup(delegate);
+      internal::SettingsPtr singleton = internal::Settings::singleton();
+      if (!singleton) return;
+      singleton->setup(delegate);
     }
 
     //-------------------------------------------------------------------------
@@ -451,7 +472,9 @@ namespace openpeer
     //-------------------------------------------------------------------------
     void ISettings::applyDefaults()
     {
-      internal::Settings::singleton()->applyDefaults();
+      internal::SettingsPtr singleton = internal::Settings::singleton();
+      if (!singleton) return;
+      singleton->applyDefaults();
     }
     
   }

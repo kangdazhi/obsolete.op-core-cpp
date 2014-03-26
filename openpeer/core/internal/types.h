@@ -55,13 +55,17 @@ namespace openpeer
       using zsLib::AutoPUID;
       using zsLib::AutoBool;
       using zsLib::AutoLock;
-      using zsLib::AutoRecursiveLock;
       using zsLib::Lock;
-      using zsLib::RecursiveLock;
       using zsLib::Log;
       using zsLib::MessageQueueAssociator;
       using zsLib::Seconds;
       using zsLib::Socket;
+      using zsLib::PrivateGlobalLock;
+      using zsLib::Singleton;
+      using zsLib::SingletonLazySharedPtr;
+
+      ZS_DECLARE_TYPEDEF_PTR(zsLib::RecursiveLock, RecursiveLock)
+      ZS_DECLARE_TYPEDEF_PTR(zsLib::AutoRecursiveLock, AutoRecursiveLock)
 
       ZS_DECLARE_USING_PTR(zsLib, MessageQueue)
       ZS_DECLARE_USING_PTR(zsLib, IMessageQueue)
@@ -79,7 +83,6 @@ namespace openpeer
       using stack::Candidate;
       using stack::CandidateList;
 
-      ZS_DECLARE_USING_PTR(stack, AutoRecursiveLock)
       ZS_DECLARE_USING_PTR(stack, IBootstrappedNetwork)
       ZS_DECLARE_USING_PTR(stack, IBootstrappedNetworkDelegate)
       ZS_DECLARE_USING_PTR(stack, ILocation)
@@ -114,11 +117,16 @@ namespace openpeer
 
       ZS_DECLARE_USING_PTR(stack::message, IdentityInfo)
 
+      ZS_DECLARE_USING_PTR(services, IBackgrounding)
+      ZS_DECLARE_USING_PTR(services, IBackgroundingSubscription)
+      ZS_DECLARE_USING_PTR(services, IBackgroundingNotifier)
+
       ZS_DECLARE_USING_PTR(services, IICESocket)
       ZS_DECLARE_USING_PTR(services, IICESocketSession)
       ZS_DECLARE_USING_PTR(services, IICESocketSubscription)
       ZS_DECLARE_USING_PTR(services, IHTTP)
 
+      ZS_DECLARE_USING_PROXY(services, IBackgroundingDelegate)
       ZS_DECLARE_USING_PROXY(services, IICESocketDelegate)
       ZS_DECLARE_USING_PROXY(services, IICESocketSessionDelegate)
       ZS_DECLARE_USING_PROXY(services, IWakeDelegate)

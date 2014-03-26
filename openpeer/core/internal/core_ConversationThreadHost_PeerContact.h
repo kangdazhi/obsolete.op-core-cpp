@@ -54,7 +54,9 @@ namespace openpeer
         #pragma mark
 
         class PeerContact : public MessageQueueAssociator,
+                            public SharedRecursiveLock,
                             public IPeerSubscriptionDelegate,
+                            public IBackgroundingDelegate,
                             public IWakeDelegate,
                             public ITimerDelegate
         {
@@ -89,7 +91,7 @@ namespace openpeer
                       IMessageQueuePtr queue,
                       ConversationThreadHostPtr host,
                       UseContactPtr contact,
-                      ElementPtr profileBundleEl
+                      const IdentityContactList &identityContacts
                       );
 
           void init();
@@ -109,7 +111,7 @@ namespace openpeer
                                        IMessageQueuePtr queue,
                                        ConversationThreadHostPtr host,
                                        UseContactPtr contact,
-                                       ElementPtr profileBundleEL
+                                       const IdentityContactList &identityContacts
                                        );
 
           void notifyPublicationUpdated(
@@ -125,7 +127,7 @@ namespace openpeer
           void notifyPeerDisconnected(ILocationPtr peerLocation);
 
           UseContactPtr getContact() const;
-          const ElementPtr &getProfileBundle() const;
+          const IdentityContactList &getIdentityContacts() const;
 
           ContactStates getContactState() const;
 
@@ -169,10 +171,26 @@ namespace openpeer
 
           //-------------------------------------------------------------------
           #pragma mark
+          #pragma mark ConversationThreadHost::PeerContact => IBackgroundingDelegate
+          #pragma mark
+
+          virtual void onBackgroundingGoingToBackground(
+                                                        IBackgroundingSubscriptionPtr subscription,
+                                                        IBackgroundingNotifierPtr notifier
+                                                        );
+
+          virtual void onBackgroundingGoingToBackgroundNow(IBackgroundingSubscriptionPtr subscription);
+
+          virtual void onBackgroundingReturningFromBackground(IBackgroundingSubscriptionPtr subscription);
+
+          virtual void onBackgroundingApplicationWillQuit(IBackgroundingSubscriptionPtr subscription);
+
+          //-------------------------------------------------------------------
+          #pragma mark
           #pragma mark ConversationThreadHost::PeerContact => IWakeDelegate
           #pragma mark
 
-          virtual void onWake() {step();}
+          virtual void onWake();
 
           //-------------------------------------------------------------------
           #pragma mark
@@ -185,8 +203,6 @@ namespace openpeer
           #pragma mark
           #pragma mark ConversationThreadHost::PeerContact => friend ConversationThreadHost::PeerLocation
           #pragma mark
-
-          // (duplicate) RecursiveLock &getLock() const;
 
           ConversationThreadHostPtr getOuter() const;
           UseConversationThreadPtr getBaseThread() const;
@@ -227,7 +243,7 @@ namespace openpeer
 
             void setState(MessageDeliveryStates state);
 
-            bool shouldPush() const;
+            bool shouldPush(bool backgroundingNow) const;
 
           protected:
             PeerContactWeakPtr mOuter;
@@ -242,7 +258,6 @@ namespace openpeer
           #pragma mark ConversationThreadHost::PeerContact => (internal)
           #pragma mark
 
-          RecursiveLock &getLock() const;
           PUID getID() const {return mID;}
 
           Log::Params log(const char *message) const;
@@ -268,8 +283,7 @@ namespace openpeer
           #pragma mark ConversationThreadHost::PeerContact => (data)
           #pragma mark
 
-          PUID mID;
-          mutable RecursiveLock mBogusLock;
+          AutoPUID mID;
           PeerContactWeakPtr mThisWeak;
           PeerContactPtr mGracefulShutdownReference;
           ConversationThreadHostWeakPtr mOuter;
@@ -277,13 +291,19 @@ namespace openpeer
           PeerContactStates mCurrentState;
 
           UseContactPtr mContact;
-          ElementPtr mProfileBundleEl;
+          IdentityContactList mIdentityContacts;
+
+          IBackgroundingSubscriptionPtr mBackgroundingSubscription;
+          IBackgroundingNotifierPtr mBackgroundingNotifier;
+          AutoBool mBackgroundingNow;
 
           IPeerSubscriptionPtr mSlaveSubscription;
 
           PeerLocationMap mPeerLocations;
 
           MessageDeliveryStatesMap mMessageDeliveryStates;
+
+          TimerPtr mAutoFindTimer;
         };
 #if 0
 

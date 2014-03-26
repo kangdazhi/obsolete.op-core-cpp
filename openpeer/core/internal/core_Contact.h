@@ -81,10 +81,10 @@ namespace openpeer
 
         static ElementPtr toDebug(ForConversationThreadPtr contact);
 
-        static ForConversationThreadPtr createFromPeerFilePublic(
-                                                                 AccountPtr account,
-                                                                 IPeerFilePublicPtr peerFilePublic
-                                                                 );
+        static ForConversationThreadPtr createFromPeerURI(
+                                                          AccountPtr account,
+                                                          const char *peerURI
+                                                          );
 
         virtual String getPeerURI() const = 0;
         virtual IPeerPtr getPeer() const = 0;
@@ -161,7 +161,7 @@ namespace openpeer
         static ElementPtr toDebug(IContactPtr contact);
 
         static ContactPtr createFromPeerFilePublic(
-                                                   UseAccountPtr account,
+                                                   AccountPtr account,
                                                    IPeerFilePublicPtr peerFilePublic
                                                    );
 
@@ -184,7 +184,7 @@ namespace openpeer
         #pragma mark
 
         static ContactPtr createFromPeer(
-                                         UseAccountPtr account,
+                                         AccountPtr account,
                                          IPeerPtr peer
                                          );
 
@@ -231,7 +231,6 @@ namespace openpeer
 
         virtual ElementPtr toDebug() const;
 
-        RecursiveLock &getLock() const;
 
       protected:
         //---------------------------------------------------------------------
@@ -240,7 +239,6 @@ namespace openpeer
         #pragma mark
 
         AutoPUID mID;
-        mutable RecursiveLock mBogusLock;
         ContactWeakPtr mThisWeak;
 
         UseAccountWeakPtr mAccount;

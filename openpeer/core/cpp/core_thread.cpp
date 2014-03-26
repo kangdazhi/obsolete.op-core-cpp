@@ -213,6 +213,18 @@ namespace openpeer
         }
 
         //---------------------------------------------------------------------
+        static bool isMessageOrMessageBundle(ElementPtr element)
+        {
+          if ("messageBundle" == element->getValue()) {
+            return true;
+          }
+          if ("message" == element->getValue()) {
+            return true;
+          }
+          return false;
+        }
+
+        //---------------------------------------------------------------------
         //---------------------------------------------------------------------
         //---------------------------------------------------------------------
         //---------------------------------------------------------------------
@@ -264,8 +276,6 @@ namespace openpeer
                                    IPeerFilesPtr signer
                                    )
         {
-          ZS_THROW_INVALID_ARGUMENT_IF(!signer)
-
           MessagePtr pThis = MessagePtr(new Message);
           pThis->mThisWeak = pThis;
           pThis->mMessageID = string(messageID);
@@ -274,31 +284,18 @@ namespace openpeer
           pThis->mBody = string(body);
           pThis->mSent = sent;
 
-          // now its time to generate the XML
-          ElementPtr messageBundleEl = Element::create("messageBundle");
-          ElementPtr messageEl = createElement("message", messageID);
-          ElementPtr fromEl = createElement("from", fromPeerURI);
-          ElementPtr sentEl = createElementWithNumber("sent", services::IHelper::timeToString(sent));
-          ElementPtr mimeTypeEl = createElementWithText("mimeType", mimeType);
-          ElementPtr bodyEl = createElementWithTextAndJSONEncode("body", body);
+          if (signer) {
+            pThis->mBundleEl = pThis->constructBundleElement(signer);
+          }
 
-          messageBundleEl->adoptAsLastChild(messageEl);
-          messageEl->adoptAsLastChild(fromEl);
-          messageEl->adoptAsLastChild(sentEl);
-          messageEl->adoptAsLastChild(mimeTypeEl);
-          messageEl->adoptAsLastChild(bodyEl);
-
-          IPeerFilePrivatePtr privatePeer = signer->getPeerFilePrivate();
-          ZS_THROW_INVALID_ARGUMENT_IF(!privatePeer)
-
-          privatePeer->signElement(messageEl);
-
-          pThis->mBundleEl = messageBundleEl;
           return pThis;
         }
 
         //---------------------------------------------------------------------
-        MessagePtr Message::create(ElementPtr messageBundleEl)
+        MessagePtr Message::create(
+                                   UseAccountPtr account,
+                                   ElementPtr messageBundleEl
+                                   )
         {
           if (!messageBundleEl) return MessagePtr();
 
@@ -306,7 +303,7 @@ namespace openpeer
           pThis->mThisWeak = pThis;
 
           try {
-            ElementPtr messageEl = messageBundleEl->findFirstChildElementChecked("message");
+            ElementPtr messageEl = ("message" == messageBundleEl->getValue() ? messageBundleEl : messageBundleEl->findFirstChildElementChecked("message"));
             ElementPtr fromEl = messageEl->findFirstChildElementChecked("from");
             ElementPtr sentEl = messageEl->findFirstChildElementChecked("sent");
             ElementPtr mimeTypeEl = messageEl->findFirstChildElementChecked("mimeType");
@@ -317,9 +314,11 @@ namespace openpeer
             pThis->mMimeType = mimeTypeEl->getText();
             pThis->mBody = bodyEl->getTextDecoded();
             pThis->mSent = services::IHelper::stringToTime(sentEl->getText());
-            pThis->mBundleEl = messageBundleEl;
+            if ("message" != messageBundleEl->getValue()) {
+              pThis->mBundleEl = messageBundleEl;
+            }
           } catch (CheckFailed &) {
-            ZS_LOG_ERROR(Detail, pThis->log("message bundle XML parse element check failure"))
+            ZS_LOG_ERROR(Detail, pThis->log("message bundle parse element check failure"))
             return MessagePtr();
           }
 
@@ -340,6 +339,13 @@ namespace openpeer
         }
 
         //---------------------------------------------------------------------
+        ElementPtr Message::messageBundleElement() const
+        {
+          if (mBundleEl) return mBundleEl->clone()->toElement();
+          return constructBundleElement(IPeerFilesPtr());
+        }
+
+        //---------------------------------------------------------------------
         ElementPtr Message::toDebug() const
         {
           ElementPtr resultEl = Element::create("thread::Message");
@@ -352,6 +358,38 @@ namespace openpeer
           IHelper::debugAppend(resultEl, "sent", mSent);
 
           return resultEl;
+        }
+
+        //---------------------------------------------------------------------
+        ElementPtr Message::constructBundleElement(IPeerFilesPtr signer) const
+        {
+          // now its time to generate the XML
+          ElementPtr messageBundleEl = Element::create("messageBundle");
+          ElementPtr messageEl = createElement("message", mMessageID);
+          ElementPtr fromEl = createElement("from", mFromPeerURI);
+          ElementPtr sentEl = createElementWithNumber("sent", services::IHelper::timeToString(mSent));
+          ElementPtr mimeTypeEl = createElementWithText("mimeType", mMimeType);
+          ElementPtr bodyEl = createElementWithTextAndJSONEncode("body", mBody);
+
+          if (signer) {
+            messageBundleEl->adoptAsLastChild(messageEl);
+          }
+
+          messageEl->adoptAsLastChild(fromEl);
+          messageEl->adoptAsLastChild(sentEl);
+          messageEl->adoptAsLastChild(mimeTypeEl);
+          messageEl->adoptAsLastChild(bodyEl);
+
+          if (signer) {
+            IPeerFilePrivatePtr privatePeer = signer->getPeerFilePrivate();
+            ZS_THROW_INVALID_ARGUMENT_IF(!privatePeer)
+
+            privatePeer->signElement(messageEl);
+
+            return messageBundleEl;
+          }
+
+          return messageEl;
         }
 
         //---------------------------------------------------------------------
@@ -421,18 +459,6 @@ namespace openpeer
           pThis->mVersion = version;
           pThis->mReceipts = messageReceipts;
 
-          ElementPtr receiptsEl = Element::create("receipts");
-          receiptsEl->setAttribute("version", string(version));
-
-          for (MessageReceiptMap::const_iterator iter = messageReceipts.begin(); iter != messageReceipts.end(); ++iter)
-          {
-            const String &messageID = (*iter).first;
-            const Time &time = (*iter).second;
-            ElementPtr receiptEl = createElementWithNumber("receipt", messageID, services::IHelper::timeToString(time));
-            receiptsEl->adoptAsLastChild(receiptEl);
-          }
-
-          pThis->mReceiptsEl = receiptsEl;
           return pThis;
         }
 
@@ -479,7 +505,6 @@ namespace openpeer
           ElementPtr resultEl = Element::create("thread::MessageReceipts");
 
           IHelper::debugAppend(resultEl, "id", mID);
-          IHelper::debugAppend(resultEl, "receipts element", (bool)mReceiptsEl);
           IHelper::debugAppend(resultEl, "version", mVersion);
           IHelper::debugAppend(resultEl, "receipts", mReceipts.size());
 
@@ -492,6 +517,23 @@ namespace openpeer
           ElementPtr objectEl = Element::create("core::thread::MessageReceipts");
           IHelper::debugAppend(objectEl, "id", mID);
           return Log::Params(message, objectEl);
+        }
+
+        //---------------------------------------------------------------------
+        ElementPtr MessageReceipts::constructReceiptsElement() const
+        {
+          ElementPtr receiptsEl = Element::create("receipts");
+          receiptsEl->setAttribute("version", string(mVersion));
+
+          for (MessageReceiptMap::const_iterator iter = mReceipts.begin(); iter != mReceipts.end(); ++iter)
+          {
+            const String &messageID = (*iter).first;
+            const Time &time = (*iter).second;
+            ElementPtr receiptEl = createElementWithNumber("receipt", messageID, services::IHelper::timeToString(time));
+            receiptsEl->adoptAsLastChild(receiptEl);
+          }
+
+          return receiptsEl;
         }
 
         //---------------------------------------------------------------------
@@ -512,15 +554,80 @@ namespace openpeer
         //---------------------------------------------------------------------
         ThreadContactPtr ThreadContact::create(
                                                UseContactPtr contact,
-                                               ElementPtr profileBundleEl
+                                               const IdentityContactList &identityContacts
                                                )
         {
           ZS_THROW_INVALID_ARGUMENT_IF(!contact)
 
           ThreadContactPtr pThis(new ThreadContact);
           pThis->mContact = contact;
-          pThis->mProfileBundleEl = profileBundleEl;
+
+          IdentityContactList filtered;
+
+          for (IdentityContactList::const_iterator iter = identityContacts.begin(); iter != identityContacts.end(); ++iter)
+          {
+            const IdentityContact &sourceIdentityContact = (*iter);
+
+            IdentityContact identityContact;
+
+            identityContact.mIdentityURI = sourceIdentityContact.mIdentityURI;
+            identityContact.mIdentityProvider = sourceIdentityContact.mIdentityProvider;
+
+            identityContact.mName = sourceIdentityContact.mName;
+            identityContact.mProfileURL = sourceIdentityContact.mProfileURL;
+            identityContact.mVProfileURL = sourceIdentityContact.mVProfileURL;
+
+            identityContact.mAvatars = sourceIdentityContact.mAvatars;
+
+            identityContact.mStableID = sourceIdentityContact.mStableID;
+
+            identityContact.mPriority = sourceIdentityContact.mPriority;
+            identityContact.mWeight = sourceIdentityContact.mWeight;
+
+            identityContact.mLastUpdated = sourceIdentityContact.mLastUpdated;
+            identityContact.mExpires = sourceIdentityContact.mExpires;
+
+            filtered.push_back(identityContact);
+          }
+
+          pThis->mIdentityContacts = filtered;
           return pThis;
+        }
+
+        //---------------------------------------------------------------------
+        ThreadContactPtr ThreadContact::create(
+                                               UseAccountPtr account,
+                                               ElementPtr contactEl
+                                               )
+        {
+          String id = contactEl->getAttributeValue("id");
+
+          UseContactPtr contact = account->findContact(id);
+          if (!contact) {
+            contact = IContactForConversationThread::createFromPeerURI(Account::convert(account), id);
+            if (!contact) return ThreadContactPtr();
+          }
+
+          IdentityContactList identityContacts;
+
+          ElementPtr identitiesEl = contactEl->findFirstChildElement("identities");
+          if (identitiesEl) {
+            ElementPtr identityEl = identitiesEl->findFirstChildElement("identity");
+            while (identityEl) {
+
+              IdentityContact identityContact;
+              IdentityInfo identityInfo = IMessageHelper::createIdentity(identityEl);
+
+              Helper::convert(identityInfo, identityContact);
+              if (identityContact.hasData()) {
+                identityContacts.push_back(identityContact);
+              }
+
+              identityEl = identityEl->findNextSiblingElement("identity");
+            }
+          }
+
+          return ThreadContact::create(contact, identityContacts);
         }
 
         //---------------------------------------------------------------------
@@ -530,9 +637,39 @@ namespace openpeer
 
           IHelper::debugAppend(resultEl, "id", mID);
           IHelper::debugAppend(resultEl, UseContact::toDebug(mContact));
-          IHelper::debugAppend(resultEl, "profile bundle", (bool)mProfileBundleEl);
+          IHelper::debugAppend(resultEl, "identity contacts", mIdentityContacts.size());
 
           return resultEl;
+        }
+
+        //---------------------------------------------------------------------
+        ElementPtr ThreadContact::constructContactElement() const
+        {
+          ElementPtr contactEl = createElement("contact", mContact->getPeerURI());
+
+          if (mIdentityContacts.size() > 0) {
+            ElementPtr identitiesEl = Element::create("identities");
+
+            for (IdentityContactList::const_iterator iter = mIdentityContacts.begin(); iter != mIdentityContacts.end(); ++iter)
+            {
+              const IdentityContact &identityContact = (*iter);
+
+              IdentityInfo identityInfo;
+
+              Helper::convert(identityContact, identityInfo);
+
+              if (identityInfo.hasData()) {
+                ElementPtr identityEl = IMessageHelper::createElement(identityInfo);
+                identitiesEl->adoptAsLastChild(identityEl);
+              }
+            }
+
+            if (identitiesEl->hasChildren()) {
+              contactEl->adoptAsLastChild(identitiesEl);
+            }
+          }
+
+          return contactEl;
         }
 
         //---------------------------------------------------------------------
@@ -594,42 +731,17 @@ namespace openpeer
 
           for (ThreadContactMap::const_iterator iter = pThis->mContacts.begin(); iter != pThis->mContacts.end(); ++iter)
           {
-            const String &peerURI = (*iter).first;
             const ThreadContactPtr &contact = (*iter).second;
-            IPeerFilePublicPtr peerPublic = contact->contact()->getPeerFilePublic();
-            if (!peerPublic) {
-              ZS_LOG_ERROR(Detail, pThis->log("contact does not have a public peer file") + ZS_PARAM("contact URI", peerURI))
-              return ThreadContactsPtr();
-            }
 
-            ElementPtr contactEl = createElement("contact", peerURI);
-            ElementPtr peerEl = peerPublic->saveToElement();
-            ElementPtr profileBundleEl = contact->profileBundleElement();
-            contactEl->adoptAsLastChild(peerEl);
-            if (profileBundleEl) {
-              contactEl->adoptAsLastChild(profileBundleEl->clone()->toElement());
-            }
+            ElementPtr contactEl = contact->contactElement();
             contactsEl->adoptAsLastChild(contactEl);
           }
 
           for (ThreadContactMap::const_iterator iter = pThis->mAddContacts.begin(); iter != pThis->mAddContacts.end(); ++iter)
           {
-            const String &peerURI = (*iter).first;
             const ThreadContactPtr &contact = (*iter).second;
-            IPeerFilePublicPtr peerPublic = contact->contact()->getPeerFilePublic();
-            if (!peerPublic) {
-              ZS_LOG_ERROR(Detail, pThis->log("contact does not have a public peer file") + ZS_PARAM("peer URI", peerURI))
-              return ThreadContactsPtr();
-            }
 
-            ElementPtr contactEl = createElement("contact", peerURI);
-            contactEl->setAttribute("disposition", "add");
-            ElementPtr peerEl = peerPublic->saveToElement();
-            ElementPtr profileBundleEl = contact->profileBundleElement();
-            contactEl->adoptAsLastChild(peerEl);
-            if (profileBundleEl) {
-              contactEl->adoptAsLastChild(profileBundleEl);
-            }
+            ElementPtr contactEl = contact->contactElement();
             contactsEl->adoptAsLastChild(contactEl);
           }
 
@@ -681,25 +793,14 @@ namespace openpeer
                   goto next;
                 }
 
-                UseContactPtr contact = account->findContact(id);
-                if (!contact) {
-                  IPeerFilePublicPtr peerFilePublic = IPeerFilePublic::loadFromElement(contactEl->findFirstChildElementChecked("peer"));
-                  if (!peerFilePublic) return ThreadContactsPtr();
-
-                  contact = IContactForConversationThread::createFromPeerFilePublic(Account::convert(account), peerFilePublic);
-                  if (!contact) return ThreadContactsPtr();
+                ThreadContactPtr threadContact = ThreadContact::create(account, contactEl);
+                if (!threadContact) {
+                  ZS_LOG_WARNING(Detail, pThis->log("thread contact was not legal"))
+                  goto next;
                 }
 
-                ElementPtr profileBundleEl = contactEl->findFirstChildElement("profileBundle");
-                if (!profileBundleEl) {
-                  profileBundleEl = contactEl->findFirstChildElement("profile");
-                }
-                if (profileBundleEl) {
-                  // make sure we have our own private copy of the data
-                  profileBundleEl = profileBundleEl->clone()->toElement();
-                }
+                UseContactPtr contact = threadContact->contact();
 
-                ThreadContactPtr threadContact = ThreadContact::create(contact, profileBundleEl);
                 if (disposition == "add") {
                   pThis->mAddContacts[contact->getPeerURI()] = threadContact;
                   goto next;
@@ -711,7 +812,7 @@ namespace openpeer
               contactEl = contactEl->findNextSiblingElement("contact");
             }
           } catch(CheckFailed &) {
-            ZS_LOG_ERROR(Detail, pThis->log("contact XML element check parser failure"))
+            ZS_LOG_ERROR(Detail, pThis->log("contact element check parser failure"))
             return ThreadContactsPtr();
           } catch (Numeric<UINT>::ValueOutOfRange &) {
             ZS_LOG_ERROR(Detail, pThis->log("contact parser value out of range"))
@@ -1002,9 +1103,9 @@ namespace openpeer
               ElementPtr codecEl = createElement("codec", string(codec.mCodecID));
 
               ElementPtr nameEl = createElementWithText("name", codec.mName);
-              ElementPtr pTimeEl = createElementWithText("ptime", string(codec.mPTime));
-              ElementPtr rateEl = createElementWithText("rate", string(codec.mRate));
-              ElementPtr channelsEl = createElementWithText("channels", string(codec.mChannels));
+              ElementPtr pTimeEl = createElementWithNumber("ptime", string(codec.mPTime));
+              ElementPtr rateEl = createElementWithNumber("rate", string(codec.mRate));
+              ElementPtr channelsEl = createElementWithNumber("channels", string(codec.mChannels));
 
               codecEl->adoptAsLastChild(nameEl);
               codecEl->adoptAsLastChild(pTimeEl);
@@ -1034,6 +1135,11 @@ namespace openpeer
             descriptionEl->adoptAsLastChild(codecsEl);
             descriptionEl->adoptAsLastChild(iceUsernameFragEl);
             descriptionEl->adoptAsLastChild(icePasswordEl);
+            if (description->mFinal) {
+              ElementPtr finalEl = createElementWithNumber("final", "true");
+              descriptionEl->adoptAsLastChild(finalEl);
+            }
+
             descriptionEl->adoptAsLastChild(candidatesEl);
 
             descriptionsEl->adoptAsLastChild(descriptionEl);
@@ -1133,6 +1239,16 @@ namespace openpeer
 
               description->mICEUsernameFrag = IMessageHelper::getElementTextAndDecode(descriptionEl->findFirstChildElementChecked("iceUsernameFrag"));
               description->mICEPassword = IMessageHelper::getElementTextAndDecode(descriptionEl->findFirstChildElementChecked("icePassword"));
+              ElementPtr finalEl = descriptionEl->findFirstChildElement("final");
+
+              description->mFinal = false;
+              if (finalEl) {
+                try {
+                  description->mFinal = Numeric<bool>(finalEl->getText());
+                } catch (Numeric<bool>::ValueOutOfRange &) {
+                  ZS_LOG_WARNING(Debug, pThis->log("final value could not be interpreted"))
+                }
+              }
 
               ElementPtr candidatesEl = descriptionEl->findFirstChildElement("candidates");
               ElementPtr candidateEl = candidatesEl->findFirstChildElement("candidate");
@@ -1152,7 +1268,7 @@ namespace openpeer
               descriptionEl = descriptionEl->findNextSiblingElement("description");
             }
           } catch(CheckFailed &) {
-            ZS_LOG_ERROR(Detail, pThis->log("dialog XML element parse check failed"))
+            ZS_LOG_ERROR(Detail, pThis->log("dialog element parse check failed"))
             return DialogPtr();
           } catch (Numeric<BYTE>::ValueOutOfRange &) {
             ZS_LOG_ERROR(Detail, pThis->log("dialog parse value out of range"))
@@ -1247,6 +1363,7 @@ namespace openpeer
           IHelper::debugAppend(resultEl, "salt", mSecuritySalt);
           IHelper::debugAppend(resultEl, "codecs", mCodecs.size());
           IHelper::debugAppend(resultEl, "candidates", mCandidates.size());
+          IHelper::debugAppend(resultEl, "final", mFinal);
 
           return resultEl;
         }
@@ -1372,7 +1489,7 @@ namespace openpeer
               return DetailsPtr();
             }
           } catch(CheckFailed &) {
-            ZS_LOG_ERROR(Detail, pThis->log("details XML element parse check failed"))
+            ZS_LOG_ERROR(Detail, pThis->log("details element parse check failed"))
             return DetailsPtr();
           } catch (Numeric<UINT>::ValueOutOfRange &) {
             ZS_LOG_ERROR(Detail, pThis->log("details parse value out of range"))
@@ -1503,7 +1620,7 @@ namespace openpeer
           AutoRecursiveLockPtr lock;
           DocumentPtr doc = publication->getJSON(lock);
           if (!doc) {
-            ZS_LOG_ERROR(Detail, pThis->log("thread was unable to get XML from publication"))
+            ZS_LOG_ERROR(Detail, pThis->log("thread was unable to get from publication"))
             return ThreadPtr();
           }
 
@@ -1532,17 +1649,23 @@ namespace openpeer
             ElementPtr messagesEl = threadEl->findFirstChildElementChecked("messages");
             pThis->mMessagesVersion = getVersion(messagesEl);
 
-            ElementPtr messageBundleEl = messagesEl->findFirstChildElement("messageBundle");
+            ElementPtr messageBundleEl = messagesEl->getFirstChildElement();
             while (messageBundleEl) {
-              MessagePtr message = Message::create(messageBundleEl);
-              if (!message) {
-                ZS_LOG_ERROR(Detail, pThis->log("failed to parse message from thread document"))
-                return ThreadPtr();
+              if (!isMessageOrMessageBundle(messageBundleEl)) goto next_message;
+
+              {
+                MessagePtr message = Message::create(account, messageBundleEl);
+                if (!message) {
+                  ZS_LOG_ERROR(Detail, pThis->log("failed to parse message from thread document"))
+                  return ThreadPtr();
+                }
+                pThis->mMessageMap[message->messageID()] = message;
+                pThis->mMessageList.push_back(message);
+                pThis->mMessagesChangedTime = zsLib::now();
               }
-              pThis->mMessageMap[message->messageID()] = message;
-              pThis->mMessageList.push_back(message);
-              pThis->mMessagesChangedTime = zsLib::now();
-              messageBundleEl = messageBundleEl->findNextSiblingElement("messageBundle");
+
+            next_message:
+              messageBundleEl = messageBundleEl->getNextSiblingElement();
             }
 
             // every message found is a changed message...
@@ -1646,39 +1769,49 @@ namespace openpeer
             messagesVersion = getVersion(messagesEl);
 
             if (messagesVersion > mMessagesVersion) {
-              ElementPtr messageBundleEl = messagesEl->findLastChildElement("messageBundle");
+              ElementPtr messageBundleEl = messagesEl->getLastChildElement();
               ElementPtr firstValidBundleEl;
               while (messageBundleEl) {
-                ElementPtr messageEl = messageBundleEl->findFirstChildElement("message");
-                if (!messageEl) {
-                  ZS_LOG_ERROR(Detail, log("missing <message ...> element inside messageBundle (which is illegal)"))
-                  return false;
+                if (!isMessageOrMessageBundle(messageBundleEl)) goto previous_message;
+
+                {
+                  ElementPtr messageEl = ("message" == messageBundleEl->getValue() ? messageBundleEl : messageBundleEl->findFirstChildElement("message"));
+                  if (!messageEl) {
+                    ZS_LOG_ERROR(Detail, log("missing <message ...> element inside messageBundle (which is illegal)"))
+                    return false;
+                  }
+                  String id = messageEl->getAttributeValue("id");
+                  if (id.size() < 1) {
+                    ZS_LOG_ERROR(Detail, log("ID attribute is missing from <message> (which is illegal)"))
+                    return false;
+                  }
+
+                  MessageMap::iterator found = mMessageMap.find(id);
+                  if (found != mMessageMap.end()) break;
+
+                  firstValidBundleEl = messageBundleEl;
                 }
-                String id = messageEl->getAttributeValue("id");
-                if (id.size() < 1) {
-                  ZS_LOG_ERROR(Detail, log("ID attribute is missing from <message> (which is illegal)"))
-                  return false;
-                }
 
-                MessageMap::iterator found = mMessageMap.find(id);
-                if (found != mMessageMap.end()) break;
-
-                firstValidBundleEl = messageBundleEl;
-
-                messageBundleEl = messageBundleEl->findPreviousSiblingElement("messageBundle");
+              previous_message:
+                messageBundleEl = messageBundleEl->getPreviousSiblingElement();
               }
 
               messageBundleEl = firstValidBundleEl;
               while (messageBundleEl) {
-                MessagePtr message = Message::create(messageBundleEl);
-                if (!message) {
-                  ZS_LOG_ERROR(Detail, log("unable to parse message bundle"))
-                  return false;
+                if (!isMessageOrMessageBundle(messageBundleEl)) goto next_message;
+
+                {
+                  MessagePtr message = Message::create(account, messageBundleEl);
+                  if (!message) {
+                    ZS_LOG_ERROR(Detail, log("unable to parse message bundle"))
+                    return false;
+                  }
+
+                  messages.push_back(message);
                 }
 
-                messages.push_back(message);
-
-                messageBundleEl = messageBundleEl->findNextSiblingElement("messageBundle");
+              next_message:
+                messageBundleEl = messageBundleEl->getNextSiblingElement();
               }
             }
 
@@ -2008,7 +2141,7 @@ namespace openpeer
           threadEl->adoptAsLastChild(pThis->mDetails->detailsElement()->clone());
           threadEl->adoptAsLastChild(pThis->mContacts->contactsElement()->clone());
           threadEl->adoptAsLastChild(messagesEl);
-          threadEl->adoptAsLastChild(pThis->mMessageReceipts->receiptsElement()->clone());
+          threadEl->adoptAsLastChild(pThis->mMessageReceipts->receiptsElement());
           threadEl->adoptAsLastChild(dialogsEl);
 
           String baseName = String("/threads/1.0/") + toString(threadType) + "/" + baseThreadID + "/" + hostThreadID + "/";
@@ -2066,7 +2199,7 @@ namespace openpeer
 
           mModifying = false;
 
-          // scope: figure out XML difference document (needs to be scoped because
+          // scope: figure out difference document (needs to be scoped because
           //        of publication lock returned from getXML(...) could cause
           //        unintended deadlock
           {
@@ -2165,7 +2298,7 @@ namespace openpeer
 
               ElementPtr contactsEl = threadEl->findFirstChildElementChecked("contacts");
 
-              // this is the replacement XML for the contacts...
+              // this is the replacement for the contacts...
               IDiff::createDiffs(IDiff::DiffAction_Replace, mChangesDoc, contactsEl, false, mContacts->contactsElement()->clone());
             }
 
@@ -2184,7 +2317,7 @@ namespace openpeer
               for (MessageList::iterator iter = mMessagesChanged.begin(); iter != mMessagesChanged.end(); ++iter)
               {
                 MessagePtr &message = (*iter);
-                IDiff::createDiffs(IDiff::DiffAction_AdoptAsLastChild, mChangesDoc, messagesEl, false, message->messageBundleElement()->clone());
+                IDiff::createDiffs(IDiff::DiffAction_AdoptAsLastChild, mChangesDoc, messagesEl, false, message->messageBundleElement());
 
                 // remember these messages in the thread document...
                 mMessageList.push_back(message);
@@ -2197,7 +2330,7 @@ namespace openpeer
 
               mMessageReceipts = MessageReceipts::create(mMessageReceipts->version()+1, mMessageReceiptsChanged);
 
-              IDiff::createDiffs(IDiff::DiffAction_Replace, mChangesDoc, receiptsEl, false, mMessageReceipts->receiptsElement()->clone());
+              IDiff::createDiffs(IDiff::DiffAction_Replace, mChangesDoc, receiptsEl, false, mMessageReceipts->receiptsElement());
             }
 
             if ((mDialogsChanged.size() > 0) ||
@@ -2274,10 +2407,10 @@ namespace openpeer
           mChangesDoc.reset();
 
           // check if the permissions document needs updating too...
-          if (ThreadType_Host == mType) {
-            if ((mContactsChanged.size() > 0) ||
-                (mContactsRemoved.size() > 0)) {
+          if ((mContactsChanged.size() > 0) ||
+              (mContactsRemoved.size() > 0)) {
 
+            if (ThreadType_Host == mType) {
               // Only need to update this document when acting as a host and
               // the contacts that are allowed to read this document are all the
               // slave contacts.
@@ -2302,6 +2435,17 @@ namespace openpeer
           }
 
           resetChanged();
+
+          // scope: double check if any contacts can be published at this time
+          {
+            const ThreadContactMap &contacts = mContacts->contacts();
+            for (ThreadContactMap::const_iterator iter = contacts.begin(); iter != contacts.end(); ++iter)
+            {
+              const ThreadContactPtr &contact = (*iter).second;
+              publishContact(contact->contact());
+            }
+          }
+
           return true;
         }
 
@@ -2561,6 +2705,26 @@ namespace openpeer
         }
 
         //---------------------------------------------------------------------
+        void Thread::getContactPublicationsToPublish(ContactPublicationMap &outContactPublications)
+        {
+          for (ContactPublicationMap::iterator iter = mContactPublications.begin(); iter != mContactPublications.end(); ++iter)
+          {
+            const String &contactURI = (*iter).first;
+            IPublicationPtr &publication = (*iter).second;
+            if (!publication) {
+              ZS_LOG_TRACE(log("contact already published"))
+              continue;
+            }
+
+            // transfer ownership of publication to caller
+            outContactPublications[contactURI] = publication;
+
+            // make sure it will never be published again
+            publication.reset();
+          }
+        }
+
+        //---------------------------------------------------------------------
         ElementPtr Thread::toDebug() const
         {
           ElementPtr resultEl = Element::create("core::thread::Thread");
@@ -2571,6 +2735,7 @@ namespace openpeer
           IHelper::debugAppend(resultEl, "modifying", mModifying);
           IHelper::debugAppend(resultEl, IPublication::toDebug(mPublication));
           IHelper::debugAppend(resultEl, IPublication::toDebug(mPermissionPublication));
+          IHelper::debugAppend(resultEl, "contact publications", mContactPublications.size());
           IHelper::debugAppend(resultEl, Details::toDebug(mDetails));
           IHelper::debugAppend(resultEl, ThreadContacts::toDebug(mContacts));
           IHelper::debugAppend(resultEl, "message version", mMessagesVersion);
@@ -2599,6 +2764,14 @@ namespace openpeer
         }
         
         //---------------------------------------------------------------------
+        Log::Params Thread::log(const char *message) const
+        {
+          ElementPtr objectEl = Element::create("core::thread::Thread");
+          IHelper::debugAppend(objectEl, "id", mID);
+          return Log::Params(message, objectEl);
+        }
+
+        //---------------------------------------------------------------------
         void Thread::resetChanged()
         {
           mDetailsChanged = false;
@@ -2615,14 +2788,93 @@ namespace openpeer
           mDescriptionsChanged.clear();
           mDescriptionsRemoved.clear();
         }
-        
+
         //---------------------------------------------------------------------
-        Log::Params Thread::log(const char *message) const
+        String Thread::getContactDocumentName(UseContactPtr contact) const
         {
-          ElementPtr objectEl = Element::create("core::thread::Thread");
-          IHelper::debugAppend(objectEl, "id", mID);
-          return Log::Params(message, objectEl);
+          ZS_THROW_INVALID_ARGUMENT_IF(!contact)
+
+          if (!mDetails) {
+            ZS_LOG_WARNING(Detail, log("cannot get document name without document details") + UseContact::toDebug(contact))
+            return String();
+          }
+
+          String domain;
+          String contactID;
+
+          if (!IPeer::splitURI(contact->getPeerURI(), domain, contactID)) {
+            ZS_LOG_WARNING(Detail, log("unable to split peer URI") + UseContact::toDebug(contact))
+            return String();
+          }
+          
+          String contactBaseName = String("/contacts/1.0/") + toString(mType) + "/" + mDetails->baseThreadID() + "/" + mDetails->hostThreadID() + "/";
+          return contactBaseName + contactID;
         }
+
+        //---------------------------------------------------------------------
+        void Thread::publishContact(UseContactPtr contact)
+        {
+          if (!contact) {
+            ZS_LOG_WARNING(Detail, log("contact to publish is NULL"))
+            return;
+          }
+
+          IPeerFilePublicPtr peerFilePublic = contact->getPeerFilePublic();
+          if (!peerFilePublic) {
+            ZS_LOG_WARNING(Debug, log("contact does not contain peer file thus cannot publish contact") + UseContact::toDebug(contact))
+            return;
+          }
+
+          if (mContactPublications.end() != mContactPublications.find(contact->getPeerURI())) {
+            ZS_LOG_TRACE(log("contact already published") + UseContact::toDebug(contact))
+            return;
+          }
+
+          if ((!mPermissionPublication) &&
+              (!mPublication)) {
+            ZS_LOG_WARNING(Debug, log("will not publish contact without a permission document or thread publication document") + UseContact::toDebug(contact))
+            return;
+          }
+
+          if (!mDetails) {
+            ZS_LOG_WARNING(Detail, log("will not publish contact that does not contact thread details") + UseContact::toDebug(contact))
+            return;
+          }
+
+          ElementPtr publicPeerEl = peerFilePublic->saveToElement();
+
+          if (!publicPeerEl) {
+            ZS_LOG_WARNING(Detail, log("unable to export public peer file") + UseContact::toDebug(contact))
+            return;
+          }
+
+          String name = getContactDocumentName(contact);
+          if (name.isEmpty()) {
+            ZS_LOG_WARNING(Detail, log("unable to create document name for contact") + UseContact::toDebug(contact))
+            return;
+          }
+
+          DocumentPtr doc = Document::create();
+          doc->adoptAsLastChild(publicPeerEl);
+
+          PublishToRelationshipsMap publishRelationships;
+
+          // scope: add "all" permissions
+          {
+            typedef IPublication::PeerURIList PeerURIList;
+            typedef IPublication::PermissionAndPeerURIListPair PermissionAndPeerURIListPair;
+
+            PeerURIList empty;
+            publishRelationships[mPermissionPublication->getName()] = PermissionAndPeerURIListPair(IPublication::Permission_All, empty);
+          }
+
+          IPublicationPtr contactPublication = IPublication::create(mPublication->getCreatorLocation(), name, "text/x-json-openpeer", doc, publishRelationships, mPublication->getPublishedLocation());
+
+          ZS_LOG_DEBUG(log("publishing contact") + UseContact::toDebug(contact) + IPublication::toDebug(contactPublication))
+
+          mContactPublications[contact->getPeerURI()] = contactPublication;
+        }
+
       }
       
       //-----------------------------------------------------------------------

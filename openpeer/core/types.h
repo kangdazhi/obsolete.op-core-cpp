@@ -56,38 +56,25 @@ namespace openpeer
     using zsLib::Duration;
     using zsLib::Seconds;
 
-    using zsLib::XML::Element;
-    using zsLib::XML::ElementPtr;
+    ZS_DECLARE_USING_PTR(zsLib::XML, Element)
 
-    using openpeer::stack::SecureByteBlock;
-    using openpeer::stack::SecureByteBlockPtr;
-    using openpeer::stack::message::IMessageHelper;
+    using openpeer::services::SharedRecursiveLock;
+    using openpeer::services::LockedValue;
 
-    using openpeer::stack::IPeerFilePublic;
-    using openpeer::stack::IPeerFilePublicPtr;
+    ZS_DECLARE_USING_PTR(openpeer::services, SecureByteBlock)
+
+    ZS_DECLARE_USING_PTR(openpeer::stack, IPeerFilePublic)
+
+    ZS_DECLARE_USING_PTR(openpeer::stack::message, IMessageHelper)
 
     // other types
     struct ContactProfileInfo;
     struct IdentityContact;
     struct RolodexContact;
 
+    ZS_DECLARE_USING_PTR(services, RecursiveLock)
+
     ZS_DECLARE_INTERACTION_PTR(IContact)
-
-    //-------------------------------------------------------------------------
-    //-------------------------------------------------------------------------
-    //-------------------------------------------------------------------------
-    //-------------------------------------------------------------------------
-    #pragma mark
-    #pragma mark ContactProfileInfo
-    #pragma mark
-
-    struct ContactProfileInfo
-    {
-      IContactPtr mContact;
-      ElementPtr mProfileBundleEl;
-
-      bool hasData() const;
-    };
 
     //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------
@@ -155,6 +142,24 @@ namespace openpeer
       bool hasData() const;
     };
 
+    ZS_DECLARE_TYPEDEF_PTR(std::list<IdentityContact>, IdentityContactList)
+
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    #pragma mark
+    #pragma mark ContactProfileInfo
+    #pragma mark
+
+    struct ContactProfileInfo
+    {
+      IContactPtr mContact;
+      IdentityContactList mIdentityContacts;
+
+      bool hasData() const;
+    };
+
     //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------
@@ -165,7 +170,9 @@ namespace openpeer
 
     ZS_DECLARE_INTERACTION_PTR(IAccount)
     ZS_DECLARE_INTERACTION_PTR(IBackgrounding)
+    ZS_DECLARE_INTERACTION_PTR(IBackgroundingNotifier)
     ZS_DECLARE_INTERACTION_PTR(IBackgroundingQuery)
+    ZS_DECLARE_INTERACTION_PTR(IBackgroundingSubscription)
     ZS_DECLARE_INTERACTION_PTR(ICache)
     ZS_DECLARE_INTERACTION_PTR(ICacheDelegate)
     ZS_DECLARE_INTERACTION_PTR(ICall)
@@ -184,6 +191,7 @@ namespace openpeer
 
     ZS_DECLARE_INTERACTION_PROXY(IAccountDelegate)
     ZS_DECLARE_INTERACTION_PROXY(IBackgroundingCompletionDelegate)
+    ZS_DECLARE_INTERACTION_PROXY(IBackgroundingDelegate)
     ZS_DECLARE_INTERACTION_PROXY(ICallDelegate)
     ZS_DECLARE_INTERACTION_PROXY(IConversationThreadDelegate)
     ZS_DECLARE_INTERACTION_PROXY(IContactPeerFilePublicLookupDelegate)
@@ -196,7 +204,6 @@ namespace openpeer
     ZS_DECLARE_TYPEDEF_PTR(std::list<ContactProfileInfo>, ContactProfileInfoList)
     ZS_DECLARE_TYPEDEF_PTR(std::list<IConversationThreadPtr>, ConversationThreadList)
     ZS_DECLARE_TYPEDEF_PTR(std::list<IIdentityPtr>, IdentityList)
-    ZS_DECLARE_TYPEDEF_PTR(std::list<IdentityContact>, IdentityContactList)
     ZS_DECLARE_TYPEDEF_PTR(std::list<RolodexContact>, RolodexContactList)
   }
 }

@@ -34,6 +34,10 @@
 #include <openpeer/core/IStack.h>
 #include <openpeer/core/internal/types.h>
 
+#define OPENPEER_CORE_SETTING_STACK_CORE_THREAD_PRIORITY "openpeer/core/core-thread-priority"
+#define OPENPEER_CORE_SETTING_STACK_MEDIA_THREAD_PRIORITY "openpeer/core/media-thread-priority"
+#define OPENPEER_CORE_SETTING_STACK_AUTHORIZED_APPLICATION_ID_SPLIT_CHAR "openpeer/core/authorized-application-id-split-char"
+
 namespace openpeer
 {
   namespace core
@@ -160,9 +164,9 @@ namespace openpeer
         #pragma mark Stack => IStackForInternal
         #pragma mark
 
-        virtual IMessageQueuePtr getQueueApplication() const;
-        virtual IMessageQueuePtr getQueueCore() const;
-        virtual IMessageQueuePtr getQueueMedia() const;
+        virtual IMessageQueuePtr getQueueApplication();
+        virtual IMessageQueuePtr getQueueCore();
+        virtual IMessageQueuePtr getQueueMedia();
         virtual IMessageQueuePtr getQueueServices() const;
         virtual IMessageQueuePtr getQueueKeyGeneration() const;
 
@@ -178,6 +182,8 @@ namespace openpeer
 
         void makeReady();
 
+        static Log::Params slog(const char *message);
+
       protected:
         //---------------------------------------------------------------------
         #pragma mark
@@ -190,11 +196,9 @@ namespace openpeer
 
         IShutdownCheckAgainDelegatePtr mShutdownCheckAgainDelegate;
 
-        IMessageQueueThreadPtr mApplicationThreadQueue;
-        MessageQueueThreadPtr  mCoreThreadQueue;
-        MessageQueueThreadPtr  mMediaThreadQueue;
-        MessageQueueThreadPtr  mServicesThreadQueue;
-        MessageQueueThreadPtr  mKeyGenerationThreadQueue;
+        IMessageQueuePtr mApplicationQueue;
+        IMessageQueuePtr mCoreQueue;
+        IMessageQueuePtr mMediaQueue;
 
         IStackDelegatePtr              mStackDelegate;
         IMediaEngineDelegatePtr        mMediaEngineDelegate;

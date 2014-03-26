@@ -415,7 +415,11 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadDocumentFetcher::step()
       {
-        if (isShutdown()) {cancel();}
+        if (isShutdown()) {
+          ZS_LOG_DEBUG(log("step forwarding to cancel"))
+          cancel();
+          return;
+        }
 
         if (mFetcher) {
           ZS_LOG_DEBUG(log("fetcher already active"))
