@@ -39,7 +39,10 @@ $(ANDROIDNDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.7/libs/armeabi/include \
 
 SOURCE_PATH := openpeer/core/cpp
 
-LOCAL_SRC_FILES := $(SOURCE_PATH)/core_Account.cpp \
+LOCAL_SRC_FILES := $(SOURCE_PATH)/core_Account_ContactSubscription.cpp \
+		   $(SOURCE_PATH)/core_Account_DelegateFilter.cpp \
+		   $(SOURCE_PATH)/core_Account_LocationSubscription.cpp \
+		   $(SOURCE_PATH)/core_Account.cpp \
 		   $(SOURCE_PATH)/core_Backgrounding.cpp \
 		   $(SOURCE_PATH)/core_Cache.cpp \
 		   $(SOURCE_PATH)/core_Call.cpp \
