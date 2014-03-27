@@ -44,6 +44,8 @@
 
 #define OPENPEER_CONVERSATION_THREAD_MAX_WAIT_DELIVERY_TIME_BEFORE_PUSH_IN_SECONDS (30)
 
+#define OPENPEER_CORE_SETTINGS_CONVERSATION_THREAD_HOST_BACKGROUNDING_PHASE "openpeer/core/backgrounding-phase-conversation-thread"
+
 namespace openpeer
 {
   namespace core
@@ -64,16 +66,19 @@ namespace openpeer
       using thread::ContactURIList;
 
       // host publishes these documents:
-      // /threads/1.0/host/base-thread-id/host-thread-id/state       - current state of the thread (includes list of all participants)
-      // /threads/1.0/host/base-thread-id/host-thread-id/permissions - all participant peer URIs that are part of the conversation thread
 
-      // /threads/1.0/subscribers/permissions                        - peer URI of the slave added to this document
+      // /threads/1.0/host/base-thread-id/host-thread-id/state          - current state of the thread (includes list of all participants)
+      // /threads/1.0/host/base-thread-id/host-thread-id/permissions    - all participant peer URIs that are part of the conversation thread
+
+      // /threads/1.0/subscribers/permissions                           - peer URI of the self added to this document (only allow subscriber to fetch documents published by ourself)
+
 
       // slaves publishes these documents to their own machine:
-      // /threads/1.0/slave/base-thread-id/host-thread-id/state
-      // /threads/1.0/slave/base-thread-id/host-thread-id/permissions     - all who can receive this document (i.e. at minimal the current host)
 
-      // /threads/1.0/subscribers/permissions
+      // /threads/1.0/slave/base-thread-id/host-thread-id/state
+      // /threads/1.0/slave/base-thread-id/host-thread-id/permissions   - all who can receive this document (i.e. at minimal the current host)
+
+      // /threads/1.0/subscribers/permissions                           - peer URI of the self added to this document (only allow subscriber to fetch documents published by ourself)
 
       //-------------------------------------------------------------------------
       //-------------------------------------------------------------------------
@@ -109,6 +114,9 @@ namespace openpeer
                                            ) = 0;
 
         virtual void notifyPeerDisconnected(ILocationPtr peerLocation) = 0;
+
+        virtual void shutdown() = 0;
+        virtual bool isShutdown() const = 0;
       };
 
       //-------------------------------------------------------------------------
@@ -126,7 +134,6 @@ namespace openpeer
         typedef String LocationID;
         typedef std::map<LocationID, DialogPtr> LocationDialogMap;
 
-        virtual RecursiveLock &getLock() const = 0;
         virtual AccountPtr getAccount() const = 0;
 
         virtual bool placeCall(CallPtr call) = 0;
@@ -313,6 +320,7 @@ namespace openpeer
 
       class ConversationThread  : public Noop,
                                   public MessageQueueAssociator,
+                                  public SharedRecursiveLock,
                                   public IConversationThread,
                                   public IConversationThreadForAccount,
                                   public IConversationThreadForCall,
@@ -363,11 +371,15 @@ namespace openpeer
       protected:
         ConversationThread(
                            IMessageQueuePtr queue,
-                           UseAccountPtr account,
+                           AccountPtr account,
                            const char *threadID
                            );
         
-        ConversationThread(Noop) : Noop(true), MessageQueueAssociator(IMessageQueuePtr()) {};
+        ConversationThread(Noop) :
+          Noop(true),
+          MessageQueueAssociator(IMessageQueuePtr()),
+          SharedRecursiveLock(SharedRecursiveLock::create())
+        {}
 
         void init();
 
@@ -390,8 +402,8 @@ namespace openpeer
         static ElementPtr toDebug(IConversationThreadPtr thread);
 
         static ConversationThreadPtr create(
-                                            IAccountPtr account,
-                                            ElementPtr profileBundleEl
+                                            AccountPtr account,
+                                            const IdentityContactList &identityContacts
                                             );
 
         static ConversationThreadListPtr getConversationThreads(IAccountPtr account);
@@ -409,7 +421,7 @@ namespace openpeer
 
         virtual ContactListPtr getContacts() const;
 
-        virtual ElementPtr getProfileBundle(IContactPtr contact) const;
+        virtual IdentityContactListPtr getIdentityContactList(IContactPtr contact) const;
         virtual ContactStates getContactState(IContactPtr contact) const;
 
         virtual void addContacts(const ContactProfileInfoList &contactProfileInfos);
@@ -419,7 +431,8 @@ namespace openpeer
         virtual void sendMessage(
                                  const char *messageID,
                                  const char *messageType,
-                                 const char *message
+                                 const char *message,
+                                 bool signMessage
                                  );
 
         // returns false if the message ID is not known
@@ -443,7 +456,7 @@ namespace openpeer
         #pragma mark
 
         static ConversationThreadPtr create(
-                                            UseAccountPtr account,
+                                            AccountPtr account,
                                             ILocationPtr peerLocation,
                                             IPublicationMetaDataPtr metaData,
                                             const SplitMap &split
@@ -463,6 +476,9 @@ namespace openpeer
                                            );
 
         virtual void notifyPeerDisconnected(ILocationPtr peerLocation);
+
+        virtual void shutdown();
+        // (duplicate) virtual bool isShutdown() const;
 
         //-----------------------------------------------------------------------
         #pragma mark
@@ -530,7 +546,6 @@ namespace openpeer
         #pragma mark
 
         // (duplicate) virtual IConversationThreadPtr convertIConversationThread() const;
-        // (duplicate) virtual RecursiveLock &getLock() const;
         // (duplicate) virtual IAccountForConversationThreadPtr getAccount() const;
         virtual bool placeCall(CallPtr call);
         virtual void notifyCallStateChanged(CallPtr call);
@@ -557,13 +572,11 @@ namespace openpeer
         bool isPending() const {return ConversationThreadState_Pending == mCurrentState;}
         bool isReady() const {return ConversationThreadState_Ready == mCurrentState;}
         bool isShuttingDown() const {return ConversationThreadState_ShuttingDown == mCurrentState;}
-        bool isShutdown() const {return ConversationThreadState_Shutdown == mCurrentState;}
+        virtual bool isShutdown() const {AutoRecursiveLock lock(*this); return ConversationThreadState_Shutdown == mCurrentState;}
 
         Log::Params log(const char *message) const;
 
         virtual ElementPtr toDebug() const;
-
-        RecursiveLock &getLock() const;
 
         void cancel();
         void step();
@@ -579,8 +592,7 @@ namespace openpeer
         #pragma mark ConversationThread => (data)
         #pragma mark
 
-        mutable RecursiveLock mBogusLock;
-        PUID mID;
+        AutoPUID mID;
         ConversationThreadWeakPtr mThisWeak;
         ConversationThreadPtr mGracefulShutdownReference;
 
@@ -627,8 +639,8 @@ namespace openpeer
         static IConversationThreadFactory &singleton();
 
         virtual ConversationThreadPtr createConversationThread(
-                                                               IAccountPtr account,
-                                                               ElementPtr profileBundleEl
+                                                               AccountPtr account,
+                                                               const IdentityContactList &identityContacts
                                                                );
         virtual ConversationThreadPtr createConversationThread(
                                                                AccountPtr account,

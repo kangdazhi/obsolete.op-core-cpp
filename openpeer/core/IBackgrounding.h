@@ -70,6 +70,18 @@ namespace openpeer
       // PURPOSE: Notifies the application is returning from to the background
       static void notifyReturningFromBackground();
 
+      //-----------------------------------------------------------------------
+      // PURPOSE: Subscribe to the backgrounding state
+      // PARAMS:  phase - Each subscription is assigned a phase number and
+      //                  more than one subscriber can share the same phase.
+      //                  Phases are done in order (lowest to highest) where
+      //                  every subscriber must complete backgrounding before
+      //                  the next phase of backgrounding is activiated.
+      static IBackgroundingSubscriptionPtr subscribe(
+                                                     IBackgroundingDelegatePtr delegate,
+                                                     ULONG phase
+                                                     );
+
       virtual ~IBackgrounding() {}  // needed to ensure virtual table is created in order to use dynamic cast
     };
 
@@ -103,6 +115,79 @@ namespace openpeer
       virtual void onBackgroundingReady(IBackgroundingQueryPtr query) = 0;
     };
 
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    #pragma mark
+    #pragma mark IBackgroundingDelegate
+    #pragma mark
+
+    interaction IBackgroundingDelegate
+    {
+      //-----------------------------------------------------------------------
+      // PURPOSE: This is notification from the system that it's going into the
+      //          background. If the subscriber needs some time to do it's work
+      //          it can keep a reference to the "notifier" object and only
+      //          release the object when the backgrounding is ready.
+      virtual void onBackgroundingGoingToBackground(
+                                                    IBackgroundingSubscriptionPtr subscription,
+                                                    IBackgroundingNotifierPtr notifier
+                                                    ) = 0;
+
+      //-----------------------------------------------------------------------
+      // PURPOSE: This notification tells the subscriber it must abandon its
+      //          backgrounding efforts as it must go to the background
+      //          immediately.
+      virtual void onBackgroundingGoingToBackgroundNow(
+                                                       IBackgroundingSubscriptionPtr subscription
+                                                       ) = 0;
+
+      //-----------------------------------------------------------------------
+      // PURPOSE: This notification tells the subscriber it is returning from
+      //          the background.
+      virtual void onBackgroundingReturningFromBackground(
+                                                          IBackgroundingSubscriptionPtr subscription
+                                                          ) = 0;
+
+      //-----------------------------------------------------------------------
+      // PURPOSE: This notification tells the subscriber the application will
+      //          quit.
+      virtual void onBackgroundingApplicationWillQuit(
+                                                      IBackgroundingSubscriptionPtr subscription
+                                                      ) = 0;
+    };
+
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    #pragma mark
+    #pragma mark IBackgroundingSubscription
+    #pragma mark
+
+    interaction IBackgroundingSubscription
+    {
+      virtual PUID getID() const = 0;
+
+      virtual void cancel() = 0;
+    };
+
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    #pragma mark
+    #pragma mark IBackgroundingNotifier
+    #pragma mark
+
+    interaction IBackgroundingNotifier
+    {
+      virtual PUID getID() const = 0;
+
+      virtual void ready() = 0;
+    };
+
   }
 }
 
@@ -111,3 +196,11 @@ ZS_DECLARE_PROXY_TYPEDEF(openpeer::core::IBackgroundingQueryPtr, IBackgroundingQ
 ZS_DECLARE_PROXY_METHOD_1(onBackgroundingReady, IBackgroundingQueryPtr)
 ZS_DECLARE_PROXY_END()
 
+ZS_DECLARE_PROXY_BEGIN(openpeer::core::IBackgroundingDelegate)
+ZS_DECLARE_PROXY_TYPEDEF(openpeer::core::IBackgroundingSubscriptionPtr, IBackgroundingSubscriptionPtr)
+ZS_DECLARE_PROXY_TYPEDEF(openpeer::core::IBackgroundingNotifierPtr, IBackgroundingNotifierPtr)
+ZS_DECLARE_PROXY_METHOD_2(onBackgroundingGoingToBackground, IBackgroundingSubscriptionPtr, IBackgroundingNotifierPtr)
+ZS_DECLARE_PROXY_METHOD_1(onBackgroundingGoingToBackgroundNow, IBackgroundingSubscriptionPtr)
+ZS_DECLARE_PROXY_METHOD_1(onBackgroundingReturningFromBackground, IBackgroundingSubscriptionPtr)
+ZS_DECLARE_PROXY_METHOD_1(onBackgroundingApplicationWillQuit, IBackgroundingSubscriptionPtr)
+ZS_DECLARE_PROXY_END()

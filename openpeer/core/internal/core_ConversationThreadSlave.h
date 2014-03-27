@@ -38,6 +38,7 @@
 
 #include <openpeer/stack/IPeerSubscription.h>
 
+#include <openpeer/services/IBackgrounding.h>
 #include <openpeer/services/IWakeDelegate.h>
 
 #include <zsLib/MessageQueueAssociator.h>
@@ -87,8 +88,10 @@ namespace openpeer
 
       class ConversationThreadSlave  : public Noop,
                                        public MessageQueueAssociator,
+                                       public SharedRecursiveLock,
                                        public IConversationThreadSlaveForConversationThread,
                                        public IConversationThreadDocumentFetcherDelegate,
+                                       public IBackgroundingDelegate,
                                        public IWakeDelegate,
                                        public ITimerDelegate,
                                        public IPeerSubscriptionDelegate
@@ -124,16 +127,23 @@ namespace openpeer
         typedef String CallID;
         typedef std::map<CallID, UseCallPtr> CallHandlers;
 
+        typedef String ContactURI;
+        typedef std::map<ContactURI, bool> ContactFetchedMap;
+
       protected:
         ConversationThreadSlave(
                                 IMessageQueuePtr queue,
-                                UseAccountPtr account,
+                                AccountPtr account,
                                 ILocationPtr peerLocation,
-                                UseConversationThreadPtr baseThread,
+                                ConversationThreadPtr baseThread,
                                 const char *threadID
                                 );
         
-        ConversationThreadSlave(Noop) : Noop(true), MessageQueueAssociator(IMessageQueuePtr()) {};
+        ConversationThreadSlave(Noop) :
+          Noop(true),
+          MessageQueueAssociator(IMessageQueuePtr()),
+          SharedRecursiveLock(SharedRecursiveLock::create())
+        {}
 
         void init();
 
@@ -229,6 +239,22 @@ namespace openpeer
                                                                         IPublicationMetaDataPtr metaData
                                                                         );
 
+        //-------------------------------------------------------------------
+        #pragma mark
+        #pragma mark ConversationThreadSlave => IBackgroundingDelegate
+        #pragma mark
+
+        virtual void onBackgroundingGoingToBackground(
+                                                      IBackgroundingSubscriptionPtr subscription,
+                                                      IBackgroundingNotifierPtr notifier
+                                                      );
+
+        virtual void onBackgroundingGoingToBackgroundNow(IBackgroundingSubscriptionPtr subscription);
+
+        virtual void onBackgroundingReturningFromBackground(IBackgroundingSubscriptionPtr subscription);
+
+        virtual void onBackgroundingApplicationWillQuit(IBackgroundingSubscriptionPtr subscription);
+
         //---------------------------------------------------------------------
         #pragma mark
         #pragma mark ConversationThreadSlave => IWakeDelegate
@@ -276,13 +302,11 @@ namespace openpeer
         bool isPending() const {return ConversationThreadSlaveState_Pending == mCurrentState;}
         bool isReady() const {return ConversationThreadSlaveState_Ready == mCurrentState;}
         bool isShuttingDown() const {return ConversationThreadSlaveState_ShuttingDown == mCurrentState;}
-        virtual bool isShutdown() const {AutoRecursiveLock lock(getLock()); return ConversationThreadSlaveState_Shutdown == mCurrentState;}
+        virtual bool isShutdown() const {AutoRecursiveLock lock(*this); return ConversationThreadSlaveState_Shutdown == mCurrentState;}
 
         Log::Params log(const char *message) const;
 
         virtual ElementPtr toDebug() const;
-
-        RecursiveLock &getLock() const;
 
         void cancel();
         void step();
@@ -292,8 +316,9 @@ namespace openpeer
         UseContactPtr getHostContact() const;
         void publish(
                      bool publishSlavePublication,
-                     bool publishSlavePermissionPublication
-                     ) const;
+                     bool publishSlavePermissionPublication,
+                     bool publishContacts
+                     );
 
       public:
         //---------------------------------------------------------------------
@@ -318,7 +343,7 @@ namespace openpeer
 
           void setState(MessageDeliveryStates state);
 
-          bool shouldPush() const;
+          bool shouldPush(bool backgroundingNow) const;
 
         protected:
           ConversationThreadSlaveWeakPtr mOuter;
@@ -333,8 +358,7 @@ namespace openpeer
         #pragma mark ConversationThreadSlave => (data)
         #pragma mark
 
-        mutable RecursiveLock mBogusLock;
-        PUID mID;
+        AutoPUID mID;
         ConversationThreadSlaveWeakPtr mThisWeak;
         ConversationThreadSlavePtr mGracefulShutdownReference;
         ConversationThreadSlavePtr mSelfHoldingStartupReferenceUntilPublicationFetchCompletes;
@@ -352,6 +376,10 @@ namespace openpeer
         ThreadPtr mHostThread;
         ThreadPtr mSlaveThread;
 
+        IBackgroundingSubscriptionPtr mBackgroundingSubscription;
+        IBackgroundingNotifierPtr mBackgroundingNotifier;
+        AutoBool mBackgroundingNow;
+
         IPeerSubscriptionPtr mHostSubscription;
 
         bool mConvertedToHostBecauseOriginalHostLikelyGoneForever;
@@ -359,6 +387,8 @@ namespace openpeer
         MessageDeliveryStatesMap mMessageDeliveryStates;
 
         CallHandlers mIncomingCallHandlers;
+
+        ContactFetchedMap mPreviouslyFetchedContacts;
       };
 
       //-----------------------------------------------------------------------

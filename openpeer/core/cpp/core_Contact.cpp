@@ -110,12 +110,29 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      ForConversationThreadPtr IContactForConversationThread::createFromPeerFilePublic(
-                                                                                       AccountPtr account,
-                                                                                       IPeerFilePublicPtr peerFilePublic
-                                                                                       )
+      ForConversationThreadPtr IContactForConversationThread::createFromPeerURI(
+                                                                                AccountPtr inAccount,
+                                                                                const char *inPeerURI
+                                                                                )
       {
-        return IContactFactory::singleton().createFromPeerFilePublic(account, peerFilePublic);
+        Contact::UseAccountPtr account(inAccount);
+
+        String peerURI(inPeerURI);
+
+        stack::IAccountPtr stackAcount = account->getStackAccount();
+
+        if (!stackAcount) {
+          ZS_LOG_ERROR(Detail, slog("stack account is not ready"))
+          return ContactPtr();
+        }
+
+        IPeerPtr peer = IPeer::create(stackAcount, peerURI);
+        if (!peer) {
+          ZS_LOG_ERROR(Detail, slog("failed to create peer object"))
+          return ContactPtr();
+        }
+
+        return IContactFactory::singleton().createFromPeer(inAccount, peer);
       }
 
       //-----------------------------------------------------------------------
@@ -202,10 +219,12 @@ namespace openpeer
 
       //-----------------------------------------------------------------------
       ContactPtr Contact::createFromPeerFilePublic(
-                                                   UseAccountPtr account,
+                                                   AccountPtr inAccount,
                                                    IPeerFilePublicPtr peerFilePublic
                                                    )
       {
+        UseAccountPtr account(inAccount);
+
         ZS_THROW_INVALID_ARGUMENT_IF(!peerFilePublic)
         stack::IAccountPtr stackAcount = account->getStackAccount();
 
@@ -220,7 +239,7 @@ namespace openpeer
           return ContactPtr();
         }
 
-        AutoRecursiveLock lock(account->getLock());
+        AutoRecursiveLock lock(*inAccount);
 
         String peerURI = peer->getPeerURI();
         ContactPtr existingPeer = account->findContact(peerURI);
@@ -299,10 +318,11 @@ namespace openpeer
 
       //-----------------------------------------------------------------------
       ContactPtr Contact::createFromPeer(
-                                         UseAccountPtr account,
+                                         AccountPtr inAccount,
                                          IPeerPtr peer
                                          )
       {
+        UseAccountPtr account(inAccount);
         stack::IAccountPtr stackAcount = account->getStackAccount();
 
         if (!stackAcount) {
@@ -310,7 +330,7 @@ namespace openpeer
           return ContactPtr();
         }
 
-        AutoRecursiveLock lock(account->getLock());
+        AutoRecursiveLock lock(*inAccount);
 
         ContactPtr existingPeer = account->findContact(peer->getPeerURI());
         if (existingPeer) {
@@ -381,8 +401,6 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ElementPtr Contact::toDebug() const
       {
-        AutoRecursiveLock lock(getLock());
-
         ElementPtr resultEl = Element::create("core::Contact");
 
         IHelper::debugAppend(resultEl, "id", mID);
@@ -390,14 +408,6 @@ namespace openpeer
         IHelper::debugAppend(resultEl, "is self", isSelf());
 
         return resultEl;
-      }
-
-      //-----------------------------------------------------------------------
-      RecursiveLock &Contact::getLock() const
-      {
-        UseAccountPtr account = mAccount.lock();
-        if (!account) return mBogusLock;
-        return account->getLock();
       }
 
       //-----------------------------------------------------------------------

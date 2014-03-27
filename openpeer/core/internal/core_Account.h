@@ -35,6 +35,8 @@
 #include <openpeer/core/internal/core_CallTransport.h>
 
 #include <openpeer/core/IAccount.h>
+#include <openpeer/core/IConversationThread.h>
+#include <openpeer/core/ICall.h>
 
 #include <openpeer/stack/IAccount.h>
 #include <openpeer/stack/IPeerSubscription.h>
@@ -42,10 +44,13 @@
 #include <openpeer/stack/IServiceLockbox.h>
 #include <openpeer/stack/IServiceNamespaceGrant.h>
 
+#include <openpeer/services/IBackgrounding.h>
 #include <openpeer/services/IHelper.h>
 #include <openpeer/services/IWakeDelegate.h>
 
 #include <zsLib/MessageQueueAssociator.h>
+
+#define OPENPEER_CORE_SETTING_ACCOUNT_BACKGROUNDING_PHASE "openpeer/core/backgrounding-phase-account"
 
 namespace openpeer
 {
@@ -78,8 +83,6 @@ namespace openpeer
         virtual ContactPtr getSelfContact() const = 0;
         virtual ILocationPtr getSelfLocation() const = 0;
 
-        virtual stack::IAccountPtr getStackAccount() const = 0;
-
         virtual IPeerFilesPtr getPeerFiles() const = 0;
       };
 
@@ -94,8 +97,6 @@ namespace openpeer
       interaction IAccountForContact
       {
         ZS_DECLARE_TYPEDEF_PTR(IAccountForContact, ForContact)
-
-        virtual RecursiveLock &getLock() const = 0;
 
         virtual ContactPtr getSelfContact() const = 0;
 
@@ -128,8 +129,6 @@ namespace openpeer
                                                  String *outErrorReason = NULL
                                                  ) const = 0;
 
-        virtual RecursiveLock &getLock() const = 0;
-
         virtual ContactPtr getSelfContact() const = 0;
         virtual ILocationPtr getSelfLocation() const = 0;
 
@@ -141,10 +140,15 @@ namespace openpeer
         virtual IPeerFilesPtr getPeerFiles() const = 0;
 
         virtual IConversationThreadDelegatePtr getConversationThreadDelegate() const = 0;
-        virtual void notifyConversationThreadCreated(ConversationThreadPtr thread) = 0;
+        virtual void notifyConversationThreadCreated(
+                                                     ConversationThreadPtr thread,
+                                                     bool notifyDelegate
+                                                     ) = 0;
 
         virtual ConversationThreadPtr getConversationThreadByID(const char *threadID) const = 0;
         virtual void getConversationThreads(ConversationThreadList &outConversationThreads) const = 0;
+
+        virtual void notifyConversationThreadStateChanged() = 0;
       };
 
       //-----------------------------------------------------------------------
@@ -177,8 +181,6 @@ namespace openpeer
       {
         ZS_DECLARE_TYPEDEF_PTR(IAccountForIdentityLookup, ForIdentityLookup)
 
-        virtual RecursiveLock &getLock() const = 0;
-
         virtual ContactPtr findContact(const char *peerURI) const = 0;
       };
 
@@ -192,6 +194,7 @@ namespace openpeer
 
       class Account : public Noop,
                       public MessageQueueAssociator,
+                      public SharedRecursiveLock,
                       public IAccount,
                       public IAccountForCall,
                       public IAccountForContact,
@@ -203,6 +206,7 @@ namespace openpeer
                       public IPeerSubscriptionDelegate,
                       public IServiceLockboxSessionDelegate,
                       public IServiceNamespaceGrantSessionDelegate,
+                      public IBackgroundingDelegate,
                       public IWakeDelegate
       {
       public:
@@ -216,6 +220,7 @@ namespace openpeer
 
         ZS_DECLARE_CLASS_PTR(ContactSubscription)
         ZS_DECLARE_CLASS_PTR(LocationSubscription)
+        ZS_DECLARE_CLASS_PTR(DelegateFilter)
 
         friend class ContactSubscription;
         friend class LocationSubscription;
@@ -244,7 +249,11 @@ namespace openpeer
                 ICallDelegatePtr callDelegate
                 );
         
-        Account(Noop) : Noop(true), MessageQueueAssociator(IMessageQueuePtr()) {};
+        Account(Noop) :
+          Noop(true),
+          MessageQueueAssociator(IMessageQueuePtr()),
+          SharedRecursiveLock(SharedRecursiveLock::create())
+        {}
 
         void init();
 
@@ -332,8 +341,6 @@ namespace openpeer
         #pragma mark Account => IAccountForContact
         #pragma mark
 
-        // (duplicate) virtual RecursiveLock &getLock() const;
-
         // (duplicate) virtual ContactPtr getSelfContact() const;
         // (duplicate) virtual stack::IAccountPtr getStackAccount() const;
 
@@ -356,8 +363,6 @@ namespace openpeer
         //                                                      String *outErrorReason
         //                                                      ) const = 0;
 
-        virtual RecursiveLock &getLock() const {return mLock;}
-
         virtual ContactPtr getSelfContact() const;
         virtual ILocationPtr getSelfLocation() const;
 
@@ -369,10 +374,15 @@ namespace openpeer
         virtual IPeerFilesPtr getPeerFiles() const;
 
         virtual IConversationThreadDelegatePtr getConversationThreadDelegate() const;
-        virtual void notifyConversationThreadCreated(ConversationThreadPtr thread);
+        virtual void notifyConversationThreadCreated(
+                                                     ConversationThreadPtr thread,
+                                                     bool notifyDelegate
+                                                     );
 
         virtual ConversationThreadPtr getConversationThreadByID(const char *threadID) const;
         virtual void getConversationThreads(ConversationThreadList &outConversationThreads) const;
+
+        virtual void notifyConversationThreadStateChanged();
 
         //---------------------------------------------------------------------
         #pragma mark
@@ -388,8 +398,6 @@ namespace openpeer
         #pragma mark
         #pragma mark Account => IAccountForIdentityLookup
         #pragma mark
-
-        // (duplicate) virtual RecursiveLock &getLock() const;
 
         // (duplicate) virtual ContactPtr findContact(const char *peerURI) const;
 
@@ -461,6 +469,22 @@ namespace openpeer
 
         //---------------------------------------------------------------------
         #pragma mark
+        #pragma mark Account => IBackgroundingDelegate
+        #pragma mark
+
+        virtual void onBackgroundingGoingToBackground(
+                                                      IBackgroundingSubscriptionPtr subscription,
+                                                      IBackgroundingNotifierPtr notifier
+                                                      );
+
+        virtual void onBackgroundingGoingToBackgroundNow(IBackgroundingSubscriptionPtr subscription);
+
+        virtual void onBackgroundingReturningFromBackground(IBackgroundingSubscriptionPtr subscription);
+
+        virtual void onBackgroundingApplicationWillQuit(IBackgroundingSubscriptionPtr subscription);
+
+        //---------------------------------------------------------------------
+        #pragma mark
         #pragma mark Account => IWakeDelegate
         #pragma mark
 
@@ -529,297 +553,17 @@ namespace openpeer
                       );
 
       public:
-        //---------------------------------------------------------------------
-        //---------------------------------------------------------------------
-        //---------------------------------------------------------------------
-        //---------------------------------------------------------------------
-        #pragma mark
-        #pragma mark Account::ContactSubscription
-        #pragma mark
-
-        class ContactSubscription : public MessageQueueAssociator,
-                                    public IWakeDelegate,
-                                    public IPeerSubscriptionDelegate,
-                                    public ITimerDelegate
-        {
-        public:
-          enum ContactSubscriptionStates
-          {
-            ContactSubscriptionState_Pending,
-            ContactSubscriptionState_Ready,
-            ContactSubscriptionState_ShuttingDown,
-            ContactSubscriptionState_Shutdown,
-          };
-
-          static const char *toString(ContactSubscriptionStates state);
-
-          friend class Account;
-          friend class Account::LocationSubscription;
-
-          typedef String LocationID;
-          typedef std::map<LocationID, LocationSubscriptionPtr> LocationSubscriptionMap;
-
-        protected:
-          ContactSubscription(
-                              AccountPtr outer,
-                              UseContactPtr contact
-                              );
-
-          void init(ILocationPtr peerLocation);
-
-        public:
-          ~ContactSubscription();
-
-          static ElementPtr toDebug(ContactSubscriptionPtr contactSubscription);
-
-        protected:
-          //-------------------------------------------------------------------
-          #pragma mark
-          #pragma mark Account::ContactSubscription => friend Account
-          #pragma mark
-
-          static ContactSubscriptionPtr create(
-                                               AccountPtr outer,
-                                               UseContactPtr contact,
-                                               ILocationPtr peerLocation = ILocationPtr()
-                                               );
-
-          // (duplicate) bool isShuttingDown() const;
-          // (duplicate) bool isShutdown() const;
-
-          void notifyAboutLocationState(
-                                        ILocationPtr location,
-                                        ILocation::LocationConnectionStates state
-                                        );
-
-          //-------------------------------------------------------------------
-          #pragma mark
-          #pragma mark Account::ContactSubscription => IWakeDelegate
-          #pragma mark
-
-          virtual void onWake();
-
-          //-------------------------------------------------------------------
-          #pragma mark
-          #pragma mark Account::ContactSubscription => IPeerSubscriptionDelegate
-          #pragma mark
-
-          virtual void onPeerSubscriptionShutdown(IPeerSubscriptionPtr subscription);
-
-          virtual void onPeerSubscriptionFindStateChanged(
-                                                          IPeerSubscriptionPtr subscription,
-                                                          IPeerPtr peer,
-                                                          PeerFindStates state
-                                                          );
-
-          virtual void onPeerSubscriptionLocationConnectionStateChanged(
-                                                                        IPeerSubscriptionPtr subscription,
-                                                                        ILocationPtr location,
-                                                                        LocationConnectionStates state
-                                                                        );
-
-          virtual void onPeerSubscriptionMessageIncoming(
-                                                         IPeerSubscriptionPtr subscription,
-                                                         IMessageIncomingPtr message
-                                                         );
-
-          //-------------------------------------------------------------------
-          #pragma mark
-          #pragma mark Account::ContactSubscription => ITimerDelegate
-          #pragma mark
-
-          virtual void onTimer(TimerPtr timer);
-
-        protected:
-          //-------------------------------------------------------------------
-          #pragma mark
-          #pragma mark Account::ContactSubscription => friend LocationSubscription
-          #pragma mark
-
-          // (duplicate) RecursiveLock &getLock() const;
-          AccountPtr getOuter() const;
-
-          UseContactPtr getContact() const {return mContact;}
-
-          void notifyLocationShutdown(const String &locationID);
-
-        private:
-          //-------------------------------------------------------------------
-          #pragma mark
-          #pragma mark Account::ContactSubscription => (internal)
-          #pragma mark
-
-          bool isPending() const {return ContactSubscriptionState_Pending == mCurrentState;}
-          bool isReady() const {return ContactSubscriptionState_Ready == mCurrentState;}
-        protected:
-          bool isShuttingDown() const {return ContactSubscriptionState_ShuttingDown == mCurrentState;}
-          bool isShutdown() const {return ContactSubscriptionState_Shutdown == mCurrentState;}
-
-        private:
-          virtual PUID getID() const {return mID;}
-
-        protected:
-          RecursiveLock &getLock() const;
-
-        private:
-          Log::Params log(const char *message) const;
-
-          virtual ElementPtr toDebug() const;
-
-          void cancel();
-          void step();
-          void setState(ContactSubscriptionStates state);
-
-        private:
-          //-------------------------------------------------------------------
-          #pragma mark
-          #pragma mark Account::ContactSubscription => (data)
-          #pragma mark
-
-          mutable RecursiveLock mBogusLock;
-          PUID mID;
-          ContactSubscriptionWeakPtr mThisWeak;
-          ContactSubscriptionPtr mGracefulShutdownReference;
-
-          AccountWeakPtr mOuter;
-
-          ContactSubscriptionStates mCurrentState;
-
-          UseContactPtr mContact;
-          IPeerSubscriptionPtr mPeerSubscription;
-          TimerPtr mPeerSubscriptionAutoCloseTimer;
-
-          LocationSubscriptionMap mLocations;
-        };
-
-        //---------------------------------------------------------------------
-        //---------------------------------------------------------------------
-        //---------------------------------------------------------------------
-        //---------------------------------------------------------------------
-        #pragma mark
-        #pragma mark Account::LocationSubscription
-        #pragma mark
-
-        class LocationSubscription : public MessageQueueAssociator,
-                                     public IPublicationSubscriptionDelegate
-        {
-        public:
-          enum LocationSubscriptionStates
-          {
-            LocationSubscriptionState_Pending,
-            LocationSubscriptionState_Ready,
-            LocationSubscriptionState_ShuttingDown,
-            LocationSubscriptionState_Shutdown,
-          };
-
-          static const char *toString(LocationSubscriptionStates state);
-
-          friend class Account::ContactSubscription;
-
-          typedef String ThreadID;
-          typedef std::map<ThreadID, UseConversationThreadPtr> ConversationThreadMap;
-
-        protected:
-          LocationSubscription(
-                               ContactSubscriptionPtr outer,
-                               ILocationPtr peerLocation
-                               );
-
-          void init();
-
-        public:
-          ~LocationSubscription();
-
-          static ElementPtr toDebug(LocationSubscriptionPtr subscription);
-
-        protected:
-          //-------------------------------------------------------------------
-          #pragma mark
-          #pragma mark Account::LocationSubscription => friend ContactSubscription
-          #pragma mark
-
-          static LocationSubscriptionPtr create(
-                                                ContactSubscriptionPtr outer,
-                                                ILocationPtr peerLocation
-                                                );
-
-          // (duplicate) bool isShuttingDown() const;
-          // (duplicate) bool isShutdown() const;
-
-          // (duplicate) void cancel();
-
-        public:
-          //-------------------------------------------------------------------
-          #pragma mark
-          #pragma mark Account::LocationSubscription => IPublicationSubscriptionDelegate
-          #pragma mark
-
-          virtual void onPublicationSubscriptionStateChanged(
-                                                             IPublicationSubscriptionPtr subcription,
-                                                             PublicationSubscriptionStates state
-                                                             );
-
-          virtual void onPublicationSubscriptionPublicationUpdated(
-                                                                   IPublicationSubscriptionPtr subscription,
-                                                                   IPublicationMetaDataPtr metaData
-                                                                   );
-
-          virtual void onPublicationSubscriptionPublicationGone(
-                                                                IPublicationSubscriptionPtr subscription,
-                                                                IPublicationMetaDataPtr metaData
-                                                                );
-
-        private:
-          //-------------------------------------------------------------------
-          #pragma mark
-          #pragma mark Account::LocationSubscription => (internal)
-          #pragma mark
-
-          bool isPending() const {return LocationSubscriptionState_Pending == mCurrentState;}
-          bool isReady() const {return LocationSubscriptionState_Ready == mCurrentState;}
-        protected:
-          bool isShuttingDown() const {return LocationSubscriptionState_ShuttingDown == mCurrentState;}
-          bool isShutdown() const {return LocationSubscriptionState_Shutdown == mCurrentState;}
-
-        private:
-          RecursiveLock &getLock() const;
-          virtual PUID getID() const {return mID;}
-
-          Log::Params log(const char *message) const;
-
-          virtual ElementPtr toDebug() const;
-
-          String getPeerURI() const;
-          String getLocationID() const;
-
-        protected:
-          void cancel();
-
-        private:
-          void step();
-          void setState(LocationSubscriptionStates state);
-
-        private:
-          //---------------------------------------------------------------------
-          #pragma mark
-          #pragma mark Account::LocationSubscription => (data)
-          #pragma mark
-
-          mutable RecursiveLock mBogusLock;
-          PUID mID;
-          LocationSubscriptionWeakPtr mThisWeak;
-          LocationSubscriptionPtr mGracefulShutdownReference;
-
-          ContactSubscriptionWeakPtr mOuter;
-
-          LocationSubscriptionStates mCurrentState;
-
-          ILocationPtr mPeerLocation;
-
-          IPublicationSubscriptionPtr mPublicationSubscription;
-
-          ConversationThreadMap mConversationThreads;             // all the conversations which have been attached to this location
-        };
+#define OPENPEER_CORE_ACCOUNT_INCLUDE_CONTACT_SUBSCRIPTION
+#include <openpeer/core/internal/core_Account_ContactSubscription.h>
+#undef OPENPEER_CORE_ACCOUNT_INCLUDE_CONTACT_SUBSCRIPTION
+
+#define OPENPEER_CORE_ACCOUNT_INCLUDE_LOCATION_SUBSCRIPTION
+#include <openpeer/core/internal/core_Account_LocationSubscription.h>
+#undef OPENPEER_CORE_ACCOUNT_INCLUDE_LOCATION_SUBSCRIPTION
+
+#define OPENPEER_CORE_ACCOUNT_INCLUDE_DELEGATE_FILTER
+#include <openpeer/core/internal/core_Account_DelegateFilter.h>
+#undef OPENPEER_CORE_ACCOUNT_INCLUDE_DELEGATE_FILTER
 
       private:
         //---------------------------------------------------------------------
@@ -830,8 +574,7 @@ namespace openpeer
         #pragma mark Account => (data)
         #pragma mark
 
-        mutable RecursiveLock mLock;
-        PUID mID;
+        AutoPUID mID;
         AccountWeakPtr mThisWeak;
         AccountPtr mGracefulShutdownReference;
 
@@ -841,15 +584,17 @@ namespace openpeer
 
         IAccountDelegatePtr mDelegate;
 
-        IConversationThreadDelegatePtr mConversationThreadDelegate;
-        ICallDelegatePtr mCallDelegate;
+        IConversationThreadDelegatePtr mConversationThreadDelegate;   // NOTE: if set, never unset and never changes
+        ICallDelegatePtr mCallDelegate;                               // NOTE: if set, never unset and never changes
 
-        stack::IAccountPtr mStackAccount;
+        IBackgroundingSubscriptionPtr mBackgroundingSubscription;
 
-        IServiceNamespaceGrantSessionPtr mGrantSession;
+        LockedValue<stack::IAccountPtr, true> mStackAccount;          // NOTE: once set, never unset and never changes
 
-        IServiceLockboxSessionPtr mLockboxSession;
-        IServiceLockboxPtr mLockboxService;
+        IServiceNamespaceGrantSessionPtr mGrantSession;               // NOTE: must always be set, never unset, never changes
+
+        LockedValue<IServiceLockboxSessionPtr, true> mLockboxSession; // NOTE: once set, never unset and never changes
+        IServiceLockboxPtr mLockboxService;                           // NOTE: must always be set, never unset, never changes
         bool mLockboxForceCreateNewAccount;
 
         mutable IdentityMap mIdentities;
@@ -863,9 +608,11 @@ namespace openpeer
 
         ConversationThreadMap mConversationThreads;
 
-        UseCallTransportPtr mCallTransport;
+        LockedValue<UseCallTransportPtr, true> mCallTransport;        // NOTE: once set, never unset and never changes
 
         IPublicationPtr mSubscribersPermissionDocument;
+
+        DelegateFilterPtr mDelegateFilter;
       };
 
       //-----------------------------------------------------------------------

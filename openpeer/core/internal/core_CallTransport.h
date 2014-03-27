@@ -135,8 +135,6 @@ namespace openpeer
 
         static const char *toString(SocketTypes type);
 
-        virtual RecursiveLock &getLock() const = 0;
-
         virtual void notifyCallCreation(PUID idCall) = 0;
         virtual void notifyCallDestruction(PUID idCall) = 0;
 
@@ -181,6 +179,7 @@ namespace openpeer
 
       class CallTransport  : public Noop,
                              public MessageQueueAssociator,
+                             public SharedRecursiveLock,
                              public ICallTransport,
                              public ICallTransportForAccount,
                              public ICallTransportForCall,
@@ -210,7 +209,11 @@ namespace openpeer
                       const IICESocket::STUNServerInfoList &stunServers
                       );
 
-        CallTransport(Noop) : Noop(true), MessageQueueAssociator(IMessageQueuePtr()) {};
+        CallTransport(Noop) :
+          Noop(true),
+          MessageQueueAssociator(IMessageQueuePtr()),
+          SharedRecursiveLock(SharedRecursiveLock::create())
+        {}
 
         void init();
 
@@ -248,8 +251,6 @@ namespace openpeer
         #pragma mark
         #pragma mark CallTransport => ICallTransportForCall
         #pragma mark
-
-        virtual RecursiveLock &getLock() const;
 
         virtual void notifyCallCreation(PUID idCall);
         virtual void notifyCallDestruction(PUID idCall);
@@ -307,7 +308,7 @@ namespace openpeer
         bool isPending() const {return CallTransportState_Pending == mCurrentState;}
         bool isReady() const {return CallTransportState_Ready == mCurrentState;}
         bool isShuttingDown() const {return CallTransportState_ShuttingDown == mCurrentState;}
-        bool isShutdown() const {return CallTransportState_ShuttingDown == mCurrentState;}
+        bool isShutdown() const {return CallTransportState_Shutdown == mCurrentState;}
 
         void start();
         void stop();
@@ -405,8 +406,7 @@ namespace openpeer
       protected:
         //-------------------------------------------------------------------
         #pragma mark CallTransport => (data)
-        PUID mID;
-        mutable RecursiveLock mLock;
+        AutoPUID mID;
         CallTransportWeakPtr mThisWeak;
         CallTransportPtr mGracefulShutdownReference;
 

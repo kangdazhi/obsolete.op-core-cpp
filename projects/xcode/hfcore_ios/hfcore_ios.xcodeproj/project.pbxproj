@@ -28,6 +28,9 @@
 		0063C12616CA9B6A00E6DB4D /* core_Stack.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BF6816CA9B6900E6DB4D /* core_Stack.cpp */; };
 		007B84ED1862AA8100BB1284 /* core_ConversationThreadHost_PeerContact.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 007B84EC1862AA8100BB1284 /* core_ConversationThreadHost_PeerContact.cpp */; };
 		007B84F01862AE1300BB1284 /* core_ConversationThreadHost_PeerLocation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 007B84EF1862AE1300BB1284 /* core_ConversationThreadHost_PeerLocation.cpp */; };
+		00AE218F18D3ECA100F8CDB9 /* core_Account_ContactSubscription.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00AE218D18D3ECA100F8CDB9 /* core_Account_ContactSubscription.cpp */; };
+		00AE219018D3ECA100F8CDB9 /* core_Account_LocationSubscription.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00AE218E18D3ECA100F8CDB9 /* core_Account_LocationSubscription.cpp */; };
+		00D31A1618DBCA0700957088 /* core_Account_DelegateFilter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00D31A1518DBCA0700957088 /* core_Account_DelegateFilter.cpp */; };
 		00F11C38189B4BDC00EB33BB /* core_Settings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00F11C37189B4BDC00EB33BB /* core_Settings.cpp */; };
 /* End PBXBuildFile section */
 
@@ -102,6 +105,12 @@
 		007B84EE1862AA9300BB1284 /* core_ConversationThreadHost_PeerContact.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_ConversationThreadHost_PeerContact.h; sourceTree = "<group>"; };
 		007B84EF1862AE1300BB1284 /* core_ConversationThreadHost_PeerLocation.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_ConversationThreadHost_PeerLocation.cpp; sourceTree = "<group>"; };
 		007B84F11862AE2600BB1284 /* core_ConversationThreadHost_PeerLocation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_ConversationThreadHost_PeerLocation.h; sourceTree = "<group>"; };
+		00AE218D18D3ECA100F8CDB9 /* core_Account_ContactSubscription.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Account_ContactSubscription.cpp; sourceTree = "<group>"; };
+		00AE218E18D3ECA100F8CDB9 /* core_Account_LocationSubscription.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Account_LocationSubscription.cpp; sourceTree = "<group>"; };
+		00AE219118D3ECB600F8CDB9 /* core_Account_ContactSubscription.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_Account_ContactSubscription.h; sourceTree = "<group>"; };
+		00AE219218D3ECB600F8CDB9 /* core_Account_LocationSubscription.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_Account_LocationSubscription.h; sourceTree = "<group>"; };
+		00D31A1518DBCA0700957088 /* core_Account_DelegateFilter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Account_DelegateFilter.cpp; sourceTree = "<group>"; };
+		00D31A1718DBCA1800957088 /* core_Account_DelegateFilter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_Account_DelegateFilter.h; sourceTree = "<group>"; };
 		00F11C36189B4BAB00EB33BB /* ISettings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ISettings.h; sourceTree = "<group>"; };
 		00F11C37189B4BDC00EB33BB /* core_Settings.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Settings.cpp; sourceTree = "<group>"; };
 		00F11C39189B4BEC00EB33BB /* core_Settings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_Settings.h; sourceTree = "<group>"; };
@@ -172,6 +181,9 @@
 			children = (
 				0063BF5716CA9B6900E6DB4D /* core.cpp */,
 				0063BF5816CA9B6900E6DB4D /* core_Account.cpp */,
+				00AE218D18D3ECA100F8CDB9 /* core_Account_ContactSubscription.cpp */,
+				00AE218E18D3ECA100F8CDB9 /* core_Account_LocationSubscription.cpp */,
+				00D31A1518DBCA0700957088 /* core_Account_DelegateFilter.cpp */,
 				0028818B18BF9257005C78F9 /* core_Backgrounding.cpp */,
 				005F60B51756B7DB00BC3DD6 /* core_Cache.cpp */,
 				0063BF5916CA9B6900E6DB4D /* core_Call.cpp */,
@@ -202,6 +214,9 @@
 				0063BF8616CA9B6900E6DB4D /* types.h */,
 				0063BF7416CA9B6900E6DB4D /* core.h */,
 				0063BF7516CA9B6900E6DB4D /* core_Account.h */,
+				00AE219118D3ECB600F8CDB9 /* core_Account_ContactSubscription.h */,
+				00AE219218D3ECB600F8CDB9 /* core_Account_LocationSubscription.h */,
+				00D31A1718DBCA1800957088 /* core_Account_DelegateFilter.h */,
 				0028818A18BF9249005C78F9 /* core_Backgrounding.h */,
 				005F60B71756B7E300BC3DD6 /* core_Cache.h */,
 				0063BF7616CA9B6900E6DB4D /* core_Call.h */,
@@ -279,9 +294,11 @@
 			files = (
 				0063C11516CA9B6A00E6DB4D /* core.cpp in Sources */,
 				0063C11616CA9B6A00E6DB4D /* core_Account.cpp in Sources */,
+				00D31A1618DBCA0700957088 /* core_Account_DelegateFilter.cpp in Sources */,
 				00F11C38189B4BDC00EB33BB /* core_Settings.cpp in Sources */,
 				0063C11716CA9B6A00E6DB4D /* core_Call.cpp in Sources */,
 				0063C11816CA9B6A00E6DB4D /* core_CallTransport.cpp in Sources */,
+				00AE218F18D3ECA100F8CDB9 /* core_Account_ContactSubscription.cpp in Sources */,
 				0028818C18BF9257005C78F9 /* core_Backgrounding.cpp in Sources */,
 				0063C11916CA9B6A00E6DB4D /* core_Contact.cpp in Sources */,
 				0063C11B16CA9B6A00E6DB4D /* core_ConversationThread.cpp in Sources */,
@@ -292,6 +309,7 @@
 				0063C11E16CA9B6A00E6DB4D /* core_ConversationThreadSlave.cpp in Sources */,
 				0063C11F16CA9B6A00E6DB4D /* core_Factory.cpp in Sources */,
 				0063C12016CA9B6A00E6DB4D /* core_Helper.cpp in Sources */,
+				00AE219018D3ECA100F8CDB9 /* core_Account_LocationSubscription.cpp in Sources */,
 				0063C12216CA9B6A00E6DB4D /* core_Identity.cpp in Sources */,
 				0063C12316CA9B6A00E6DB4D /* core_IdentityLookup.cpp in Sources */,
 				007B84ED1862AA8100BB1284 /* core_ConversationThreadHost_PeerContact.cpp in Sources */,

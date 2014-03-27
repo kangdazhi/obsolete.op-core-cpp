@@ -604,10 +604,14 @@ namespace openpeer
       //-----------------------------------------------------------------------
       MediaEnginePtr MediaEngine::singleton(IMediaEngineDelegatePtr delegate)
       {
-        static MediaEnginePtr engine = IMediaEngineFactory::singleton().createMediaEngine(delegate);
-        return engine;
+        static SingletonLazySharedPtr<MediaEngine> singleton(IMediaEngineFactory::singleton().createMediaEngine(delegate));
+        MediaEnginePtr result = singleton.singleton();
+        if (!result) {
+          ZS_LOG_WARNING(Debug, slog("singleton gone"))
+        }
+        return result;
       }
-      
+
       //-------------------------------------------------------------------------
       void MediaEngine::setDefaultVideoOrientation(VideoOrientations orientation)
       {
@@ -2640,6 +2644,12 @@ namespace openpeer
         ElementPtr objectEl = Element::create("core::MediaEngine");
         IHelper::debugAppend(objectEl, "id", mID);
         return Log::Params(message, objectEl);
+      }
+
+      //-----------------------------------------------------------------------
+      Log::Params MediaEngine::slog(const char *message)
+      {
+        return Log::Params(message, "core::MediaEngine");
       }
 
       //-----------------------------------------------------------------------

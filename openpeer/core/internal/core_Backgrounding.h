@@ -51,14 +51,15 @@ namespace openpeer
       #pragma mark
 
       class Backgrounding : public zsLib::MessageQueueAssociator,
-                            public IBackgrounding
+                            public core::IBackgrounding
       {
       public:
         friend interaction IBackgroundingFactory;
-        friend interaction IBackgrounding;
+        friend interaction core::IBackgrounding;
 
         ZS_DECLARE_CLASS_PTR(Query)
         ZS_DECLARE_CLASS_PTR(Completion)
+        ZS_DECLARE_CLASS_PTR(Subscription)
 
       protected:
         Backgrounding();
@@ -72,6 +73,13 @@ namespace openpeer
         static BackgroundingPtr convert(IBackgroundingPtr backgrounding);
 
         static BackgroundingPtr singleton();
+
+        static QueryPtr createDeadQuery(core::IBackgroundingCompletionDelegatePtr readyDelegate);
+
+        static SubscriptionPtr subscribe(
+                                         core::IBackgroundingDelegatePtr delegate,
+                                         ULONG phase
+                                         );
 
       protected:
         //---------------------------------------------------------------------
@@ -96,6 +104,7 @@ namespace openpeer
         #pragma mark
 
         Log::Params log(const char *message) const;
+        static Log::Params slog(const char *message);
         Log::Params debug(const char *message) const;
 
         virtual ElementPtr toDebug() const;
@@ -107,7 +116,7 @@ namespace openpeer
         #pragma mark Backgrounding::Query
         #pragma mark
 
-        class Query : public IBackgroundingQuery
+        class Query : public core::IBackgroundingQuery
         {
           friend class Backgrounding;
 
@@ -115,7 +124,7 @@ namespace openpeer
           Query() {}
 
         public:
-          static QueryPtr create();
+          static QueryPtr create() {return QueryPtr(new Query());}
 
         protected:
           //-------------------------------------------------------------------
@@ -130,13 +139,14 @@ namespace openpeer
           #pragma mark Backgrounding::Query => IBackgroundingQuery
           #pragma mark
 
-          virtual PUID getID() const {return mQuery->getID();}
+          virtual PUID getID() const {return mQuery ? mQuery->getID() : mID;}
 
-          virtual bool isReady() const {return mQuery->isReady();}
+          virtual bool isReady() const {return mQuery ? mQuery->isReady() : true;}
 
-          virtual size_t totalBackgroundingSubscribersStillPending() const {return mQuery->totalBackgroundingSubscribersStillPending();}
+          virtual size_t totalBackgroundingSubscribersStillPending() const {return mQuery ? mQuery->totalBackgroundingSubscribersStillPending() : 0;}
 
         protected:
+          AutoPUID mID;
           services::IBackgroundingQueryPtr mQuery;
         };
 
@@ -145,18 +155,20 @@ namespace openpeer
         #pragma mark Backgrounding::Completion
         #pragma mark
 
-        class Completion : public services::IBackgroundingCompletionDelegate
+        class Completion : public MessageQueueAssociator,
+                           public services::IBackgroundingCompletionDelegate
         {
         protected:
           Completion(
+                     IMessageQueuePtr queue,
                      QueryPtr query,
-                     IBackgroundingCompletionDelegatePtr delegate
+                     core::IBackgroundingCompletionDelegatePtr delegate
                      );
 
         public:
           static CompletionPtr create(
                                       QueryPtr query,
-                                      IBackgroundingCompletionDelegatePtr delegate
+                                      core::IBackgroundingCompletionDelegatePtr delegate
                                       );
 
         protected:
@@ -168,10 +180,106 @@ namespace openpeer
           virtual void onBackgroundingReady(services::IBackgroundingQueryPtr query);
 
         protected:
+          //-------------------------------------------------------------------
+          #pragma mark
+          #pragma mark Backgrounding::Completion => (internal)
+          #pragma mark
+
+          Log::Params log(const char *message) const;
+
+        protected:
+          AutoPUID mID;
           CompletionPtr mThis;
 
           QueryPtr mQuery;
           IBackgroundingCompletionDelegatePtr mDelegate;
+        };
+
+        //---------------------------------------------------------------------
+        #pragma mark
+        #pragma mark Backgrounding::Subscription
+        #pragma mark
+
+        class Subscription : public MessageQueueAssociator,
+                             public core::IBackgroundingSubscription,
+                             public services::IBackgroundingDelegate
+        {
+        public:
+          ZS_DECLARE_CLASS_PTR(Notifier)
+
+        protected:
+          Subscription(
+                       IMessageQueuePtr queue,
+                       core::IBackgroundingDelegatePtr delegate
+                       );
+
+        public:
+          static SubscriptionPtr create(core::IBackgroundingDelegatePtr delegate);
+
+          void subscribe(services::IBackgroundingSubscriptionPtr subscription);
+
+        protected:
+          //-------------------------------------------------------------------
+          #pragma mark
+          #pragma mark Backgrounding::Subscription => IBackgroundingSubscription
+          #pragma mark
+
+          virtual PUID getID() const {return mID;}
+
+          virtual void cancel();
+
+          //-------------------------------------------------------------------
+          #pragma mark
+          #pragma mark Backgrounding::Subscription => services::IBackgroundingDelegate
+          #pragma mark
+
+          virtual void onBackgroundingGoingToBackground(
+                                                        services::IBackgroundingSubscriptionPtr subscription,
+                                                        services::IBackgroundingNotifierPtr notifier
+                                                        );
+
+          virtual void onBackgroundingGoingToBackgroundNow(services::IBackgroundingSubscriptionPtr subscription);
+
+          virtual void onBackgroundingReturningFromBackground(services::IBackgroundingSubscriptionPtr subscription);
+
+          virtual void onBackgroundingApplicationWillQuit(services::IBackgroundingSubscriptionPtr subscription);
+
+        public:
+          class Notifier : public core::IBackgroundingNotifier
+          {
+          protected:
+            Notifier(services::IBackgroundingNotifierPtr notifier) : mNotifier(notifier) {}
+
+          public:
+            static NotifierPtr create(services::IBackgroundingNotifierPtr notifier)
+            {
+              NotifierPtr pThis(new Notifier(notifier));
+              return pThis;
+            }
+
+          protected:
+            virtual PUID getID() const {return mNotifier->getID();}
+
+            virtual void ready() {mNotifier->ready();}
+
+          protected:
+            services::IBackgroundingNotifierPtr mNotifier;
+          };
+
+        protected:
+          //-------------------------------------------------------------------
+          #pragma mark
+          #pragma mark Backgrounding::Subscription => (internal)
+          #pragma mark
+
+          Log::Params log(const char *message) const;
+
+        protected:
+          AutoPUID mID;
+          SubscriptionWeakPtr mThisWeak;
+
+          services::IBackgroundingSubscriptionPtr mSubscription;
+          core::IBackgroundingDelegatePtr mDelegate;
         };
 
       protected:

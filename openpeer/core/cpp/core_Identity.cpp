@@ -230,6 +230,7 @@ namespace openpeer
         IServiceLockboxSessionPtr lockboxSession = account->getLockboxSession();
 
         pThis->mSession = IServiceIdentitySession::loginWithIdentity(pThis, provider, grantSession, lockboxSession, outerFrameURLUponReload, identityURI_or_identityBaseURI);
+        if (!pThis->mSession) return IdentityPtr();
         pThis->init();
         account->associateIdentity(pThis);
 
@@ -281,6 +282,7 @@ namespace openpeer
         IServiceLockboxSessionPtr lockboxSession = account->getLockboxSession();
 
         pThis->mSession = IServiceIdentitySession::loginWithIdentityPreauthorized(pThis, provider, grantSession, lockboxSession, identityURI, identityAccessToken, identityAccessSecret, identityAccessSecretExpires);
+        if (!pThis->mSession) return IdentityPtr();
         pThis->init();
         account->associateIdentity(pThis);
 

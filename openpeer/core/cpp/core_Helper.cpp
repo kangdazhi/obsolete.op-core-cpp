@@ -129,6 +129,42 @@ namespace openpeer
           outContact.mAvatars.push_back(avatar);
         }
       }
+
+      //-----------------------------------------------------------------------
+      void Helper::convert(
+                           const IdentityContact &source,
+                           IdentityInfo &outContact
+                           )
+      {
+        outContact.mURI = source.mIdentityURI;
+        outContact.mProvider = source.mIdentityProvider;
+        outContact.mStableID = source.mStableID;
+
+        outContact.mPeerFilePublic = source.mPeerFilePublic;
+        outContact.mIdentityProofBundle = source.mIdentityProofBundleEl;
+
+        outContact.mPriority = source.mPriority;
+        outContact.mWeight = source.mWeight;
+
+        outContact.mUpdated = source.mLastUpdated;
+        outContact.mExpires = source.mExpires;
+
+        outContact.mName = source.mName;
+        outContact.mProfile = source.mProfileURL;
+        outContact.mVProfile = source.mVProfileURL;
+
+        for (IdentityContact::AvatarList::const_iterator avIter = source.mAvatars.begin();  avIter != source.mAvatars.end(); ++avIter)
+        {
+          const IdentityContact::Avatar &resultAvatar = (*avIter);
+          IdentityInfo::Avatar avatar;
+
+          avatar.mName = resultAvatar.mName;
+          avatar.mURL = resultAvatar.mURL;
+          avatar.mWidth = resultAvatar.mWidth;
+          avatar.mHeight = resultAvatar.mHeight;
+          outContact.mAvatars.push_back(avatar);
+        }
+      }
     }
 
     //-------------------------------------------------------------------------
