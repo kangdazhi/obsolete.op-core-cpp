@@ -316,7 +316,7 @@ namespace openpeer
 
         mError = mVoiceBase->Init();
         if (mError < 0) {
-          ZS_LOG_ERROR(Detail, log("failed to initialize voice base") + ZS_PARAM("error", mVideoBase->LastError()))
+          ZS_LOG_ERROR(Detail, log("failed to initialize voice base") + ZS_PARAM("error", mVoiceBase->LastError()))
           return;
         } else if (mVoiceBase->LastError() > 0) {
           ZS_LOG_WARNING(Detail, log("an error has occured during voice base init") + ZS_PARAM("error", mVoiceBase->LastError()))
@@ -1335,6 +1335,9 @@ namespace openpeer
           return;
         }
         
+        ZS_LOG_WARNING(Detail, log("CallbackOnAudioSessionInterruptionBegin - escaped"))
+        return;
+        
         try {
           if (mDelegate)
             mDelegate->onMediaEngineAudioSessionInterruptionBegan();
@@ -1352,6 +1355,9 @@ namespace openpeer
           ZS_LOG_WARNING(Detail, log("audio session interruption ended callback igored as delegate was not specified"))
           return;
         }
+        
+        ZS_LOG_WARNING(Detail, log("CallbackOnAudioSessionInterruptionEnd - escaped"))
+        return;
         
         try {
           if (mDelegate)
