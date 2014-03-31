@@ -1136,7 +1136,7 @@ namespace openpeer
             descriptionEl->adoptAsLastChild(iceUsernameFragEl);
             descriptionEl->adoptAsLastChild(icePasswordEl);
             if (description->mFinal) {
-              ElementPtr finalEl = createElementWithNumber("final", "true");
+              ElementPtr finalEl = createElementWithNumber("iceFinal", "true");
               descriptionEl->adoptAsLastChild(finalEl);
             }
 
@@ -1239,7 +1239,7 @@ namespace openpeer
 
               description->mICEUsernameFrag = IMessageHelper::getElementTextAndDecode(descriptionEl->findFirstChildElementChecked("iceUsernameFrag"));
               description->mICEPassword = IMessageHelper::getElementTextAndDecode(descriptionEl->findFirstChildElementChecked("icePassword"));
-              ElementPtr finalEl = descriptionEl->findFirstChildElement("final");
+              ElementPtr finalEl = descriptionEl->findFirstChildElement("iceFinal");
 
               description->mFinal = false;
               if (finalEl) {
