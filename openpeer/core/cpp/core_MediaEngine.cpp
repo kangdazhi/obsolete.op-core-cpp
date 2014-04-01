@@ -49,6 +49,7 @@
 
 #ifdef _ANDROID
 #include <pthread.h>
+#include <android/log.h>
 #endif
 
 #ifdef TARGET_OS_IPHONE
@@ -264,9 +265,9 @@ namespace openpeer
       void MediaEngine::init()
       {
         AutoRecursiveLock lock(mLock);
-
+        
         ZS_LOG_DEBUG(log("init media engine"))
-#ifndef ANDROID
+
         mVoiceEngine = webrtc::VoiceEngine::Create();
         if (mVoiceEngine == NULL) {
           ZS_LOG_ERROR(Detail, log("failed to create voice engine"))
@@ -315,7 +316,7 @@ namespace openpeer
 
         mError = mVoiceBase->Init();
         if (mError < 0) {
-          ZS_LOG_ERROR(Detail, log("failed to initialize voice base") + ZS_PARAM("error", mVideoBase->LastError()))
+          ZS_LOG_ERROR(Detail, log("failed to initialize voice base") + ZS_PARAM("error", mVoiceBase->LastError()))
           return;
         } else if (mVoiceBase->LastError() > 0) {
           ZS_LOG_WARNING(Detail, log("an error has occured during voice base init") + ZS_PARAM("error", mVoiceBase->LastError()))
@@ -331,7 +332,7 @@ namespace openpeer
           ZS_LOG_ERROR(Detail, log("failed to create video engine"))
           return;
         }
-        
+
         mVideoBase = webrtc::ViEBase::GetInterface(mVideoEngine);
         if (mVideoBase == NULL) {
           ZS_LOG_ERROR(Detail, log("failed to get interface for video base"))
@@ -430,13 +431,11 @@ namespace openpeer
             return;
           }
         }
-#endif //ANDROID
       }
       
       //-----------------------------------------------------------------------
       void MediaEngine::destroyMediaEngine()
       {
-#ifndef ANDROID
         // scope: delete voice engine
         {
           if (mVoiceBase) {
@@ -577,7 +576,6 @@ namespace openpeer
             return;
           }
         }
-#endif //ANDROID
       }
       
       //-----------------------------------------------------------------------
@@ -694,7 +692,7 @@ namespace openpeer
         AutoRecursiveLock lock(mLock);
 
         ZS_LOG_DEBUG(log("set EC enabled") + ZS_PARAM("value", enabled))
-#ifndef ANDROID
+
         webrtc::EcModes ecMode = getEcMode();
         if (ecMode == webrtc::kEcUnchanged) {
           return;
@@ -711,7 +709,7 @@ namespace openpeer
             return;
           }
         }
-#endif //ANDROID
+
         mEcEnabled = enabled;
       }
 
@@ -721,13 +719,13 @@ namespace openpeer
         AutoRecursiveLock lock(mLock);
 
         ZS_LOG_DEBUG(log("set AGC enabled") + ZS_PARAM("value", enabled))
-#ifndef ANDROID
+
         mError = mVoiceAudioProcessing->SetAgcStatus(enabled, webrtc::kAgcAdaptiveDigital);
         if (mError != 0) {
           ZS_LOG_ERROR(Detail, log("failed to set automatic gain control status") + ZS_PARAM("error", mVoiceBase->LastError()))
           return;
         }
-#endif //ANDROID
+
         mAgcEnabled = enabled;
       }
 
@@ -737,13 +735,13 @@ namespace openpeer
         AutoRecursiveLock lock(mLock);
 
         ZS_LOG_DEBUG(log("set NS enabled") + ZS_PARAM("value", enabled))
-#ifndef ANDROID
+
         mError = mVoiceAudioProcessing->SetNsStatus(enabled, webrtc::kNsLowSuppression);
         if (mError != 0) {
           ZS_LOG_ERROR(Detail, log("failed to set noise suppression status") + ZS_PARAM("error", mVoiceBase->LastError()))
           return;
         }
-#endif //ANDROID
+
         mNsEnabled = enabled;
       }
       
@@ -773,13 +771,12 @@ namespace openpeer
         AutoRecursiveLock lock(mLock);
 
         ZS_LOG_DEBUG(log("set microphone mute enabled") + ZS_PARAM("value", enabled))
-#ifndef ANDROID
+
         mError = mVoiceVolumeControl->SetInputMute(-1, enabled);
         if (mError != 0) {
           ZS_LOG_ERROR(Detail, log("failed to set microphone mute") + ZS_PARAM("error", mVoiceBase->LastError()))
           return;
         }
-#endif //ANDROID
       }
 
       //-----------------------------------------------------------------------
@@ -790,13 +787,13 @@ namespace openpeer
         ZS_LOG_DEBUG(log("get microphone mute enabled"))
 
         bool enabled;
-#ifndef ANDROID
+
         mError = mVoiceVolumeControl->GetInputMute(-1, enabled);
         if (mError != 0) {
           ZS_LOG_ERROR(Detail, log("failed to set microphone mute") + ZS_PARAM("error", mVoiceBase->LastError()))
           return false;
         }
-#endif //ANDROID
+
         return enabled;
       }
 
@@ -806,13 +803,12 @@ namespace openpeer
         AutoRecursiveLock lock(mLock);
 
         ZS_LOG_DEBUG(log("set loudspeaker enabled") + ZS_PARAM("value", enabled))
-#ifndef ANDROID
+
         mError = mVoiceHardware->SetLoudspeakerStatus(enabled);
         if (mError != 0) {
           ZS_LOG_ERROR(Detail, log("failed to set loudspeaker") + ZS_PARAM("error", mVoiceBase->LastError()))
           return;
         }
-#endif //ANDROID
       }
 
       //-----------------------------------------------------------------------
@@ -823,13 +819,13 @@ namespace openpeer
         ZS_LOG_DEBUG(log("get loudspeaker enabled"))
 
         bool enabled;
-#ifndef ANDROID
+
         mError = mVoiceHardware->GetLoudspeakerStatus(enabled);
         if (mError != 0) {
           ZS_LOG_ERROR(Detail, log("failed to get loudspeaker") + ZS_PARAM("error", mVoiceBase->LastError()))
           return false;
         }
-#endif //ANDROID
+
         return enabled;
       }
 
@@ -841,13 +837,13 @@ namespace openpeer
         ZS_LOG_DEBUG(log("get output audio route"))
 
         OutputAudioRoute route;
-#ifndef ANDROID
+
         mError = mVoiceHardware->GetOutputAudioRoute(route);
         if (mError != 0) {
           ZS_LOG_ERROR(Detail, log("failed to get output audio route") + ZS_PARAM("error", mVoiceBase->LastError()))
           return OutputAudioRoute_BuiltInSpeaker;
         }
-#endif //ANDROID
+
         switch (route) {
           case webrtc::kOutputAudioRouteHeadphone:
             return OutputAudioRoute_Headphone;
@@ -974,7 +970,7 @@ namespace openpeer
         unsigned int extendedMax;
         unsigned int jitter;
         int rttMs;
-#ifndef ANDROID
+
         mError = mVideoRtpRtcp->GetReceivedRTCPStatistics(mVideoChannel, fractionLost, cumulativeLost, extendedMax, jitter, rttMs);
         if (0 != mError) {
           ZS_LOG_ERROR(Detail, log("failed to get received RTCP statistics for video") + ZS_PARAM("error", mVideoBase->LastError()))
@@ -1001,7 +997,7 @@ namespace openpeer
         stat.packetsSent = packetsSent;
         stat.bytesReceived = bytesReceived;
         stat.packetsReceived = packetsReceived;
-#endif //ANDROID
+
         return 0;
       }
 
@@ -1009,7 +1005,7 @@ namespace openpeer
       int MediaEngine::getVoiceTransportStatistics(RtpRtcpStatistics &stat)
       {
         AutoRecursiveLock lock(mLock);
-#ifndef ANDROID
+
         webrtc::CallStatistics callStat;
 
         mError = mVoiceRtpRtcp->GetRTCPStatistics(mVoiceChannel, callStat);
@@ -1027,7 +1023,7 @@ namespace openpeer
         stat.packetsSent = callStat.packetsSent;
         stat.bytesReceived = callStat.bytesReceived;
         stat.packetsReceived = callStat.packetsReceived;
-#endif //ANDROID
+
         return 0;
       }
 
@@ -1110,9 +1106,9 @@ namespace openpeer
         AutoRecursiveLock lock(mLock);
 
         ZS_LOG_DEBUG(log("register voice external transport"))
-#ifndef ANDROID
+
         mRedirectVoiceTransport.redirect(&transport);
-#endif
+
         return 0;
       }
 
@@ -1122,16 +1118,15 @@ namespace openpeer
         AutoRecursiveLock lock(mLock);
 
         ZS_LOG_DEBUG(log("deregister voice external transport"))
-#ifndef ANDROID
+
         mRedirectVoiceTransport.redirect(NULL);
-#endif
+
         return 0;
       }
 
       //-----------------------------------------------------------------------
       int MediaEngine::receivedVoiceRTPPacket(const void *data, size_t length)
       {
-#ifndef ANDROID
         int channel = OPENPEER_MEDIA_ENGINE_INVALID_CHANNEL;
         {
           AutoRecursiveLock lock(mMediaEngineReadyLock);
@@ -1149,14 +1144,13 @@ namespace openpeer
           ZS_LOG_ERROR(Detail, log("received voice RTP packet failed") + ZS_PARAM("error", mVoiceBase->LastError()))
           return mError;
         }
-#endif
+
         return 0;
       }
 
       //-----------------------------------------------------------------------
       int MediaEngine::receivedVoiceRTCPPacket(const void* data, size_t length)
       {
-#ifndef ANDROID
         int channel = OPENPEER_MEDIA_ENGINE_INVALID_CHANNEL;
         {
           AutoRecursiveLock lock(mMediaEngineReadyLock);
@@ -1174,7 +1168,7 @@ namespace openpeer
           ZS_LOG_ERROR(Detail, log("received voice RTCP packet failed") + ZS_PARAM("error", mVoiceBase->LastError()))
           return mError;
         }
-#endif //ANDROID
+
         return 0;
       }
 
@@ -1184,9 +1178,9 @@ namespace openpeer
         AutoRecursiveLock lock(mLock);
 
         ZS_LOG_DEBUG(log("register video external transport"))
-#ifndef ANDROID
+
         mRedirectVideoTransport.redirect(&transport);
-#endif //ANDROID
+
         return 0;
       }
 
@@ -1196,16 +1190,15 @@ namespace openpeer
         AutoRecursiveLock lock(mLock);
 
         ZS_LOG_DEBUG(log("deregister video external transport"))
-#ifndef ANDROID
+
         mRedirectVideoTransport.redirect(NULL);
-#endif //ANDROID
+
         return 0;
       }
 
       //-----------------------------------------------------------------------
       int MediaEngine::receivedVideoRTPPacket(const void *data, size_t length)
       {
-#ifndef ANDROID
         int channel = OPENPEER_MEDIA_ENGINE_INVALID_CHANNEL;
         {
           AutoRecursiveLock lock(mMediaEngineReadyLock);
@@ -1223,14 +1216,13 @@ namespace openpeer
           ZS_LOG_ERROR(Detail, log("received video RTP packet failed") + ZS_PARAM("error", mVideoBase->LastError()))
           return mError;
         }
-#endif
+
         return 0;
       }
 
       //-----------------------------------------------------------------------
       int MediaEngine::receivedVideoRTCPPacket(const void *data, size_t length)
       {
-#ifndef ANDROID
         int channel = OPENPEER_MEDIA_ENGINE_INVALID_CHANNEL;
         {
           AutoRecursiveLock lock(mMediaEngineReadyLock);
@@ -1248,7 +1240,7 @@ namespace openpeer
           ZS_LOG_ERROR(Detail, log("received video RTCP packet failed") + ZS_PARAM("error", mVideoBase->LastError()))
           return mError;
         }
-#endif //ANDROID
+
         return 0;
       }
 
@@ -1262,7 +1254,6 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void MediaEngine::Print(const webrtc::TraceLevel level, const char *traceString, const int length)
       {
-#ifndef ANDROID
         switch (level) {
           case webrtc::kTraceApiCall:
           case webrtc::kTraceStateInfo:
@@ -1291,7 +1282,6 @@ namespace openpeer
             ZS_LOG_TRACE(log(traceString))
             break;
         }
-#endif //ANDROID
       }
 
       //---------------------------------------------------------------------
@@ -1345,6 +1335,9 @@ namespace openpeer
           return;
         }
         
+        ZS_LOG_WARNING(Detail, log("CallbackOnAudioSessionInterruptionBegin - escaped"))
+        return;
+        
         try {
           if (mDelegate)
             mDelegate->onMediaEngineAudioSessionInterruptionBegan();
@@ -1362,6 +1355,9 @@ namespace openpeer
           ZS_LOG_WARNING(Detail, log("audio session interruption ended callback igored as delegate was not specified"))
           return;
         }
+        
+        ZS_LOG_WARNING(Detail, log("CallbackOnAudioSessionInterruptionEnd - escaped"))
+        return;
         
         try {
           if (mDelegate)
@@ -1568,7 +1564,6 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void MediaEngine::internalStartVoice()
       {
-#ifndef ANDROID
         {
           AutoRecursiveLock lock(mLock);
 
@@ -1601,17 +1596,19 @@ namespace openpeer
               return;
             }
           }
+          
           mError = mVoiceAudioProcessing->SetAgcStatus(mAgcEnabled, webrtc::kAgcAdaptiveDigital);
           if (mError != 0) {
             ZS_LOG_ERROR(Detail, log("failed to set automatic gain control status") + ZS_PARAM("error", mVoiceBase->LastError()))
             return;
           }
+          
           mError = mVoiceAudioProcessing->SetNsStatus(mNsEnabled, webrtc::kNsLowSuppression);
           if (mError != 0) {
             ZS_LOG_ERROR(Detail, log("failed to set noise suppression status") + ZS_PARAM("error", mVoiceBase->LastError()))
             return;
           }
-
+          
           mError = mVoiceVolumeControl->SetInputMute(-1, false);
           if (mError != 0) {
             ZS_LOG_ERROR(Detail, log("failed to set microphone mute") + ZS_PARAM("error", mVoiceBase->LastError()))
@@ -1664,7 +1661,7 @@ namespace openpeer
             }
 #endif
           }
-
+          
           webrtc::CodecInst cfinst;
           memset(&cfinst, 0, sizeof(webrtc::CodecInst));
           for (int idx = 0; idx < mVoiceCodec->NumOfCodecs(); idx++) {
@@ -1711,7 +1708,7 @@ namespace openpeer
             }
           }
         }
-#endif //ANDROID
+        
         {
           AutoRecursiveLock lock(mMediaEngineReadyLock);
           mVoiceEngineReady = true;
@@ -1730,7 +1727,7 @@ namespace openpeer
           AutoRecursiveLock lock(mLock);
 
           ZS_LOG_DEBUG(log("stop voice"))
-#ifndef ANDROID
+
           mError = mVoiceBase->StopSend(mVoiceChannel);
           if (mError != 0) {
             ZS_LOG_ERROR(Detail, log("failed to stop sending voice") + ZS_PARAM("error", mVoiceBase->LastError()))
@@ -1763,7 +1760,7 @@ namespace openpeer
             ZS_LOG_ERROR(Detail, log("failed to delete voice channel") + ZS_PARAM("error", mVoiceBase->LastError()))
             return;
           }
-#endif //ANDROID
+
           mVoiceChannel = OPENPEER_MEDIA_ENGINE_INVALID_CHANNEL;
         }
       }
@@ -1771,7 +1768,6 @@ namespace openpeer
       //-----------------------------------------------------------------------
       int MediaEngine::registerVoiceTransport()
       {
-#ifndef ANDROID
         if (NULL != mVoiceTransport) {
           mError = mVoiceNetwork->RegisterExternalTransport(mVoiceChannel, *mVoiceTransport);
           if (0 != mError) {
@@ -1782,7 +1778,7 @@ namespace openpeer
           ZS_LOG_ERROR(Detail, log("external voice transport is not set"))
           return -1;
         }
-#endif //ANDROID
+
         return 0;
       }
       
@@ -1796,7 +1792,6 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void MediaEngine::internalStartVideoCapture()
       {
-#ifndef ANDROID
         {
           AutoRecursiveLock lock(mLock);
           
@@ -1809,7 +1804,7 @@ namespace openpeer
           char uniqueId[KMaxUniqueIdLength];
           memset(uniqueId, 0, KMaxUniqueIdLength);
           uint32_t captureIdx;
-          
+
           if (mCameraType == CameraType_Back)
           {
             captureIdx = 0;
@@ -1829,7 +1824,7 @@ namespace openpeer
 #else
           void *captureView = NULL;
 #endif
-#ifndef __QNX__
+#if !defined(__QNX__) && !defined(_ANDROID)
           if (captureView == NULL) {
             ZS_LOG_ERROR(Detail, log("capture view is not set"))
             return;
@@ -1905,6 +1900,10 @@ namespace openpeer
             ZS_LOG_ERROR(Detail, log("failed to get orientation from video capture device") + ZS_PARAM("error", mVideoBase->LastError()))
             return;
           }
+#elif defined(_ANDROID)
+          setVideoCaptureRotation();
+
+          webrtc::RotateCapturedFrame orientation = webrtc::RotateCapturedFrame_270;
 #else
           webrtc::RotateCapturedFrame orientation = webrtc::RotateCapturedFrame_0;
 #endif
@@ -1926,7 +1925,7 @@ namespace openpeer
             return;
           }
 
-#ifndef __QNX__
+#if !defined(__QNX__) && !defined(_ANDROID)
           mError = mVideoRender->AddRenderer(mCaptureId, captureView, 0, 0.0F, 0.0F, 1.0F,
                                              1.0F);
           if (0 != mError) {
@@ -1941,19 +1940,17 @@ namespace openpeer
           }
 #endif
         }
-#endif //ANDROID
       }
       
       //-----------------------------------------------------------------------
       void MediaEngine::internalStopVideoCapture()
       {
-#ifndef ANDROID
         {
           AutoRecursiveLock lock(mLock);
           
           ZS_LOG_DEBUG(log("stop video capture"))
 
-#ifndef __QNX__
+#if !defined(__QNX__) && !defined(_ANDROID)
           mError = mVideoRender->StopRender(mCaptureId);
           if (mError != 0) {
             ZS_LOG_ERROR(Detail, log("failed to stop rendering video capture") + ZS_PARAM("error", mVideoBase->LastError()))
@@ -1988,19 +1985,17 @@ namespace openpeer
           
           mVcpm = NULL;
         }
-#endif //ANDROID
       }
 
       //-----------------------------------------------------------------------
       void MediaEngine::internalStartVideoChannel()
       {
-#ifndef ANDROID
         {
           AutoRecursiveLock lock(mLock);
           
           ZS_LOG_DEBUG(log("start video channel"))
-          
-#if defined(TARGET_OS_IPHONE) || defined(__QNX__)
+
+#if defined(TARGET_OS_IPHONE) || defined(__QNX__) || defined(_ANDROID)
           void *channelView = mChannelRenderView;
 #else
           void *channelView = NULL;
@@ -2031,7 +2026,7 @@ namespace openpeer
             ZS_LOG_ERROR(Detail, log("failed to connect capture device to video channel") + ZS_PARAM("error", mVideoBase->LastError()))
             return;
           }
-
+          
           mError = mVideoRtpRtcp->SetRTCPStatus(mVideoChannel, webrtc::kRtcpCompound_RFC4585);
           if (0 != mError) {
             ZS_LOG_ERROR(Detail, log("failed to set video RTCP status") + ZS_PARAM("error", mVideoBase->LastError()))
@@ -2092,7 +2087,7 @@ namespace openpeer
               break;
             }
           }
-
+          
           mError = setVideoCodecParameters();
           if (mError != 0) {
             return;
@@ -2119,18 +2114,16 @@ namespace openpeer
             return;
           }
         }
-
+        
         {
           AutoRecursiveLock lock(mMediaEngineReadyLock);
           mVideoEngineReady = true;
         }
-#endif //ANDROID
       }
       
       //-----------------------------------------------------------------------
       void MediaEngine::internalStopVideoChannel()
       {
-#ifndef ANDROID
         {
           AutoRecursiveLock lock(mMediaEngineReadyLock);
           mVideoEngineReady = false;
@@ -2177,7 +2170,6 @@ namespace openpeer
 
           mVideoChannel = OPENPEER_MEDIA_ENGINE_INVALID_CHANNEL;
         }
-#endif //ANDROID
       }
       
       //-----------------------------------------------------------------------
@@ -2186,7 +2178,7 @@ namespace openpeer
         AutoRecursiveLock lock(mLock);
         
         ZS_LOG_DEBUG(log("start video capture recording"))
-#ifndef ANDROID
+
         webrtc::CapturedFrameOrientation recordOrientation;
         switch (mRecordVideoOrientation) {
           case IMediaEngine::VideoOrientation_LandscapeLeft:
@@ -2253,7 +2245,6 @@ namespace openpeer
           ZS_LOG_ERROR(Detail, log("failed to start video capture recording") + ZS_PARAM("error", mVoiceBase->LastError()))
           return;
         }
-#endif //ANDROID
       }
       
       //-----------------------------------------------------------------------
@@ -2262,7 +2253,7 @@ namespace openpeer
         AutoRecursiveLock lock(mLock);
         
         ZS_LOG_DEBUG(log("stop video capture recording"))
-#ifndef ANDROID
+
         mError = mVideoFile->StopRecordCaptureVideo(mCaptureId);
         if (mError != 0) {
           ZS_LOG_ERROR(Detail, log("failed to stop video capture recording") + ZS_PARAM("error", mVoiceBase->LastError()))
@@ -2274,7 +2265,7 @@ namespace openpeer
           ZS_LOG_ERROR(Detail, log("failed to disable orientation lock on video capture device") + ZS_PARAM("error", mVideoBase->LastError()))
           return;
         }
-#endif //ANDROID
+
         try {
           if (mDelegate)
             mDelegate->onMediaEngineVideoCaptureRecordStopped();
@@ -2286,7 +2277,6 @@ namespace openpeer
       //-----------------------------------------------------------------------
       int MediaEngine::registerVideoTransport()
       {
-#ifndef ANDROID
         if (NULL != mVideoTransport) {
           mError = mVideoNetwork->RegisterSendTransport(mVideoChannel, *mVideoTransport);
           if (0 != mError) {
@@ -2297,20 +2287,19 @@ namespace openpeer
           ZS_LOG_ERROR(Detail, log("external video transport is not set"))
           return -1;
         }
-#endif //ANDROID
+
         return 0;
       }
       
       //-----------------------------------------------------------------------
       int MediaEngine::deregisterVideoTransport()
       {
-#ifndef ANDROID
         mError = mVideoNetwork->DeregisterSendTransport(mVideoChannel);
         if (mError != 0) {
           ZS_LOG_ERROR(Detail, log("failed to deregister video external transport") + ZS_PARAM("error", mVideoBase->LastError()))
           return mError;
         }
-#endif
+
         return 0;
       }
       
@@ -2545,10 +2534,10 @@ namespace openpeer
           return -1;
         }
 #else
-        width = 180;
-        height = 320;
+        width = 480;
+        height = 640;
         maxFramerate = 15;
-        maxBitrate = 250;
+        maxBitrate = 400;
 #endif
         return 0;
       }
@@ -2556,13 +2545,21 @@ namespace openpeer
       //-----------------------------------------------------------------------
       int MediaEngine::setVideoCaptureRotation()
       {
-#ifndef ANDROID
         webrtc::RotateCapturedFrame orientation;
+#ifdef TARGET_OS_IPHONE
         mError = mVideoCapture->GetOrientation(mDeviceUniqueId, orientation);
         if (mError != 0) {
           ZS_LOG_ERROR(Detail, log("failed to get orientation from video capture device") + ZS_PARAM("error", mVideoBase->LastError()))
           return mError;
         }
+#elif defined(_ANDROID)
+        if (mCameraType == CameraType_Back)
+          orientation = webrtc::RotateCapturedFrame_90;
+        else if (mCameraType == CameraType_Front)
+          orientation = webrtc::RotateCapturedFrame_270;
+#else
+        orientation = webrtc::RotateCapturedFrame_0;
+#endif
         mError = mVideoCapture->SetRotateCapturedFrames(mCaptureId, orientation);
         if (mError != 0) {
           ZS_LOG_ERROR(Detail, log("failed to set rotation for video capture device") + ZS_PARAM("error", mVideoBase->LastError()))
@@ -2590,14 +2587,13 @@ namespace openpeer
         if (rotationString) {
           ZS_LOG_DEBUG(log("video capture rotation set") + ZS_PARAM("rotation", rotationString))
         }
-#endif //ANDROID
+
         return 0;
       }
       
       //-----------------------------------------------------------------------
       int MediaEngine::setVideoCodecParameters()
       {
-#ifndef ANDROID
 #ifdef TARGET_OS_IPHONE
         webrtc::RotateCapturedFrame orientation;
         mError = mVideoCapture->GetOrientation(mDeviceUniqueId, orientation);
@@ -2633,14 +2629,13 @@ namespace openpeer
         
         ZS_LOG_DEBUG(log("video codec size") + ZS_PARAM("width", width) + ZS_PARAM("height", height))
         
-#endif //ANDROID
         return 0;
       }
 
       //-----------------------------------------------------------------------
       webrtc::EcModes MediaEngine::getEcMode()
       {
-#ifdef TARGET_OS_IPHONE
+#if defined(TARGET_OS_IPHONE) || defined (_ANDROID)
         return webrtc::kEcAecm;
 #elif defined(__QNX__)
         return webrtc::kEcAec;
