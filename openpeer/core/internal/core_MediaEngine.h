@@ -51,7 +51,7 @@
 #include <vie_capture.h>
 #include <vie_codec.h>
 #include <vie_rtp_rtcp.h>
-#include <vie_file.h>
+
 
 namespace openpeer
 {
@@ -151,7 +151,6 @@ namespace openpeer
         typedef webrtc::ViECapture VideoCapture;
         typedef webrtc::ViERTP_RTCP VideoRtpRtcp;
         typedef webrtc::ViECodec VideoCodec;
-        typedef webrtc::ViEFile VideoFile;
 
       protected:
 
@@ -407,7 +406,6 @@ namespace openpeer
         VideoCapture *mVideoCapture;
         VideoRtpRtcp *mVideoRtpRtcp;
         VideoCodec *mVideoCodec;
-        VideoFile *mVideoFile;
         void *mCaptureRenderView;
         void *mChannelRenderView;
         bool mVideoEngineReady;
