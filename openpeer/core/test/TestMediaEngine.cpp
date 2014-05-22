@@ -40,6 +40,10 @@ extern char *__progname;
 #include <android/log.h>
 #endif
 
+#ifdef __APPLE__
+#include <TargetConditionals.h>
+#endif
+
 namespace openpeer { namespace core { namespace test { ZS_DECLARE_SUBSYSTEM(openpeer_core_test) } } }
 
 namespace openpeer { namespace core { namespace test { ZS_IMPLEMENT_SUBSYSTEM(openpeer_core_test) } } }
@@ -275,16 +279,19 @@ namespace openpeer
       //-----------------------------------------------------------------------
       int TestMediaEngine::registerVoiceTransport()
       {
+#ifndef TARGET_OS_MAC
         voice_channel_transports_[mVoiceChannel].reset( new VoiceChannelTransport(mVoiceNetwork, mVoiceChannel));
-
+#endif
         return 0;
       }
       
       //-----------------------------------------------------------------------
       int TestMediaEngine::setVoiceTransportParameters()
       {
+#ifndef TARGET_OS_MAC
         mError = voice_channel_transports_[mVoiceChannel]->SetSendDestination(mReceiverAddress.c_str(), 20010);
         mError = voice_channel_transports_[mVoiceChannel]->SetLocalReceiver(20010);
+#endif
         return mError;
       }
       
@@ -315,8 +322,9 @@ namespace openpeer
       //-----------------------------------------------------------------------
       int TestMediaEngine::registerVideoTransport()
       {
+#ifndef TARGET_OS_MAC
         video_channel_transports_[mVideoChannel].reset( new VideoChannelTransport(mVideoNetwork, mVideoChannel));
-
+#endif
         return 0;
       }
       
@@ -330,8 +338,10 @@ namespace openpeer
       //-----------------------------------------------------------------------
       int TestMediaEngine::setVideoTransportParameters()
       {
+#ifndef TARGET_OS_MAC
         mError = video_channel_transports_[mVideoChannel]->SetSendDestination(mReceiverAddress.c_str(), 20000);
         mError = video_channel_transports_[mVideoChannel]->SetLocalReceiver(20000);
+#endif
         return mError;
       }
       
