@@ -1,6 +1,6 @@
 /*
 
- Copyright (c) 2013, SMB Phone Inc.
+ Copyright (c) 2013, Hookflash Inc.
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -182,6 +182,8 @@ namespace openpeer
     ZS_DECLARE_INTERACTION_PTR(IIdentityLookup)
     ZS_DECLARE_INTERACTION_PTR(ILoggerDelegate)
     ZS_DECLARE_INTERACTION_PTR(IMediaEngine)
+    ZS_DECLARE_INTERACTION_PTR(IPushMessaging)
+    ZS_DECLARE_INTERACTION_PTR(IPushMessagingQuery)
     ZS_DECLARE_INTERACTION_PTR(ISettings)
     ZS_DECLARE_INTERACTION_PTR(ISettingsDelegate)
     ZS_DECLARE_INTERACTION_PTR(IStack)
@@ -198,6 +200,8 @@ namespace openpeer
     ZS_DECLARE_INTERACTION_PROXY(IIdentityDelegate)
     ZS_DECLARE_INTERACTION_PROXY(IIdentityLookupDelegate)
     ZS_DECLARE_INTERACTION_PROXY(IMediaEngineDelegate)
+    ZS_DECLARE_INTERACTION_PROXY(IPushMessagingDelegate)
+    ZS_DECLARE_INTERACTION_PROXY(IPushMessagingQueryDelegate)
     ZS_DECLARE_INTERACTION_PROXY(IStackDelegate)
 
     ZS_DECLARE_TYPEDEF_PTR(std::list<IContactPtr>, ContactList)

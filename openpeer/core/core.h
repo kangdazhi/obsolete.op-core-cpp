@@ -1,6 +1,6 @@
 /*
 
- Copyright (c) 2013, SMB Phone Inc.
+ Copyright (c) 2013, Hookflash Inc.
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -43,5 +43,6 @@
 #include <openpeer/core/IIdentityLookup.h>
 #include <openpeer/core/ILogger.h>
 #include <openpeer/core/IMediaEngine.h>
+#include <openpeer/core/IPushMessaging.h>
 #include <openpeer/core/ISettings.h>
 #include <openpeer/core/IStack.h>

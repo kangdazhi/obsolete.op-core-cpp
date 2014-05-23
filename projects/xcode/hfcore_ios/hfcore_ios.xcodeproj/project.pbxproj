@@ -55,6 +55,7 @@
 		005F60B41756B7C500BC3DD6 /* ICache.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ICache.h; sourceTree = "<group>"; };
 		005F60B51756B7DB00BC3DD6 /* core_Cache.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Cache.cpp; sourceTree = "<group>"; };
 		005F60B71756B7E300BC3DD6 /* core_Cache.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_Cache.h; sourceTree = "<group>"; };
+		006272EC192EDD100044D76F /* IPushMessaging.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IPushMessaging.h; sourceTree = "<group>"; };
 		0063BF4216CA9B2F00E6DB4D /* libhfcore_ios.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libhfcore_ios.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		0063BF5516CA9B6900E6DB4D /* core.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = core.h; sourceTree = "<group>"; };
 		0063BF5716CA9B6900E6DB4D /* core.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core.cpp; sourceTree = "<group>"; };
@@ -170,6 +171,7 @@
 				0063BF7016CA9B6900E6DB4D /* IIdentityLookup.h */,
 				0063BF7116CA9B6900E6DB4D /* ILogger.h */,
 				0063BF7216CA9B6900E6DB4D /* IMediaEngine.h */,
+				006272EC192EDD100044D76F /* IPushMessaging.h */,
 				00F11C36189B4BAB00EB33BB /* ISettings.h */,
 				0063BF8716CA9B6900E6DB4D /* IStack.h */,
 			);
