@@ -49,6 +49,7 @@ namespace openpeer
     using zsLib::WORD;
     using zsLib::LONG;
     using zsLib::ULONG;
+    using zsLib::BYTE;
     using zsLib::Time;
     using zsLib::String;
     using zsLib::PTRNUMBER;

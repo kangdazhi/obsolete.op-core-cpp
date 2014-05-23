@@ -74,6 +74,17 @@ namespace openpeer
                             const IdentityContact &source,
                             IdentityInfo &outContact
                             );
+
+        static SecureByteBlockPtr convert(
+                                          const BYTE *buffer,
+                                          size_t bufferSizeInBytes
+                                          );
+
+        static void extractRawBuffer(
+                                     const SecureByteBlock &inBuffer,
+                                     const BYTE * &outBuffer,
+                                     size_t &outBufferSizeInBytes
+                                     );
       };
     }
   }

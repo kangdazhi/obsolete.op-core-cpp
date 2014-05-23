@@ -58,6 +58,17 @@ namespace openpeer
 
       static IPeerFilePublicPtr createPeerFilePublic(const ElementPtr &element);
       static ElementPtr convertToElement(IPeerFilePublicPtr peerFilePublic);
+
+      static SecureByteBlockPtr convert(
+                                        const BYTE *buffer,
+                                        size_t bufferSizeInBytes
+                                        );
+
+      static void extractRawBuffer(
+                                   const SecureByteBlock &inBuffer,
+                                   const BYTE * &outBuffer,
+                                   size_t &outBufferSizeInBytes
+                                   );
     };
   }
 }

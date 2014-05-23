@@ -165,6 +165,26 @@ namespace openpeer
           outContact.mAvatars.push_back(avatar);
         }
       }
+
+      //-----------------------------------------------------------------------
+      SecureByteBlockPtr Helper::convert(
+                                         const BYTE *buffer,
+                                         size_t bufferSizeInBytes
+                                         )
+      {
+        return services::IHelper::convertToBuffer(buffer, bufferSizeInBytes);
+      }
+
+      //-----------------------------------------------------------------------
+      void Helper::extractRawBuffer(
+                                    const SecureByteBlock &inBuffer,
+                                    const BYTE * &outBuffer,
+                                    size_t &outBufferSizeInBytes
+                                    )
+      {
+        outBuffer = inBuffer.BytePtr();
+        outBufferSizeInBytes = inBuffer.SizeInBytes();
+      }
     }
 
     //-------------------------------------------------------------------------
@@ -205,10 +225,31 @@ namespace openpeer
       return internal::Helper::createPeerFilePublic(element);
     }
      
-    //-------------------------------------------------------------------------  
+    //-------------------------------------------------------------------------
     ElementPtr IHelper::convertToElement(IPeerFilePublicPtr peerFilePublic)
     {
       return internal::Helper::convertToElement(peerFilePublic);
+    }
+
+    //-------------------------------------------------------------------------
+    SecureByteBlockPtr IHelper::convert(
+                                        const BYTE *buffer,
+                                        size_t bufferSizeInBytes
+                                        )
+
+    {
+      return internal::Helper::convert(buffer, bufferSizeInBytes);
+    }
+
+    //-------------------------------------------------------------------------
+    void IHelper::extractRawBuffer(
+                                   const SecureByteBlock &inBuffer,
+                                   const BYTE * &outBuffer,
+                                   size_t &outBufferSizeInBytes
+                                   )
+
+    {
+      return internal::Helper::extractRawBuffer(inBuffer, outBuffer, outBufferSizeInBytes);
     }
   }
 }
