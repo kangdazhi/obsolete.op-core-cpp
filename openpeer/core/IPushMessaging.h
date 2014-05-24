@@ -58,6 +58,39 @@ namespace openpeer
 
       typedef std::list<IContactPtr> ContactList;
 
+      enum PushStates
+      {
+        PushState_Read,
+        PushState_Delivered,
+        PushState_Sent,
+        PushState_Pushed,
+        PushState_Error,
+      };
+
+      static const char *toString(PushStates state);
+
+      struct PushStateContactDetail
+      {
+        IContactPtr mContact;
+
+        WORD mErrorCode;
+        String mErrorReason;
+      };
+
+      ZS_DECLARE_PTR(PushStateContactDetail)
+
+      ZS_DECLARE_TYPEDEF_PTR(std::list<PushStateContactDetailPtr>, PushStateContactDetailList)
+
+      struct PushStateDetail
+      {
+        PushStates mState;
+        PushStateContactDetailList mRelatedContacts;
+      };
+
+      ZS_DECLARE_PTR(PushStateDetail)
+
+      ZS_DECLARE_TYPEDEF_PTR(std::list<PushStateDetailPtr>, PushStateDetailList)
+      
       typedef String ValueType;
       typedef std::list<ValueType> ValueList;
 
@@ -72,6 +105,8 @@ namespace openpeer
         Time mExpires;              // optional, system will assign a long life time if not specified
 
         IContactPtr mFrom;          // what peer sent the message (system will fill in if sending a message out)
+
+        PushStateDetailList mPushStateDetails;
       };
 
       ZS_DECLARE_PTR(PushMessage)
@@ -92,12 +127,6 @@ namespace openpeer
 
       virtual void shutdown() = 0;
 
-      virtual IPushMessagingQueryPtr push(
-                                          IPushMessagingQueryDelegatePtr delegate,
-                                          const ContactList &toContactList,
-                                          const PushMessage &message
-                                          ) = 0;
-
       virtual void registerDevice(
                                   const char *deviceToken,
                                   const char *mappedType,   // for APNS maps to "loc-key"
@@ -108,8 +137,14 @@ namespace openpeer
                                   unsigned int priority     // for APNS, maps to push priority
                                   ) = 0;
 
-      virtual void markPushMessageRead(const char *messageID);
-      virtual void deletePushMessage(const char *messageID);
+      virtual IPushMessagingQueryPtr push(
+                                          IPushMessagingQueryDelegatePtr delegate,
+                                          const ContactList &toContactList,
+                                          const PushMessage &message
+                                          ) = 0;
+
+      virtual void markPushMessageRead(const char *messageID) = 0;
+      virtual void deletePushMessage(const char *messageID) = 0;
     };
 
     //-------------------------------------------------------------------------
@@ -148,47 +183,15 @@ namespace openpeer
 
     interaction IPushMessagingQuery
     {
-      typedef IPushMessaging::PushMessagePtr PushMessagePtr;
-
-      enum PushStates
-      {
-        PushState_Read,
-        PushState_Delivered,
-        PushState_Sent,
-        PushState_Pushed,
-        PushState_Error,
-      };
-
-      static const char *toString(PushStates state);
-
-      struct PushContactDetail
-      {
-        IContactPtr mContact;
-
-        WORD mErrorCode;
-        String mErrorReason;
-      };
-
-      ZS_DECLARE_PTR(PushContactDetail)
-
-      ZS_DECLARE_TYPEDEF_PTR(std::list<PushContactDetailPtr>, PushContactDetailList)
-
-      struct PushDetail
-      {
-        PushStates mState;
-        PushContactDetailList mRelatedContacts;
-      };
-
-      ZS_DECLARE_PTR(PushDetail)
-
-      ZS_DECLARE_TYPEDEF_PTR(std::list<PushDetailPtr>, PushDetailList)
+      ZS_DECLARE_TYPEDEF_PTR(IPushMessaging::PushMessage, PushMessage)
+      ZS_DECLARE_TYPEDEF_PTR(IPushMessaging::PushStateDetailList, PushStateDetailList)
 
       virtual PUID getID() const = 0;
 
       virtual void cancel() = 0;
 
       virtual PushMessagePtr getPushMessage() = 0;
-      virtual PushDetailListPtr getPushStates() = 0;
+      virtual PushStateDetailListPtr getPushStates() = 0;
     };
 
     //-------------------------------------------------------------------------
