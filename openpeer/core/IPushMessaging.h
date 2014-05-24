@@ -67,7 +67,11 @@ namespace openpeer
         String mFullMessage;
         ValueList mValues;          // values related to mapped type
         ElementPtr mCustomPushData; // extended push related custom data
+
+        Time mSent;                 // when was the message sent, system will assign a value if not specified
         Time mExpires;              // optional, system will assign a long life time if not specified
+
+        IContactPtr mFrom;          // what peer sent the message (system will fill in if sending a message out)
       };
 
       ZS_DECLARE_PTR(PushMessage)
@@ -157,14 +161,27 @@ namespace openpeer
 
       static const char *toString(PushStates state);
 
+      struct PushContactDetail
+      {
+        IContactPtr mContact;
+
+        WORD mErrorCode;
+        String mErrorReason;
+      };
+
+      ZS_DECLARE_PTR(PushContactDetail)
+
+      ZS_DECLARE_TYPEDEF_PTR(std::list<PushContactDetailPtr>, PushContactDetailList)
+
       struct PushDetail
       {
         PushStates mState;
-        ContactList mRelatedContacts;
+        PushContactDetailList mRelatedContacts;
       };
 
-      typedef std::list<PushDetail> PushDetailList;
-      ZS_DECLARE_PTR(PushDetailList)
+      ZS_DECLARE_PTR(PushDetail)
+
+      ZS_DECLARE_TYPEDEF_PTR(std::list<PushDetailPtr>, PushDetailList)
 
       virtual PUID getID() const = 0;
 
