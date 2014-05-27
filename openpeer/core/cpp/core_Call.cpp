@@ -54,6 +54,8 @@
 #define OPENPEER_CALL_RTCP_ICE_KEEP_ALIVE_INDICATIONS_SENT_IN_SECONDS (20)
 #define OPENPEER_CALL_RTCP_ICE_EXPECTING_DATA_WITHIN_IN_SECONDS (45)
 
+#define OPENPEER_CALL_RECHECK_MEDIA_TIMER_IN_MILLISECONDS (100)
+
 namespace openpeer { namespace core { ZS_DECLARE_SUBSYSTEM(openpeer_core) } }
 namespace openpeer { namespace core { ZS_DECLARE_FORWARD_SUBSYSTEM(openpeer_media) } }
 
@@ -70,6 +72,7 @@ namespace openpeer
       using services::IHelper;
 
       using zsLib::ITimerDelegateProxy;
+      using zsLib::Milliseconds;
 
       using stack::CandidateList;
 
@@ -732,6 +735,10 @@ namespace openpeer
 
             thread->notifyCallCleanup(mThisWeakNoQueue.lock());
           }
+          if (timer == mMediaCheckTimer.get()) {
+            ZS_LOG_DEBUG(log("rechecking media now"))
+            goto call_step;
+          }
           return;
         }
 
@@ -885,7 +892,18 @@ namespace openpeer
           IHelper::debugAppend(resultEl, "first closed", mFirstClosedRemoteCallTime);
         }
 
+        IHelper::debugAppend(resultEl, "media check timer", (bool)mMediaCheckTimer.get());
+
+        IHelper::debugAppend(resultEl, "audio socket", (bool)mAudioSocket.get());
+        IHelper::debugAppend(resultEl, "video socket", (bool)mVideoSocket.get());
+
+        IHelper::debugAppend(resultEl, "audio socket subscription", (bool)mAudioRTPSocketSubscription.get());
+        IHelper::debugAppend(resultEl, "video socket subscription", (bool)mVideoRTPSocketSubscription.get());
+
         IHelper::debugAppend(resultEl, "media hold", mMediaHolding.get());
+        IHelper::debugAppend(resultEl, "picked location", (bool)mPickedLocation.get());
+        IHelper::debugAppend(resultEl, "early location", (bool)mEarlyLocation.get());
+
         IHelper::debugAppend(resultEl, "notified destroyed", mNotifiedCallTransportDestroyed.get());
 
         return resultEl;
@@ -1149,44 +1167,69 @@ namespace openpeer
       //-----------------------------------------------------------------------
       bool Call::stepIsMediaReady() throw (Exceptions::StepFailure)
       {
-        ZS_LOG_DEBUG(log("checking if media is ready"))
+        ZS_LOG_TRACE(log("checking if media is ready"))
 
-        // setup all the audio ICE socket subscriptions...
-        if (hasAudio()) {
-          if (!mAudioSocket.get()) {
-            mAudioSocket.set(mTransport->getSocket(internal::convert(SocketType_Audio)));
+        {
+          // setup all the audio ICE socket subscriptions...
+          if (hasAudio()) {
+            if (!mAudioSocket.get()) {
+              mAudioSocket.set(mTransport->getSocket(internal::convert(SocketType_Audio)));
+            }
+            if (!mAudioSocket.get()) goto media_not_ready;
+
+            if (!mAudioRTPSocketSubscription.get()) {
+              ZS_LOG_DEBUG(log("subscripting audio RTP socket"))
+              mAudioRTPSocketSubscription.set(mAudioSocket.get()->subscribe(mThisICESocketDelegate));
+              ZS_THROW_CUSTOM_IF(Exceptions::StepFailure, !mAudioRTPSocketSubscription.get())
+            }
           }
 
-          if (!mAudioRTPSocketSubscription.get()) {
-            ZS_LOG_DEBUG(log("subscripting audio RTP socket"))
-            mAudioRTPSocketSubscription.set(mAudioSocket.get()->subscribe(mThisICESocketDelegate));
-            ZS_THROW_CUSTOM_IF(Exceptions::StepFailure, !mAudioRTPSocketSubscription.get())
+          if (hasVideo()) {
+            // setup all the video ICE socket subscriptions...
+            if (!mVideoSocket.get()) {
+              mVideoSocket.set(mTransport->getSocket(internal::convert(SocketType_Video)));
+            }
+            if (!mVideoSocket.get()) return false;
+
+            if (!mVideoRTPSocketSubscription.get()) {
+              ZS_LOG_DEBUG(log("subscripting video RTP socket"))
+              mVideoRTPSocketSubscription.set(mVideoSocket.get()->subscribe(mThisICESocketDelegate));
+              ZS_THROW_CUSTOM_IF(Exceptions::StepFailure, !mVideoRTPSocketSubscription.get())
+            }
+          }
+
+          if (hasAudio()) {
+            mAudioSocket.get()->wakeup();
+          }
+
+          if (hasVideo()) {
+            mVideoSocket.get()->wakeup();
           }
         }
 
-        if (hasVideo()) {
-          // setup all the video ICE socket subscriptions...
-          if (!mVideoSocket.get()) {
-            mVideoSocket.set(mTransport->getSocket(internal::convert(SocketType_Video)));
+      media_ready:
+        {
+          ZS_LOG_TRACE(log("audio and/or video sockets are all told to wake") + ZS_PARAM("has audio", hasAudio()) + ZS_PARAM("has video", hasVideo()))
+
+          TimerPtr timer = mMediaCheckTimer.get();
+          if (timer) {
+            timer->cancel();
+            mMediaCheckTimer.set(TimerPtr());
           }
-          if (!mVideoRTPSocketSubscription.get()) {
-            ZS_LOG_DEBUG(log("subscripting video RTP socket"))
-            mVideoRTPSocketSubscription.set(mVideoSocket.get()->subscribe(mThisICESocketDelegate));
-            ZS_THROW_CUSTOM_IF(Exceptions::StepFailure, !mVideoRTPSocketSubscription.get())
+
+          return true;
+        }
+
+      media_not_ready:
+        {
+          ZS_LOG_TRACE(log("media is not ready"))
+          TimerPtr timer = mMediaCheckTimer.get();
+          if (!timer) {
+            timer = Timer::create(mThisTimerDelegate, Milliseconds(OPENPEER_CALL_RECHECK_MEDIA_TIMER_IN_MILLISECONDS));
+            mMediaCheckTimer.set(timer);
           }
         }
-
-        if (hasAudio()) {
-          mAudioSocket.get()->wakeup();
-        }
-
-        if (hasVideo()) {
-          mVideoSocket.get()->wakeup();
-        }
-
-        ZS_LOG_TRACE(log("audio and/or video sockets are all told to wake") + ZS_PARAM("has audio", hasAudio()) + ZS_PARAM("has video", hasVideo()))
-
-        return true;
+        return false;
       }
 
       //-----------------------------------------------------------------------
