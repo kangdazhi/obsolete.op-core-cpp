@@ -690,8 +690,10 @@ namespace openpeer
         //---------------------------------------------------------------------
         // variables protected with independent locks
 
-        LockedValue<IICESocketPtr, true> mAudioSocket;
-        LockedValue<IICESocketPtr, true> mVideoSocket;
+        LockedValue<TimerPtr> mMediaCheckTimer;
+
+        LockedValue<IICESocketPtr> mAudioSocket;
+        LockedValue<IICESocketPtr> mVideoSocket;
 
         LockedValue<IICESocketSubscriptionPtr, true> mAudioRTPSocketSubscription;
         LockedValue<IICESocketSubscriptionPtr, true> mVideoRTPSocketSubscription;
