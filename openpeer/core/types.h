@@ -185,6 +185,7 @@ namespace openpeer
     ZS_DECLARE_INTERACTION_PTR(IMediaEngine)
     ZS_DECLARE_INTERACTION_PTR(IPushMessaging)
     ZS_DECLARE_INTERACTION_PTR(IPushMessagingQuery)
+    ZS_DECLARE_INTERACTION_PTR(IPushMessagingRegisterQuery)
     ZS_DECLARE_INTERACTION_PTR(ISettings)
     ZS_DECLARE_INTERACTION_PTR(ISettingsDelegate)
     ZS_DECLARE_INTERACTION_PTR(IStack)
@@ -203,6 +204,7 @@ namespace openpeer
     ZS_DECLARE_INTERACTION_PROXY(IMediaEngineDelegate)
     ZS_DECLARE_INTERACTION_PROXY(IPushMessagingDelegate)
     ZS_DECLARE_INTERACTION_PROXY(IPushMessagingQueryDelegate)
+    ZS_DECLARE_INTERACTION_PROXY(IPushMessagingRegisterQueryDelegate)
     ZS_DECLARE_INTERACTION_PROXY(IStackDelegate)
 
     ZS_DECLARE_TYPEDEF_PTR(std::list<IContactPtr>, ContactList)

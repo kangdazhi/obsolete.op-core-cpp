@@ -56,8 +56,6 @@ namespace openpeer
       };
       static const char *toString(PushMessagingStates state);
 
-      typedef std::list<IContactPtr> ContactList;
-
       enum PushStates
       {
         PushState_Read,
@@ -69,9 +67,12 @@ namespace openpeer
 
       static const char *toString(PushStates state);
 
+      typedef String PeerOrIdentityURI;
+      ZS_DECLARE_TYPEDEF_PTR(std::list<PeerOrIdentityURI>, PeerOrIdentityURIList)
+
       struct PushStateContactDetail
       {
-        IContactPtr mContact;
+        PeerOrIdentityURI mURI;
 
         WORD mErrorCode;
         String mErrorReason;
@@ -127,19 +128,19 @@ namespace openpeer
 
       virtual void shutdown() = 0;
 
-      virtual void registerDevice(
-                                  const char *deviceToken,
-                                  const char *mappedType,   // for APNS maps to "loc-key"
-                                  bool unreadBadge,         // true causes total unread messages to be displayed in badge
-                                  const char *sound,        // what sound to play upon receiving a message. For APNS, maps to "sound" field
-                                  const char *action,       // for APNS, maps to "action-loc-key"
-                                  const char *launchImage,  // for APNS, maps to "launch-image"
-                                  unsigned int priority     // for APNS, maps to push priority
-                                  ) = 0;
+      virtual IPushMessagingRegisterQueryPtr registerDevice(
+                                                            const char *deviceToken,
+                                                            const char *mappedType,   // for APNS maps to "loc-key"
+                                                            bool unreadBadge,         // true causes total unread messages to be displayed in badge
+                                                            const char *sound,        // what sound to play upon receiving a message. For APNS, maps to "sound" field
+                                                            const char *action,       // for APNS, maps to "action-loc-key"
+                                                            const char *launchImage,  // for APNS, maps to "launch-image"
+                                                            unsigned int priority     // for APNS, maps to push priority
+                                                            ) = 0;
 
       virtual IPushMessagingQueryPtr push(
                                           IPushMessagingQueryDelegatePtr delegate,
-                                          const ContactList &toContactList,
+                                          const PeerOrIdentityURIList &toContactList,
                                           const PushMessage &message
                                           ) = 0;
 
@@ -184,14 +185,12 @@ namespace openpeer
     interaction IPushMessagingQuery
     {
       ZS_DECLARE_TYPEDEF_PTR(IPushMessaging::PushMessage, PushMessage)
-      ZS_DECLARE_TYPEDEF_PTR(IPushMessaging::PushStateDetailList, PushStateDetailList)
 
       virtual PUID getID() const = 0;
 
       virtual void cancel() = 0;
 
       virtual PushMessagePtr getPushMessage() = 0;
-      virtual PushStateDetailListPtr getPushStates() = 0;
     };
 
     //-------------------------------------------------------------------------
@@ -207,6 +206,36 @@ namespace openpeer
       virtual void onPushMessagingQueryPushStatesChanged(IPushMessagingQueryPtr query) = 0;
     };
 
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    #pragma mark
+    #pragma mark IPushMessagingRegisterQuery
+    #pragma mark
+
+    interaction IPushMessagingRegisterQuery
+    {
+      virtual PUID getID() const = 0;
+
+      virtual bool isComplete(
+                              WORD *outErrorCode = NULL,
+                              String *outErrorReason = NULL
+                              ) = 0;
+    };
+
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    #pragma mark
+    #pragma mark IPushMessagingRegisterQueryDelegate
+    #pragma mark
+
+    interaction IPushMessagingRegisterQueryDelegate
+    {
+      virtual void onPushMessagingRegisterQueryCompleted(IPushMessagingRegisterQueryPtr query) = 0;
+    };
   }
 }
 
@@ -222,4 +251,9 @@ ZS_DECLARE_PROXY_END()
 ZS_DECLARE_PROXY_BEGIN(openpeer::core::IPushMessagingQueryDelegate)
 ZS_DECLARE_PROXY_TYPEDEF(openpeer::core::IPushMessagingQueryPtr, IPushMessagingQueryPtr)
 ZS_DECLARE_PROXY_METHOD_1(onPushMessagingQueryPushStatesChanged, IPushMessagingQueryPtr)
+ZS_DECLARE_PROXY_END()
+
+ZS_DECLARE_PROXY_BEGIN(openpeer::core::IPushMessagingRegisterQueryDelegate)
+ZS_DECLARE_PROXY_TYPEDEF(openpeer::core::IPushMessagingRegisterQueryPtr, IPushMessagingRegisterQueryPtr)
+ZS_DECLARE_PROXY_METHOD_1(onPushMessagingRegisterQueryCompleted, IPushMessagingRegisterQueryPtr)
 ZS_DECLARE_PROXY_END()
