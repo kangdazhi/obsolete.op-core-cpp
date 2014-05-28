@@ -157,6 +157,7 @@ namespace openpeer
       ZS_DECLARE_CLASS_PTR(Identity)
       ZS_DECLARE_CLASS_PTR(IdentityLookup)
       ZS_DECLARE_CLASS_PTR(MediaEngine)
+      ZS_DECLARE_CLASS_PTR(PushMessaging)
       ZS_DECLARE_CLASS_PTR(Settings)
       ZS_DECLARE_CLASS_PTR(Stack)
       ZS_DECLARE_CLASS_PTR(VideoViewPort)
