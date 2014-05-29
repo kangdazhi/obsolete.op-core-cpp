@@ -175,6 +175,11 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      void PushMessaging::recheckNow()
+      {
+      }
+
+      //-----------------------------------------------------------------------
       void PushMessaging::markPushMessageRead(const char *messageID)
       {
       }

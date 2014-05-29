@@ -144,6 +144,8 @@ namespace openpeer
                                           const PushMessage &message
                                           ) = 0;
 
+      virtual void recheckNow() = 0;
+
       virtual void markPushMessageRead(const char *messageID) = 0;
       virtual void deletePushMessage(const char *messageID) = 0;
     };

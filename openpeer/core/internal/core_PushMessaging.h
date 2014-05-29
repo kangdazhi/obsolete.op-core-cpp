@@ -110,6 +110,8 @@ namespace openpeer
                                             const PushMessage &message
                                             );
 
+        virtual void recheckNow();
+
         virtual void markPushMessageRead(const char *messageID);
         virtual void deletePushMessage(const char *messageID);
 
