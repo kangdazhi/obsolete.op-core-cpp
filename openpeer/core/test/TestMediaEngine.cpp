@@ -279,7 +279,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       int TestMediaEngine::registerVoiceTransport()
       {
-#ifndef TARGET_OS_MAC
+#if !defined(TARGET_OS_MAC) || defined(TARGET_OS_IPHONE) && (TARGET_OS_IPHONE)
         voice_channel_transports_[mVoiceChannel].reset( new VoiceChannelTransport(mVoiceNetwork, mVoiceChannel));
 #endif
         return 0;
@@ -288,7 +288,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       int TestMediaEngine::setVoiceTransportParameters()
       {
-#ifndef TARGET_OS_MAC
+#if !defined(TARGET_OS_MAC) || defined(TARGET_OS_IPHONE) && (TARGET_OS_IPHONE)
         mError = voice_channel_transports_[mVoiceChannel]->SetSendDestination(mReceiverAddress.c_str(), 20010);
         mError = voice_channel_transports_[mVoiceChannel]->SetLocalReceiver(20010);
 #endif
@@ -322,7 +322,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       int TestMediaEngine::registerVideoTransport()
       {
-#ifndef TARGET_OS_MAC
+#if !defined(TARGET_OS_MAC) || defined(TARGET_OS_IPHONE) && (TARGET_OS_IPHONE)
         video_channel_transports_[mVideoChannel].reset( new VideoChannelTransport(mVideoNetwork, mVideoChannel));
 #endif
         return 0;
@@ -338,7 +338,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       int TestMediaEngine::setVideoTransportParameters()
       {
-#ifndef TARGET_OS_MAC
+#if !defined(TARGET_OS_MAC) || defined(TARGET_OS_IPHONE) && (TARGET_OS_IPHONE)
         mError = video_channel_transports_[mVideoChannel]->SetSendDestination(mReceiverAddress.c_str(), 20000);
         mError = video_channel_transports_[mVideoChannel]->SetLocalReceiver(20000);
 #endif

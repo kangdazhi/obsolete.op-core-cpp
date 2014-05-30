@@ -1418,13 +1418,13 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void MediaEngine::operator()()
       {
-  #if !defined(_ANDROID) && !defined(_LINUX)
-  # ifdef __QNX__
+#if !defined(_ANDROID) && !defined(_LINUX)
+#ifdef __QNX__
         pthread_setname_np(pthread_self(), "org.openpeer.core.mediaEngine");
-  # else
+#else
         pthread_setname_np("org.openpeer.core.mediaEngine");
-  # endif
-  #endif
+#endif
+#endif
         ZS_LOG_DEBUG(log("media engine lifetime thread spawned"))
 
         bool repeat = false;
@@ -1804,20 +1804,6 @@ namespace openpeer
           char uniqueId[KMaxUniqueIdLength];
           memset(uniqueId, 0, KMaxUniqueIdLength);
           uint32_t captureIdx;
-
-          if (mCameraType == CameraType_Back)
-          {
-            captureIdx = 0;
-          }
-          else if (mCameraType == CameraType_Front)
-          {
-            captureIdx = 1;
-          }
-          else
-          {
-            ZS_LOG_ERROR(Detail, log("camera type is not set"))
-            return;
-          }
           
 #if defined(TARGET_OS_IPHONE) || defined(__QNX__)
           void *captureView = mCaptureRenderView;
@@ -1837,6 +1823,37 @@ namespace openpeer
             return;
           }
           
+          uint32_t numberOfDevices = devInfo->NumberOfDevices();
+          
+          if (mCameraType == CameraType_Back)
+          {
+            if (numberOfDevices >= 2)
+            {
+              captureIdx = 0;
+            }
+            else
+            {
+              ZS_LOG_ERROR(Detail, log("back camera is not supported on single camera devices"))
+              return;
+            }
+          }
+          else if (mCameraType == CameraType_Front)
+          {
+            if (numberOfDevices >= 2)
+            {
+              captureIdx = 1;
+            }
+            else
+            {
+              captureIdx = 0;
+            }
+          }
+          else
+          {
+            ZS_LOG_ERROR(Detail, log("camera type is not set"))
+            return;
+          }
+
           mError = devInfo->GetDeviceName(captureIdx, deviceName,
                                           KMaxDeviceNameLength, uniqueId,
                                           KMaxUniqueIdLength);
