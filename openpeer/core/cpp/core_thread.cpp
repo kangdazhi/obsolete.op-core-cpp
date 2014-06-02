@@ -616,7 +616,7 @@ namespace openpeer
             while (identityEl) {
 
               IdentityContact identityContact;
-              IdentityInfo identityInfo = IMessageHelper::createIdentity(identityEl);
+              IdentityInfo identityInfo = IdentityInfo::create(identityEl);
 
               Helper::convert(identityInfo, identityContact);
               if (identityContact.hasData()) {
@@ -659,7 +659,7 @@ namespace openpeer
               Helper::convert(identityContact, identityInfo);
 
               if (identityInfo.hasData()) {
-                ElementPtr identityEl = IMessageHelper::createElement(identityInfo);
+                ElementPtr identityEl = identityInfo.createElement();
                 identitiesEl->adoptAsLastChild(identityEl);
               }
             }
@@ -1121,7 +1121,7 @@ namespace openpeer
             {
               Candidate &finalCandidate = (*finalIter);
 
-              ElementPtr candidateEl = IMessageHelper::createElement(finalCandidate);
+              ElementPtr candidateEl = finalCandidate.createElement();
               if (candidateEl) {
                 candidatesEl->adoptAsLastChild(candidateEl);
               }
@@ -1255,7 +1255,7 @@ namespace openpeer
 
               while (candidateEl)
               {
-                Candidate candidate = IMessageHelper::createCandidate(candidateEl);
+                Candidate candidate = Candidate::create(candidateEl);
                 if (candidate.hasData()) {
                   description->mCandidates.push_back(candidate);
                 }
