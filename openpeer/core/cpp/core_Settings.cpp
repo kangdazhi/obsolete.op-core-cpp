@@ -138,6 +138,7 @@ namespace openpeer
           get(mAppliedDefaults) = true;
         }
 
+        setUInt(OPENPEER_CORE_SETTINGS_CONVERSATION_THREAD_HOST_BACKGROUNDING_PHASE, 1);
         setUInt(OPENPEER_CORE_SETTING_ACCOUNT_BACKGROUNDING_PHASE, 1);
 
         setString(OPENPEER_CORE_SETTING_STACK_CORE_THREAD_PRIORITY, "normal");
