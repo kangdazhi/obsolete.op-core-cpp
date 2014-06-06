@@ -1,6 +1,6 @@
 /*
 
- Copyright (c) 2013, Hookflash Inc.
+ Copyright (c) 2014, Hookflash Inc.
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -130,6 +130,7 @@ namespace openpeer
 
       virtual IPushMessagingRegisterQueryPtr registerDevice(
                                                             const char *deviceToken,
+                                                            Time expires,             // how long should the subscription for push messaging last
                                                             const char *mappedType,   // for APNS maps to "loc-key"
                                                             bool unreadBadge,         // true causes total unread messages to be displayed in badge
                                                             const char *sound,        // what sound to play upon receiving a message. For APNS, maps to "sound" field
