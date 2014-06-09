@@ -314,8 +314,10 @@ namespace openpeer
         virtual void removeIdentities(const IdentityList &identitiesToRemove);
 
         virtual String getInnerBrowserWindowFrameURL() const;
+        virtual String getBrowserWindowRedirectURL() const;
 
         virtual void notifyBrowserWindowVisible();
+        virtual void notifyBrowserWindowRedirected();
         virtual void notifyBrowserWindowClosed();
 
         virtual ElementPtr getNextMessageForInnerBrowerWindowFrame();

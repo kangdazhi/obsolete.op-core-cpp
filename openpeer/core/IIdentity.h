@@ -54,6 +54,7 @@ namespace openpeer
         IdentityState_WaitingAttachmentOfDelegate,
         IdentityState_WaitingForBrowserWindowToBeLoaded,
         IdentityState_WaitingForBrowserWindowToBeMadeVisible,
+        IdentityState_WaitingForBrowserWindowToBeRedirected,
         IdentityState_WaitingForBrowserWindowToClose,
         IdentityState_Ready,
         IdentityState_Shutdown,
@@ -107,8 +108,10 @@ namespace openpeer
       virtual void getSelfIdentityContact(IdentityContact &outIdentityContact) const = 0;
 
       virtual String getInnerBrowserWindowFrameURL() const = 0;
+      virtual String getBrowserWindowRedirectURL() const = 0;
 
       virtual void notifyBrowserWindowVisible() = 0;
+      virtual void notifyBrowserWindowRedirected() = 0;
       virtual void notifyBrowserWindowClosed() = 0;
 
       virtual ElementPtr getNextMessageForInnerBrowerWindowFrame() = 0;

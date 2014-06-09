@@ -492,10 +492,24 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      String Account::getBrowserWindowRedirectURL() const
+      {
+        ZS_THROW_BAD_STATE_IF(!mGrantSession)
+        return mGrantSession->getBrowserWindowRedirectURL();
+      }
+
+      //-----------------------------------------------------------------------
       void Account::notifyBrowserWindowVisible()
       {
         ZS_THROW_BAD_STATE_IF(!mGrantSession)
         mGrantSession->notifyBrowserWindowVisible();
+      }
+
+      //-----------------------------------------------------------------------
+      void Account::notifyBrowserWindowRedirected()
+      {
+        ZS_THROW_BAD_STATE_IF(!mGrantSession)
+        mGrantSession->notifyBrowserWindowRedirected();
       }
 
       //-----------------------------------------------------------------------
@@ -1731,6 +1745,7 @@ namespace openpeer
         case AccountState_WaitingForAssociationToIdentity:        return "Waiting for Association to Identity";
         case AccountState_WaitingForBrowserWindowToBeLoaded:      return "Waiting for Browser Window to be Loaded";
         case AccountState_WaitingForBrowserWindowToBeMadeVisible: return "Waiting for Browser Window to be made Visible";
+        case AccountState_WaitingForBrowserWindowToBeRedirected:  return "Waiting for Browser Window to be Redirected";
         case AccountState_WaitingForBrowserWindowToClose:         return "Waiting for Browser Window to Close";
         case AccountState_Ready:                                  return "Ready";
         case AccountState_ShuttingDown:                           return "Shutting down";

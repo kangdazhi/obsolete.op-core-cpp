@@ -78,6 +78,7 @@ namespace openpeer
           case IIdentity::IdentityState_PendingAssociation:                     return IServiceIdentitySession::SessionState_WaitingForAssociationToLockbox;
           case IIdentity::IdentityState_WaitingAttachmentOfDelegate:            return IServiceIdentitySession::SessionState_WaitingAttachmentOfDelegate;
           case IIdentity::IdentityState_WaitingForBrowserWindowToBeLoaded:      return IServiceIdentitySession::SessionState_WaitingForBrowserWindowToBeLoaded;
+          case IIdentity::IdentityState_WaitingForBrowserWindowToBeRedirected:  return IServiceIdentitySession::SessionState_WaitingForBrowserWindowToBeRedirected;
           case IIdentity::IdentityState_WaitingForBrowserWindowToBeMadeVisible: return IServiceIdentitySession::SessionState_WaitingForBrowserWindowToBeMadeVisible;
           case IIdentity::IdentityState_WaitingForBrowserWindowToClose:         return IServiceIdentitySession::SessionState_WaitingForBrowserWindowToClose;
           case IIdentity::IdentityState_Ready:                                  return IServiceIdentitySession::SessionState_Ready;
@@ -96,6 +97,7 @@ namespace openpeer
           case IServiceIdentitySession::SessionState_WaitingForAssociationToLockbox:          return IIdentity::IdentityState_PendingAssociation;
           case IServiceIdentitySession::SessionState_WaitingAttachmentOfDelegate:             return IIdentity::IdentityState_WaitingAttachmentOfDelegate;
           case IServiceIdentitySession::SessionState_WaitingForBrowserWindowToBeLoaded:       return IIdentity::IdentityState_WaitingForBrowserWindowToBeLoaded;
+          case IServiceIdentitySession::SessionState_WaitingForBrowserWindowToBeRedirected:   return IIdentity::IdentityState_WaitingForBrowserWindowToBeRedirected;
           case IServiceIdentitySession::SessionState_WaitingForBrowserWindowToBeMadeVisible:  return IIdentity::IdentityState_WaitingForBrowserWindowToBeMadeVisible;
           case IServiceIdentitySession::SessionState_WaitingForBrowserWindowToClose:          return IIdentity::IdentityState_WaitingForBrowserWindowToClose;
           case IServiceIdentitySession::SessionState_Ready:                                   return IIdentity::IdentityState_Ready;
@@ -373,9 +375,21 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      String Identity::getBrowserWindowRedirectURL() const
+      {
+        return mSession->getBrowserWindowRedirectURL();
+      }
+
+      //-----------------------------------------------------------------------
       void Identity::notifyBrowserWindowVisible()
       {
         mSession->notifyBrowserWindowVisible();
+      }
+
+      //-----------------------------------------------------------------------
+      void Identity::notifyBrowserWindowRedirected()
+      {
+        mSession->notifyBrowserWindowRedirected();
       }
 
       //-----------------------------------------------------------------------

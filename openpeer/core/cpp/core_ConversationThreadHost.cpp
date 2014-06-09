@@ -485,6 +485,7 @@ namespace openpeer
                 case IAccount::AccountState_WaitingForAssociationToIdentity:
                 case IAccount::AccountState_WaitingForBrowserWindowToBeLoaded:
                 case IAccount::AccountState_WaitingForBrowserWindowToBeMadeVisible:
+                case IAccount::AccountState_WaitingForBrowserWindowToBeRedirected:
                 case IAccount::AccountState_WaitingForBrowserWindowToClose:
                 {
                   return IConversationThread::ContactState_Finding;

@@ -152,8 +152,10 @@ namespace openpeer
         virtual void getSelfIdentityContact(IdentityContact &outIdentityContact) const;
 
         virtual String getInnerBrowserWindowFrameURL() const;
+        virtual String getBrowserWindowRedirectURL() const;
 
         virtual void notifyBrowserWindowVisible();
+        virtual void notifyBrowserWindowRedirected();
         virtual void notifyBrowserWindowClosed();
 
         virtual ElementPtr getNextMessageForInnerBrowerWindowFrame();

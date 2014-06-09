@@ -54,6 +54,7 @@ namespace openpeer
         AccountState_WaitingForAssociationToIdentity,
         AccountState_WaitingForBrowserWindowToBeLoaded,
         AccountState_WaitingForBrowserWindowToBeMadeVisible,
+        AccountState_WaitingForBrowserWindowToBeRedirected,
         AccountState_WaitingForBrowserWindowToClose,
         AccountState_Ready,
         AccountState_ShuttingDown,
@@ -104,8 +105,10 @@ namespace openpeer
       virtual void removeIdentities(const IdentityList &identitiesToRemove) = 0;
 
       virtual String getInnerBrowserWindowFrameURL() const = 0;
+      virtual String getBrowserWindowRedirectURL() const = 0;
 
       virtual void notifyBrowserWindowVisible() = 0;
+      virtual void notifyBrowserWindowRedirected() = 0;
       virtual void notifyBrowserWindowClosed() = 0;
 
       virtual ElementPtr getNextMessageForInnerBrowerWindowFrame() = 0;
