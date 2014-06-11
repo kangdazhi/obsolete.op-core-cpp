@@ -333,7 +333,6 @@
 		E2506E53170DA55C005A43D2 /* CoreImage.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreImage.framework; path = System/Library/Frameworks/CoreImage.framework; sourceTree = SDKROOT; };
 		E2506E55170DA584005A43D2 /* AssetsLibrary.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AssetsLibrary.framework; path = System/Library/Frameworks/AssetsLibrary.framework; sourceTree = SDKROOT; };
 		E2E46018192BF7EC005BAED9 /* librbe_components.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = librbe_components.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E2E4601A192BF820005BAED9 /* lib_core_neon_offsets.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = lib_core_neon_offsets.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2E4601B192BF820005BAED9 /* libacm2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libacm2.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2E46025192BF979005BAED9 /* libaudio_coding_module.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libaudio_coding_module.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2E46026192BF979005BAED9 /* libaudio_conference_mixer.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libaudio_conference_mixer.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -372,8 +371,6 @@
 		E2E46047192BF980005BAED9 /* libwebrtc_utility.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libwebrtc_utility.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2E46048192BF980005BAED9 /* libwebrtc_video_coding.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libwebrtc_video_coding.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2E46049192BF980005BAED9 /* libwebrtc_vp8.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libwebrtc_vp8.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E2E46070192BF9F3005BAED9 /* libvpx_asm_offsets_vp8.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvpx_asm_offsets_vp8.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E2E46071192BF9F3005BAED9 /* libvpx_asm_offsets_vpx_scale.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvpx_asm_offsets_vpx_scale.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2E460C1192C010C005BAED9 /* libopus.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libopus.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2E460C2192C010C005BAED9 /* libyuv_neon.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libyuv_neon.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2E460C3192C010C005BAED9 /* libyuv.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libyuv.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -545,8 +542,6 @@
 				E2E460C1192C010C005BAED9 /* libopus.a */,
 				E2E460C2192C010C005BAED9 /* libyuv_neon.a */,
 				E2E460C3192C010C005BAED9 /* libyuv.a */,
-				E2E46070192BF9F3005BAED9 /* libvpx_asm_offsets_vp8.a */,
-				E2E46071192BF9F3005BAED9 /* libvpx_asm_offsets_vpx_scale.a */,
 				E2E46025192BF979005BAED9 /* libaudio_coding_module.a */,
 				E2E46026192BF979005BAED9 /* libaudio_conference_mixer.a */,
 				E2E46027192BF979005BAED9 /* libaudio_device.a */,
@@ -584,7 +579,6 @@
 				E2E46047192BF980005BAED9 /* libwebrtc_utility.a */,
 				E2E46048192BF980005BAED9 /* libwebrtc_video_coding.a */,
 				E2E46049192BF980005BAED9 /* libwebrtc_vp8.a */,
-				E2E4601A192BF820005BAED9 /* lib_core_neon_offsets.a */,
 				E2E4601B192BF820005BAED9 /* libacm2.a */,
 				E2E46018192BF7EC005BAED9 /* librbe_components.a */,
 				0012C515177CE1E70017FF5E /* libz.dylib */,
