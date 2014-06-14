@@ -416,6 +416,11 @@ namespace openpeer
 
         ISettingsForStack::applyDefaultsIfNoDelegatePresent();
 
+        String instanceID = services::ISettings::getString(OPENPEER_COMMON_SETTING_INSTANCE_ID);
+        String authorizedAppId = services::ISettings::getString(OPENPEER_COMMON_SETTING_APPLICATION_AUTHORIZATION_ID);
+
+        ZS_LOG_FORCED(Informational, Basic, slog("instance information") + ZS_PARAM("instance id", instanceID) + ZS_PARAM("authorized application id", authorizedAppId))
+
         IMessageQueueManager::registerMessageQueueThreadPriority(OPENPEER_CORE_STACK_CORE_THREAD_QUEUE_NAME, zsLib::threadPriorityFromString(services::ISettings::getString(OPENPEER_CORE_SETTING_STACK_CORE_THREAD_PRIORITY)));
         IMessageQueueManager::registerMessageQueueThreadPriority(OPENPEER_CORE_STACK_MEDIA_THREAD_QUEUE_NAME, zsLib::threadPriorityFromString(services::ISettings::getString(OPENPEER_CORE_SETTING_STACK_MEDIA_THREAD_PRIORITY)));
 
@@ -429,8 +434,6 @@ namespace openpeer
           mMediaEngineDelegate = IMediaEngineDelegateProxy::create(getQueueApplication(), mediaEngineDelegate);
           UseMediaEngine::setup(mMediaEngineDelegate);
         }
-
-        String authorizedAppId = services::ISettings::getString(OPENPEER_COMMON_SETTING_APPLICATION_AUTHORIZATION_ID);
 
         if (!isAuthorizedApplicationIDExpiryWindowStillValid(authorizedAppId, Seconds(1))) {
           ZS_LOG_WARNING(Basic, slog("application id is not valid") + ZS_PARAM("authorized application id", authorizedAppId))
