@@ -36,7 +36,9 @@
 
 #define OPENPEER_CORE_SETTING_STACK_CORE_THREAD_PRIORITY "openpeer/core/core-thread-priority"
 #define OPENPEER_CORE_SETTING_STACK_MEDIA_THREAD_PRIORITY "openpeer/core/media-thread-priority"
+
 #define OPENPEER_CORE_SETTING_STACK_AUTHORIZED_APPLICATION_ID_SPLIT_CHAR "openpeer/core/authorized-application-id-split-char"
+
 
 namespace openpeer
 {
