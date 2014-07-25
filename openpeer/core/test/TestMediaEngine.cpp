@@ -40,6 +40,10 @@ extern char *__progname;
 #include <android/log.h>
 #endif
 
+#ifdef __APPLE__
+#include <TargetConditionals.h>
+#endif
+
 namespace openpeer { namespace core { namespace test { ZS_DECLARE_SUBSYSTEM(openpeer_core_test) } } }
 
 namespace openpeer { namespace core { namespace test { ZS_IMPLEMENT_SUBSYSTEM(openpeer_core_test) } } }
@@ -65,23 +69,23 @@ namespace openpeer
       #pragma mark TestMediaEngine
       #pragma mark
 
-	  //-----------------------------------------------------------------------
-	  TestMediaEngine::TestMediaEngine() :
+      //-----------------------------------------------------------------------
+      TestMediaEngine::TestMediaEngine() :
         MediaEngine(zsLib::Noop()),
         mReceiverAddress("")
-	  {
+      {
 #ifdef __QNX__
-			slog2_buffer_set_config_t buffer_config;
-			slog2_buffer_t buffer_handle;
-			buffer_config.buffer_set_name = __progname;
-			buffer_config.num_buffers = 1;
-			buffer_config.verbosity_level = SLOG2_INFO;
-			buffer_config.buffer_config[0].buffer_name = "media_logger";
-			buffer_config.buffer_config[0].num_pages = 7;
-			if (-1 == slog2_register(&buffer_config, &buffer_handle, 0)) {
-			    fprintf(stderr, "Error registering slogger2 buffer!\n");
-			}
-			mBufferHandle = buffer_handle;
+        slog2_buffer_set_config_t buffer_config;
+        slog2_buffer_t buffer_handle;
+        buffer_config.buffer_set_name = __progname;
+        buffer_config.num_buffers = 1;
+        buffer_config.verbosity_level = SLOG2_INFO;
+        buffer_config.buffer_config[0].buffer_name = "media_logger";
+        buffer_config.buffer_config[0].num_pages = 7;
+        if (-1 == slog2_register(&buffer_config, &buffer_handle, 0)) {
+            fprintf(stderr, "Error registering slogger2 buffer!\n");
+        }
+        mBufferHandle = buffer_handle;
 #endif
       }
       
@@ -234,7 +238,7 @@ namespace openpeer
 #ifdef __QNX__
         slog2f(mBufferHandle, 0, SLOG2_INFO, "%s", traceString);
 #elif defined _ANDROID
-        //__android_log_print(ANDROID_LOG_DEBUG, "TestMediaEngine", traceString);
+        __android_log_print(ANDROID_LOG_DEBUG, "TestMediaEngine", traceString);
 #else
         printf("%s\n", traceString);
 #endif
@@ -275,16 +279,19 @@ namespace openpeer
       //-----------------------------------------------------------------------
       int TestMediaEngine::registerVoiceTransport()
       {
+#if !defined(TARGET_OS_MAC) || defined(TARGET_OS_IPHONE) && (TARGET_OS_IPHONE)
         voice_channel_transports_[mVoiceChannel].reset( new VoiceChannelTransport(mVoiceNetwork, mVoiceChannel));
-
+#endif
         return 0;
       }
       
       //-----------------------------------------------------------------------
       int TestMediaEngine::setVoiceTransportParameters()
       {
+#if !defined(TARGET_OS_MAC) || defined(TARGET_OS_IPHONE) && (TARGET_OS_IPHONE)
         mError = voice_channel_transports_[mVoiceChannel]->SetSendDestination(mReceiverAddress.c_str(), 20010);
         mError = voice_channel_transports_[mVoiceChannel]->SetLocalReceiver(20010);
+#endif
         return mError;
       }
       
@@ -315,8 +322,9 @@ namespace openpeer
       //-----------------------------------------------------------------------
       int TestMediaEngine::registerVideoTransport()
       {
+#if !defined(TARGET_OS_MAC) || defined(TARGET_OS_IPHONE) && (TARGET_OS_IPHONE)
         video_channel_transports_[mVideoChannel].reset( new VideoChannelTransport(mVideoNetwork, mVideoChannel));
-
+#endif
         return 0;
       }
       
@@ -330,8 +338,10 @@ namespace openpeer
       //-----------------------------------------------------------------------
       int TestMediaEngine::setVideoTransportParameters()
       {
+#if !defined(TARGET_OS_MAC) || defined(TARGET_OS_IPHONE) && (TARGET_OS_IPHONE)
         mError = video_channel_transports_[mVideoChannel]->SetSendDestination(mReceiverAddress.c_str(), 20000);
         mError = video_channel_transports_[mVideoChannel]->SetLocalReceiver(20000);
+#endif
         return mError;
       }
       

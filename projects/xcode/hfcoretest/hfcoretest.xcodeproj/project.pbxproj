@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		002F74D31839C2B500581FA7 /* libgenperf_libs.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 002F74C61839C2B400581FA7 /* libgenperf_libs.a */; };
 		0063CF5616CAF01A00E6DB4D /* boost_replacement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063CDB816CAF01900E6DB4D /* boost_replacement.cpp */; };
 		0063CF5716CAF01A00E6DB4D /* desktop_FakeGUI.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063CDBB16CAF01900E6DB4D /* desktop_FakeGUI.cpp */; };
 		0063CF5816CAF01A00E6DB4D /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063CDBD16CAF01900E6DB4D /* main.cpp */; };
@@ -26,52 +25,55 @@
 		00C5B0DC177CA2C900D6F8AC /* libcryptopp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C5B0D7177CA27D00D6F8AC /* libcryptopp.a */; };
 		00C5B0DD177CA2DC00D6F8AC /* libudns.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C5B0D2177CA27D00D6F8AC /* libudns.a */; };
 		00C82C271832025D005B87E0 /* boost.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C82C261832025C005B87E0 /* boost.framework */; };
-		E27837AE17A7E01000E2CB11 /* libaudio_coding_module.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278378117A7E00E00E2CB11 /* libaudio_coding_module.a */; };
-		E27837AF17A7E01000E2CB11 /* libaudio_conference_mixer.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278378217A7E00E00E2CB11 /* libaudio_conference_mixer.a */; };
-		E27837B017A7E01000E2CB11 /* libaudio_device.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278378317A7E00E00E2CB11 /* libaudio_device.a */; };
-		E27837B117A7E01000E2CB11 /* libaudio_processing_sse2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278378417A7E00E00E2CB11 /* libaudio_processing_sse2.a */; };
-		E27837B217A7E01000E2CB11 /* libaudio_processing.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278378517A7E00E00E2CB11 /* libaudio_processing.a */; };
-		E27837B317A7E01000E2CB11 /* libbitrate_controller.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278378617A7E00E00E2CB11 /* libbitrate_controller.a */; };
-		E27837B417A7E01000E2CB11 /* libCNG.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278378717A7E00E00E2CB11 /* libCNG.a */; };
-		E27837B517A7E01000E2CB11 /* libcommon_audio_sse2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278378817A7E00F00E2CB11 /* libcommon_audio_sse2.a */; };
-		E27837B617A7E01000E2CB11 /* libcommon_audio.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278378917A7E00F00E2CB11 /* libcommon_audio.a */; };
-		E27837B717A7E01000E2CB11 /* libcommon_video.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278378A17A7E00F00E2CB11 /* libcommon_video.a */; };
-		E27837B817A7E01000E2CB11 /* libdesktop_capture_differ_sse2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278378B17A7E00F00E2CB11 /* libdesktop_capture_differ_sse2.a */; };
-		E27837B917A7E01000E2CB11 /* libdesktop_capture.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278378C17A7E00F00E2CB11 /* libdesktop_capture.a */; };
-		E27837BA17A7E01000E2CB11 /* libG711.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278378D17A7E00F00E2CB11 /* libG711.a */; };
-		E27837BB17A7E01000E2CB11 /* libG722.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278378E17A7E00F00E2CB11 /* libG722.a */; };
-		E27837BC17A7E01000E2CB11 /* libiLBC.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278378F17A7E00F00E2CB11 /* libiLBC.a */; };
-		E27837BD17A7E01000E2CB11 /* libiSAC.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278379017A7E00F00E2CB11 /* libiSAC.a */; };
-		E27837BE17A7E01000E2CB11 /* libiSACFix.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278379117A7E00F00E2CB11 /* libiSACFix.a */; };
-		E27837BF17A7E01000E2CB11 /* libmedia_file.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278379217A7E00F00E2CB11 /* libmedia_file.a */; };
-		E27837C017A7E01000E2CB11 /* libNetEq.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278379317A7E00F00E2CB11 /* libNetEq.a */; };
-		E27837C117A7E01000E2CB11 /* libNetEq4.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278379417A7E00F00E2CB11 /* libNetEq4.a */; };
-		E27837C217A7E01000E2CB11 /* libopus.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278379517A7E00F00E2CB11 /* libopus.a */; };
-		E27837C317A7E01000E2CB11 /* libpaced_sender.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278379617A7E00F00E2CB11 /* libpaced_sender.a */; };
-		E27837C417A7E01000E2CB11 /* libPCM16B.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278379717A7E00F00E2CB11 /* libPCM16B.a */; };
-		E27837C517A7E01000E2CB11 /* libremote_bitrate_estimator.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278379817A7E00F00E2CB11 /* libremote_bitrate_estimator.a */; };
-		E27837C617A7E01000E2CB11 /* librtp_rtcp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278379917A7E00F00E2CB11 /* librtp_rtcp.a */; };
-		E27837C717A7E01000E2CB11 /* libsystem_wrappers.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278379A17A7E00F00E2CB11 /* libsystem_wrappers.a */; };
-		E27837C817A7E01000E2CB11 /* libvideo_capture_module.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278379B17A7E00F00E2CB11 /* libvideo_capture_module.a */; };
-		E27837C917A7E01000E2CB11 /* libvideo_coding_utility.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278379C17A7E00F00E2CB11 /* libvideo_coding_utility.a */; };
-		E27837CA17A7E01000E2CB11 /* libvideo_engine_core.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278379D17A7E00F00E2CB11 /* libvideo_engine_core.a */; };
-		E27837CB17A7E01000E2CB11 /* libvideo_processing_sse2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278379E17A7E00F00E2CB11 /* libvideo_processing_sse2.a */; };
-		E27837CC17A7E01000E2CB11 /* libvideo_processing.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E278379F17A7E00F00E2CB11 /* libvideo_processing.a */; };
-		E27837CD17A7E01000E2CB11 /* libvideo_render_module.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E27837A017A7E00F00E2CB11 /* libvideo_render_module.a */; };
-		E27837CE17A7E01000E2CB11 /* libvoice_engine.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E27837A117A7E00F00E2CB11 /* libvoice_engine.a */; };
-		E27837CF17A7E01000E2CB11 /* libvpx_asm_offsets_vp8.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E27837A217A7E00F00E2CB11 /* libvpx_asm_offsets_vp8.a */; };
-		E27837D017A7E01000E2CB11 /* libvpx_asm_offsets_vpx_scale.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E27837A317A7E00F00E2CB11 /* libvpx_asm_offsets_vpx_scale.a */; };
-		E27837D117A7E01000E2CB11 /* libvpx_intrinsics_mmx.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E27837A417A7E00F00E2CB11 /* libvpx_intrinsics_mmx.a */; };
-		E27837D217A7E01000E2CB11 /* libvpx_intrinsics_sse2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E27837A517A7E00F00E2CB11 /* libvpx_intrinsics_sse2.a */; };
-		E27837D317A7E01000E2CB11 /* libvpx_intrinsics_ssse3.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E27837A617A7E00F00E2CB11 /* libvpx_intrinsics_ssse3.a */; };
-		E27837D417A7E01000E2CB11 /* libvpx.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E27837A717A7E00F00E2CB11 /* libvpx.a */; };
-		E27837D517A7E01000E2CB11 /* libwebrtc_i420.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E27837A817A7E00F00E2CB11 /* libwebrtc_i420.a */; };
-		E27837D617A7E01000E2CB11 /* libwebrtc_opus.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E27837A917A7E00F00E2CB11 /* libwebrtc_opus.a */; };
-		E27837D717A7E01000E2CB11 /* libwebrtc_utility.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E27837AA17A7E01000E2CB11 /* libwebrtc_utility.a */; };
-		E27837D817A7E01000E2CB11 /* libwebrtc_video_coding.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E27837AB17A7E01000E2CB11 /* libwebrtc_video_coding.a */; };
-		E27837D917A7E01000E2CB11 /* libwebrtc_vp8.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E27837AC17A7E01000E2CB11 /* libwebrtc_vp8.a */; };
-		E27837DA17A7E01000E2CB11 /* libyuv.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E27837AD17A7E01000E2CB11 /* libyuv.a */; };
-		E27837E717A7E12D00E2CB11 /* libjpeg_turbo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E27837E617A7E12D00E2CB11 /* libjpeg_turbo.a */; };
+		E23C2EBF192E11BB00706ADA /* libacm2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E23C2EBD192E11BB00706ADA /* libacm2.a */; };
+		E23C2EC1192E11FF00706ADA /* TestMediaEngine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E210969316D4CECA002147D1 /* TestMediaEngine.cpp */; };
+		E2E22EF81939311300664265 /* libwebrtc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E23C2EE6192E1B0400706ADA /* libwebrtc.a */; };
+		E2E22F261939311C00664265 /* libaudio_coding_module.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22EF91939311300664265 /* libaudio_coding_module.a */; };
+		E2E22F271939311C00664265 /* libaudio_conference_mixer.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22EFA1939311400664265 /* libaudio_conference_mixer.a */; };
+		E2E22F281939311C00664265 /* libaudio_device.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22EFB1939311400664265 /* libaudio_device.a */; };
+		E2E22F291939311C00664265 /* libaudio_processing_sse2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22EFC1939311400664265 /* libaudio_processing_sse2.a */; };
+		E2E22F2A1939311C00664265 /* libaudio_processing.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22EFD1939311400664265 /* libaudio_processing.a */; };
+		E2E22F2B1939311C00664265 /* libbitrate_controller.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22EFE1939311400664265 /* libbitrate_controller.a */; };
+		E2E22F2C1939311C00664265 /* libCNG.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22EFF1939311500664265 /* libCNG.a */; };
+		E2E22F2D1939311C00664265 /* libcommon_audio_sse2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F001939311500664265 /* libcommon_audio_sse2.a */; };
+		E2E22F2E1939311C00664265 /* libcommon_audio.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F011939311500664265 /* libcommon_audio.a */; };
+		E2E22F2F1939311C00664265 /* libcommon_video.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F021939311500664265 /* libcommon_video.a */; };
+		E2E22F301939311C00664265 /* libdesktop_capture_differ_sse2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F031939311500664265 /* libdesktop_capture_differ_sse2.a */; };
+		E2E22F311939311C00664265 /* libdesktop_capture.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F041939311600664265 /* libdesktop_capture.a */; };
+		E2E22F321939311C00664265 /* libG711.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F051939311600664265 /* libG711.a */; };
+		E2E22F331939311C00664265 /* libG722.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F061939311600664265 /* libG722.a */; };
+		E2E22F341939311C00664265 /* libiLBC.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F071939311600664265 /* libiLBC.a */; };
+		E2E22F351939311C00664265 /* libiSAC.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F081939311600664265 /* libiSAC.a */; };
+		E2E22F361939311C00664265 /* libiSACFix.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F091939311700664265 /* libiSACFix.a */; };
+		E2E22F371939311C00664265 /* libmedia_file.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F0A1939311700664265 /* libmedia_file.a */; };
+		E2E22F381939311C00664265 /* libNetEq.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F0B1939311700664265 /* libNetEq.a */; };
+		E2E22F391939311C00664265 /* libNetEq4.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F0C1939311700664265 /* libNetEq4.a */; };
+		E2E22F3A1939311C00664265 /* libopus.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F0D1939311700664265 /* libopus.a */; };
+		E2E22F3B1939311C00664265 /* libpaced_sender.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F0E1939311800664265 /* libpaced_sender.a */; };
+		E2E22F3C1939311C00664265 /* libPCM16B.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F0F1939311800664265 /* libPCM16B.a */; };
+		E2E22F3D1939311C00664265 /* libremote_bitrate_estimator.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F101939311800664265 /* libremote_bitrate_estimator.a */; };
+		E2E22F3E1939311C00664265 /* librtp_rtcp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F111939311800664265 /* librtp_rtcp.a */; };
+		E2E22F3F1939311C00664265 /* libsystem_wrappers.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F121939311800664265 /* libsystem_wrappers.a */; };
+		E2E22F401939311C00664265 /* libvideo_capture_module.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F131939311900664265 /* libvideo_capture_module.a */; };
+		E2E22F411939311C00664265 /* libvideo_coding_utility.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F141939311900664265 /* libvideo_coding_utility.a */; };
+		E2E22F421939311C00664265 /* libvideo_engine_core.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F151939311900664265 /* libvideo_engine_core.a */; };
+		E2E22F431939311C00664265 /* libvideo_processing_sse2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F161939311900664265 /* libvideo_processing_sse2.a */; };
+		E2E22F441939311C00664265 /* libvideo_processing.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F171939311900664265 /* libvideo_processing.a */; };
+		E2E22F451939311C00664265 /* libvideo_render_module.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F181939311A00664265 /* libvideo_render_module.a */; };
+		E2E22F461939311C00664265 /* libvoice_engine.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F191939311A00664265 /* libvoice_engine.a */; };
+		E2E22F471939311C00664265 /* libvpx_asm_offsets_vp8.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F1A1939311A00664265 /* libvpx_asm_offsets_vp8.a */; };
+		E2E22F481939311C00664265 /* libvpx_asm_offsets_vpx_scale.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F1B1939311A00664265 /* libvpx_asm_offsets_vpx_scale.a */; };
+		E2E22F491939311C00664265 /* libvpx_intrinsics_mmx.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F1C1939311A00664265 /* libvpx_intrinsics_mmx.a */; };
+		E2E22F4A1939311C00664265 /* libvpx_intrinsics_sse2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F1D1939311B00664265 /* libvpx_intrinsics_sse2.a */; };
+		E2E22F4B1939311C00664265 /* libvpx_intrinsics_ssse3.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F1E1939311B00664265 /* libvpx_intrinsics_ssse3.a */; };
+		E2E22F4C1939311C00664265 /* libvpx.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F1F1939311B00664265 /* libvpx.a */; };
+		E2E22F4D1939311C00664265 /* libwebrtc_i420.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F201939311B00664265 /* libwebrtc_i420.a */; };
+		E2E22F4E1939311C00664265 /* libwebrtc_opus.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F211939311B00664265 /* libwebrtc_opus.a */; };
+		E2E22F4F1939311C00664265 /* libwebrtc_utility.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F221939311B00664265 /* libwebrtc_utility.a */; };
+		E2E22F501939311C00664265 /* libwebrtc_video_coding.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F231939311C00664265 /* libwebrtc_video_coding.a */; };
+		E2E22F511939311C00664265 /* libwebrtc_vp8.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F241939311C00664265 /* libwebrtc_vp8.a */; };
+		E2E22F521939311C00664265 /* libyuv.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F251939311C00664265 /* libyuv.a */; };
+		E2E22F541939324500664265 /* librbe_components.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E22F531939324500664265 /* librbe_components.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -166,12 +168,12 @@
 			remoteGlobalIDString = 0066829F16C9DC3D00259F81;
 			remoteInfo = cryptopp;
 		};
-		E278377F17A7DF7A00E2CB11 /* PBXContainerItemProxy */ = {
+		E23C2EE5192E1B0400706ADA /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = E210821A17A7466D001D1608 /* webrtc_osx.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 307C243DFDDBFD9EF8440480;
-			remoteInfo = All;
+			containerPortal = E2E460C8192C0175005BAED9 /* webrtc_osx.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = D9F32959024A3DE38441E273;
+			remoteInfo = webrtc;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -188,7 +190,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		002F74C61839C2B400581FA7 /* libgenperf_libs.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libgenperf_libs.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		004A55921839D67D00AEF378 /* ortclib.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = ortclib.xcodeproj; path = "../../../../ortc-lib/projects/xcode/ortclib/ortclib.xcodeproj"; sourceTree = "<group>"; };
 		0063CD6D16CAEFE400E6DB4D /* hfcoreTest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = hfcoreTest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0063CDB816CAF01900E6DB4D /* boost_replacement.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = boost_replacement.cpp; sourceTree = "<group>"; };
@@ -212,55 +213,56 @@
 		0063D5BF16CB32AD00E6DB4D /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
 		0063D5C116CB32B500E6DB4D /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		00C82C261832025C005B87E0 /* boost.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = boost.framework; path = "../../../../ortc-lib/libs/boost/osx/framework/boost.framework"; sourceTree = "<group>"; };
-		E210821A17A7466D001D1608 /* webrtc_osx.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = webrtc_osx.xcodeproj; path = "../../../../ortc-lib/libs/webrtc/webrtc_osx.xcodeproj"; sourceTree = "<group>"; };
 		E210969316D4CECA002147D1 /* TestMediaEngine.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TestMediaEngine.cpp; sourceTree = "<group>"; };
 		E210969416D4CECA002147D1 /* TestMediaEngine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TestMediaEngine.h; sourceTree = "<group>"; };
-		E278378117A7E00E00E2CB11 /* libaudio_coding_module.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libaudio_coding_module.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278378217A7E00E00E2CB11 /* libaudio_conference_mixer.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libaudio_conference_mixer.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278378317A7E00E00E2CB11 /* libaudio_device.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libaudio_device.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278378417A7E00E00E2CB11 /* libaudio_processing_sse2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libaudio_processing_sse2.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278378517A7E00E00E2CB11 /* libaudio_processing.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libaudio_processing.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278378617A7E00E00E2CB11 /* libbitrate_controller.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libbitrate_controller.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278378717A7E00E00E2CB11 /* libCNG.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libCNG.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278378817A7E00F00E2CB11 /* libcommon_audio_sse2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libcommon_audio_sse2.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278378917A7E00F00E2CB11 /* libcommon_audio.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libcommon_audio.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278378A17A7E00F00E2CB11 /* libcommon_video.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libcommon_video.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278378B17A7E00F00E2CB11 /* libdesktop_capture_differ_sse2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libdesktop_capture_differ_sse2.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278378C17A7E00F00E2CB11 /* libdesktop_capture.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libdesktop_capture.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278378D17A7E00F00E2CB11 /* libG711.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libG711.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278378E17A7E00F00E2CB11 /* libG722.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libG722.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278378F17A7E00F00E2CB11 /* libiLBC.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libiLBC.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278379017A7E00F00E2CB11 /* libiSAC.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libiSAC.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278379117A7E00F00E2CB11 /* libiSACFix.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libiSACFix.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278379217A7E00F00E2CB11 /* libmedia_file.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libmedia_file.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278379317A7E00F00E2CB11 /* libNetEq.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libNetEq.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278379417A7E00F00E2CB11 /* libNetEq4.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libNetEq4.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278379517A7E00F00E2CB11 /* libopus.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libopus.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278379617A7E00F00E2CB11 /* libpaced_sender.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libpaced_sender.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278379717A7E00F00E2CB11 /* libPCM16B.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libPCM16B.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278379817A7E00F00E2CB11 /* libremote_bitrate_estimator.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libremote_bitrate_estimator.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278379917A7E00F00E2CB11 /* librtp_rtcp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = librtp_rtcp.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278379A17A7E00F00E2CB11 /* libsystem_wrappers.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libsystem_wrappers.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278379B17A7E00F00E2CB11 /* libvideo_capture_module.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvideo_capture_module.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278379C17A7E00F00E2CB11 /* libvideo_coding_utility.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvideo_coding_utility.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278379D17A7E00F00E2CB11 /* libvideo_engine_core.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvideo_engine_core.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278379E17A7E00F00E2CB11 /* libvideo_processing_sse2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvideo_processing_sse2.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E278379F17A7E00F00E2CB11 /* libvideo_processing.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvideo_processing.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E27837A017A7E00F00E2CB11 /* libvideo_render_module.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvideo_render_module.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E27837A117A7E00F00E2CB11 /* libvoice_engine.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvoice_engine.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E27837A217A7E00F00E2CB11 /* libvpx_asm_offsets_vp8.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvpx_asm_offsets_vp8.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E27837A317A7E00F00E2CB11 /* libvpx_asm_offsets_vpx_scale.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvpx_asm_offsets_vpx_scale.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E27837A417A7E00F00E2CB11 /* libvpx_intrinsics_mmx.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvpx_intrinsics_mmx.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E27837A517A7E00F00E2CB11 /* libvpx_intrinsics_sse2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvpx_intrinsics_sse2.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E27837A617A7E00F00E2CB11 /* libvpx_intrinsics_ssse3.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvpx_intrinsics_ssse3.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E27837A717A7E00F00E2CB11 /* libvpx.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvpx.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E27837A817A7E00F00E2CB11 /* libwebrtc_i420.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libwebrtc_i420.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E27837A917A7E00F00E2CB11 /* libwebrtc_opus.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libwebrtc_opus.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E27837AA17A7E01000E2CB11 /* libwebrtc_utility.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libwebrtc_utility.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E27837AB17A7E01000E2CB11 /* libwebrtc_video_coding.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libwebrtc_video_coding.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E27837AC17A7E01000E2CB11 /* libwebrtc_vp8.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libwebrtc_vp8.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E27837AD17A7E01000E2CB11 /* libyuv.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libyuv.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E27837E617A7E12D00E2CB11 /* libjpeg_turbo.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libjpeg_turbo.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E23C2EBD192E11BB00706ADA /* libacm2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libacm2.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22EF91939311300664265 /* libaudio_coding_module.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libaudio_coding_module.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22EFA1939311400664265 /* libaudio_conference_mixer.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libaudio_conference_mixer.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22EFB1939311400664265 /* libaudio_device.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libaudio_device.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22EFC1939311400664265 /* libaudio_processing_sse2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libaudio_processing_sse2.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22EFD1939311400664265 /* libaudio_processing.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libaudio_processing.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22EFE1939311400664265 /* libbitrate_controller.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libbitrate_controller.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22EFF1939311500664265 /* libCNG.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libCNG.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F001939311500664265 /* libcommon_audio_sse2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libcommon_audio_sse2.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F011939311500664265 /* libcommon_audio.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libcommon_audio.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F021939311500664265 /* libcommon_video.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libcommon_video.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F031939311500664265 /* libdesktop_capture_differ_sse2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libdesktop_capture_differ_sse2.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F041939311600664265 /* libdesktop_capture.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libdesktop_capture.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F051939311600664265 /* libG711.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libG711.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F061939311600664265 /* libG722.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libG722.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F071939311600664265 /* libiLBC.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libiLBC.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F081939311600664265 /* libiSAC.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libiSAC.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F091939311700664265 /* libiSACFix.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libiSACFix.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F0A1939311700664265 /* libmedia_file.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libmedia_file.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F0B1939311700664265 /* libNetEq.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libNetEq.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F0C1939311700664265 /* libNetEq4.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libNetEq4.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F0D1939311700664265 /* libopus.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libopus.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F0E1939311800664265 /* libpaced_sender.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libpaced_sender.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F0F1939311800664265 /* libPCM16B.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libPCM16B.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F101939311800664265 /* libremote_bitrate_estimator.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libremote_bitrate_estimator.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F111939311800664265 /* librtp_rtcp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = librtp_rtcp.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F121939311800664265 /* libsystem_wrappers.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libsystem_wrappers.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F131939311900664265 /* libvideo_capture_module.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvideo_capture_module.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F141939311900664265 /* libvideo_coding_utility.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvideo_coding_utility.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F151939311900664265 /* libvideo_engine_core.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvideo_engine_core.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F161939311900664265 /* libvideo_processing_sse2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvideo_processing_sse2.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F171939311900664265 /* libvideo_processing.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvideo_processing.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F181939311A00664265 /* libvideo_render_module.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvideo_render_module.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F191939311A00664265 /* libvoice_engine.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvoice_engine.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F1A1939311A00664265 /* libvpx_asm_offsets_vp8.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvpx_asm_offsets_vp8.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F1B1939311A00664265 /* libvpx_asm_offsets_vpx_scale.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvpx_asm_offsets_vpx_scale.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F1C1939311A00664265 /* libvpx_intrinsics_mmx.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvpx_intrinsics_mmx.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F1D1939311B00664265 /* libvpx_intrinsics_sse2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvpx_intrinsics_sse2.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F1E1939311B00664265 /* libvpx_intrinsics_ssse3.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvpx_intrinsics_ssse3.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F1F1939311B00664265 /* libvpx.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvpx.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F201939311B00664265 /* libwebrtc_i420.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libwebrtc_i420.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F211939311B00664265 /* libwebrtc_opus.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libwebrtc_opus.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F221939311B00664265 /* libwebrtc_utility.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libwebrtc_utility.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F231939311C00664265 /* libwebrtc_video_coding.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libwebrtc_video_coding.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F241939311C00664265 /* libwebrtc_vp8.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libwebrtc_vp8.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F251939311C00664265 /* libyuv.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libyuv.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E22F531939324500664265 /* librbe_components.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = librbe_components.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E460C8192C0175005BAED9 /* webrtc_osx.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = webrtc_osx.xcodeproj; path = "../../../../ortc-lib/libs/webrtc/webrtc/webrtc_osx.xcodeproj"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -268,53 +270,54 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				002F74D31839C2B500581FA7 /* libgenperf_libs.a in Frameworks */,
-				E27837E717A7E12D00E2CB11 /* libjpeg_turbo.a in Frameworks */,
-				E27837AE17A7E01000E2CB11 /* libaudio_coding_module.a in Frameworks */,
-				E27837AF17A7E01000E2CB11 /* libaudio_conference_mixer.a in Frameworks */,
-				E27837B017A7E01000E2CB11 /* libaudio_device.a in Frameworks */,
-				E27837B117A7E01000E2CB11 /* libaudio_processing_sse2.a in Frameworks */,
-				E27837B217A7E01000E2CB11 /* libaudio_processing.a in Frameworks */,
-				E27837B317A7E01000E2CB11 /* libbitrate_controller.a in Frameworks */,
-				E27837B417A7E01000E2CB11 /* libCNG.a in Frameworks */,
-				E27837B517A7E01000E2CB11 /* libcommon_audio_sse2.a in Frameworks */,
-				E27837B617A7E01000E2CB11 /* libcommon_audio.a in Frameworks */,
-				E27837B717A7E01000E2CB11 /* libcommon_video.a in Frameworks */,
-				E27837B817A7E01000E2CB11 /* libdesktop_capture_differ_sse2.a in Frameworks */,
-				E27837B917A7E01000E2CB11 /* libdesktop_capture.a in Frameworks */,
-				E27837BA17A7E01000E2CB11 /* libG711.a in Frameworks */,
-				E27837BB17A7E01000E2CB11 /* libG722.a in Frameworks */,
-				E27837BC17A7E01000E2CB11 /* libiLBC.a in Frameworks */,
-				E27837BD17A7E01000E2CB11 /* libiSAC.a in Frameworks */,
-				E27837BE17A7E01000E2CB11 /* libiSACFix.a in Frameworks */,
-				E27837BF17A7E01000E2CB11 /* libmedia_file.a in Frameworks */,
-				E27837C017A7E01000E2CB11 /* libNetEq.a in Frameworks */,
-				E27837C117A7E01000E2CB11 /* libNetEq4.a in Frameworks */,
-				E27837C217A7E01000E2CB11 /* libopus.a in Frameworks */,
-				E27837C317A7E01000E2CB11 /* libpaced_sender.a in Frameworks */,
-				E27837C417A7E01000E2CB11 /* libPCM16B.a in Frameworks */,
-				E27837C517A7E01000E2CB11 /* libremote_bitrate_estimator.a in Frameworks */,
-				E27837C617A7E01000E2CB11 /* librtp_rtcp.a in Frameworks */,
-				E27837C717A7E01000E2CB11 /* libsystem_wrappers.a in Frameworks */,
-				E27837C817A7E01000E2CB11 /* libvideo_capture_module.a in Frameworks */,
-				E27837C917A7E01000E2CB11 /* libvideo_coding_utility.a in Frameworks */,
-				E27837CA17A7E01000E2CB11 /* libvideo_engine_core.a in Frameworks */,
-				E27837CB17A7E01000E2CB11 /* libvideo_processing_sse2.a in Frameworks */,
-				E27837CC17A7E01000E2CB11 /* libvideo_processing.a in Frameworks */,
-				E27837CD17A7E01000E2CB11 /* libvideo_render_module.a in Frameworks */,
-				E27837CE17A7E01000E2CB11 /* libvoice_engine.a in Frameworks */,
-				E27837CF17A7E01000E2CB11 /* libvpx_asm_offsets_vp8.a in Frameworks */,
-				E27837D017A7E01000E2CB11 /* libvpx_asm_offsets_vpx_scale.a in Frameworks */,
-				E27837D117A7E01000E2CB11 /* libvpx_intrinsics_mmx.a in Frameworks */,
-				E27837D217A7E01000E2CB11 /* libvpx_intrinsics_sse2.a in Frameworks */,
-				E27837D317A7E01000E2CB11 /* libvpx_intrinsics_ssse3.a in Frameworks */,
-				E27837D417A7E01000E2CB11 /* libvpx.a in Frameworks */,
-				E27837D517A7E01000E2CB11 /* libwebrtc_i420.a in Frameworks */,
-				E27837D617A7E01000E2CB11 /* libwebrtc_opus.a in Frameworks */,
-				E27837D717A7E01000E2CB11 /* libwebrtc_utility.a in Frameworks */,
-				E27837D817A7E01000E2CB11 /* libwebrtc_video_coding.a in Frameworks */,
-				E27837D917A7E01000E2CB11 /* libwebrtc_vp8.a in Frameworks */,
-				E27837DA17A7E01000E2CB11 /* libyuv.a in Frameworks */,
+				E2E22F541939324500664265 /* librbe_components.a in Frameworks */,
+				E2E22F261939311C00664265 /* libaudio_coding_module.a in Frameworks */,
+				E2E22F271939311C00664265 /* libaudio_conference_mixer.a in Frameworks */,
+				E2E22F281939311C00664265 /* libaudio_device.a in Frameworks */,
+				E2E22F291939311C00664265 /* libaudio_processing_sse2.a in Frameworks */,
+				E2E22F2A1939311C00664265 /* libaudio_processing.a in Frameworks */,
+				E2E22F2B1939311C00664265 /* libbitrate_controller.a in Frameworks */,
+				E2E22F2C1939311C00664265 /* libCNG.a in Frameworks */,
+				E2E22F2D1939311C00664265 /* libcommon_audio_sse2.a in Frameworks */,
+				E2E22F2E1939311C00664265 /* libcommon_audio.a in Frameworks */,
+				E2E22F2F1939311C00664265 /* libcommon_video.a in Frameworks */,
+				E2E22F301939311C00664265 /* libdesktop_capture_differ_sse2.a in Frameworks */,
+				E2E22F311939311C00664265 /* libdesktop_capture.a in Frameworks */,
+				E2E22F321939311C00664265 /* libG711.a in Frameworks */,
+				E2E22F331939311C00664265 /* libG722.a in Frameworks */,
+				E2E22F341939311C00664265 /* libiLBC.a in Frameworks */,
+				E2E22F351939311C00664265 /* libiSAC.a in Frameworks */,
+				E2E22F361939311C00664265 /* libiSACFix.a in Frameworks */,
+				E2E22F371939311C00664265 /* libmedia_file.a in Frameworks */,
+				E2E22F381939311C00664265 /* libNetEq.a in Frameworks */,
+				E2E22F391939311C00664265 /* libNetEq4.a in Frameworks */,
+				E2E22F3A1939311C00664265 /* libopus.a in Frameworks */,
+				E2E22F3B1939311C00664265 /* libpaced_sender.a in Frameworks */,
+				E2E22F3C1939311C00664265 /* libPCM16B.a in Frameworks */,
+				E2E22F3D1939311C00664265 /* libremote_bitrate_estimator.a in Frameworks */,
+				E2E22F3E1939311C00664265 /* librtp_rtcp.a in Frameworks */,
+				E2E22F3F1939311C00664265 /* libsystem_wrappers.a in Frameworks */,
+				E2E22F401939311C00664265 /* libvideo_capture_module.a in Frameworks */,
+				E2E22F411939311C00664265 /* libvideo_coding_utility.a in Frameworks */,
+				E2E22F421939311C00664265 /* libvideo_engine_core.a in Frameworks */,
+				E2E22F431939311C00664265 /* libvideo_processing_sse2.a in Frameworks */,
+				E2E22F441939311C00664265 /* libvideo_processing.a in Frameworks */,
+				E2E22F451939311C00664265 /* libvideo_render_module.a in Frameworks */,
+				E2E22F461939311C00664265 /* libvoice_engine.a in Frameworks */,
+				E2E22F471939311C00664265 /* libvpx_asm_offsets_vp8.a in Frameworks */,
+				E2E22F481939311C00664265 /* libvpx_asm_offsets_vpx_scale.a in Frameworks */,
+				E2E22F491939311C00664265 /* libvpx_intrinsics_mmx.a in Frameworks */,
+				E2E22F4A1939311C00664265 /* libvpx_intrinsics_sse2.a in Frameworks */,
+				E2E22F4B1939311C00664265 /* libvpx_intrinsics_ssse3.a in Frameworks */,
+				E2E22F4C1939311C00664265 /* libvpx.a in Frameworks */,
+				E2E22F4D1939311C00664265 /* libwebrtc_i420.a in Frameworks */,
+				E2E22F4E1939311C00664265 /* libwebrtc_opus.a in Frameworks */,
+				E2E22F4F1939311C00664265 /* libwebrtc_utility.a in Frameworks */,
+				E2E22F501939311C00664265 /* libwebrtc_video_coding.a in Frameworks */,
+				E2E22F511939311C00664265 /* libwebrtc_vp8.a in Frameworks */,
+				E2E22F521939311C00664265 /* libyuv.a in Frameworks */,
+				E2E22EF81939311300664265 /* libwebrtc.a in Frameworks */,
+				E23C2EBF192E11BB00706ADA /* libacm2.a in Frameworks */,
 				0063D03416CAF1C200E6DB4D /* libcurl.dylib in Frameworks */,
 				0063D37516CB2BB600E6DB4D /* libhfcore.a in Frameworks */,
 				0063D37416CB2B3400E6DB4D /* libhfstack.a in Frameworks */,
@@ -351,7 +354,6 @@
 				0063CFFD16CAF10500E6DB4D /* Projects */,
 				0063CFFF16CAF11B00E6DB4D /* Frameworks */,
 				0063CFFE16CAF11200E6DB4D /* Libraries */,
-				00EC4727177D46AA00D68AF7 /* WebRTC Libraries */,
 				0063CD6E16CAEFE400E6DB4D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -406,7 +408,7 @@
 				0063D34C16CB296000E6DB4D /* cryptopp.xcodeproj */,
 				0063D34616CB294B00E6DB4D /* udns.xcodeproj */,
 				0063D34016CB293C00E6DB4D /* zsLib.xcodeproj */,
-				E210821A17A7466D001D1608 /* webrtc_osx.xcodeproj */,
+				E2E460C8192C0175005BAED9 /* webrtc_osx.xcodeproj */,
 			);
 			name = Projects;
 			sourceTree = "<group>";
@@ -421,6 +423,53 @@
 		0063CFFF16CAF11B00E6DB4D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				E2E22F531939324500664265 /* librbe_components.a */,
+				E2E22EF91939311300664265 /* libaudio_coding_module.a */,
+				E2E22EFA1939311400664265 /* libaudio_conference_mixer.a */,
+				E2E22EFB1939311400664265 /* libaudio_device.a */,
+				E2E22EFC1939311400664265 /* libaudio_processing_sse2.a */,
+				E2E22EFD1939311400664265 /* libaudio_processing.a */,
+				E2E22EFE1939311400664265 /* libbitrate_controller.a */,
+				E2E22EFF1939311500664265 /* libCNG.a */,
+				E2E22F001939311500664265 /* libcommon_audio_sse2.a */,
+				E2E22F011939311500664265 /* libcommon_audio.a */,
+				E2E22F021939311500664265 /* libcommon_video.a */,
+				E2E22F031939311500664265 /* libdesktop_capture_differ_sse2.a */,
+				E2E22F041939311600664265 /* libdesktop_capture.a */,
+				E2E22F051939311600664265 /* libG711.a */,
+				E2E22F061939311600664265 /* libG722.a */,
+				E2E22F071939311600664265 /* libiLBC.a */,
+				E2E22F081939311600664265 /* libiSAC.a */,
+				E2E22F091939311700664265 /* libiSACFix.a */,
+				E2E22F0A1939311700664265 /* libmedia_file.a */,
+				E2E22F0B1939311700664265 /* libNetEq.a */,
+				E2E22F0C1939311700664265 /* libNetEq4.a */,
+				E2E22F0D1939311700664265 /* libopus.a */,
+				E2E22F0E1939311800664265 /* libpaced_sender.a */,
+				E2E22F0F1939311800664265 /* libPCM16B.a */,
+				E2E22F101939311800664265 /* libremote_bitrate_estimator.a */,
+				E2E22F111939311800664265 /* librtp_rtcp.a */,
+				E2E22F121939311800664265 /* libsystem_wrappers.a */,
+				E2E22F131939311900664265 /* libvideo_capture_module.a */,
+				E2E22F141939311900664265 /* libvideo_coding_utility.a */,
+				E2E22F151939311900664265 /* libvideo_engine_core.a */,
+				E2E22F161939311900664265 /* libvideo_processing_sse2.a */,
+				E2E22F171939311900664265 /* libvideo_processing.a */,
+				E2E22F181939311A00664265 /* libvideo_render_module.a */,
+				E2E22F191939311A00664265 /* libvoice_engine.a */,
+				E2E22F1A1939311A00664265 /* libvpx_asm_offsets_vp8.a */,
+				E2E22F1B1939311A00664265 /* libvpx_asm_offsets_vpx_scale.a */,
+				E2E22F1C1939311A00664265 /* libvpx_intrinsics_mmx.a */,
+				E2E22F1D1939311B00664265 /* libvpx_intrinsics_sse2.a */,
+				E2E22F1E1939311B00664265 /* libvpx_intrinsics_ssse3.a */,
+				E2E22F1F1939311B00664265 /* libvpx.a */,
+				E2E22F201939311B00664265 /* libwebrtc_i420.a */,
+				E2E22F211939311B00664265 /* libwebrtc_opus.a */,
+				E2E22F221939311B00664265 /* libwebrtc_utility.a */,
+				E2E22F231939311C00664265 /* libwebrtc_video_coding.a */,
+				E2E22F241939311C00664265 /* libwebrtc_vp8.a */,
+				E2E22F251939311C00664265 /* libyuv.a */,
+				E23C2EBD192E11BB00706ADA /* libacm2.a */,
 				0063D03316CAF1C200E6DB4D /* libcurl.dylib */,
 				00C82C261832025C005B87E0 /* boost.framework */,
 				0063D5C116CB32B500E6DB4D /* OpenGL.framework */,
@@ -482,63 +531,10 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		00EC4727177D46AA00D68AF7 /* WebRTC Libraries */ = {
+		E23C2EDE192E1B0400706ADA /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				002F74C61839C2B400581FA7 /* libgenperf_libs.a */,
-				E27837E617A7E12D00E2CB11 /* libjpeg_turbo.a */,
-				E278378117A7E00E00E2CB11 /* libaudio_coding_module.a */,
-				E278378217A7E00E00E2CB11 /* libaudio_conference_mixer.a */,
-				E278378317A7E00E00E2CB11 /* libaudio_device.a */,
-				E278378417A7E00E00E2CB11 /* libaudio_processing_sse2.a */,
-				E278378517A7E00E00E2CB11 /* libaudio_processing.a */,
-				E278378617A7E00E00E2CB11 /* libbitrate_controller.a */,
-				E278378717A7E00E00E2CB11 /* libCNG.a */,
-				E278378817A7E00F00E2CB11 /* libcommon_audio_sse2.a */,
-				E278378917A7E00F00E2CB11 /* libcommon_audio.a */,
-				E278378A17A7E00F00E2CB11 /* libcommon_video.a */,
-				E278378B17A7E00F00E2CB11 /* libdesktop_capture_differ_sse2.a */,
-				E278378C17A7E00F00E2CB11 /* libdesktop_capture.a */,
-				E278378D17A7E00F00E2CB11 /* libG711.a */,
-				E278378E17A7E00F00E2CB11 /* libG722.a */,
-				E278378F17A7E00F00E2CB11 /* libiLBC.a */,
-				E278379017A7E00F00E2CB11 /* libiSAC.a */,
-				E278379117A7E00F00E2CB11 /* libiSACFix.a */,
-				E278379217A7E00F00E2CB11 /* libmedia_file.a */,
-				E278379317A7E00F00E2CB11 /* libNetEq.a */,
-				E278379417A7E00F00E2CB11 /* libNetEq4.a */,
-				E278379517A7E00F00E2CB11 /* libopus.a */,
-				E278379617A7E00F00E2CB11 /* libpaced_sender.a */,
-				E278379717A7E00F00E2CB11 /* libPCM16B.a */,
-				E278379817A7E00F00E2CB11 /* libremote_bitrate_estimator.a */,
-				E278379917A7E00F00E2CB11 /* librtp_rtcp.a */,
-				E278379A17A7E00F00E2CB11 /* libsystem_wrappers.a */,
-				E278379B17A7E00F00E2CB11 /* libvideo_capture_module.a */,
-				E278379C17A7E00F00E2CB11 /* libvideo_coding_utility.a */,
-				E278379D17A7E00F00E2CB11 /* libvideo_engine_core.a */,
-				E278379E17A7E00F00E2CB11 /* libvideo_processing_sse2.a */,
-				E278379F17A7E00F00E2CB11 /* libvideo_processing.a */,
-				E27837A017A7E00F00E2CB11 /* libvideo_render_module.a */,
-				E27837A117A7E00F00E2CB11 /* libvoice_engine.a */,
-				E27837A217A7E00F00E2CB11 /* libvpx_asm_offsets_vp8.a */,
-				E27837A317A7E00F00E2CB11 /* libvpx_asm_offsets_vpx_scale.a */,
-				E27837A417A7E00F00E2CB11 /* libvpx_intrinsics_mmx.a */,
-				E27837A517A7E00F00E2CB11 /* libvpx_intrinsics_sse2.a */,
-				E27837A617A7E00F00E2CB11 /* libvpx_intrinsics_ssse3.a */,
-				E27837A717A7E00F00E2CB11 /* libvpx.a */,
-				E27837A817A7E00F00E2CB11 /* libwebrtc_i420.a */,
-				E27837A917A7E00F00E2CB11 /* libwebrtc_opus.a */,
-				E27837AA17A7E01000E2CB11 /* libwebrtc_utility.a */,
-				E27837AB17A7E01000E2CB11 /* libwebrtc_video_coding.a */,
-				E27837AC17A7E01000E2CB11 /* libwebrtc_vp8.a */,
-				E27837AD17A7E01000E2CB11 /* libyuv.a */,
-			);
-			name = "WebRTC Libraries";
-			sourceTree = "<group>";
-		};
-		E210821B17A7466D001D1608 /* Products */ = {
-			isa = PBXGroup;
-			children = (
+				E23C2EE6192E1B0400706ADA /* libwebrtc.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -557,7 +553,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				E278378017A7DF7A00E2CB11 /* PBXTargetDependency */,
 				00C5B0D9177CA2B200D6F8AC /* PBXTargetDependency */,
 				00C5B0DB177CA2B200D6F8AC /* PBXTargetDependency */,
 				0063D36716CB29C600E6DB4D /* PBXTargetDependency */,
@@ -615,8 +610,8 @@
 					ProjectRef = 0063D34616CB294B00E6DB4D /* udns.xcodeproj */;
 				},
 				{
-					ProductGroup = E210821B17A7466D001D1608 /* Products */;
-					ProjectRef = E210821A17A7466D001D1608 /* webrtc_osx.xcodeproj */;
+					ProductGroup = E23C2EDE192E1B0400706ADA /* Products */;
+					ProjectRef = E2E460C8192C0175005BAED9 /* webrtc_osx.xcodeproj */;
 				},
 				{
 					ProductGroup = 0063D34116CB293C00E6DB4D /* Products */;
@@ -680,6 +675,13 @@
 			remoteRef = 00C5B0D6177CA27D00D6F8AC /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
+		E23C2EE6192E1B0400706ADA /* libwebrtc.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libwebrtc.a;
+			remoteRef = E23C2EE5192E1B0400706ADA /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 /* End PBXReferenceProxy section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -687,6 +689,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E23C2EC1192E11FF00706ADA /* TestMediaEngine.cpp in Sources */,
 				0063CF5616CAF01A00E6DB4D /* boost_replacement.cpp in Sources */,
 				0063CF5716CAF01A00E6DB4D /* desktop_FakeGUI.cpp in Sources */,
 				0063CF5816CAF01A00E6DB4D /* main.cpp in Sources */,
@@ -725,11 +728,6 @@
 			isa = PBXTargetDependency;
 			name = cryptopp;
 			targetProxy = 00C5B0DA177CA2B200D6F8AC /* PBXContainerItemProxy */;
-		};
-		E278378017A7DF7A00E2CB11 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = All;
-			targetProxy = E278377F17A7DF7A00E2CB11 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -856,11 +854,7 @@
 					"DEBUG=1",
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(USER_LIBRARY_DIR)/Developer/Xcode/DerivedData/hfcore-cbdogecqbtidpievqsyxwfplppcr/Build/Products/Debug-iphoneos",
-					"$(USER_LIBRARY_DIR)/Developer/Xcode/DerivedData/hfcore-cbdogecqbtidpievqsyxwfplppcr/Build/Products/Debug",
-				);
+				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -878,11 +872,7 @@
 					"NDEBUG=1",
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(USER_LIBRARY_DIR)/Developer/Xcode/DerivedData/hfcore-cbdogecqbtidpievqsyxwfplppcr/Build/Products/Debug-iphoneos",
-					"$(USER_LIBRARY_DIR)/Developer/Xcode/DerivedData/hfcore-cbdogecqbtidpievqsyxwfplppcr/Build/Products/Debug",
-				);
+				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

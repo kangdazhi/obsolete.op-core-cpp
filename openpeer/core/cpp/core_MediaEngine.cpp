@@ -153,7 +153,6 @@ namespace openpeer
         mVideoCapture(NULL),
         mVideoRtpRtcp(NULL),
         mVideoCodec(NULL),
-        mVideoFile(NULL),
         mVideoEngineReady(false),
         mFaceDetection(false),
         mCaptureRenderView(NULL),
@@ -221,7 +220,6 @@ namespace openpeer
         mVideoCapture(NULL),
         mVideoRtpRtcp(NULL),
         mVideoCodec(NULL),
-        mVideoFile(NULL),
         mVideoEngineReady(false),
         mFaceDetection(false),
         mCaptureRenderView(NULL),
@@ -363,12 +361,14 @@ namespace openpeer
           ZS_LOG_ERROR(Detail, log("failed to get interface for video codec"))
           return;
         }
+#if 0
         mVideoFile = webrtc::ViEFile::GetInterface(mVideoEngine);
         if (mVideoFile == NULL) {
           ZS_LOG_ERROR(Detail, log("failed to get interface for video file"))
           return;
         }
-
+#endif
+        
         mError = mVideoBase->Init();
         if (mError < 0) {
           ZS_LOG_ERROR(Detail, log("failed to initialize video base") + ZS_PARAM("error", mVideoBase->LastError()))
@@ -562,7 +562,7 @@ namespace openpeer
               return;
             }
           }
-          
+#if 0
           if (mVideoFile) {
             mError = mVideoFile->Release();
             if (mError < 0) {
@@ -570,7 +570,7 @@ namespace openpeer
               return;
             }
           }
-
+#endif
           if (!VideoEngine::Delete(mVideoEngine)) {
             ZS_LOG_ERROR(Detail, log("failed to delete video engine"))
             return;
@@ -1211,7 +1211,7 @@ namespace openpeer
           return -1;
         }
 
-        mError = mVideoNetwork->ReceivedRTPPacket(channel, data, length);
+        mError = mVideoNetwork->ReceivedRTPPacket(channel, data, length, webrtc::PacketTime());
         if (0 != mError) {
           ZS_LOG_ERROR(Detail, log("received video RTP packet failed") + ZS_PARAM("error", mVideoBase->LastError()))
           return mError;
@@ -1418,13 +1418,13 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void MediaEngine::operator()()
       {
-  #if !defined(_ANDROID) && !defined(_LINUX)
-  # ifdef __QNX__
+#if !defined(_ANDROID) && !defined(_LINUX)
+#ifdef __QNX__
         pthread_setname_np(pthread_self(), "org.openpeer.core.mediaEngine");
-  # else
+#else
         pthread_setname_np("org.openpeer.core.mediaEngine");
-  # endif
-  #endif
+#endif
+#endif
         ZS_LOG_DEBUG(log("media engine lifetime thread spawned"))
 
         bool repeat = false;
@@ -1804,20 +1804,6 @@ namespace openpeer
           char uniqueId[KMaxUniqueIdLength];
           memset(uniqueId, 0, KMaxUniqueIdLength);
           uint32_t captureIdx;
-
-          if (mCameraType == CameraType_Back)
-          {
-            captureIdx = 0;
-          }
-          else if (mCameraType == CameraType_Front)
-          {
-            captureIdx = 1;
-          }
-          else
-          {
-            ZS_LOG_ERROR(Detail, log("camera type is not set"))
-            return;
-          }
           
 #if defined(TARGET_OS_IPHONE) || defined(__QNX__)
           void *captureView = mCaptureRenderView;
@@ -1837,6 +1823,37 @@ namespace openpeer
             return;
           }
           
+          uint32_t numberOfDevices = devInfo->NumberOfDevices();
+          
+          if (mCameraType == CameraType_Back)
+          {
+            if (numberOfDevices >= 2)
+            {
+              captureIdx = 0;
+            }
+            else
+            {
+              ZS_LOG_ERROR(Detail, log("back camera is not supported on single camera devices"))
+              return;
+            }
+          }
+          else if (mCameraType == CameraType_Front)
+          {
+            if (numberOfDevices >= 2)
+            {
+              captureIdx = 1;
+            }
+            else
+            {
+              captureIdx = 0;
+            }
+          }
+          else
+          {
+            ZS_LOG_ERROR(Detail, log("camera type is not set"))
+            return;
+          }
+
           mError = devInfo->GetDeviceName(captureIdx, deviceName,
                                           KMaxDeviceNameLength, uniqueId,
                                           KMaxUniqueIdLength);
@@ -1900,10 +1917,6 @@ namespace openpeer
             ZS_LOG_ERROR(Detail, log("failed to get orientation from video capture device") + ZS_PARAM("error", mVideoBase->LastError()))
             return;
           }
-#elif defined(_ANDROID)
-          setVideoCaptureRotation();
-
-          webrtc::RotateCapturedFrame orientation = webrtc::RotateCapturedFrame_270;
 #else
           webrtc::RotateCapturedFrame orientation = webrtc::RotateCapturedFrame_0;
 #endif
@@ -1924,6 +1937,10 @@ namespace openpeer
             ZS_LOG_ERROR(Detail, log("failed to start capturing") + ZS_PARAM("error", mVideoBase->LastError()))
             return;
           }
+          
+#if defined(_ANDROID)
+          setVideoCaptureRotation();
+#endif
 
 #if !defined(__QNX__) && !defined(_ANDROID)
           mError = mVideoRender->AddRenderer(mCaptureId, captureView, 0, 0.0F, 0.0F, 1.0F,
@@ -2225,6 +2242,7 @@ namespace openpeer
         if (mError != 0)
           return;
         
+#if 0
         webrtc::CodecInst audioCodec;
         memset(&audioCodec, 0, sizeof(webrtc::CodecInst));
         strcpy(audioCodec.plname, "AAC");
@@ -2245,6 +2263,7 @@ namespace openpeer
           ZS_LOG_ERROR(Detail, log("failed to start video capture recording") + ZS_PARAM("error", mVoiceBase->LastError()))
           return;
         }
+#endif
       }
       
       //-----------------------------------------------------------------------
@@ -2254,11 +2273,13 @@ namespace openpeer
         
         ZS_LOG_DEBUG(log("stop video capture recording"))
 
+#if 0
         mError = mVideoFile->StopRecordCaptureVideo(mCaptureId);
         if (mError != 0) {
           ZS_LOG_ERROR(Detail, log("failed to stop video capture recording") + ZS_PARAM("error", mVoiceBase->LastError()))
           return;
         }
+#endif
         
         mError = mVideoCapture->EnableCapturedFrameOrientationLock(mCaptureId, false);
         if (mError != 0) {
