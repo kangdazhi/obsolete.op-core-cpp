@@ -58,7 +58,14 @@ namespace openpeer
 
       enum PushStates
       {
+        PushState_None,
+
         PushState_Read,
+        PushState_Answered,
+        PushState_Flagged,
+        PushState_Deleted,
+        PushState_Draft,
+        PushState_Recent,
         PushState_Delivered,
         PushState_Sent,
         PushState_Pushed,
@@ -66,39 +73,33 @@ namespace openpeer
       };
 
       static const char *toString(PushStates state);
+      static PushStates toPushState(const char *state);
 
-      typedef String PeerOrIdentityURI;
-      ZS_DECLARE_TYPEDEF_PTR(std::list<PeerOrIdentityURI>, PeerOrIdentityURIList)
+      ZS_DECLARE_TYPEDEF_PTR(std::list<IContactPtr>, ContactList)
 
       struct PushStateContactDetail
       {
-        PeerOrIdentityURI mURI;
+        IContactPtr mRemotePeer;
 
         WORD mErrorCode;
         String mErrorReason;
       };
 
-      ZS_DECLARE_PTR(PushStateContactDetail)
+      ZS_DECLARE_TYPEDEF_PTR(std::list<PushStateContactDetail>, PushStateContactDetailList)
 
-      ZS_DECLARE_TYPEDEF_PTR(std::list<PushStateContactDetailPtr>, PushStateContactDetailList)
-
-      struct PushStateDetail
-      {
-        PushStates mState;
-        PushStateContactDetailList mRelatedContacts;
-      };
-
-      ZS_DECLARE_PTR(PushStateDetail)
-
-      ZS_DECLARE_TYPEDEF_PTR(std::list<PushStateDetailPtr>, PushStateDetailList)
+      typedef std::map<PushStates, PushStateContactDetailList> PushStateDetailMap;
       
-      typedef String ValueType;
-      typedef std::list<ValueType> ValueList;
+      typedef String Value;
+      typedef std::list<Value> ValueList;
 
       struct PushMessage
       {
         String mMessageID;          // system will fill in this value
+
+        String mMimeType;           // only "text/<sub-type>" mime types are allowed
         String mFullMessage;
+
+        String mPushType;
         ValueList mValues;          // values related to mapped type
         ElementPtr mCustomPushData; // extended push related custom data
 
@@ -107,7 +108,7 @@ namespace openpeer
 
         IContactPtr mFrom;          // what peer sent the message (system will fill in if sending a message out)
 
-        PushStateDetailList mPushStateDetails;
+        PushStateDetailMap mPushStateDetails;
       };
 
       ZS_DECLARE_PTR(PushMessage)
@@ -116,14 +117,15 @@ namespace openpeer
 
       static IPushMessagingPtr create(
                                       IPushMessagingDelegatePtr delegate,
+                                      IPushMessagingDatabaseAbstractionDelegatePtr databaseDelegate,
                                       IAccountPtr account
                                       );
 
       virtual PUID getID() const = 0;
 
       virtual PushMessagingStates getState(
-                                           WORD *outErrorCode,
-                                           String *outErrorReason
+                                           WORD *outErrorCode = NULL,
+                                           String *outErrorReason = NULL
                                            ) const = 0;
 
       virtual void shutdown() = 0;
@@ -141,7 +143,7 @@ namespace openpeer
 
       virtual IPushMessagingQueryPtr push(
                                           IPushMessagingQueryDelegatePtr delegate,
-                                          const PeerOrIdentityURIList &toContactList,
+                                          const ContactList &toContactList,
                                           const PushMessage &message
                                           ) = 0;
 
@@ -193,6 +195,7 @@ namespace openpeer
 
       virtual void cancel() = 0;
 
+      virtual bool isUploaded() const = 0;
       virtual PushMessagePtr getPushMessage() = 0;
     };
 
@@ -206,6 +209,7 @@ namespace openpeer
 
     interaction IPushMessagingQueryDelegate
     {
+      virtual void onPushMessagingQueryUploaded(IPushMessagingQueryPtr query) = 0;
       virtual void onPushMessagingQueryPushStatesChanged(IPushMessagingQueryPtr query) = 0;
     };
 
@@ -253,6 +257,7 @@ ZS_DECLARE_PROXY_END()
 
 ZS_DECLARE_PROXY_BEGIN(openpeer::core::IPushMessagingQueryDelegate)
 ZS_DECLARE_PROXY_TYPEDEF(openpeer::core::IPushMessagingQueryPtr, IPushMessagingQueryPtr)
+ZS_DECLARE_PROXY_METHOD_1(onPushMessagingQueryUploaded, IPushMessagingQueryPtr)
 ZS_DECLARE_PROXY_METHOD_1(onPushMessagingQueryPushStatesChanged, IPushMessagingQueryPtr)
 ZS_DECLARE_PROXY_END()
 

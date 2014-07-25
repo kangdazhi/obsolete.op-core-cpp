@@ -48,6 +48,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0026040C1981DB480004F594 /* core_PushMessaging_PushQuery.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_PushMessaging_PushQuery.h; sourceTree = "<group>"; };
+		0026040D1981DDB80004F594 /* core_PushMessaging_RegisterQuery.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_PushMessaging_RegisterQuery.h; sourceTree = "<group>"; };
 		0028818918BF8B96005C78F9 /* IBackgrounding.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IBackgrounding.h; sourceTree = "<group>"; };
 		0028818A18BF9249005C78F9 /* core_Backgrounding.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_Backgrounding.h; sourceTree = "<group>"; };
 		0028818B18BF9257005C78F9 /* core_Backgrounding.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Backgrounding.cpp; sourceTree = "<group>"; };
@@ -241,6 +243,8 @@
 				0063BF8316CA9B6900E6DB4D /* core_Logger.h */,
 				0063BF8416CA9B6900E6DB4D /* core_MediaEngine.h */,
 				00D223A2193686540053AF47 /* core_PushMessaging.h */,
+				0026040C1981DB480004F594 /* core_PushMessaging_PushQuery.h */,
+				0026040D1981DDB80004F594 /* core_PushMessaging_RegisterQuery.h */,
 				0063BF8516CA9B6900E6DB4D /* core_Stack.h */,
 				00F11C39189B4BEC00EB33BB /* core_Settings.h */,
 				0041DAB3185E6481004D4219 /* core_thread.h */,

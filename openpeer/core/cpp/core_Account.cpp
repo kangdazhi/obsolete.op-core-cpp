@@ -104,14 +104,16 @@ namespace openpeer
                        ) :
         MessageQueueAssociator(queue),
         SharedRecursiveLock(SharedRecursiveLock::create()),
-        mDelegate(IAccountDelegateProxy::createWeak(UseStack::queueApplication(), delegate)),
         mConversationThreadDelegate(IConversationThreadDelegateProxy::createWeak(UseStack::queueApplication(), conversationThreadDelegate)),
         mCallDelegate(ICallDelegateProxy::createWeak(UseStack::queueApplication(), callDelegate)),
         mCurrentState(AccountState_Pending),
         mLastErrorCode(0),
-        mLockboxForceCreateNewAccount(false)
+        mLockboxForceCreateNewAccount(false),
+        mTotalPendingMessages(0)
       {
         ZS_LOG_BASIC(log("created"))
+
+        mDefaultSubscription = mSubscriptions.subscribe(delegate, UseStack::queueApplication());
       }
 
       //-----------------------------------------------------------------------
@@ -172,6 +174,12 @@ namespace openpeer
 
       //-----------------------------------------------------------------------
       AccountPtr Account::convert(ForIdentityLookupPtr account)
+      {
+        return dynamic_pointer_cast<Account>(account);
+      }
+
+      //-----------------------------------------------------------------------
+      AccountPtr Account::convert(ForPushMessagingPtr account)
       {
         return dynamic_pointer_cast<Account>(account);
       }
@@ -290,6 +298,41 @@ namespace openpeer
         return pThis;
       }
 
+      //-----------------------------------------------------------------------
+      IAccountSubscriptionPtr Account::subscribe(IAccountDelegatePtr originalDelegate)
+      {
+        ZS_LOG_DETAIL(log("subscribing to account state"))
+
+        AutoRecursiveLock lock(*this);
+        if (!originalDelegate) return mDefaultSubscription;
+
+        IAccountSubscriptionPtr subscription = mSubscriptions.subscribe(originalDelegate, UseStack::queueApplication());
+
+        IAccountDelegatePtr delegate = mSubscriptions.delegate(subscription, true);
+
+        if (delegate) {
+          AccountPtr pThis = mThisWeak.lock();
+
+          if (AccountState_Pending != mCurrentState) {
+            delegate->onAccountStateChanged(pThis, mCurrentState);
+          }
+
+          if (mAssociatedIdentitiesChanged) {
+            delegate->onAccountAssociatedIdentitiesChanged(pThis);
+          }
+
+          for (ULONG index = 0; index < mTotalPendingMessages; ++index) {
+            delegate->onAccountPendingMessageForInnerBrowserWindowFrame(pThis);
+          }
+        }
+
+        if (isShutdown()) {
+          mSubscriptions.clear();
+        }
+        
+        return subscription;
+      }
+      
       //-----------------------------------------------------------------------
       IAccount::AccountStates Account::getState(
                                                 WORD *outErrorCode,
@@ -529,6 +572,9 @@ namespace openpeer
         if (!doc) {
           ZS_LOG_WARNING(Detail, log("lockbox has no message pending for inner browser window frame"))
           return ElementPtr();
+        }
+        if (mTotalPendingMessages > 0) {
+          --mTotalPendingMessages;
         }
         ElementPtr root = doc->getFirstChildElement();
         ZS_THROW_BAD_STATE_IF(!root)
@@ -832,6 +878,20 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       #pragma mark
+      #pragma mark Account => IAccountForPushMessaging
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      stack::IBootstrappedNetworkPtr Account::getLockboxBootstrapper() const
+      {
+        return mLockboxService->getBootstrappedNetwork();
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
       #pragma mark Account => ICallTransportDelegate
       #pragma mark
 
@@ -1011,13 +1071,9 @@ namespace openpeer
           return;
         }
 
-        ZS_THROW_BAD_STATE_IF(!mDelegate)
+        get(mAssociatedIdentitiesChanged) = true;
 
-        try {
-          mDelegate->onAccountAssociatedIdentitiesChanged(mThisWeak.lock());
-        } catch(IAccountDelegateProxy::Exceptions::DelegateGone &) {
-          ZS_LOG_WARNING(Detail, log("delegate gone"))
-        }
+        mSubscriptions.delegate()->onAccountAssociatedIdentitiesChanged(mThisWeak.lock());
 
         step();
       }
@@ -1053,13 +1109,9 @@ namespace openpeer
           return;
         }
 
-        ZS_THROW_BAD_STATE_IF(!mDelegate)
+        ++mTotalPendingMessages;
 
-        try {
-          mDelegate->onAccountPendingMessageForInnerBrowserWindowFrame(mThisWeak.lock());
-        } catch(IAccountDelegateProxy::Exceptions::DelegateGone &) {
-          ZS_LOG_WARNING(Detail, log("delegate gone"))
-        }
+        mSubscriptions.delegate()->onAccountPendingMessageForInnerBrowserWindowFrame(mThisWeak.lock());
 
         step();
       }
@@ -1244,7 +1296,7 @@ namespace openpeer
         IHelper::debugAppend(resultEl, "error code", mLastErrorCode);
         IHelper::debugAppend(resultEl, "error reason", mLastErrorReason);
 
-        IHelper::debugAppend(resultEl, "delegate", (bool)mDelegate);
+        IHelper::debugAppend(resultEl, "delegate", mSubscriptions.size());
 
         IHelper::debugAppend(resultEl, "conversation thread delegate", (bool)mConversationThreadDelegate);
         IHelper::debugAppend(resultEl, "call delegate", (bool)mCallDelegate);
@@ -1355,7 +1407,7 @@ namespace openpeer
 
         mGracefulShutdownReference.reset();
 
-        mDelegate.reset();
+        mSubscriptions.clear();
 
         mConversationThreads.clear();
 
@@ -1448,6 +1500,12 @@ namespace openpeer
           {
             ZS_LOG_TRACE(log("namespace grant is waiting for browser window to be made visible"))
             setState(AccountState_WaitingForBrowserWindowToBeMadeVisible);
+            return false;
+          }
+          case IServiceNamespaceGrantSession::SessionState_WaitingForBrowserWindowToBeRedirected:
+          {
+            ZS_LOG_TRACE(log("namespace grant is waiting for browser window to close"))
+            setState(AccountState_WaitingForBrowserWindowToBeRedirected);
             return false;
           }
           case IServiceNamespaceGrantSession::SessionState_WaitingForBrowserWindowToClose:
@@ -1693,11 +1751,7 @@ namespace openpeer
         AccountPtr pThis = mThisWeak.lock();
 
         if (pThis) {
-          try {
-            mDelegate->onAccountStateChanged(mThisWeak.lock(), state);
-          } catch (IAccountDelegateProxy::Exceptions::DelegateGone &) {
-            ZS_LOG_WARNING(Detail, log("delegate gone"))
-          }
+          mSubscriptions.delegate()->onAccountStateChanged(pThis, state);
         }
       }
 

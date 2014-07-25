@@ -443,6 +443,32 @@ namespace openpeer
         if (this) {}
         return MediaEngine::create(delegate);
       }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark IPushMessagingFactory
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      IPushMessagingFactory &IPushMessagingFactory::singleton()
+      {
+        return Factory::singleton();
+      }
+
+      //-----------------------------------------------------------------------
+      PushMessagingPtr IPushMessagingFactory::create(
+                                                     IPushMessagingDelegatePtr delegate,
+                                                     IPushMessagingDatabaseAbstractionDelegatePtr databaseDelegate,
+                                                     IAccountPtr account
+                                                     )
+      {
+        if (this) {}
+        return PushMessaging::create(delegate, databaseDelegate, account);
+      }
+
     }
   }
 }

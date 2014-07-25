@@ -207,10 +207,14 @@ namespace openpeer
     ZS_DECLARE_INTERACTION_PROXY(IPushMessagingRegisterQueryDelegate)
     ZS_DECLARE_INTERACTION_PROXY(IStackDelegate)
 
+    ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxDatabaseAbstractionDelegate, IPushMessagingDatabaseAbstractionDelegate)
+
     ZS_DECLARE_TYPEDEF_PTR(std::list<IContactPtr>, ContactList)
     ZS_DECLARE_TYPEDEF_PTR(std::list<ContactProfileInfo>, ContactProfileInfoList)
     ZS_DECLARE_TYPEDEF_PTR(std::list<IConversationThreadPtr>, ConversationThreadList)
     ZS_DECLARE_TYPEDEF_PTR(std::list<IIdentityPtr>, IdentityList)
     ZS_DECLARE_TYPEDEF_PTR(std::list<RolodexContact>, RolodexContactList)
+
+    ZS_DECLARE_INTERACTION_PROXY_SUBSCRIPTION(IAccountSubscription, IAccountDelegate)
   }
 }

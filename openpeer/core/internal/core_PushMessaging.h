@@ -34,6 +34,8 @@
 #include <openpeer/core/internal/types.h>
 #include <openpeer/core/IPushMessaging.h>
 
+#include <openpeer/core/internal/core_Account.h>
+
 #include <openpeer/stack/IServicePushMailbox.h>
 
 #include <zsLib/MessageQueueAssociator.h>
@@ -54,16 +56,34 @@ namespace openpeer
 
       class PushMessaging : public Noop,
                             public MessageQueueAssociator,
-                            public IPushMessaging
+                            public SharedRecursiveLock,
+                            public IPushMessaging,
+                            public IAccountDelegate,
+                            public stack::IServicePushMailboxSessionDelegate
       {
       public:
         friend interaction IPushMessagingFactory;
         friend interaction IPushMessaging;
 
+        ZS_DECLARE_CLASS_PTR(RegisterQuery)
+        ZS_DECLARE_CLASS_PTR(PushQuery)
+
+        ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSession, IServicePushMailboxSession)
+        ZS_DECLARE_TYPEDEF_PTR(IAccountForPushMessaging, UseAccount)
+
       protected:
-        PushMessaging(IMessageQueuePtr queue);
+        PushMessaging(
+                      IMessageQueuePtr queue,
+                      IPushMessagingDelegatePtr delegate,
+                      IPushMessagingDatabaseAbstractionDelegatePtr databaseDelegate,
+                      UseAccountPtr account
+                      );
         
-        PushMessaging(Noop) : Noop(true), MessageQueueAssociator(IMessageQueuePtr()) {};
+        PushMessaging(Noop) :
+          Noop(true),
+          MessageQueueAssociator(IMessageQueuePtr()),
+          SharedRecursiveLock(SharedRecursiveLock::create())
+        {}
 
         void init();
 
@@ -82,14 +102,15 @@ namespace openpeer
 
         static PushMessagingPtr create(
                                         IPushMessagingDelegatePtr delegate,
+                                        IPushMessagingDatabaseAbstractionDelegatePtr databaseDelegate,
                                         IAccountPtr account
                                         );
 
         virtual PUID getID() const;
 
         virtual PushMessagingStates getState(
-                                             WORD *outErrorCode,
-                                             String *outErrorReason
+                                             WORD *outErrorCode = NULL,
+                                             String *outErrorReason = NULL
                                              ) const;
 
         virtual void shutdown();
@@ -107,7 +128,7 @@ namespace openpeer
 
         virtual IPushMessagingQueryPtr push(
                                             IPushMessagingQueryDelegatePtr delegate,
-                                            const PeerOrIdentityURIList &toContactList,
+                                            const ContactList &toContactList,
                                             const PushMessage &message
                                             );
 
@@ -118,8 +139,32 @@ namespace openpeer
 
         //---------------------------------------------------------------------
         #pragma mark
+        #pragma mark PushMessaging => IAccountDelegate
+        #pragma mark
+
+        virtual void onAccountStateChanged(
+                                           IAccountPtr account,
+                                           AccountStates state
+                                           );
+
+        virtual void onAccountAssociatedIdentitiesChanged(IAccountPtr account);
+
+        virtual void onAccountPendingMessageForInnerBrowserWindowFrame(IAccountPtr account);
+
+        //---------------------------------------------------------------------
+        #pragma mark
         #pragma mark PushMessaging => IServicePushMessagingSessionDelegate
         #pragma mark
+
+        virtual void onServicePushMailboxSessionStateChanged(
+                                                             IServicePushMailboxSessionPtr session,
+                                                             SessionStates state
+                                                             );
+
+        virtual void onServicePushMailboxSessionFolderChanged(
+                                                              IServicePushMailboxSessionPtr session,
+                                                              const char *folder
+                                                              );
 
       private:
         //---------------------------------------------------------------------
@@ -127,11 +172,31 @@ namespace openpeer
         #pragma mark PushMessaging => (internal)
         #pragma mark
 
+        bool isShutdown() const {return PushMessagingStates_Shutdown == mCurrentState;}
+        bool isShuttingDown() const {return PushMessagingStates_ShuttingDown == mCurrentState;}
+
         Log::Params log(const char *message) const;
+        Log::Params debug(const char *message) const;
 
         virtual ElementPtr toDebug() const;
 
         void cancel();
+        void setCurrentState(PushMessagingStates state);
+        void setError(WORD errorCode, const char *inReason = NULL);
+
+        void step();
+        bool stepAccount();
+        bool stepMailbox();
+
+      public:
+
+#define OPENPEER_CORE_PUSH_MESSAGING_PUSH_QUERY
+#include <openpeer/core/internal/core_PushMessaging_PushQuery.h>
+#undef OPENPEER_CORE_PUSH_MESSAGING_PUSH_QUERY
+
+#define OPENPEER_CORE_PUSH_MESSAGING_REGISTER_QUERY
+#include <openpeer/core/internal/core_PushMessaging_RegisterQuery.h>
+#undef OPENPEER_CORE_PUSH_MESSAGING_REGISTER_QUERY
 
       protected:
         //---------------------------------------------------------------------
@@ -139,11 +204,22 @@ namespace openpeer
         #pragma mark PushMessaging => (data)
         #pragma mark
 
-        PUID mID;
-        mutable RecursiveLock mLock;
+        AutoPUID mID;
         PushMessagingWeakPtr mThisWeak;
+        PushMessagingPtr mGracefulShutdownReference;
 
         IPushMessagingDelegatePtr mDelegate;
+        IPushMessagingDatabaseAbstractionDelegatePtr mDatabase;
+
+        IServicePushMailboxSessionPtr mMailbox;
+
+        UseAccountPtr mAccount;
+        IAccountSubscriptionPtr mAccountSubscription;
+        AutoBool mPreviouslyReady;
+
+        PushMessagingStates mCurrentState;
+        AutoWORD mLastError;
+        String mLastErrorReason;
       };
 
       //-----------------------------------------------------------------------
@@ -160,6 +236,7 @@ namespace openpeer
 
         virtual PushMessagingPtr create(
                                         IPushMessagingDelegatePtr delegate,
+                                        IPushMessagingDatabaseAbstractionDelegatePtr databaseDelegate,
                                         IAccountPtr account
                                         );
       };

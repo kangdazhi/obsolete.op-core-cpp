@@ -85,6 +85,8 @@ namespace openpeer
 
       virtual PUID getID() const = 0;
 
+      virtual IAccountSubscriptionPtr subscribe(IAccountDelegatePtr delegate) = 0;
+
       virtual AccountStates getState(
                                      WORD *outErrorCode,
                                      String *outErrorReason
@@ -136,6 +138,24 @@ namespace openpeer
 
       virtual void onAccountPendingMessageForInnerBrowserWindowFrame(IAccountPtr account) = 0;
     };
+
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    #pragma mark
+    #pragma mark IAccountSubscription
+    #pragma mark
+
+    interaction IAccountSubscription
+    {
+      virtual PUID getID() const = 0;
+
+      virtual void cancel() = 0;
+
+      virtual void background() = 0;
+    };
+    
   }
 }
 
@@ -146,3 +166,11 @@ ZS_DECLARE_PROXY_METHOD_2(onAccountStateChanged, IAccountPtr, AccountStates)
 ZS_DECLARE_PROXY_METHOD_1(onAccountAssociatedIdentitiesChanged, IAccountPtr)
 ZS_DECLARE_PROXY_METHOD_1(onAccountPendingMessageForInnerBrowserWindowFrame, IAccountPtr)
 ZS_DECLARE_PROXY_END()
+
+ZS_DECLARE_PROXY_SUBSCRIPTIONS_BEGIN(openpeer::core::IAccountDelegate, openpeer::core::IAccountSubscription)
+ZS_DECLARE_PROXY_SUBSCRIPTIONS_TYPEDEF(openpeer::core::IAccountPtr, IAccountPtr)
+ZS_DECLARE_PROXY_SUBSCRIPTIONS_TYPEDEF(openpeer::core::IAccount::AccountStates, AccountStates)
+ZS_DECLARE_PROXY_SUBSCRIPTIONS_METHOD_2(onAccountStateChanged, IAccountPtr, AccountStates)
+ZS_DECLARE_PROXY_SUBSCRIPTIONS_METHOD_1(onAccountAssociatedIdentitiesChanged, IAccountPtr)
+ZS_DECLARE_PROXY_SUBSCRIPTIONS_METHOD_1(onAccountPendingMessageForInnerBrowserWindowFrame, IAccountPtr)
+ZS_DECLARE_PROXY_SUBSCRIPTIONS_END()
