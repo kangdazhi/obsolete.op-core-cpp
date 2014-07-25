@@ -53,7 +53,8 @@ namespace openpeer
 
         class RegisterQuery : public MessageQueueAssociator,
                               public SharedRecursiveLock,
-                              public IPushMessagingRegisterQuery
+                              public IPushMessagingRegisterQuery,
+                              public stack::IServicePushMailboxRegisterQueryDelegate
         {
         public:
           ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxRegisterQuery, IServicePushMailboxRegisterQuery)
@@ -62,27 +63,48 @@ namespace openpeer
           RegisterQuery(
                         IMessageQueuePtr queue,
                         const SharedRecursiveLock &lock,
-                        IPushMessagingRegisterQueryDelegatePtr delegate
+                        IPushMessagingRegisterQueryDelegatePtr delegate,
+                        const char *deviceToken,
+                        Time expires,
+                        const char *mappedType,
+                        bool unreadBadge,
+                        const char *sound,
+                        const char *action,
+                        const char *launchImage,
+                        unsigned int priority
                         );
 
           void init();
 
         public:
-          //-------------------------------------------------------------------
-          #pragma mark
-          #pragma mark PushMessaging::PushQuery => friend PushMessaging
-          #pragma mark
-
-          PushQueryPtr create(
-                              IMessageQueuePtr queue,
-                              const SharedRecursiveLock &lock,
-                              IPushMessagingRegisterQueryDelegatePtr delegate,
-                              PushMessagePtr message
-                              );
+          ~RegisterQuery();
 
           //-------------------------------------------------------------------
           #pragma mark
-          #pragma mark PushMessaging::PushQuery => IPushMessagingQuery
+          #pragma mark PushMessaging::RegisterQuery => friend PushMessaging
+          #pragma mark
+
+          static RegisterQueryPtr create(
+                                         IMessageQueuePtr queue,
+                                         const SharedRecursiveLock &lock,
+                                         IPushMessagingRegisterQueryDelegatePtr delegate,
+                                         const char *deviceToken,
+                                         Time expires,
+                                         const char *mappedType,
+                                         bool unreadBadge,
+                                         const char *sound,
+                                         const char *action,
+                                         const char *launchImage,
+                                         unsigned int priority
+                                         );
+
+          void attachMailbox(IServicePushMailboxSessionPtr mailbox);
+
+          void cancel();
+
+          //-------------------------------------------------------------------
+          #pragma mark
+          #pragma mark PushMessaging::RegisterQuery => IPushMessagingQuery
           #pragma mark
 
           virtual PUID getID() const {return mID;}
@@ -90,7 +112,21 @@ namespace openpeer
           virtual bool isComplete(
                                   WORD *outErrorCode = NULL,
                                   String *outErrorReason = NULL
-                                  );
+                                  ) const;
+
+          //-------------------------------------------------------------------
+          #pragma mark
+          #pragma mark PushMessaging::RegisterQuery => IServicePushMailboxRegisterQueryDelegate
+          #pragma mark
+
+          virtual void onPushMailboxRegisterQueryCompleted(IServicePushMailboxRegisterQueryPtr query);
+
+          //-------------------------------------------------------------------
+          #pragma mark
+          #pragma mark PushMessaging::PushQuery => (internal)
+          #pragma mark
+
+          Log::Params log(const char *message) const;
 
         protected:
           //-------------------------------------------------------------------
@@ -99,10 +135,24 @@ namespace openpeer
           #pragma mark
 
           AutoPUID mID;
+          RegisterQueryWeakPtr mThisWeak;
 
           IPushMessagingRegisterQueryDelegatePtr mDelegate;
 
+          AutoBool mHadQuery;
           IServicePushMailboxRegisterQueryPtr mQuery;
+
+          String mDeviceToken;
+          Time mExpires;
+          String mMappedType;
+          bool mUnreadBadge;
+          String mSound;
+          String mAction;
+          String mLaunchImage;
+          unsigned int mPriority;
+
+          WORD mLastErrorCode;
+          String mLastErrorReason;
         };
 
 #if 0

@@ -35,10 +35,18 @@
 #include <openpeer/core/IPushMessaging.h>
 
 #include <openpeer/core/internal/core_Account.h>
+#include <openpeer/core/internal/core_Contact.h>
 
 #include <openpeer/stack/IServicePushMailbox.h>
 
 #include <zsLib/MessageQueueAssociator.h>
+
+#define OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MAILBOX_FOLDER "openpeer/core/push-messaging-default-push-mailbox-folder"
+#define OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MESSAGE_TYPE "openpeer/core/push-messaging-default-push-message-type"
+
+#define OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_EXPIRES_IN_SECONDS "openpeer/core/push-messaging-default-push-expires-in-seconds"
+
+#define OPENPEER_CORE_PUSH_MESSAGING_MIMETYPE_FILTER_PREFIX "text/"
 
 namespace openpeer
 {
@@ -58,18 +66,28 @@ namespace openpeer
                             public MessageQueueAssociator,
                             public SharedRecursiveLock,
                             public IPushMessaging,
+                            public IWakeDelegate,
                             public IAccountDelegate,
                             public stack::IServicePushMailboxSessionDelegate
       {
       public:
         friend interaction IPushMessagingFactory;
         friend interaction IPushMessaging;
+        friend class PushQuery;
+        friend class RegisterQuery;
 
         ZS_DECLARE_CLASS_PTR(RegisterQuery)
         ZS_DECLARE_CLASS_PTR(PushQuery)
 
         ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSession, IServicePushMailboxSession)
         ZS_DECLARE_TYPEDEF_PTR(IAccountForPushMessaging, UseAccount)
+        ZS_DECLARE_TYPEDEF_PTR(IContactForPushMessaging, UseContact)
+
+        typedef std::list<PushQueryPtr> PushQueryList;
+        typedef std::list<RegisterQueryPtr> RegisterQueryList;
+
+        typedef String MessageID;
+        typedef std::list<MessageID> MessageIDList;
 
       protected:
         PushMessaging(
@@ -106,7 +124,7 @@ namespace openpeer
                                         IAccountPtr account
                                         );
 
-        virtual PUID getID() const;
+        virtual PUID getID() const {return mID;}
 
         virtual PushMessagingStates getState(
                                              WORD *outErrorCode = NULL,
@@ -116,6 +134,7 @@ namespace openpeer
         virtual void shutdown();
 
         virtual IPushMessagingRegisterQueryPtr registerDevice(
+                                                              IPushMessagingRegisterQueryDelegatePtr delegate,
                                                               const char *deviceToken,
                                                               Time expires,
                                                               const char *mappedType,
@@ -134,8 +153,37 @@ namespace openpeer
 
         virtual void recheckNow();
 
+        virtual bool getMessagesUpdates(
+                                        const char *inLastVersionDownloaded,
+                                        String &outUpdatedToVersion,
+                                        PushMessageList &outNewMessages
+                                        );
+
         virtual void markPushMessageRead(const char *messageID);
         virtual void deletePushMessage(const char *messageID);
+
+        //---------------------------------------------------------------------
+        #pragma mark
+        #pragma mark PushMessaging => friend PushQuery
+        #pragma mark
+
+        // (duplicate) static void copy(
+        //                              UseAccountPtr account,
+        //                              const IServicePushMailboxSession::PushMessage &source,
+        //                              PushMessage &dest
+        //                              );
+
+        //---------------------------------------------------------------------
+        #pragma mark
+        #pragma mark PushMessaging => friend RegisterQuery
+        #pragma mark
+
+        //---------------------------------------------------------------------
+        #pragma mark
+        #pragma mark PushMessaging => IWakeDelegate
+        #pragma mark
+
+        virtual void onWake();
 
         //---------------------------------------------------------------------
         #pragma mark
@@ -175,6 +223,7 @@ namespace openpeer
         bool isShutdown() const {return PushMessagingStates_Shutdown == mCurrentState;}
         bool isShuttingDown() const {return PushMessagingStates_ShuttingDown == mCurrentState;}
 
+        static Log::Params slog(const char *message);
         Log::Params log(const char *message) const;
         Log::Params debug(const char *message) const;
 
@@ -187,6 +236,19 @@ namespace openpeer
         void step();
         bool stepAccount();
         bool stepMailbox();
+        bool stepAttach();
+        bool stepMarkReadAndDelete();
+
+        static void copy(
+                         UseAccountPtr account,
+                         const IServicePushMailboxSession::PushMessage &source,
+                         PushMessage &dest
+                         );
+
+        static void copy(
+                         const PushMessage &source,
+                         IServicePushMailboxSession::PushMessage &dest
+                         );
 
       public:
 
@@ -220,6 +282,14 @@ namespace openpeer
         PushMessagingStates mCurrentState;
         AutoWORD mLastError;
         String mLastErrorReason;
+
+        PushQueryList mPendingAttachmentPushQueries;
+        RegisterQueryList mPendingAttachmentRegisterQueries;
+
+        MessageIDList mMarkReadMessages;
+        MessageIDList mDeleteMessages;
+
+        String mLastVersionDownloaded;
       };
 
       //-----------------------------------------------------------------------

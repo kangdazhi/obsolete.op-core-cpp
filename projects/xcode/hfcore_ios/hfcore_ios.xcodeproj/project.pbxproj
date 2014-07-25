@@ -28,6 +28,8 @@
 		0063C12616CA9B6A00E6DB4D /* core_Stack.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BF6816CA9B6900E6DB4D /* core_Stack.cpp */; };
 		007B84ED1862AA8100BB1284 /* core_ConversationThreadHost_PeerContact.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 007B84EC1862AA8100BB1284 /* core_ConversationThreadHost_PeerContact.cpp */; };
 		007B84F01862AE1300BB1284 /* core_ConversationThreadHost_PeerLocation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 007B84EF1862AE1300BB1284 /* core_ConversationThreadHost_PeerLocation.cpp */; };
+		0088E8F81982956A00A7C6B7 /* core_PushMessaging_PushQuery.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0088E8F71982956A00A7C6B7 /* core_PushMessaging_PushQuery.cpp */; };
+		0088E8FA1982CD6D00A7C6B7 /* core_PushMessaging_RegisterQuery.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0088E8F91982CD6D00A7C6B7 /* core_PushMessaging_RegisterQuery.cpp */; };
 		00AE218F18D3ECA100F8CDB9 /* core_Account_ContactSubscription.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00AE218D18D3ECA100F8CDB9 /* core_Account_ContactSubscription.cpp */; };
 		00AE219018D3ECA100F8CDB9 /* core_Account_LocationSubscription.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00AE218E18D3ECA100F8CDB9 /* core_Account_LocationSubscription.cpp */; };
 		00D223A11936863A0053AF47 /* core_PushMessaging.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00D223A01936863A0053AF47 /* core_PushMessaging.cpp */; };
@@ -109,6 +111,8 @@
 		007B84EE1862AA9300BB1284 /* core_ConversationThreadHost_PeerContact.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_ConversationThreadHost_PeerContact.h; sourceTree = "<group>"; };
 		007B84EF1862AE1300BB1284 /* core_ConversationThreadHost_PeerLocation.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_ConversationThreadHost_PeerLocation.cpp; sourceTree = "<group>"; };
 		007B84F11862AE2600BB1284 /* core_ConversationThreadHost_PeerLocation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_ConversationThreadHost_PeerLocation.h; sourceTree = "<group>"; };
+		0088E8F71982956A00A7C6B7 /* core_PushMessaging_PushQuery.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_PushMessaging_PushQuery.cpp; sourceTree = "<group>"; };
+		0088E8F91982CD6D00A7C6B7 /* core_PushMessaging_RegisterQuery.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_PushMessaging_RegisterQuery.cpp; sourceTree = "<group>"; };
 		00AE218D18D3ECA100F8CDB9 /* core_Account_ContactSubscription.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Account_ContactSubscription.cpp; sourceTree = "<group>"; };
 		00AE218E18D3ECA100F8CDB9 /* core_Account_LocationSubscription.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Account_LocationSubscription.cpp; sourceTree = "<group>"; };
 		00AE219118D3ECB600F8CDB9 /* core_Account_ContactSubscription.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_Account_ContactSubscription.h; sourceTree = "<group>"; };
@@ -209,6 +213,8 @@
 				0063BF6616CA9B6900E6DB4D /* core_Logger.cpp */,
 				0063BF6716CA9B6900E6DB4D /* core_MediaEngine.cpp */,
 				00D223A01936863A0053AF47 /* core_PushMessaging.cpp */,
+				0088E8F71982956A00A7C6B7 /* core_PushMessaging_PushQuery.cpp */,
+				0088E8F91982CD6D00A7C6B7 /* core_PushMessaging_RegisterQuery.cpp */,
 				00F11C37189B4BDC00EB33BB /* core_Settings.cpp */,
 				0063BF6816CA9B6900E6DB4D /* core_Stack.cpp */,
 				0041DAB1185E6472004D4219 /* core_thread.cpp */,
@@ -313,12 +319,14 @@
 				0028818C18BF9257005C78F9 /* core_Backgrounding.cpp in Sources */,
 				0063C11916CA9B6A00E6DB4D /* core_Contact.cpp in Sources */,
 				0063C11B16CA9B6A00E6DB4D /* core_ConversationThread.cpp in Sources */,
+				0088E8F81982956A00A7C6B7 /* core_PushMessaging_PushQuery.cpp in Sources */,
 				007B84F01862AE1300BB1284 /* core_ConversationThreadHost_PeerLocation.cpp in Sources */,
 				0041DAB2185E6472004D4219 /* core_thread.cpp in Sources */,
 				0063C11C16CA9B6A00E6DB4D /* core_ConversationThreadDocumentFetcher.cpp in Sources */,
 				0063C11D16CA9B6A00E6DB4D /* core_ConversationThreadHost.cpp in Sources */,
 				0063C11E16CA9B6A00E6DB4D /* core_ConversationThreadSlave.cpp in Sources */,
 				0063C11F16CA9B6A00E6DB4D /* core_Factory.cpp in Sources */,
+				0088E8FA1982CD6D00A7C6B7 /* core_PushMessaging_RegisterQuery.cpp in Sources */,
 				0063C12016CA9B6A00E6DB4D /* core_Helper.cpp in Sources */,
 				00AE219018D3ECA100F8CDB9 /* core_Account_LocationSubscription.cpp in Sources */,
 				0063C12216CA9B6A00E6DB4D /* core_Identity.cpp in Sources */,

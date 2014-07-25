@@ -119,6 +119,32 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       #pragma mark
+      #pragma mark IContactForPushMessaging
+      #pragma mark
+
+      interaction IContactForPushMessaging
+      {
+        ZS_DECLARE_TYPEDEF_PTR(IContactForPushMessaging, ForPushMessaging)
+
+        static ForPushMessagingPtr createFromPeer(
+                                                  AccountPtr account,
+                                                  IPeerPtr peer
+                                                  );
+
+        static ForPushMessagingPtr createFromPeerURI(
+                                                     AccountPtr account,
+                                                     const char *peerURI
+                                                     );
+
+
+        virtual IPeerPtr getPeer() const = 0;
+      };
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
       #pragma mark Contact
       #pragma mark
 
@@ -126,7 +152,8 @@ namespace openpeer
                       public IContact,
                       public IContactForAccount,
                       public IContactForConversationThread,
-                      public IContactForCall
+                      public IContactForCall,
+                      public IContactForPushMessaging
       {
       public:
         friend interaction IContactFactory;
@@ -134,6 +161,7 @@ namespace openpeer
         friend interaction IContactForAccount;
         friend interaction IContactForConversationThread;
         friend interaction IContactForCall;
+        friend interaction IContactForPushMessaging;
 
         ZS_DECLARE_TYPEDEF_PTR(IAccountForContact, UseAccount)
 
@@ -151,6 +179,7 @@ namespace openpeer
         static ContactPtr convert(ForAccountPtr contact);
         static ContactPtr convert(ForConversationThreadPtr contact);
         static ContactPtr convert(ForCallPtr contact);
+        static ContactPtr convert(ForPushMessagingPtr contact);
 
       protected:
         //---------------------------------------------------------------------
@@ -198,10 +227,10 @@ namespace openpeer
         #pragma mark Contact => IContactForConversationThread
         #pragma mark
 
-        // (duplicate) static ContactPtr createFromPeerFilePublic(
-        //                                                        IAccountPtr account,
-        //                                                        IPeerFilePublicPtr peerFilePublic
-        //                                                        );
+        static ContactPtr createFromPeerURI(
+                                            AccountPtr account,
+                                            const char *peerURI
+                                            );
 
         // (duplicate) virtual String getPeerURI() const;
         // (duplicate) virtual IPeerPtr getPeer() const;
@@ -219,6 +248,23 @@ namespace openpeer
 
         // (duplicate) virtual String getPeerURI() const;
         // (duplicate) virtual IPeerPtr getPeer() const;
+
+        //---------------------------------------------------------------------
+        #pragma mark
+        #pragma mark IContactForPushMessaging
+        #pragma mark
+
+        // (duplicate) static ContactPtr createFromPeer(
+        //                                              AccountPtr account,
+        //                                              IPeerPtr peer
+        //                                              );
+
+        // (duplicate) static ContactPtr createFromPeerURI(
+        //                                                 AccountPtr account,
+        //                                                 const char *peerURI
+        //                                                 );
+
+        // (duplicate) virtual String getPeerURI() const;
 
       private:
         //---------------------------------------------------------------------
@@ -261,6 +307,11 @@ namespace openpeer
                                           AccountPtr account,
                                           IPeerPtr peer
                                           );
+
+        virtual ContactPtr createFromPeerURI(
+                                             AccountPtr account,
+                                             const char *peerURI
+                                             );
 
         virtual ContactPtr createFromPeerFilePublic(
                                                     AccountPtr account,

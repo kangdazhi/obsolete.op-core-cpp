@@ -53,7 +53,8 @@ namespace openpeer
 
         class PushQuery : public MessageQueueAssociator,
                           public SharedRecursiveLock,
-                          public IPushMessagingQuery
+                          public IPushMessagingQuery,
+                          public stack::IServicePushMailboxSendQueryDelegate
         {
         public:
           ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSendQuery, IServicePushMailboxSendQuery)
@@ -62,22 +63,33 @@ namespace openpeer
           PushQuery(
                     IMessageQueuePtr queue,
                     const SharedRecursiveLock &lock,
-                    IPushMessagingQueryDelegatePtr delegate
+                    IPushMessagingQueryDelegatePtr delegate,
+                    PushMessagePtr message
                     );
+
           void init();
 
         public:
+          ~PushQuery();
+
           //-------------------------------------------------------------------
           #pragma mark
           #pragma mark PushMessaging::PushQuery => friend PushMessaging
           #pragma mark
 
-          PushQueryPtr create(
-                              IMessageQueuePtr queue,
-                              const SharedRecursiveLock &lock,
-                              IPushMessagingQueryDelegatePtr delegate,
-                              PushMessagePtr message
-                              );
+          static PushQueryPtr create(
+                                     IMessageQueuePtr queue,
+                                     const SharedRecursiveLock &lock,
+                                     IPushMessagingQueryDelegatePtr delegate,
+                                     PushMessagePtr message
+                                     );
+
+          void attachMailbox(
+                             UseAccountPtr account,
+                             IServicePushMailboxSessionPtr mailbox
+                             );
+
+          // (duplicate) virtual void cancel();
 
           //-------------------------------------------------------------------
           #pragma mark
@@ -91,6 +103,22 @@ namespace openpeer
           virtual bool isUploaded() const;
           virtual PushMessagePtr getPushMessage();
 
+          //-------------------------------------------------------------------
+          #pragma mark
+          #pragma mark PushMessaging::PushQuery => IServicePushMailboxSendQueryDelegate
+          #pragma mark
+
+          virtual void onPushMailboxSendQueryMessageUploaded(IServicePushMailboxSendQueryPtr query);
+          virtual void onPushMailboxSendQueryPushStatesChanged(IServicePushMailboxSendQueryPtr query);
+
+        protected:
+          //-------------------------------------------------------------------
+          #pragma mark
+          #pragma mark PushMessaging::PushQuery => (internal)
+          #pragma mark
+
+          Log::Params log(const char *message) const;
+
         protected:
           //-------------------------------------------------------------------
           #pragma mark
@@ -98,11 +126,16 @@ namespace openpeer
           #pragma mark
 
           AutoPUID mID;
+          PushQueryWeakPtr mThisWeak;
 
-          IPushMessagingDelegatePtr mDelegate;
+          IPushMessagingQueryDelegatePtr mDelegate;
           PushMessagePtr mMessage;
 
+          UseAccountPtr mAccount;
+
           IServicePushMailboxSendQueryPtr mQuery;
+
+          mutable AutoBool mReportedUploaded;
         };
 
 #if 0

@@ -85,8 +85,7 @@ namespace openpeer
         String mErrorReason;
       };
 
-      ZS_DECLARE_TYPEDEF_PTR(std::list<PushStateContactDetail>, PushStateContactDetailList)
-
+      typedef std::list<PushStateContactDetail> PushStateContactDetailList;
       typedef std::map<PushStates, PushStateContactDetailList> PushStateDetailMap;
       
       typedef String Value;
@@ -113,6 +112,11 @@ namespace openpeer
 
       ZS_DECLARE_PTR(PushMessage)
 
+      typedef std::list<PushMessagePtr> PushMessageList;
+
+      typedef String MessageID;
+      typedef std::list<MessageID> MessageIDList;
+
       static ElementPtr toDebug(IPushMessagingPtr push);
 
       static IPushMessagingPtr create(
@@ -131,6 +135,7 @@ namespace openpeer
       virtual void shutdown() = 0;
 
       virtual IPushMessagingRegisterQueryPtr registerDevice(
+                                                            IPushMessagingRegisterQueryDelegatePtr delegate,
                                                             const char *deviceToken,
                                                             Time expires,             // how long should the subscription for push messaging last
                                                             const char *mappedType,   // for APNS maps to "loc-key"
@@ -148,6 +153,26 @@ namespace openpeer
                                           ) = 0;
 
       virtual void recheckNow() = 0;
+
+      //-----------------------------------------------------------------------
+      // PURPOSE: get delta list of messages that have changed since last
+      //          fetch of messages
+      // RETURNS: true if call was successful otherwise false
+      // NOTES:   If false is returned the current list of messages must be
+      //          flushed and all messages must be downloaded again (i.e.
+      //          a version conflict was detected). Pass in NULL
+      //          for "inLastVersionDownloaded" if false is returned. If false
+      //          is still returning then the messages cannot be fetched.
+      //
+      //          The resultant list can be empty even if the method
+      //          returns true. This could mean all the downloaded messages
+      //          were filtererd out because they were not compatible push
+      //          messages.
+      virtual bool getMessagesUpdates(
+                                      const char *inLastVersionDownloaded,  // pass in NULL if no previous version known
+                                      String &outUpdatedToVersion,          // updated to this version (if same as passed in then no change available)
+                                      PushMessageList &outNewMessages
+                                      ) = 0;
 
       virtual void markPushMessageRead(const char *messageID) = 0;
       virtual void deletePushMessage(const char *messageID) = 0;
@@ -173,10 +198,7 @@ namespace openpeer
 
       virtual void onPushMessagingDeviceRegistered(IPushMessagingPtr messaging) = 0;
 
-      virtual void onPushMessagingNewMessage(
-                                             IPushMessagingPtr messaging,
-                                             PushMessagePtr message
-                                             ) = 0;
+      virtual void onPushMessagingNewMessages(IPushMessagingPtr messaging) = 0;
     };
 
     //-------------------------------------------------------------------------
@@ -228,7 +250,7 @@ namespace openpeer
       virtual bool isComplete(
                               WORD *outErrorCode = NULL,
                               String *outErrorReason = NULL
-                              ) = 0;
+                              ) const = 0;
     };
 
     //-------------------------------------------------------------------------
@@ -252,7 +274,7 @@ ZS_DECLARE_PROXY_TYPEDEF(openpeer::core::IPushMessaging::PushMessagingStates, Pu
 ZS_DECLARE_PROXY_TYPEDEF(openpeer::core::IPushMessaging::PushMessagePtr, PushMessagePtr)
 ZS_DECLARE_PROXY_METHOD_2(onPushMessagingStateChanged, IPushMessagingPtr, PushMessagingStates)
 ZS_DECLARE_PROXY_METHOD_1(onPushMessagingDeviceRegistered, IPushMessagingPtr)
-ZS_DECLARE_PROXY_METHOD_2(onPushMessagingNewMessage, IPushMessagingPtr, PushMessagePtr)
+ZS_DECLARE_PROXY_METHOD_1(onPushMessagingNewMessages, IPushMessagingPtr)
 ZS_DECLARE_PROXY_END()
 
 ZS_DECLARE_PROXY_BEGIN(openpeer::core::IPushMessagingQueryDelegate)

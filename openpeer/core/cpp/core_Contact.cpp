@@ -111,28 +111,11 @@ namespace openpeer
 
       //-----------------------------------------------------------------------
       ForConversationThreadPtr IContactForConversationThread::createFromPeerURI(
-                                                                                AccountPtr inAccount,
-                                                                                const char *inPeerURI
+                                                                                AccountPtr account,
+                                                                                const char *peerURI
                                                                                 )
       {
-        Contact::UseAccountPtr account(inAccount);
-
-        String peerURI(inPeerURI);
-
-        stack::IAccountPtr stackAcount = account->getStackAccount();
-
-        if (!stackAcount) {
-          ZS_LOG_ERROR(Detail, slog("stack account is not ready"))
-          return ContactPtr();
-        }
-
-        IPeerPtr peer = IPeer::create(stackAcount, peerURI);
-        if (!peer) {
-          ZS_LOG_ERROR(Detail, slog("failed to create peer object"))
-          return ContactPtr();
-        }
-
-        return IContactFactory::singleton().createFromPeer(inAccount, peer);
+        return IContactFactory::singleton().createFromPeerURI(account, peerURI);
       }
 
       //-----------------------------------------------------------------------
@@ -147,6 +130,32 @@ namespace openpeer
       ElementPtr IContactForCall::toDebug(ForCallPtr contact)
       {
         return Contact::toDebug(Contact::convert(contact));
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark IContactForPushMessaging
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      IContactForPushMessaging::ForPushMessagingPtr IContactForPushMessaging::createFromPeer(
+                                                                                             AccountPtr account,
+                                                                                             IPeerPtr peer
+                                                                                             )
+      {
+        return IContactFactory::singleton().createFromPeer(account, peer);
+      }
+
+      //-----------------------------------------------------------------------
+      IContactForPushMessaging::ForPushMessagingPtr IContactForPushMessaging::createFromPeerURI(
+                                                                                                AccountPtr account,
+                                                                                                const char *peerURI
+                                                                                                )
+      {
+        return IContactFactory::singleton().createFromPeerURI(account, peerURI);
       }
 
       //-----------------------------------------------------------------------
@@ -198,6 +207,12 @@ namespace openpeer
 
       //-----------------------------------------------------------------------
       ContactPtr Contact::convert(ForCallPtr contact)
+      {
+        return dynamic_pointer_cast<Contact>(contact);
+      }
+
+      //-----------------------------------------------------------------------
+      ContactPtr Contact::convert(ForPushMessagingPtr contact)
       {
         return dynamic_pointer_cast<Contact>(contact);
       }
@@ -360,6 +375,32 @@ namespace openpeer
       #pragma mark Contact => IContactForConversationThread
       #pragma mark
 
+      //-----------------------------------------------------------------------
+      ContactPtr Contact::createFromPeerURI(
+                                            AccountPtr inAccount,
+                                            const char *inPeerURI
+                                            )
+      {
+        Contact::UseAccountPtr account(inAccount);
+
+        String peerURI(inPeerURI);
+
+        stack::IAccountPtr stackAcount = account->getStackAccount();
+
+        if (!stackAcount) {
+          ZS_LOG_ERROR(Detail, slog("stack account is not ready"))
+          return ContactPtr();
+        }
+
+        IPeerPtr peer = IPeer::create(stackAcount, peerURI);
+        if (!peer) {
+          ZS_LOG_ERROR(Detail, slog("failed to create peer object"))
+          return ContactPtr();
+        }
+
+        return IContactFactory::singleton().createFromPeer(inAccount, peer);
+      }
+      
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------

@@ -34,11 +34,14 @@
 #include <openpeer/core/internal/core_Account.h>
 #include <openpeer/core/internal/core_Helper.h>
 
+#include <openpeer/core/IContact.h>
+
 #include <openpeer/stack/IBootstrappedNetwork.h>
 #include <openpeer/stack/IServicePushMailbox.h>
 #include <openpeer/stack/IHelper.h>
 
 #include <openpeer/services/IHelper.h>
+#include <openpeer/services/ISettings.h>
 
 #include <zsLib/Stringize.h>
 #include <zsLib/XML.h>
@@ -147,12 +150,6 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      PUID PushMessaging::getID() const
-      {
-        return mID;
-      }
-
-      //-----------------------------------------------------------------------
       IPushMessaging::PushMessagingStates PushMessaging::getState(
                                                                   WORD *outErrorCode,
                                                                   String *outErrorReason
@@ -176,6 +173,7 @@ namespace openpeer
 
       //-----------------------------------------------------------------------
       IPushMessagingRegisterQueryPtr PushMessaging::registerDevice(
+                                                                   IPushMessagingRegisterQueryDelegatePtr delegate,
                                                                    const char *deviceToken,
                                                                    Time expires,
                                                                    const char *mappedType,
@@ -186,7 +184,18 @@ namespace openpeer
                                                                    unsigned int priority
                                                                    )
       {
-        return IPushMessagingRegisterQueryPtr();
+        ZS_LOG_DEBUG(log("register called") + ZS_PARAM("device token", deviceToken) + ZS_PARAM("expires", expires) + ZS_PARAM("mapped type", mappedType) + ZS_PARAM("unread badge", unreadBadge) + ZS_PARAM("sound", sound) + ZS_PARAM("action", action) + ZS_PARAM("launch image", launchImage) + ZS_PARAM("priority", priority))
+
+        RegisterQueryPtr query = RegisterQuery::create(getAssociatedMessageQueue(), *this, delegate, deviceToken, expires, mappedType, unreadBadge, sound, action, launchImage, priority);
+        if (mMailbox) query->attachMailbox(mMailbox);
+
+        AutoRecursiveLock lock(*this);
+
+        mPendingAttachmentRegisterQueries.push_back(query);
+
+        IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
+        
+        return query;
       }
 
       //-----------------------------------------------------------------------
@@ -196,7 +205,34 @@ namespace openpeer
                                                  const PushMessage &message
                                                  )
       {
-        return IPushMessagingQueryPtr();
+        ZS_LOG_DEBUG(log("push called") + ZS_PARAM("message", message.mFullMessage))
+
+        AutoRecursiveLock lock(*this);
+
+        PushMessagePtr pushMessage(new PushMessage);
+        (*pushMessage) = message;
+
+        if (Time() == pushMessage->mSent) {
+          pushMessage->mSent = zsLib::now();
+        }
+        if (Time() == pushMessage->mExpires) {
+          pushMessage->mSent = zsLib::now() + Seconds(services::ISettings::getUInt(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_EXPIRES_IN_SECONDS));
+        }
+
+        if (mAccount) {
+          pushMessage->mFrom = IContact::getForSelf(Account::convert(mAccount));
+        }
+
+        PushQueryPtr query = PushQuery::create(getAssociatedMessageQueue(), *this, delegate, pushMessage);
+        if ((mAccount) &&
+            (mMailbox))
+          query->attachMailbox(mAccount, mMailbox);
+        else
+          mPendingAttachmentPushQueries.push_back(query);
+
+        IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
+
+        return query;
       }
 
       //-----------------------------------------------------------------------
@@ -212,13 +248,101 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      bool PushMessaging::getMessagesUpdates(
+                                             const char *inLastVersionDownloaded,
+                                             String &outUpdatedToVersion,
+                                             PushMessageList &outNewMessages
+                                             )
+      {
+        typedef IServicePushMailboxSession::PushMessageList MailboxPushMessageList;
+        ZS_DECLARE_TYPEDEF_PTR(IServicePushMailboxSession::PushMessage, MailboxPushMessage)
+
+        String lastVersionDownloaded(inLastVersionDownloaded);
+
+        AutoRecursiveLock lock(*this);
+        if ((!mMailbox) ||
+            (!mAccount)) {
+          ZS_LOG_WARNING(Detail, log("cannot download messages at this time"))
+          mLastVersionDownloaded = lastVersionDownloaded;
+          outUpdatedToVersion = lastVersionDownloaded;
+          return true;
+        }
+
+        IServicePushMailboxSession::PushMessageListPtr added;
+        IServicePushMailboxSession::MessageIDListPtr removed;
+
+        bool result = mMailbox->getFolderMessageUpdates(services::ISettings::getString(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MAILBOX_FOLDER), lastVersionDownloaded, outUpdatedToVersion, added, removed);
+
+        if (!result) {
+          outUpdatedToVersion = String();
+          return false;
+        }
+
+        String pushType = services::ISettings::getString(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MESSAGE_TYPE);
+
+        if (added) {
+          for (MailboxPushMessageList::const_iterator iter = added->begin(); iter != added->end(); ++iter) {
+            const MailboxPushMessagePtr &message = (*iter);
+
+            if (!message) {
+              ZS_LOG_WARNING(Detail, log("message was null"))
+              continue;
+            }
+
+            if (message->mPushType != pushType) {
+              ZS_LOG_WARNING(Trace, log("ignoring message that is not of proper push type") + ZS_PARAM("push type", message->mPushType) + ZS_PARAM("expecting", pushType))
+              continue;
+            }
+
+            if (0 != strncmp(message->mMimeType, OPENPEER_CORE_PUSH_MESSAGING_MIMETYPE_FILTER_PREFIX, strlen(OPENPEER_CORE_PUSH_MESSAGING_MIMETYPE_FILTER_PREFIX))) {
+              ZS_LOG_WARNING(Trace, log("ignoring message because mime type is not supported") + ZS_PARAM("mime type", message->mMimeType) + ZS_PARAM("expecting", OPENPEER_CORE_PUSH_MESSAGING_MIMETYPE_FILTER_PREFIX "*"))
+              continue;
+            }
+
+            PushMessagePtr newMessage(new PushMessage);
+            PushMessaging::copy(mAccount, *message, *newMessage);
+
+            outNewMessages.push_back(newMessage);
+          }
+        }
+
+        return true;
+      }
+
+      //-----------------------------------------------------------------------
       void PushMessaging::markPushMessageRead(const char *messageID)
       {
+        ZS_LOG_DEBUG(log("mark read") + ZS_PARAM("message id", messageID))
+        AutoRecursiveLock lock(*this);
+        mMarkReadMessages.push_back(messageID);
+
+        IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
       }
 
       //-----------------------------------------------------------------------
       void PushMessaging::deletePushMessage(const char *messageID)
       {
+        ZS_LOG_DEBUG(log("delete message") + ZS_PARAM("message id", messageID))
+        AutoRecursiveLock lock(*this);
+        mDeleteMessages.push_back(messageID);
+
+        IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark PushMessaging => IWakeDelegate
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      void PushMessaging::onWake()
+      {
+        ZS_LOG_TRACE(log("on wake"))
+        AutoRecursiveLock lock(*this);
+        step();
       }
 
       //-----------------------------------------------------------------------
@@ -275,6 +399,22 @@ namespace openpeer
                                                                    const char *folder
                                                                    )
       {
+        AutoRecursiveLock lock(*this);
+        if (folder != services::ISettings::getString(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MAILBOX_FOLDER)) {
+          ZS_LOG_TRACE(log("not interested in this folder update") + ZS_PARAM("folder", folder))
+          return;
+        }
+
+        if (!mDelegate) {
+          ZS_LOG_WARNING(Detail, log("delegate gone"))
+          return;
+        }
+
+        try {
+          mDelegate->onPushMessagingNewMessages(mThisWeak.lock());
+        } catch(IPushMessagingDelegateProxy::Exceptions::DelegateGone &) {
+          ZS_LOG_WARNING(Detail, log("delegate gone"))
+        }
       }
 
       //-----------------------------------------------------------------------
@@ -284,6 +424,13 @@ namespace openpeer
       #pragma mark
       #pragma mark PushMessaging => (internal)
       #pragma mark
+
+      //-----------------------------------------------------------------------
+      Log::Params PushMessaging::slog(const char *message)
+      {
+        ElementPtr objectEl = Element::create("core::PushMessaging");
+        return Log::Params(message, objectEl);
+      }
 
       //-----------------------------------------------------------------------
       Log::Params PushMessaging::log(const char *message) const
@@ -312,6 +459,15 @@ namespace openpeer
         IHelper::debugAppend(resultEl, "delegate", (bool)mDelegate);
 
         IHelper::debugAppend(resultEl, "account", mAccount ? mAccount->getID() : 0);
+        IHelper::debugAppend(resultEl, "account subscription", mAccountSubscription ? mAccountSubscription->getID() : 0);
+        IHelper::debugAppend(resultEl, "previously ready", mPreviouslyReady);
+
+        IHelper::debugAppend(resultEl, "current state", toString(mCurrentState));
+        IHelper::debugAppend(resultEl, "last error", mLastError);
+        IHelper::debugAppend(resultEl, "last error reason", mLastErrorReason);
+
+        IHelper::debugAppend(resultEl, "pending attachment push queries", mPendingAttachmentPushQueries.size());
+        IHelper::debugAppend(resultEl, "pending attachment register queries", mPendingAttachmentRegisterQueries.size());
 
         return resultEl;
       }
@@ -327,6 +483,9 @@ namespace openpeer
           mMailbox->shutdown();
         }
 
+        mMarkReadMessages.clear();
+        mDeleteMessages.clear();
+
         if (mGracefulShutdownReference) {
           if (IServicePushMailboxSession::SessionState_Shutdown != mMailbox->getState()) {
             ZS_LOG_TRACE(log("waiting for mailbox to shutdown"))
@@ -336,6 +495,22 @@ namespace openpeer
 
         setCurrentState(PushMessagingStates_Shutdown);
 
+        for (RegisterQueryList::iterator iter = mPendingAttachmentRegisterQueries.begin(); iter != mPendingAttachmentRegisterQueries.end(); ++iter)
+        {
+          ZS_LOG_DEBUG(log("cancelling register query"))
+          RegisterQueryPtr query = (*iter);
+          query->cancel();
+        }
+        mPendingAttachmentRegisterQueries.clear();
+
+        for (PushQueryList::iterator iter = mPendingAttachmentPushQueries.begin(); iter != mPendingAttachmentPushQueries.end(); ++iter)
+        {
+          ZS_LOG_DEBUG(log("canelling push query"))
+          PushQueryPtr query = (*iter);
+          query->cancel();
+        }
+        mPendingAttachmentPushQueries.clear();
+        
         mMailbox.reset();
 
         mDelegate.reset();
@@ -351,6 +526,7 @@ namespace openpeer
       void PushMessaging::setCurrentState(PushMessagingStates state)
       {
         if (state == mCurrentState) return;
+        if (PushMessagingStates_Shutdown == mCurrentState) return;
 
         ZS_LOG_DEBUG(log("state changed") + ZS_PARAM("old state", toString(mCurrentState)) + ZS_PARAM("new state", toString(state)))
 
@@ -398,6 +574,8 @@ namespace openpeer
 
         if (!stepAccount()) goto post_step;
         if (!stepMailbox()) goto post_step;
+        if (!stepAttach()) goto post_step;
+        if (!stepMarkReadAndDelete()) goto post_step;
 
         setCurrentState(PushMessagingStates_Ready);
 
@@ -487,7 +665,264 @@ namespace openpeer
 
         mMailbox = IServicePushMailboxSession::create(mThisWeak.lock(), mDatabase, servicePushmailbox, mAccount->getStackAccount(), mAccount->getNamespaceGrantSession(), mAccount->getLockboxSession());
 
+        String monitorFolder = services::ISettings::getString(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MAILBOX_FOLDER);
+
+        mMailbox->monitorFolder(monitorFolder);
+
+        if (mLastVersionDownloaded.hasData()) {
+          ZS_LOG_DEBUG(log("checking if there are new downloads available at this time"))
+          String latestAvailableVersion = mMailbox->getLatestDownloadVersionAvailableForFolder(monitorFolder);
+
+          if (latestAvailableVersion != mLastVersionDownloaded) {
+            if (mDelegate) {
+              try {
+                mDelegate->onPushMessagingNewMessages(mThisWeak.lock());
+              } catch(IPushMessagingDelegateProxy::Exceptions::DelegateGone &) {
+                ZS_LOG_WARNING(Detail, log("delegate gone"))
+              }
+            }
+          }
+
+          mLastVersionDownloaded.clear();
+        }
+
         return true;
+      }
+
+      //-----------------------------------------------------------------------
+      bool PushMessaging::stepAttach()
+      {
+        ZS_LOG_TRACE(log("step attach"))
+
+        for (RegisterQueryList::iterator iter = mPendingAttachmentRegisterQueries.begin(); iter != mPendingAttachmentRegisterQueries.end(); ++iter)
+        {
+          ZS_LOG_DEBUG(log("attaching register query"))
+          RegisterQueryPtr query = (*iter);
+          query->attachMailbox(mMailbox);
+        }
+        mPendingAttachmentRegisterQueries.clear();
+
+        for (PushQueryList::iterator iter = mPendingAttachmentPushQueries.begin(); iter != mPendingAttachmentPushQueries.end(); ++iter)
+        {
+          ZS_LOG_DEBUG(log("attaching push query"))
+          PushQueryPtr query = (*iter);
+          query->attachMailbox(mAccount, mMailbox);
+        }
+        mPendingAttachmentPushQueries.clear();
+
+        return true;
+      }
+
+      //-----------------------------------------------------------------------
+      bool PushMessaging::stepMarkReadAndDelete()
+      {
+        ZS_LOG_TRACE(log("step mark read and delete"))
+
+        for (MessageIDList::iterator iter = mMarkReadMessages.begin(); iter != mMarkReadMessages.end(); ++iter)
+        {
+          const MessageID &messageID = (*iter);
+          ZS_LOG_DEBUG(log("step mark read and delete - mark read") + ZS_PARAM("message id", messageID))
+
+          mMailbox->markPushMessageRead(messageID);
+        }
+        mMarkReadMessages.clear();
+
+        for (MessageIDList::iterator iter = mDeleteMessages.begin(); iter != mDeleteMessages.end(); ++iter)
+        {
+          const MessageID &messageID = (*iter);
+          ZS_LOG_DEBUG(log("step mark read and delete - delete") + ZS_PARAM("message id", messageID))
+
+          mMailbox->deletePushMessage(messageID);
+        }
+        mDeleteMessages.clear();
+
+        return true;
+      }
+
+      //-----------------------------------------------------------------------
+      void PushMessaging::copy(
+                               UseAccountPtr account,
+                               const IServicePushMailboxSession::PushMessage &source,
+                               PushMessage &dest
+                               )
+      {
+        typedef IServicePushMailboxSession::PushStateDetailMap MailboxPushStateDetailMap;
+        typedef IServicePushMailboxSession::PushStatePeerDetailList MailboxPushStatePeerDetailList;
+        typedef IServicePushMailboxSession::PushStatePeerDetail MailboxPushStatePeerDetail;
+        typedef IServicePushMailboxSession::PushStates MailboxPushStates;
+
+        // update the local message
+        dest.mMessageID = source.mMessageID;
+
+        if (dest.mMimeType.isEmpty())
+          dest.mMimeType = source.mMimeType;
+
+        if (dest.mFullMessage.isEmpty()) {
+          if (source.mFullMessage) {
+            dest.mFullMessage = IHelper::convertToString(*source.mFullMessage);
+          }
+        }
+
+        if (dest.mPushType.isEmpty()) {
+          dest.mPushType = source.mPushType;
+        }
+
+        if (dest.mValues.size() < 1) {
+          dest.mValues = source.mPushValues;
+        }
+
+        if (!dest.mCustomPushData) {
+          if (source.mCustomPushData) {
+            dest.mCustomPushData = source.mCustomPushData->clone()->toElement();
+          }
+        }
+
+        if (Time() == dest.mSent) {
+          dest.mSent = source.mSent;
+        }
+
+        if (Time() == dest.mExpires) {
+          dest.mExpires = source.mExpires;
+        }
+
+        if (!dest.mFrom) {
+          if (source.mFrom) {
+            dest.mFrom = Contact::convert(UseContact::createFromPeer(Account::convert(account), source.mFrom));
+          }
+        }
+
+        for (MailboxPushStateDetailMap::const_iterator iter = source.mPushStateDetails.begin(); iter != source.mPushStateDetails.end(); ++iter)
+        {
+          const MailboxPushStates &sourceState = (*iter).first;
+          const MailboxPushStatePeerDetailList &sourceDetailList = (*iter).second;
+
+          PushStates destState = IPushMessaging::toPushState(IServicePushMailboxSession::toString(sourceState));
+          if (PushState_None == destState) {
+            ZS_LOG_WARNING(Detail, slog("state did not translate") + ZS_PARAM("original state", IServicePushMailboxSession::toString(sourceState)))
+            continue;
+          }
+
+          PushStateDetailMap::iterator found = dest.mPushStateDetails.find(destState);
+          if (found == dest.mPushStateDetails.end()) {
+            dest.mPushStateDetails[destState] = PushStateContactDetailList();
+            found = dest.mPushStateDetails.find(destState);
+          }
+
+          PushStateContactDetailList &destDetailList = (*found).second;
+
+          for (MailboxPushStatePeerDetailList::const_iterator peerIter = sourceDetailList.begin(); peerIter != sourceDetailList.end(); ++peerIter)
+          {
+            const MailboxPushStatePeerDetail &detail = (*peerIter);
+
+            PushStateContactDetail destDetail;
+            if (account) {
+              destDetail.mRemotePeer = Contact::convert(UseContact::createFromPeerURI(Account::convert(account), detail.mURI));
+            }
+
+            if (!destDetail.mRemotePeer) {
+              ZS_LOG_WARNING(Detail, slog("unable to create contact") + ZS_PARAM("uri", detail.mURI))
+              continue;
+            }
+            destDetail.mErrorCode = detail.mErrorCode;
+            destDetail.mErrorReason = detail.mErrorReason;
+
+            destDetailList.push_back(destDetail);
+          }
+        }
+      }
+      
+      //-----------------------------------------------------------------------
+      void PushMessaging::copy(
+                               const PushMessage &source,
+                               IServicePushMailboxSession::PushMessage &dest
+                               )
+      {
+        typedef IServicePushMailboxSession::PushStateDetailMap MailboxPushStateDetailMap;
+        typedef IServicePushMailboxSession::PushStatePeerDetailList MailboxPushStatePeerDetailList;
+        typedef IServicePushMailboxSession::PushStatePeerDetail MailboxPushStatePeerDetail;
+        typedef IServicePushMailboxSession::PushStates MailboxPushStates;
+
+        if (dest.mMessageID.isEmpty()) {
+          dest.mMessageID = source.mMessageID;
+        }
+
+        if (dest.mMessageType.isEmpty()) {
+          dest.mMessageType = services::ISettings::getString(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MESSAGE_TYPE);
+        }
+
+        if (dest.mMimeType.isEmpty()) {
+          dest.mMimeType = source.mMimeType;
+        }
+
+        if (!dest.mFullMessage) {
+          if (source.mFullMessage.hasData()) {
+            dest.mFullMessage = IHelper::convertToBuffer(source.mFullMessage);
+          }
+        }
+
+        if (dest.mPushType.isEmpty()) {
+          dest.mPushType = source.mPushType;
+        }
+
+        if (dest.mPushValues.size() < 1) {
+          dest.mPushValues = source.mValues;
+        }
+
+        if (!dest.mCustomPushData) {
+          if (source.mCustomPushData) {
+            dest.mCustomPushData = source.mCustomPushData->clone()->toElement();
+          }
+        }
+
+        if (Time() == dest.mSent) {
+          dest.mSent = source.mSent;
+        }
+        if (Time() == dest.mExpires) {
+          dest.mExpires = source.mExpires;
+        }
+
+        if (!dest.mFrom) {
+          if (source.mFrom) {
+            dest.mFrom = UseContactPtr(Contact::convert(source.mFrom))->getPeer();
+          }
+        }
+
+        for (PushStateDetailMap::const_iterator iter = source.mPushStateDetails.begin(); iter != source.mPushStateDetails.end(); ++iter)
+        {
+          const PushStates &sourceState = (*iter).first;
+          const PushStateContactDetailList &sourceList = (*iter).second;
+
+          MailboxPushStates destState = IServicePushMailboxSession::toPushState(IPushMessaging::toString(sourceState));
+          if (IServicePushMailboxSession::PushState_None == destState) {
+            ZS_LOG_WARNING(Detail, slog("push state failed to convert") + ZS_PARAM("state", IPushMessaging::toString(sourceState)))
+            continue;
+          }
+
+          MailboxPushStateDetailMap::iterator found = dest.mPushStateDetails.find(destState);
+          if (found == dest.mPushStateDetails.end()) {
+            dest.mPushStateDetails[destState] = MailboxPushStatePeerDetailList();
+            found = dest.mPushStateDetails.find(destState);
+          }
+
+          MailboxPushStatePeerDetailList &destList = (*found).second;
+
+          for (PushStateContactDetailList::const_iterator contactIter = sourceList.begin(); contactIter != sourceList.end(); ++contactIter)
+          {
+            const PushStateContactDetail &sourceDetail = (*contactIter);
+            if (!sourceDetail.mRemotePeer) {
+              ZS_LOG_WARNING(Detail, slog("contact is empty in source list"))
+              continue;
+            }
+
+            MailboxPushStatePeerDetail destDetail;
+
+            destDetail.mURI = sourceDetail.mRemotePeer->getPeerURI();
+            destDetail.mErrorCode = sourceDetail.mErrorCode;
+            destDetail.mErrorReason = sourceDetail.mErrorReason;
+
+            destList.push_back(destDetail);
+          }
+        }
       }
 
       //-----------------------------------------------------------------------

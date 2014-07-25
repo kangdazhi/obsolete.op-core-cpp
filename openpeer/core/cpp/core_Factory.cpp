@@ -223,6 +223,16 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      ContactPtr IContactFactory::createFromPeerURI(
+                                                    AccountPtr account,
+                                                    const char *peerURI
+                                                    )
+      {
+        if (this) {}
+        return Contact::createFromPeerURI(account, peerURI);
+      }
+
+      //-----------------------------------------------------------------------
       ContactPtr IContactFactory::createFromPeerFilePublic(
                                                            AccountPtr account,
                                                            IPeerFilePublicPtr peerFilePublic
