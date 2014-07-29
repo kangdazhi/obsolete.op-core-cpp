@@ -205,7 +205,7 @@ namespace openpeer
                                                  const PushMessage &message
                                                  )
       {
-        ZS_LOG_DEBUG(log("push called") + ZS_PARAM("message", message.mFullMessage))
+        ZS_LOG_DEBUG(log("push called") + ZS_PARAM("message", message.mFullMessage) + ZS_PARAM("raw data", (bool)message.mRawFullMessage))
 
         AutoRecursiveLock lock(*this);
 
@@ -291,11 +291,6 @@ namespace openpeer
 
             if (message->mPushType != pushType) {
               ZS_LOG_WARNING(Trace, log("ignoring message that is not of proper push type") + ZS_PARAM("push type", message->mPushType) + ZS_PARAM("expecting", pushType))
-              continue;
-            }
-
-            if (0 != strncmp(message->mMimeType, OPENPEER_CORE_PUSH_MESSAGING_MIMETYPE_FILTER_PREFIX, strlen(OPENPEER_CORE_PUSH_MESSAGING_MIMETYPE_FILTER_PREFIX))) {
-              ZS_LOG_WARNING(Trace, log("ignoring message because mime type is not supported") + ZS_PARAM("mime type", message->mMimeType) + ZS_PARAM("expecting", OPENPEER_CORE_PUSH_MESSAGING_MIMETYPE_FILTER_PREFIX "*"))
               continue;
             }
 
@@ -759,7 +754,15 @@ namespace openpeer
 
         if (dest.mFullMessage.isEmpty()) {
           if (source.mFullMessage) {
-            dest.mFullMessage = IHelper::convertToString(*source.mFullMessage);
+            if (0 == strncmp(source.mMimeType, OPENPEER_CORE_PUSH_MESSAGING_MIMETYPE_FILTER_PREFIX, strlen(OPENPEER_CORE_PUSH_MESSAGING_MIMETYPE_FILTER_PREFIX))) {
+              dest.mFullMessage = IHelper::convertToString(*source.mFullMessage);
+            }
+          }
+        }
+
+        if (!dest.mRawFullMessage) {
+          if (source.mFullMessage) {
+            dest.mRawFullMessage = IHelper::clone(source.mFullMessage);
           }
         }
 
@@ -767,8 +770,8 @@ namespace openpeer
           dest.mPushType = source.mPushType;
         }
 
-        if (dest.mValues.size() < 1) {
-          dest.mValues = source.mPushValues;
+        if (dest.mPushValues.size() < 1) {
+          dest.mPushValues = source.mPushValues;
         }
 
         if (!dest.mCustomPushData) {
@@ -857,6 +860,8 @@ namespace openpeer
         if (!dest.mFullMessage) {
           if (source.mFullMessage.hasData()) {
             dest.mFullMessage = IHelper::convertToBuffer(source.mFullMessage);
+          } else if (source.mRawFullMessage) {
+            dest.mFullMessage = IHelper::clone(source.mRawFullMessage);
           }
         }
 
@@ -865,7 +870,7 @@ namespace openpeer
         }
 
         if (dest.mPushValues.size() < 1) {
-          dest.mPushValues = source.mValues;
+          dest.mPushValues = source.mPushValues;
         }
 
         if (!dest.mCustomPushData) {

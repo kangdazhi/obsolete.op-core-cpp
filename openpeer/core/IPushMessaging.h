@@ -93,19 +93,20 @@ namespace openpeer
 
       struct PushMessage
       {
-        String mMessageID;          // system will fill in this value
+        String mMessageID;                  // system will fill in this value
 
-        String mMimeType;           // only "text/<sub-type>" mime types are allowed
-        String mFullMessage;
+        String mMimeType;
+        String mFullMessage;                // only valid for "text/<sub-type>" mime types
+        SecureByteBlockPtr mRawFullMessage; // raw version of the message (only supply if full message is empty and sending binary)
 
-        String mPushType;
-        ValueList mValues;          // values related to mapped type
-        ElementPtr mCustomPushData; // extended push related custom data
+        String mPushType;                   // worked with registration "mappedType" to filter out push message types
+        ValueList mPushValues;              // values related to mapped type
+        ElementPtr mCustomPushData;         // extended push related custom data
 
-        Time mSent;                 // when was the message sent, system will assign a value if not specified
-        Time mExpires;              // optional, system will assign a long life time if not specified
+        Time mSent;                         // when was the message sent, system will assign a value if not specified
+        Time mExpires;                      // optional, system will assign a long life time if not specified
 
-        IContactPtr mFrom;          // what peer sent the message (system will fill in if sending a message out)
+        IContactPtr mFrom;                  // what peer sent the message (system will fill in if sending a message out)
 
         PushStateDetailMap mPushStateDetails;
       };
@@ -196,8 +197,6 @@ namespace openpeer
                                                PushMessagingStates state
                                                ) = 0;
 
-      virtual void onPushMessagingDeviceRegistered(IPushMessagingPtr messaging) = 0;
-
       virtual void onPushMessagingNewMessages(IPushMessagingPtr messaging) = 0;
     };
 
@@ -273,7 +272,6 @@ ZS_DECLARE_PROXY_TYPEDEF(openpeer::core::IPushMessagingPtr, IPushMessagingPtr)
 ZS_DECLARE_PROXY_TYPEDEF(openpeer::core::IPushMessaging::PushMessagingStates, PushMessagingStates)
 ZS_DECLARE_PROXY_TYPEDEF(openpeer::core::IPushMessaging::PushMessagePtr, PushMessagePtr)
 ZS_DECLARE_PROXY_METHOD_2(onPushMessagingStateChanged, IPushMessagingPtr, PushMessagingStates)
-ZS_DECLARE_PROXY_METHOD_1(onPushMessagingDeviceRegistered, IPushMessagingPtr)
 ZS_DECLARE_PROXY_METHOD_1(onPushMessagingNewMessages, IPushMessagingPtr)
 ZS_DECLARE_PROXY_END()
 
