@@ -658,7 +658,7 @@ namespace openpeer
 
         IServicePushMailboxPtr servicePushmailbox = IServicePushMailbox::createServicePushMailboxFrom(network);
 
-        mMailbox = IServicePushMailboxSession::create(mThisWeak.lock(), mDatabase, servicePushmailbox, mAccount->getStackAccount(), mAccount->getNamespaceGrantSession(), mAccount->getLockboxSession());
+        mMailbox = IServicePushMailboxSession::create(mThisWeak.lock(), mDatabase, UseStack::queueApplication(), servicePushmailbox, mAccount->getStackAccount(), mAccount->getNamespaceGrantSession(), mAccount->getLockboxSession());
 
         String monitorFolder = services::ISettings::getString(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MAILBOX_FOLDER);
 
