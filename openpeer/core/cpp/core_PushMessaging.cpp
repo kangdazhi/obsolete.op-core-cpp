@@ -73,6 +73,50 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
+      static void copy(const stack::IServicePushMailboxSession::PushInfoList &source, IPushMessaging::PushInfoList &dest)
+      {
+        typedef stack::IServicePushMailboxSession::PushInfo SourceType;
+        typedef stack::IServicePushMailboxSession::PushInfoList SourceListType;
+        typedef IPushMessaging::PushInfo DestType;
+        typedef IPushMessaging::PushInfoList DestListType;
+
+        for (SourceListType::const_iterator iter = source.begin(); iter != source.end(); ++iter)
+        {
+          const SourceType &sourceValue = (*iter);
+
+          DestType destValue;
+
+          destValue.mServiceType = sourceValue.mServiceType;
+          destValue.mValues = sourceValue.mValues;
+          destValue.mCustom = sourceValue.mCustom ? sourceValue.mCustom->clone()->toElement() : ElementPtr();
+
+          dest.push_back(destValue);
+        }
+      }
+
+      //-----------------------------------------------------------------------
+      static void copy(const IPushMessaging::PushInfoList &source, stack::IServicePushMailboxSession::PushInfoList &dest)
+      {
+        typedef IPushMessaging::PushInfo SourceType;
+        typedef IPushMessaging::PushInfoList SourceListType;
+        typedef stack::IServicePushMailboxSession::PushInfo DestType;
+        typedef stack::IServicePushMailboxSession::PushInfoList DestListType;
+
+        for (SourceListType::const_iterator iter = source.begin(); iter != source.end(); ++iter)
+        {
+          const SourceType &sourceValue = (*iter);
+
+          DestType destValue;
+
+          destValue.mServiceType = sourceValue.mServiceType;
+          destValue.mValues = sourceValue.mValues;
+          destValue.mCustom = sourceValue.mCustom ? sourceValue.mCustom->clone()->toElement() : ElementPtr();
+
+          dest.push_back(destValue);
+        }
+      }
+      
+      //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -770,14 +814,8 @@ namespace openpeer
           dest.mPushType = source.mPushType;
         }
 
-        if (dest.mPushValues.size() < 1) {
-          dest.mPushValues = source.mPushValues;
-        }
-
-        if (!dest.mCustomPushData) {
-          if (source.mCustomPushData) {
-            dest.mCustomPushData = source.mCustomPushData->clone()->toElement();
-          }
+        if (dest.mPushInfos.size() < 1) {
+          internal::copy(source.mPushInfos, dest.mPushInfos);
         }
 
         if (Time() == dest.mSent) {
@@ -869,14 +907,8 @@ namespace openpeer
           dest.mPushType = source.mPushType;
         }
 
-        if (dest.mPushValues.size() < 1) {
-          dest.mPushValues = source.mPushValues;
-        }
-
-        if (!dest.mCustomPushData) {
-          if (source.mCustomPushData) {
-            dest.mCustomPushData = source.mCustomPushData->clone()->toElement();
-          }
+        if (dest.mPushInfos.size() < 1) {
+          internal::copy(source.mPushInfos, dest.mPushInfos);
         }
 
         if (Time() == dest.mSent) {

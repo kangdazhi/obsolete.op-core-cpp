@@ -91,6 +91,15 @@ namespace openpeer
       typedef String Value;
       typedef std::list<Value> ValueList;
 
+      struct PushInfo
+      {
+        String mServiceType;  // e.g. "apns" or "gcm"
+        ValueList mValues;    // values related to mapped type for given service
+        ElementPtr mCustom;   // extended push related custom push data
+      };
+
+      typedef std::list<PushInfo> PushInfoList;
+
       struct PushMessage
       {
         String mMessageID;                  // system will fill in this value
@@ -100,8 +109,7 @@ namespace openpeer
         SecureByteBlockPtr mRawFullMessage; // raw version of the message (only supply if full message is empty and sending binary)
 
         String mPushType;                   // worked with registration "mappedType" to filter out push message types
-        ValueList mPushValues;              // values related to mapped type
-        ElementPtr mCustomPushData;         // extended push related custom data
+        PushInfoList mPushInfos;            // each service has its own push information
 
         Time mSent;                         // when was the message sent, system will assign a value if not specified
         Time mExpires;                      // optional, system will assign a long life time if not specified
