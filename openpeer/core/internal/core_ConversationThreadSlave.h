@@ -199,7 +199,7 @@ namespace openpeer
         virtual void addContacts(const ContactProfileInfoList &contacts);
         virtual void removeContacts(const ContactList &contacts);
 
-        virtual ContactStates getContactState(UseContactPtr contact) const;
+        virtual ContactConnectionStates getContactConnectionState(UseContactPtr contact) const;
 
         virtual bool placeCalls(const PendingCallMap &pendingCalls);
         virtual void notifyCallStateChanged(UseCallPtr call);

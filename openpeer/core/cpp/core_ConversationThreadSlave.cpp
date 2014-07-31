@@ -373,34 +373,34 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      IConversationThread::ContactStates ConversationThreadSlave::getContactState(UseContactPtr contact) const
+      IConversationThread::ContactConnectionStates ConversationThreadSlave::getContactConnectionState(UseContactPtr contact) const
       {
         AutoRecursiveLock lock(*this);
 
         UseContactPtr hostContact = getHostContact();
         if (!hostContact) {
           ZS_LOG_ERROR(Basic, log("host contact not found on slave thread"))
-          return IConversationThread::ContactState_NotApplicable;
+          return IConversationThread::ContactConnectionState_NotApplicable;
         }
         if (hostContact->getPeerURI() != contact->getPeerURI()) {
           ZS_LOG_DEBUG(log("contact state requested is not the host contact (thus do not know state of peer connnection)"))
-          return IConversationThread::ContactState_NotApplicable;
+          return IConversationThread::ContactConnectionState_NotApplicable;
         }
 
         if (mPeerLocation) {
           if (mPeerLocation->isConnected()) {
-            return IConversationThread::ContactState_Connected;
+            return IConversationThread::ContactConnectionState_Connected;
           }
         }
 
         switch (hostContact->getPeer()->getFindState()) {
-          case IPeer::PeerFindState_Pending:    return IConversationThread::ContactState_NotApplicable;
-          case IPeer::PeerFindState_Idle:       return (mPeerLocation ? IConversationThread::ContactState_Disconnected : IConversationThread::ContactState_NotApplicable);
-          case IPeer::PeerFindState_Finding:    return IConversationThread::ContactState_Finding;
-          case IPeer::PeerFindState_Completed:  return (mPeerLocation ? IConversationThread::ContactState_Disconnected : IConversationThread::ContactState_NotApplicable);
+          case IPeer::PeerFindState_Pending:    return IConversationThread::ContactConnectionState_NotApplicable;
+          case IPeer::PeerFindState_Idle:       return (mPeerLocation ? IConversationThread::ContactConnectionState_Disconnected : IConversationThread::ContactConnectionState_NotApplicable);
+          case IPeer::PeerFindState_Finding:    return IConversationThread::ContactConnectionState_Finding;
+          case IPeer::PeerFindState_Completed:  return (mPeerLocation ? IConversationThread::ContactConnectionState_Disconnected : IConversationThread::ContactConnectionState_NotApplicable);
         }
 
-        return IConversationThread::ContactState_NotApplicable;
+        return IConversationThread::ContactConnectionState_NotApplicable;
       }
 
       //-----------------------------------------------------------------------
@@ -733,8 +733,9 @@ namespace openpeer
             if (found != mMessageDeliveryStates.end()) {
               MessageDeliveryStatePtr &deliveryState = (*found).second;
 
-              if (IConversationThread::MessageDeliveryState_Delivered == deliveryState->mState) {
-                ZS_LOG_DEBUG(log("message receipt was already notified as delivered thus no need to notify any further") + ZS_PARAM("message ID", id))
+              if ((IConversationThread::MessageDeliveryState_Delivered == deliveryState->mState) ||
+                  (IConversationThread::MessageDeliveryState_Read == deliveryState->mState)) {
+                ZS_LOG_DEBUG(log("message receipt was already notified as delivered or read thus no need to notify any further") + ZS_PARAM("message ID", id))
                 continue;
               }
             }
@@ -766,9 +767,10 @@ namespace openpeer
                 if (found != mMessageDeliveryStates.end()) {
                   // check to see if this message was already marked as delivered
                   MessageDeliveryStatePtr &deliveryState = (*found).second;
-                  if (IConversationThread::MessageDeliveryState_Delivered == deliveryState->mState) {
+                  if ((IConversationThread::MessageDeliveryState_Delivered == deliveryState->mState) ||
+                      (IConversationThread::MessageDeliveryState_Read == deliveryState->mState)) {
                     // stop notifying of delivered since it's alerady been marked as delivered
-                    ZS_LOG_DEBUG(log("message was already notified as delivered thus no need to notify any further") + message->toDebug())
+                    ZS_LOG_DEBUG(log("message was already notified as delivered or read thus no need to notify any further") + message->toDebug())
                     break;
                   }
 
@@ -1185,8 +1187,9 @@ namespace openpeer
               }
 
               MessageDeliveryStatePtr &deliveryState = (*found).second;
-              if (IConversationThread::MessageDeliveryState_Delivered != deliveryState->mState) {
-                ZS_LOG_DEBUG(log("found message that has not delivered yet") + message->toDebug() + ZS_PARAM("state", IConversationThread::toString(deliveryState->mState)))
+              if ((IConversationThread::MessageDeliveryState_Delivered != deliveryState->mState) &&
+                  (IConversationThread::MessageDeliveryState_Read != deliveryState->mState)) {
+                ZS_LOG_DEBUG(log("found message that has not delivered or read yet") + message->toDebug() + ZS_PARAM("state", IConversationThread::toString(deliveryState->mState)))
                 mustConvertToHost = true;
                 goto done_checking_for_undelivered_messages;
               }
@@ -1393,7 +1396,8 @@ namespace openpeer
           MessageDeliveryStatesMap::iterator found = mMessageDeliveryStates.find(message->messageID());
           if (found != mMessageDeliveryStates.end()) {
             MessageDeliveryStatePtr &deliveryState = (*found).second;
-            if (IConversationThread::MessageDeliveryState_Delivered != deliveryState->mState) {
+            if ((IConversationThread::MessageDeliveryState_Delivered != deliveryState->mState) &&
+                (IConversationThread::MessageDeliveryState_Read != deliveryState->mState)) {
               ZS_LOG_TRACE(log("requires subscription because of undelivered message") + message->toDebug() + ZS_PARAM("was in delivery state", IConversationThread::toString(deliveryState->mState)))
               requiresSubscription = true;
             }
@@ -1459,6 +1463,7 @@ namespace openpeer
                   break;
                 }
                 case IConversationThread::MessageDeliveryState_Delivered:
+                case IConversationThread::MessageDeliveryState_Read:
                 case IConversationThread::MessageDeliveryState_UserNotAvailable: {
                   stopProcessing = true;
                   break;
@@ -1489,7 +1494,7 @@ namespace openpeer
           }
         }
 
-        baseThread->notifyContactState(mThisWeak.lock(), hostContact, getContactState(hostContact));
+        baseThread->notifyContactState(mThisWeak.lock(), hostContact, getContactConnectionState(hostContact));
 
         ZS_LOG_TRACE(log("step complete") + toDebug())
       }
@@ -1636,6 +1641,7 @@ namespace openpeer
         switch (mState) {
           case IConversationThread::MessageDeliveryState_Discovering:       break;  // not possible anyway
           case IConversationThread::MessageDeliveryState_Delivered:
+          case IConversationThread::MessageDeliveryState_Read:
           case IConversationThread::MessageDeliveryState_UserNotAvailable:  mOuter.reset(); break;  // no longer require link to outer
         }
       }

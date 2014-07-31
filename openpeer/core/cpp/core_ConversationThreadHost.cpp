@@ -467,7 +467,7 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      IConversationThread::ContactStates ConversationThreadHost::getContactState(UseContactPtr contact) const
+      IConversationThread::ContactConnectionStates ConversationThreadHost::getContactConnectionState(UseContactPtr contact) const
       {
         AutoRecursiveLock lock(*this);
 
@@ -487,27 +487,27 @@ namespace openpeer
                 case IAccount::AccountState_WaitingForBrowserWindowToBeMadeVisible:
                 case IAccount::AccountState_WaitingForBrowserWindowToClose:
                 {
-                  return IConversationThread::ContactState_Finding;
+                  return IConversationThread::ContactConnectionState_Finding;
                 }
                 case IAccount::AccountState_Ready:
                 {
-                  return IConversationThread::ContactState_Connected;
+                  return IConversationThread::ContactConnectionState_Connected;
                 }
                 case IAccount::AccountState_ShuttingDown:
                 case IAccount::AccountState_Shutdown:
                 {
-                  return IConversationThread::ContactState_Disconnected;
+                  return IConversationThread::ContactConnectionState_Disconnected;
                 }
               }
             }
-            return IConversationThread::ContactState_NotApplicable;
+            return IConversationThread::ContactConnectionState_NotApplicable;
           }
           ZS_LOG_WARNING(Detail, log("contact was not found as part of the conversation") + UseContact::toDebug(contact))
-          return IConversationThread::ContactState_NotApplicable;
+          return IConversationThread::ContactConnectionState_NotApplicable;
         }
 
         const PeerContactPtr &peerContact = (*found).second;
-        return peerContact->getContactState();
+        return peerContact->getContactConnectionState();
       }
 
       //-----------------------------------------------------------------------
@@ -773,7 +773,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::notifyContactState(
                                                       UseContactPtr contact,
-                                                      ContactStates state
+                                                      ContactConnectionStates state
                                                       )
       {
         AutoRecursiveLock lock(*this);

@@ -163,7 +163,7 @@ namespace openpeer
         typedef std::map<CallID, UseCallPtr> PendingCallMap;
 
         typedef IConversationThreadForCall::LocationDialogMap LocationDialogMap;
-        typedef IConversationThread::ContactStates ContactStates;
+        typedef IConversationThread::ContactConnectionStates ContactConnectionStates;
 
         static ElementPtr toDebug(IConversationThreadHostSlaveBasePtr hostOrSlave);
 
@@ -203,7 +203,7 @@ namespace openpeer
         virtual void addContacts(const ContactProfileInfoList &contacts) = 0;
         virtual void removeContacts(const ContactList &contacts) = 0;
 
-        virtual ContactStates getContactState(UseContactPtr contact) const = 0;
+        virtual ContactConnectionStates getContactConnectionState(UseContactPtr contact) const = 0;
 
         virtual bool sendMessages(const MessageList &messages) = 0;
 
@@ -232,7 +232,7 @@ namespace openpeer
         ZS_DECLARE_TYPEDEF_PTR(ICallForConversationThread, UseCall)
         ZS_DECLARE_TYPEDEF_PTR(IContactForConversationThread, UseContact)
 
-        typedef IConversationThread::ContactStates ContactStates;
+        typedef IConversationThread::ContactConnectionStates ContactConnectionStates;
 
         virtual AccountPtr getAccount() const = 0;
         virtual stack::IPublicationRepositoryPtr getRepository() const = 0;
@@ -244,7 +244,7 @@ namespace openpeer
         virtual void notifyContactState(
                                         IConversationThreadHostSlaveBasePtr thread,
                                         UseContactPtr contact,
-                                        ContactStates state
+                                        ContactConnectionStates state
                                         ) = 0;
 
         virtual void notifyMessageReceived(MessagePtr message) = 0;
@@ -348,7 +348,7 @@ namespace openpeer
 
         static const char *toString(ConversationThreadStates state);
 
-        typedef IConversationThread::ContactStates ContactStates;
+        typedef IConversationThread::ContactConnectionStates ContactConnectionStates;
 
         typedef String MessageID;
         typedef std::map<MessageID, MessageDeliveryStates> MessageDeliveryStatesMap;
@@ -365,7 +365,7 @@ namespace openpeer
         typedef std::map<CallID, CallHandlerPair> CallHandlerMap;
 
         typedef String ContactID;
-        typedef std::pair<UseContactPtr, ContactStates> ContactStatePair;
+        typedef std::pair<UseContactPtr, ContactConnectionStates> ContactStatePair;
         typedef std::map<ContactID, ContactStatePair> ContactStateMap;
 
       protected:
@@ -420,16 +420,20 @@ namespace openpeer
         virtual IAccountPtr getAssociatedAccount() const;
 
         virtual ContactListPtr getContacts() const;
-
-        virtual IdentityContactListPtr getIdentityContactList(IContactPtr contact) const;
-        virtual ContactStates getContactState(IContactPtr contact) const;
-
         virtual void addContacts(const ContactProfileInfoList &contactProfileInfos);
         virtual void removeContacts(const ContactList &contacts);
+
+        virtual IdentityContactListPtr getIdentityContactList(IContactPtr contact) const;
+        virtual ContactConnectionStates getContactConnectionState(IContactPtr contact) const;
+
+        virtual ElementPtr getContactStatus(IContactPtr contact) const;
+
+        virtual void setStatusInThread(ElementPtr contactStatusInThreadOfSelf);
 
         // sending a message will cause the message to be delivered to all the contacts currently in the conversation
         virtual void sendMessage(
                                  const char *messageID,
+                                 const char *replacesMessageID,
                                  const char *messageType,
                                  const char *message,
                                  bool signMessage
@@ -438,10 +442,12 @@ namespace openpeer
         // returns false if the message ID is not known
         virtual bool getMessage(
                                 const char *messageID,
+                                String &outReplacesMessageID,
                                 IContactPtr &outFrom,
                                 String &outMessageType,
                                 String &outMessage,
-                                Time &outTime
+                                Time &outTime,
+                                bool &outValidated
                                 ) const;
 
         // returns false if the message ID is not known
@@ -496,7 +502,7 @@ namespace openpeer
         virtual void notifyContactState(
                                         IConversationThreadHostSlaveBasePtr thread,
                                         UseContactPtr contact,
-                                        ContactStates state
+                                        ContactConnectionStates state
                                         );
 
         virtual void notifyMessageReceived(MessagePtr message);
@@ -623,7 +629,7 @@ namespace openpeer
         CallHandlerMap mCallHandlers;
 
         // used to remember the last notified state for a contact
-        ContactStateMap mLastReportedContactStates;
+        ContactStateMap mLastReportedContactConnectionStates;
       };
 
       //-----------------------------------------------------------------------

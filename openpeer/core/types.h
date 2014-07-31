@@ -177,6 +177,8 @@ namespace openpeer
     ZS_DECLARE_INTERACTION_PTR(ICacheDelegate)
     ZS_DECLARE_INTERACTION_PTR(ICall)
     ZS_DECLARE_INTERACTION_PTR(IConversationThread)
+    ZS_DECLARE_INTERACTION_PTR(IConversationThreadComposingStatus)
+    ZS_DECLARE_INTERACTION_PTR(IConversationThreadSystemMessage)
     ZS_DECLARE_INTERACTION_PTR(IContactPeerFilePublicLookup)
     ZS_DECLARE_INTERACTION_PTR(IIdentity)
     ZS_DECLARE_INTERACTION_PTR(IIdentityLookup)

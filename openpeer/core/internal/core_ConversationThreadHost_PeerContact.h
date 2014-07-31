@@ -129,7 +129,7 @@ namespace openpeer
           UseContactPtr getContact() const;
           const IdentityContactList &getIdentityContacts() const;
 
-          ContactStates getContactState() const;
+          ContactConnectionStates getContactConnectionState() const;
 
           void gatherMessageReceipts(MessageReceiptMap &receipts) const;
 

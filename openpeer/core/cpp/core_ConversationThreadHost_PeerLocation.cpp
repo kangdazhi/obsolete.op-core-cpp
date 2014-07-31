@@ -518,8 +518,9 @@ namespace openpeer
             MessageDeliveryStatesMap::iterator found = mMessageDeliveryStates.find(id);
             if (found != mMessageDeliveryStates.end()) {
               IConversationThread::MessageDeliveryStates &deliveryState = (*found).second;
-              if (IConversationThread::MessageDeliveryState_Delivered == deliveryState) {
-                ZS_LOG_DEBUG(log("message receipt was already notified as delivered thus no need to notify any further") + ZS_PARAM("message ID", id))
+              if ((IConversationThread::MessageDeliveryState_Delivered == deliveryState) ||
+                  (IConversationThread::MessageDeliveryState_Read == deliveryState)) {
+                ZS_LOG_DEBUG(log("message receipt was already notified as delivered or read thus no need to notify any further") + ZS_PARAM("message ID", id))
                 continue;
               }
             }
@@ -551,9 +552,10 @@ namespace openpeer
                 if (found != mMessageDeliveryStates.end()) {
                   // check to see if this message was already marked as delivered
                   IConversationThread::MessageDeliveryStates &deliveryState = (*found).second;
-                  if (IConversationThread::MessageDeliveryState_Delivered == deliveryState) {
+                  if ((IConversationThread::MessageDeliveryState_Delivered == deliveryState) ||
+                      (IConversationThread::MessageDeliveryState_Read == deliveryState)) {
                     // stop notifying of delivered since it's alerady been marked as delivered
-                    ZS_LOG_DEBUG(log("message was already notified as delivered thus no need to notify any further") + message->toDebug())
+                    ZS_LOG_DEBUG(log("message was already notified as delivered or read thus no need to notify any further") + message->toDebug())
                     break;
                   }
 

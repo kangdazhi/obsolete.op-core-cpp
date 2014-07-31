@@ -230,7 +230,7 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      IConversationThread::ContactStates ConversationThreadHost::PeerContact::getContactState() const
+      IConversationThread::ContactConnectionStates ConversationThreadHost::PeerContact::getContactConnectionState() const
       {
         AutoRecursiveLock lock(*this);
 
@@ -239,20 +239,20 @@ namespace openpeer
         {
           const PeerLocationPtr &peerLocation = (*iter).second;
           if (peerLocation->isConnected()) {
-            return IConversationThread::ContactState_Connected;
+            return IConversationThread::ContactConnectionState_Connected;
           }
         }
 
         if (mContact) {
           switch (mContact->getPeer()->getFindState()) {
-            case IPeer::PeerFindState_Pending:    return IConversationThread::ContactState_NotApplicable;
-            case IPeer::PeerFindState_Idle:       return (mPeerLocations.size() > 0 ? IConversationThread::ContactState_Disconnected : IConversationThread::ContactState_NotApplicable);
-            case IPeer::PeerFindState_Finding:    return IConversationThread::ContactState_Finding;
-            case IPeer::PeerFindState_Completed:  return (mPeerLocations.size() > 0 ? IConversationThread::ContactState_Disconnected : IConversationThread::ContactState_NotApplicable);
+            case IPeer::PeerFindState_Pending:    return IConversationThread::ContactConnectionState_NotApplicable;
+            case IPeer::PeerFindState_Idle:       return (mPeerLocations.size() > 0 ? IConversationThread::ContactConnectionState_Disconnected : IConversationThread::ContactConnectionState_NotApplicable);
+            case IPeer::PeerFindState_Finding:    return IConversationThread::ContactConnectionState_Finding;
+            case IPeer::PeerFindState_Completed:  return (mPeerLocations.size() > 0 ? IConversationThread::ContactConnectionState_Disconnected : IConversationThread::ContactConnectionState_NotApplicable);
           }
         }
 
-        return IConversationThread::ContactState_NotApplicable;
+        return IConversationThread::ContactConnectionState_NotApplicable;
       }
 
       //-----------------------------------------------------------------------
@@ -780,7 +780,8 @@ namespace openpeer
           MessageDeliveryStatesMap::iterator found = mMessageDeliveryStates.find(message->messageID());
           if (found != mMessageDeliveryStates.end()) {
             MessageDeliveryStatePtr &deliveryState = (*found).second;
-            if (IConversationThread::MessageDeliveryState_Delivered != deliveryState->mState) {
+            if ((IConversationThread::MessageDeliveryState_Delivered != deliveryState->mState) &&
+                (IConversationThread::MessageDeliveryState_Read != deliveryState->mState)) {
               ZS_LOG_DEBUG(log("requires subscription because of undelivered message") + message->toDebug() + ZS_PARAM("was in delivery state", IConversationThread::toString(deliveryState->mState)))
               requiresSubscription = true;
             }
@@ -842,6 +843,7 @@ namespace openpeer
                   break;
                 }
                 case IConversationThread::MessageDeliveryState_Delivered:
+                case IConversationThread::MessageDeliveryState_Read:
                 case IConversationThread::MessageDeliveryState_UserNotAvailable: {
                   stopProcessing = true;
                   break;
@@ -871,7 +873,7 @@ namespace openpeer
           }
         }
 
-        outer->notifyContactState(mContact, getContactState());
+        outer->notifyContactState(mContact, getContactConnectionState());
       }
 
       //-----------------------------------------------------------------------
@@ -973,6 +975,7 @@ namespace openpeer
         switch (mState) {
           case IConversationThread::MessageDeliveryState_Discovering:       break;  // not possible anyway
           case IConversationThread::MessageDeliveryState_Delivered:
+          case IConversationThread::MessageDeliveryState_Read:
           case IConversationThread::MessageDeliveryState_UserNotAvailable:  mOuter.reset(); break;  // no longer require link to outer
         }
       }

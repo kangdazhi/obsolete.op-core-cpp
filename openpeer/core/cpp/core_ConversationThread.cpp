@@ -354,51 +354,6 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      IdentityContactListPtr ConversationThread::getIdentityContactList(IContactPtr contact) const
-      {
-        ZS_THROW_INVALID_ARGUMENT_IF(!contact)
-
-        IdentityContactListPtr result(new IdentityContactList);
-
-        AutoRecursiveLock lock(*this);
-
-        if (!mLastOpenThread) {
-          ZS_LOG_WARNING(Detail, log("cannot get identity contacts as no contacts have been added to this conversation thread"))
-          return result;
-        }
-
-        ThreadContactMap contacts;
-        mLastOpenThread->getContacts(contacts);
-
-        ThreadContactMap::iterator found = contacts.find(contact->getPeerURI());
-        if (found == contacts.end()) {
-          ZS_LOG_WARNING(Detail, log("cannot get identity contacts as contact was not found") + IContact::toDebug(contact))
-          return result;
-        }
-        const ThreadContactPtr &threadContact = (*found).second;
-
-        (*result) = threadContact->identityContacts();
-        return result;
-      }
-
-      //-----------------------------------------------------------------------
-      IConversationThread::ContactStates ConversationThread::getContactState(IContactPtr inContact) const
-      {
-        ZS_THROW_INVALID_ARGUMENT_IF(!inContact)
-
-        ContactPtr contact = Contact::convert(inContact);
-
-        AutoRecursiveLock lock(*this);
-
-        if (!mLastOpenThread) {
-          ZS_LOG_WARNING(Detail, log("no conversation thread was ever openned"))
-          return IConversationThread::ContactState_NotApplicable;
-        }
-
-        return mLastOpenThread->getContactState(contact);
-      }
-
-      //-----------------------------------------------------------------------
       void ConversationThread::addContacts(const ContactProfileInfoList &inputContacts)
       {
         if (inputContacts.size() < 1) {
@@ -509,10 +464,70 @@ namespace openpeer
         //***********************************************************************
         // HERE - check if trying to remove "self"
       }
+      
+      //-----------------------------------------------------------------------
+      IdentityContactListPtr ConversationThread::getIdentityContactList(IContactPtr contact) const
+      {
+        ZS_THROW_INVALID_ARGUMENT_IF(!contact)
+
+        IdentityContactListPtr result(new IdentityContactList);
+
+        AutoRecursiveLock lock(*this);
+
+        if (!mLastOpenThread) {
+          ZS_LOG_WARNING(Detail, log("cannot get identity contacts as no contacts have been added to this conversation thread"))
+          return result;
+        }
+
+        ThreadContactMap contacts;
+        mLastOpenThread->getContacts(contacts);
+
+        ThreadContactMap::iterator found = contacts.find(contact->getPeerURI());
+        if (found == contacts.end()) {
+          ZS_LOG_WARNING(Detail, log("cannot get identity contacts as contact was not found") + IContact::toDebug(contact))
+          return result;
+        }
+        const ThreadContactPtr &threadContact = (*found).second;
+
+        (*result) = threadContact->identityContacts();
+        return result;
+      }
+
+      //-----------------------------------------------------------------------
+      IConversationThread::ContactConnectionStates ConversationThread::getContactConnectionState(IContactPtr inContact) const
+      {
+        ZS_THROW_INVALID_ARGUMENT_IF(!inContact)
+
+        ContactPtr contact = Contact::convert(inContact);
+
+        AutoRecursiveLock lock(*this);
+
+        if (!mLastOpenThread) {
+          ZS_LOG_WARNING(Detail, log("no conversation thread was ever openned"))
+          return IConversationThread::ContactConnectionState_NotApplicable;
+        }
+
+        return mLastOpenThread->getContactConnectionState(contact);
+      }
+
+      //-----------------------------------------------------------------------
+      ElementPtr ConversationThread::getContactStatus(IContactPtr contact) const
+      {
+#define ROBIN_TODO 1
+#define ROBIN_TODO 2
+      }
+
+      //-----------------------------------------------------------------------
+      void ConversationThread::setStatusInThread(ElementPtr contactStatusInThreadOfSelf)
+      {
+#define ROBIN_TODO 1
+#define ROBIN_TODO 2
+      }
 
       //-----------------------------------------------------------------------
       void ConversationThread::sendMessage(
                                            const char *messageID,
+                                           const char *replacesMessageID,
                                            const char *messageType,
                                            const char *body,
                                            bool signMessage
@@ -524,6 +539,9 @@ namespace openpeer
         ZS_THROW_INVALID_ARGUMENT_IF('\0' == *messageType)
         ZS_THROW_INVALID_ARGUMENT_IF(!body)
         ZS_THROW_INVALID_ARGUMENT_IF('\0' == *body)
+
+#define ROBIN_TODO 1
+#define ROBIN_TODO 2
 
         AutoRecursiveLock lock(*this);
 
@@ -554,12 +572,17 @@ namespace openpeer
       //-----------------------------------------------------------------------
       bool ConversationThread::getMessage(
                                           const char *messageID,
+                                          String &outReplacesMessageID,
                                           IContactPtr &outFrom,
                                           String &outMessageType,
                                           String &outMessage,
-                                          Time &outTime
+                                          Time &outTime,
+                                          bool &outValidated
                                           ) const
       {
+#define ROBIN_TODO 1
+#define ROBIN_TODO 2
+
         AutoRecursiveLock lock(*this);
         ZS_THROW_INVALID_ARGUMENT_IF(!messageID)
 
@@ -758,7 +781,7 @@ namespace openpeer
       void ConversationThread::notifyContactState(
                                                   IConversationThreadHostSlaveBasePtr thread,
                                                   UseContactPtr contact,
-                                                  ContactStates state
+                                                  ContactConnectionStates state
                                                   )
       {
         AutoRecursiveLock lock(*this);
@@ -769,10 +792,10 @@ namespace openpeer
         }
 
         bool changed = false;
-        ContactStates lastState = IConversationThread::ContactState_NotApplicable;
+        ContactConnectionStates lastState = IConversationThread::ContactConnectionState_NotApplicable;
 
-        ContactStateMap::iterator found = mLastReportedContactStates.find(contact->getPeerURI());
-        if (found != mLastReportedContactStates.end()) {
+        ContactStateMap::iterator found = mLastReportedContactConnectionStates.find(contact->getPeerURI());
+        if (found != mLastReportedContactConnectionStates.end()) {
           ContactStatePair &statePair = (*found).second;
           lastState = statePair.second;
           changed = (lastState != state);
@@ -790,10 +813,10 @@ namespace openpeer
         }
 
         // remember the last reported state so it isn't repeated
-        mLastReportedContactStates[contact->getPeerURI()] = ContactStatePair(contact, state);
+        mLastReportedContactConnectionStates[contact->getPeerURI()] = ContactStatePair(contact, state);
 
         try {
-          mDelegate->onConversationThreadContactStateChanged(mThisWeak.lock(), Contact::convert(contact), state);
+          mDelegate->onConversationThreadContactConnectionStateChanged(mThisWeak.lock(), Contact::convert(contact), state);
         } catch (IConversationThreadDelegateProxy::Exceptions::DelegateGone &) {
           ZS_LOG_WARNING(Detail, log("conversation thread delegate gone"))
         }
@@ -1269,7 +1292,7 @@ namespace openpeer
         IHelper::debugAppend(resultEl, "pending delivery", mPendingDeliveryMessages.size());
         IHelper::debugAppend(resultEl, "pending calls", mPendingCalls.size());
         IHelper::debugAppend(resultEl, "call handlers", mCallHandlers.size());
-        IHelper::debugAppend(resultEl, "last reported", mLastReportedContactStates.size());
+        IHelper::debugAppend(resultEl, "last reported", mLastReportedContactConnectionStates.size());
 
         return resultEl;
       }
@@ -1513,25 +1536,25 @@ namespace openpeer
         for (ThreadContactMap::const_iterator iter = contacts.begin(); iter != contacts.end(); ++iter) {
           const ThreadContactPtr &threadContact = (*iter).second;
           UseContactPtr contact = threadContact->contact();
-          ContactStates state = mLastOpenThread->getContactState(contact);
+          ContactConnectionStates state = mLastOpenThread->getContactConnectionState(contact);
 
           bool changed = false;
 
-          ContactStateMap::iterator found = mLastReportedContactStates.find(contact->getPeerURI());
-          if (found != mLastReportedContactStates.end()) {
+          ContactStateMap::iterator found = mLastReportedContactConnectionStates.find(contact->getPeerURI());
+          if (found != mLastReportedContactConnectionStates.end()) {
             ContactStatePair &statePair = (*found).second;
             if (statePair.second != state) {
               statePair.second = state;
               changed = true;
             }
           } else {
-            mLastReportedContactStates[contact->getPeerURI()] = ContactStatePair(contact, state);
+            mLastReportedContactConnectionStates[contact->getPeerURI()] = ContactStatePair(contact, state);
             changed = true;
           }
 
           try {
             ZS_LOG_DEBUG(log("notifying of contact state changed") + ZS_PARAM("state", IConversationThread::toString(state)) + UseContact::toDebug(contact))
-            mDelegate->onConversationThreadContactStateChanged(mThisWeak.lock(), Contact::convert(contact), state);
+            mDelegate->onConversationThreadContactConnectionStateChanged(mThisWeak.lock(), Contact::convert(contact), state);
           } catch (IConversationThreadDelegateProxy::Exceptions::DelegateGone &) {
             ZS_LOG_WARNING(Detail, log("conversation thread delegate gone"))
           }
@@ -1597,20 +1620,21 @@ namespace openpeer
     {
       switch (state) {
         case MessageDeliveryState_Discovering:      return "Discovering";
-        case MessageDeliveryState_Delivered:        return "Delivered";
         case MessageDeliveryState_UserNotAvailable: return "User not available";
+        case MessageDeliveryState_Delivered:        return "Delivered";
+        case MessageDeliveryState_Read:             return "Read";
       }
       return "UNDEFINED";
     }
 
     //-------------------------------------------------------------------------
-    const char *IConversationThread::toString(ContactStates state)
+    const char *IConversationThread::toString(ContactConnectionStates state)
     {
       switch (state) {
-        case ContactState_NotApplicable:  return "Not applicable";
-        case ContactState_Finding:        return "Finding";
-        case ContactState_Connected:      return "Connected";
-        case ContactState_Disconnected:   return "Disconnected";
+        case ContactConnectionState_NotApplicable:  return "Not applicable";
+        case ContactConnectionState_Finding:        return "Finding";
+        case ContactConnectionState_Connected:      return "Connected";
+        case ContactConnectionState_Disconnected:   return "Disconnected";
       }
 
       return "UNDEFINED";

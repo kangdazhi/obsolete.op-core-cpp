@@ -156,11 +156,11 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      void Account::DelegateFilter::onConversationThreadContactStateChanged(
-                                                                            IConversationThreadPtr conversationThread,
-                                                                            IContactPtr contact,
-                                                                            ContactStates state
-                                                                            )
+      void Account::DelegateFilter::onConversationThreadContactConnectionStateChanged(
+                                                                                      IConversationThreadPtr conversationThread,
+                                                                                      IContactPtr contact,
+                                                                                      ContactConnectionStates state
+                                                                                      )
       {
         AutoRecursiveLock lock(*this);
 
@@ -168,16 +168,43 @@ namespace openpeer
 
         FilteredEvents *event = find(conversationThread->getID());
         if (event) {
-          ZS_LOG_TRACE(log("delaying contact change changed event") + ZS_PARAM("thread", conversationThread->getID()) + ZS_PARAM("contact", contact->getID()) + ZS_PARAM("state", IConversationThread::toString(state)))
+          ZS_LOG_TRACE(log("delaying contact connection state change changed event") + ZS_PARAM("thread", conversationThread->getID()) + ZS_PARAM("contact", contact->getID()) + ZS_PARAM("state", IConversationThread::toString(state)))
 
-          event->mFiredContactStateChanges.push_back(ContactStateChangedEvent(contact, state));
+          event->mFiredContactConnectionStateChanges.push_back(ContactConnectionStateChangedEvent(contact, state));
           return;
         }
 
-        ZS_LOG_TRACE(log("firing contact change changed event now") + ZS_PARAM("thread", conversationThread->getID()) + ZS_PARAM("contact", contact->getID()) + ZS_PARAM("state", IConversationThread::toString(state)))
+        ZS_LOG_TRACE(log("firing contact connection state change changed event now") + ZS_PARAM("thread", conversationThread->getID()) + ZS_PARAM("contact", contact->getID()) + ZS_PARAM("state", IConversationThread::toString(state)))
 
         try {
-          mConversationThreadDelegate->onConversationThreadContactsChanged(conversationThread);
+          mConversationThreadDelegate->onConversationThreadContactConnectionStateChanged(conversationThread, contact, state);
+        } catch(IConversationThreadDelegateProxy::Exceptions::DelegateGone &) {
+          ZS_LOG_WARNING(Detail, log("delegate gone"))
+        }
+      }
+
+      //-----------------------------------------------------------------------
+      void Account::DelegateFilter::onConversationThreadContactStatusChanged(
+                                                                             IConversationThreadPtr conversationThread,
+                                                                             IContactPtr contact
+                                                                             )
+      {
+        AutoRecursiveLock lock(*this);
+
+        if (!mConversationThreadDelegate) return;
+
+        FilteredEvents *event = find(conversationThread->getID());
+        if (event) {
+          ZS_LOG_TRACE(log("delaying contact status change changed event") + ZS_PARAM("thread", conversationThread->getID()) + ZS_PARAM("contact", contact->getID()))
+
+          event->mFiredContactStatusChanged.push_back(contact);
+          return;
+        }
+
+        ZS_LOG_TRACE(log("firing contact status change changed event now") + ZS_PARAM("thread", conversationThread->getID()) + ZS_PARAM("contact", contact->getID()))
+
+        try {
+          mConversationThreadDelegate->onConversationThreadContactStatusChanged(conversationThread, contact);
         } catch(IConversationThreadDelegateProxy::Exceptions::DelegateGone &) {
           ZS_LOG_WARNING(Detail, log("delegate gone"))
         }
@@ -346,15 +373,23 @@ namespace openpeer
             mConversationThreadDelegate->onConversationThreadContactsChanged(event.mConversationThread);
           }
 
-          for (ContactStateChangedList::iterator iter = event.mFiredContactStateChanges.begin(); iter != event.mFiredContactStateChanges.end(); ++iter)
+          for (ContactConnectionStateChangedList::iterator iter = event.mFiredContactConnectionStateChanges.begin(); iter != event.mFiredContactConnectionStateChanges.end(); ++iter)
           {
-            ContactStateChangedEvent &changeEvent = (*iter);
+            ContactConnectionStateChangedEvent &changeEvent = (*iter);
 
             IContactPtr contact = changeEvent.first;
-            ContactStates state = changeEvent.second;
+            ContactConnectionStates state = changeEvent.second;
 
-            ZS_LOG_TRACE(log("firing delayed contact change") + ZS_PARAM("contact", contact->getID()) + ZS_PARAM("state", IConversationThread::toString(state)))
-            mConversationThreadDelegate->onConversationThreadContactStateChanged(event.mConversationThread, contact, state);
+            ZS_LOG_TRACE(log("firing delayed contact connection state change") + ZS_PARAM("contact", contact->getID()) + ZS_PARAM("state", IConversationThread::toString(state)))
+            mConversationThreadDelegate->onConversationThreadContactConnectionStateChanged(event.mConversationThread, contact, state);
+          }
+
+          for (ContactStatusChangedList::iterator iter = event.mFiredContactStatusChanged.begin(); iter != event.mFiredContactStatusChanged.end(); ++iter)
+          {
+            IContactPtr contact = (*iter);
+
+            ZS_LOG_TRACE(log("firing delayed contact status change") + ZS_PARAM("contact", contact->getID()))
+            mConversationThreadDelegate->onConversationThreadContactStatusChanged(event.mConversationThread, contact);
           }
         } catch(IConversationThreadDelegateProxy::Exceptions::DelegateGone &) {
           ZS_LOG_WARNING(Detail, log("delegate gone"))
