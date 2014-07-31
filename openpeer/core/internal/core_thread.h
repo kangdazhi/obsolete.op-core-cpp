@@ -103,6 +103,7 @@ namespace openpeer
 
           static MessagePtr create(
                                    const char *messageID,
+                                   const char *replacesMessageID,
                                    const char *fromPeerURI,
                                    const char *mimeType,
                                    const char *body,
@@ -118,10 +119,12 @@ namespace openpeer
           ElementPtr messageBundleElement() const;
 
           const String &messageID() const         {return mMessageID;}
+          const String &replacesMessageID() const {return mReplacesMessageID;}
           const String &fromPeerURI() const       {return mFromPeerURI;}
           const String &mimeType() const          {return mMimeType;}
           const String &body() const              {return mBody;}
           const Time &sent() const                {return mSent;}
+          bool validated() const                  {return mValidated;}
 
           ElementPtr toDebug() const;
 
@@ -136,10 +139,12 @@ namespace openpeer
 
           AutoPUID mID;
           String mMessageID;
+          String mReplacesMessageID;
           String mFromPeerURI;
           String mMimeType;
           String mBody;
           Time mSent;
+          AutoBool mValidated;
         };
 
         //---------------------------------------------------------------------

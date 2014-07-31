@@ -269,6 +269,7 @@ namespace openpeer
         //---------------------------------------------------------------------
         MessagePtr Message::create(
                                    const char *messageID,
+                                   const char *replacesMessageID,
                                    const char *fromPeerURI,
                                    const char *mimeType,
                                    const char *body,
@@ -278,13 +279,15 @@ namespace openpeer
         {
           MessagePtr pThis = MessagePtr(new Message);
           pThis->mThisWeak = pThis;
-          pThis->mMessageID = string(messageID);
-          pThis->mFromPeerURI = string(fromPeerURI);
+          pThis->mMessageID = String(messageID);
+          pThis->mReplacesMessageID = String(replacesMessageID);
+          pThis->mFromPeerURI = String(fromPeerURI);
           pThis->mMimeType = string(mimeType);
-          pThis->mBody = string(body);
+          pThis->mBody = String(body);
           pThis->mSent = sent;
 
           if (signer) {
+            get(pThis->mValidated) = true;
             pThis->mBundleEl = pThis->constructBundleElement(signer);
           }
 
@@ -310,11 +313,29 @@ namespace openpeer
             ElementPtr bodyEl = messageEl->findFirstChildElementChecked("body");
 
             pThis->mMessageID = messageEl->getAttributeValue("id");
+            pThis->mReplacesMessageID = messageEl->getAttributeValue("replaces");
             pThis->mFromPeerURI = fromEl->getAttributeValue("id");
             pThis->mMimeType = mimeTypeEl->getText();
             pThis->mBody = bodyEl->getTextDecoded();
             pThis->mSent = services::IHelper::stringToTime(sentEl->getText());
             if ("message" != messageBundleEl->getValue()) {
+
+              if (account) {
+                UseContactPtr contact = UseContact::createFromPeerURI(Account::convert(account), pThis->mFromPeerURI);
+                if (contact) {
+                  IPeerFilePublicPtr peerFilePublic = contact->getPeerFilePublic();
+                  if (peerFilePublic) {
+                    get(pThis->mValidated) = peerFilePublic->verifySignature(messageEl);
+                  }
+                }
+              }
+
+              if (pThis->mValidated) {
+                ZS_LOG_TRACE(pThis->log("message received validated") + pThis->toDebug())
+              } else {
+                ZS_LOG_WARNING(Debug, pThis->log("message received did not validate validated") + pThis->toDebug())
+              }
+
               pThis->mBundleEl = messageBundleEl;
             }
           } catch (CheckFailed &) {
@@ -351,7 +372,8 @@ namespace openpeer
           ElementPtr resultEl = Element::create("thread::Message");
 
           IHelper::debugAppend(resultEl, "id", mID);
-          IHelper::debugAppend(resultEl, "message id (s)", mMessageID);
+          IHelper::debugAppend(resultEl, "message id", mMessageID);
+          IHelper::debugAppend(resultEl, "replaces message id", mReplacesMessageID);
           IHelper::debugAppend(resultEl, "from peer URI", mFromPeerURI);
           IHelper::debugAppend(resultEl, "mime type", mMimeType);
           IHelper::debugAppend(resultEl, "body", mBody);
@@ -366,6 +388,9 @@ namespace openpeer
           // now its time to generate the XML
           ElementPtr messageBundleEl = Element::create("messageBundle");
           ElementPtr messageEl = createElement("message", mMessageID);
+          if (mReplacesMessageID.hasData()) {
+            messageEl->setAttribute("replaces", mReplacesMessageID);
+          }
           ElementPtr fromEl = createElement("from", mFromPeerURI);
           ElementPtr sentEl = createElementWithNumber("sent", services::IHelper::timeToString(mSent));
           ElementPtr mimeTypeEl = createElementWithText("mimeType", mMimeType);

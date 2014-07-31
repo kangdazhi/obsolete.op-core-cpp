@@ -537,11 +537,6 @@ namespace openpeer
         ZS_THROW_INVALID_ARGUMENT_IF('\0' == *messageID)
         ZS_THROW_INVALID_ARGUMENT_IF(!messageType)
         ZS_THROW_INVALID_ARGUMENT_IF('\0' == *messageType)
-        ZS_THROW_INVALID_ARGUMENT_IF(!body)
-        ZS_THROW_INVALID_ARGUMENT_IF('\0' == *body)
-
-#define ROBIN_TODO 1
-#define ROBIN_TODO 2
 
         AutoRecursiveLock lock(*this);
 
@@ -557,7 +552,7 @@ namespace openpeer
           return;
         }
 
-        MessagePtr message = Message::create(messageID, UseContactPtr(account->getSelfContact())->getPeerURI(), messageType, body, zsLib::now(), signMessage ? peerFiles : IPeerFilesPtr());
+        MessagePtr message = Message::create(messageID, replacesMessageID, UseContactPtr(account->getSelfContact())->getPeerURI(), messageType, body, zsLib::now(), signMessage ? peerFiles : IPeerFilesPtr());
         if (!message) {
           ZS_LOG_ERROR(Detail, log("failed to create message object") + ZS_PARAM("message ID", messageID))
           return;
@@ -580,9 +575,6 @@ namespace openpeer
                                           bool &outValidated
                                           ) const
       {
-#define ROBIN_TODO 1
-#define ROBIN_TODO 2
-
         AutoRecursiveLock lock(*this);
         ZS_THROW_INVALID_ARGUMENT_IF(!messageID)
 
@@ -607,10 +599,12 @@ namespace openpeer
           return false;
         }
 
+        outReplacesMessageID = message->replacesMessageID();
         outFrom = contact;
         outMessageType = message->mimeType();
         outMessage = message->body();
         outTime = message->sent();
+        outValidated = message->validated();
 
         ZS_LOG_DEBUG(log("obtained message information") + ZS_PARAM("message ID", messageID) + ZS_PARAM("peer URI", peerURI) + IContact::toDebug(contact) + ZS_PARAM("type", outMessageType) + ZS_PARAM("message", outMessage) + ZS_PARAM("time", outTime))
         return true;
