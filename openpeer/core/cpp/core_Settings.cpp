@@ -68,6 +68,22 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       #pragma mark
+      #pragma mark ISettingsForStack
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      Duration ISettingsForThread::getThreadMoveMessageToCacheTimeInSeconds()
+      {
+        SettingsPtr singleton = Settings::singleton();
+        if (!singleton) return Duration(Seconds(120));
+        return singleton->getThreadMoveMessageToCacheTimeInSeconds();
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
       #pragma mark Settings
       #pragma mark
 
@@ -139,6 +155,7 @@ namespace openpeer
         }
 
         setUInt(OPENPEER_CORE_SETTING_ACCOUNT_BACKGROUNDING_PHASE, 1);
+        setUInt(OPENPEER_CORE_SETTING_THREAD_MOVE_MESSAGE_TO_CACHE_TIME_IN_SECONDS, 120);
 
         setString(OPENPEER_CORE_SETTING_STACK_CORE_THREAD_PRIORITY, "normal");
         setString(OPENPEER_CORE_SETTING_STACK_MEDIA_THREAD_PRIORITY, "real-time");
@@ -166,6 +183,32 @@ namespace openpeer
         ZS_LOG_WARNING(Detail, log("To prevent issues with missing settings, the default settings are being applied. Recommend installing a settings delegate to fetch settings required from a externally."))
 
         applyDefaults();
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark Settings => ISettingsForThread
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      Duration Settings::getThreadMoveMessageToCacheTimeInSeconds()
+      {
+        {
+          AutoRecursiveLock lock(mLock);
+          if (Duration() != mThreadMoveMessageToCacheTimeInSeconds) return mThreadMoveMessageToCacheTimeInSeconds;
+        }
+
+        Duration cacheDuration = Seconds(getUInt(OPENPEER_CORE_SETTING_THREAD_MOVE_MESSAGE_TO_CACHE_TIME_IN_SECONDS));
+
+        {
+          AutoRecursiveLock lock(mLock);
+          mThreadMoveMessageToCacheTimeInSeconds = cacheDuration;
+        }
+
+        return cacheDuration;
       }
 
       //-----------------------------------------------------------------------

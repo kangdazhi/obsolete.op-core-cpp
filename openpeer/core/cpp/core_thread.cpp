@@ -35,6 +35,10 @@
 #include <openpeer/core/internal/core_Contact.h>
 #include <openpeer/core/internal/core_Account.h>
 #include <openpeer/core/internal/core_Helper.h>
+#include <openpeer/core/internal/core_Stack.h>
+#include <openpeer/core/internal/core_Settings.h>
+
+#include <openpeer/core/ICache.h>
 
 #include <openpeer/stack/message/IMessageHelper.h>
 #include <openpeer/stack/IPublication.h>
@@ -65,6 +69,7 @@ namespace openpeer
       namespace thread
       {
         using services::IHelper;
+        using zsLib::ITimerDelegateProxy;
 
         using zsLib::Numeric;
         using zsLib::IPAddress;
@@ -76,6 +81,9 @@ namespace openpeer
 
         typedef IPublication::PublishToRelationshipsMap PublishToRelationshipsMap;
         typedef IPublication::RelationshipList RelationshipList;
+
+        ZS_DECLARE_TYPEDEF_PTR(IStackForInternal, UseStack)
+        ZS_DECLARE_TYPEDEF_PTR(ISettingsForThread, UseSettings)
 
         //---------------------------------------------------------------------
         //---------------------------------------------------------------------
@@ -237,7 +245,7 @@ namespace openpeer
         //  <messages>
         //   ...
         //   <messageBundle xmlns="http://www.openpeer.org/openpeer/1.0/message">
-        //    <message id=”e041038922edbc0638cebbded884896” />
+        //    <message id=”e041038922edbc0638cebbded884896” replaces="cfdc7852457086040262d764c60bdf3e79c24438" />
         //     <from id=”920bd1d88e4cc3ba0f95e24ea9168e272ff03b3b” />
         //     <sent>2002-Jan-01 10:00:01.123456789</sent>
         //     <mimeType>text/plain</mimeType>
@@ -260,10 +268,10 @@ namespace openpeer
         // </thread>
 
         //---------------------------------------------------------------------
-        ElementPtr Message::toDebug(MessagePtr message)
+        Message::Message() :
+          SharedRecursiveLock(SharedRecursiveLock::create()),
+          mFlags(0)
         {
-          if (!message) return ElementPtr();
-          return message->toDebug();
         }
 
         //---------------------------------------------------------------------
@@ -279,17 +287,22 @@ namespace openpeer
         {
           MessagePtr pThis = MessagePtr(new Message);
           pThis->mThisWeak = pThis;
-          pThis->mMessageID = String(messageID);
-          pThis->mReplacesMessageID = String(replacesMessageID);
-          pThis->mFromPeerURI = String(fromPeerURI);
-          pThis->mMimeType = string(mimeType);
-          pThis->mBody = String(body);
-          pThis->mSent = sent;
+          pThis->mData = MessageDataPtr(new MessageData);
+
+          pThis->mData->mMessageID = String(messageID);
+          pThis->mData->mReplacesMessageID = String(replacesMessageID);
+          pThis->mData->mFromPeerURI = String(fromPeerURI);
+          pThis->mData->mMimeType = string(mimeType);
+          pThis->mData->mBody = String(body);
+          pThis->mData->mSent = sent;
 
           if (signer) {
-            get(pThis->mValidated) = true;
-            pThis->mBundleEl = pThis->constructBundleElement(signer);
+            pThis->mFlags = Flag_Validated;
+            pThis->mData->mValidated = true;
+            pThis->mData->mBundleEl = pThis->constructBundleElement(signer);
           }
+
+          pThis->scheduleCaching();
 
           return pThis;
         }
@@ -305,65 +318,89 @@ namespace openpeer
           MessagePtr pThis = MessagePtr(new Message);
           pThis->mThisWeak = pThis;
 
-          try {
-            ElementPtr messageEl = ("message" == messageBundleEl->getValue() ? messageBundleEl : messageBundleEl->findFirstChildElementChecked("message"));
-            ElementPtr fromEl = messageEl->findFirstChildElementChecked("from");
-            ElementPtr sentEl = messageEl->findFirstChildElementChecked("sent");
-            ElementPtr mimeTypeEl = messageEl->findFirstChildElementChecked("mimeType");
-            ElementPtr bodyEl = messageEl->findFirstChildElementChecked("body");
+          pThis->mData = pThis->parseFromElement(account, messageBundleEl);
 
-            pThis->mMessageID = messageEl->getAttributeValue("id");
-            pThis->mReplacesMessageID = messageEl->getAttributeValue("replaces");
-            pThis->mFromPeerURI = fromEl->getAttributeValue("id");
-            pThis->mMimeType = mimeTypeEl->getText();
-            pThis->mBody = bodyEl->getTextDecoded();
-            pThis->mSent = services::IHelper::stringToTime(sentEl->getText());
-            if ("message" != messageBundleEl->getValue()) {
-
-              if (account) {
-                UseContactPtr contact = UseContact::createFromPeerURI(Account::convert(account), pThis->mFromPeerURI);
-                if (contact) {
-                  IPeerFilePublicPtr peerFilePublic = contact->getPeerFilePublic();
-                  if (peerFilePublic) {
-                    get(pThis->mValidated) = peerFilePublic->verifySignature(messageEl);
-                  }
-                }
-              }
-
-              if (pThis->mValidated) {
-                ZS_LOG_TRACE(pThis->log("message received validated") + pThis->toDebug())
-              } else {
-                ZS_LOG_WARNING(Debug, pThis->log("message received did not validate validated") + pThis->toDebug())
-              }
-
-              pThis->mBundleEl = messageBundleEl;
-            }
-          } catch (CheckFailed &) {
-            ZS_LOG_ERROR(Detail, pThis->log("message bundle parse element check failure"))
+          if (!pThis->mData)
             return MessagePtr();
-          }
 
-          if (Time() == pThis->mSent) {
-            ZS_LOG_ERROR(Detail, pThis->log("message bundle value out of range parse error"))
-            return MessagePtr();
-          }
-          if (pThis->mMessageID.size() < 1) {
-            ZS_LOG_ERROR(Detail, pThis->log("message id missing"))
-            return MessagePtr();
-          }
-          if (pThis->mFromPeerURI.size() < 1) {
-            ZS_LOG_ERROR(Detail, pThis->log("missing peer URI"))
-            return MessagePtr();
-          }
+          if (pThis->mData->mValidated)
+            pThis->mFlags = Flag_Validated;
 
+          pThis->scheduleCaching();
           return pThis;
+        }
+
+        //---------------------------------------------------------------------
+        ElementPtr Message::toDebug(MessagePtr message)
+        {
+          if (!message) return ElementPtr();
+          return message->toDebug();
         }
 
         //---------------------------------------------------------------------
         ElementPtr Message::messageBundleElement() const
         {
-          if (mBundleEl) return mBundleEl->clone()->toElement();
+          AutoRecursiveLock lock(*this);
+          restoreFromCache();
+
+          if (mData->mBundleEl) return mData->mBundleEl->clone()->toElement();
           return constructBundleElement(IPeerFilesPtr());
+        }
+
+        //---------------------------------------------------------------------
+        String Message::messageID() const
+        {
+          AutoRecursiveLock lock(*this);
+          restoreFromCache();
+          return mData->mMessageID;
+        }
+
+        //---------------------------------------------------------------------
+        String Message::replacesMessageID() const
+        {
+          AutoRecursiveLock lock(*this);
+          restoreFromCache();
+          return mData->mReplacesMessageID;
+        }
+
+        //---------------------------------------------------------------------
+        String Message::fromPeerURI() const
+        {
+          AutoRecursiveLock lock(*this);
+          restoreFromCache();
+          return mData->mFromPeerURI;
+        }
+
+        //---------------------------------------------------------------------
+        String Message::mimeType() const
+        {
+          AutoRecursiveLock lock(*this);
+          restoreFromCache();
+          return mData->mMimeType;
+        }
+
+        //---------------------------------------------------------------------
+        String Message::body() const
+        {
+          AutoRecursiveLock lock(*this);
+          restoreFromCache();
+          return mData->mBody;
+        }
+
+        //---------------------------------------------------------------------
+        Time Message::sent() const
+        {
+          AutoRecursiveLock lock(*this);
+          restoreFromCache();
+          return mData->mSent;
+        }
+
+        //---------------------------------------------------------------------
+        bool Message::validated() const
+        {
+          AutoRecursiveLock lock(*this);
+          restoreFromCache();
+          return mData->mValidated;
         }
 
         //---------------------------------------------------------------------
@@ -372,14 +409,61 @@ namespace openpeer
           ElementPtr resultEl = Element::create("thread::Message");
 
           IHelper::debugAppend(resultEl, "id", mID);
-          IHelper::debugAppend(resultEl, "message id", mMessageID);
-          IHelper::debugAppend(resultEl, "replaces message id", mReplacesMessageID);
-          IHelper::debugAppend(resultEl, "from peer URI", mFromPeerURI);
-          IHelper::debugAppend(resultEl, "mime type", mMimeType);
-          IHelper::debugAppend(resultEl, "body", mBody);
-          IHelper::debugAppend(resultEl, "sent", mSent);
+
+          MessageDataPtr data;
+
+          {
+            AutoRecursiveLock lock(*this);
+            restoreFromCache();
+            data = mData;
+          }
+
+          IHelper::debugAppend(resultEl, "message id", data->mMessageID);
+          IHelper::debugAppend(resultEl, "replaces message id", data->mReplacesMessageID);
+          IHelper::debugAppend(resultEl, "from peer URI", data->mFromPeerURI);
+          IHelper::debugAppend(resultEl, "mime type", data->mMimeType);
+          IHelper::debugAppend(resultEl, "body", data->mBody);
+          IHelper::debugAppend(resultEl, "sent", data->mSent);
 
           return resultEl;
+        }
+
+        //---------------------------------------------------------------------
+        //---------------------------------------------------------------------
+        //---------------------------------------------------------------------
+        //---------------------------------------------------------------------
+        #pragma mark
+        #pragma mark Message => ITimerDelegate
+        #pragma mark
+
+        //---------------------------------------------------------------------
+        void Message::onTimer(TimerPtr timer)
+        {
+          AutoRecursiveLock lock(*this);
+          if (!mData) return; // nothing to do
+
+          if (timer != mData->mTimer) return; // not the correct timeout
+
+          mData->mTimer->cancel();
+          mData->mTimer.reset();
+
+          moveToCache();
+        }
+
+        //---------------------------------------------------------------------
+        //---------------------------------------------------------------------
+        //---------------------------------------------------------------------
+        //---------------------------------------------------------------------
+        #pragma mark
+        #pragma mark Message => (internal)
+        #pragma mark
+
+        //---------------------------------------------------------------------
+        Log::Params Message::log(const char *message) const
+        {
+          ElementPtr objectEl = Element::create("core::thread::Message");
+          IHelper::debugAppend(objectEl, "id", mID);
+          return Log::Params(message, objectEl);
         }
 
         //---------------------------------------------------------------------
@@ -387,14 +471,14 @@ namespace openpeer
         {
           // now its time to generate the XML
           ElementPtr messageBundleEl = Element::create("messageBundle");
-          ElementPtr messageEl = createElement("message", mMessageID);
-          if (mReplacesMessageID.hasData()) {
-            messageEl->setAttribute("replaces", mReplacesMessageID);
+          ElementPtr messageEl = createElement("message", mData->mMessageID);
+          if (mData->mReplacesMessageID.hasData()) {
+            messageEl->setAttribute("replaces", mData->mReplacesMessageID);
           }
-          ElementPtr fromEl = createElement("from", mFromPeerURI);
-          ElementPtr sentEl = createElementWithNumber("sent", services::IHelper::timeToString(mSent));
-          ElementPtr mimeTypeEl = createElementWithText("mimeType", mMimeType);
-          ElementPtr bodyEl = createElementWithTextAndJSONEncode("body", mBody);
+          ElementPtr fromEl = createElement("from", mData->mFromPeerURI);
+          ElementPtr sentEl = createElementWithNumber("sent", services::IHelper::timeToString(mData->mSent));
+          ElementPtr mimeTypeEl = createElementWithText("mimeType", mData->mMimeType);
+          ElementPtr bodyEl = createElementWithTextAndJSONEncode("body", mData->mBody);
 
           if (signer) {
             messageBundleEl->adoptAsLastChild(messageEl);
@@ -413,16 +497,172 @@ namespace openpeer
 
             return messageBundleEl;
           }
-
+          
           return messageEl;
+        }
+        
+        //-----------------------------------------------------------------------
+        String Message::getCookieName() const
+        {
+          return String("/thread/message/cached-") + string(mID);
         }
 
         //---------------------------------------------------------------------
-        Log::Params Message::log(const char *message) const
+        void Message::moveToCache()
         {
-          ElementPtr objectEl = Element::create("core::thread::Message");
-          IHelper::debugAppend(objectEl, "id", mID);
-          return Log::Params(message, objectEl);
+          if (!mData) return; // nothing to do
+
+          if ((mFlags & Flag_Cached) != 0) {
+            ZS_LOG_TRACE(log("already cached"))
+            mData.reset();
+            return;
+          }
+
+          DocumentPtr doc = Document::create();
+
+          if (mData->mBundleEl)
+            doc->adoptAsLastChild(mData->mBundleEl);
+          else
+            doc->adoptAsLastChild(constructBundleElement(IPeerFilesPtr()));
+
+          GeneratorPtr generator = Generator::createJSONGenerator();
+
+          boost::shared_array<char> output;
+          size_t length = 0;
+          output = generator->write(doc, &length);
+
+          if (mData->mBundleEl)
+            mData->mBundleEl->orphan();
+
+          ZS_LOG_DEBUG(log("moving document to cache"))
+          ICache::store(getCookieName(), Time(), output.get());
+
+          mFlags = mFlags | Flag_Cached;
+        }
+
+        //---------------------------------------------------------------------
+        void Message::restoreFromCache() const
+        {
+          if (mData) {
+            if (Time() == mData->mScheduledAt) {
+              scheduleCaching();
+              return;
+            }
+
+            Duration diff = zsLib::now() - mData->mScheduledAt;
+            if (diff < (UseSettings::getThreadMoveMessageToCacheTimeInSeconds()/2)) return; // plenty of time left on the timer thus do nothing
+
+            scheduleCaching();
+            return;
+          }
+
+          ZS_LOG_DEBUG(log("restoring from cache"))
+
+          ZS_THROW_BAD_STATE_IF(0 == (mFlags & Flag_Cached))  // must be cached otherwise it's an error
+
+          String output = ICache::fetch(getCookieName());
+
+          DocumentPtr doc = Document::createFromParsedJSON(output);
+          ZS_THROW_INVALID_ASSUMPTION_IF(!doc)
+
+          mData = parseFromElement(UseAccountPtr(), doc->getFirstChildElement());
+          ZS_THROW_INVALID_ASSUMPTION_IF(!mData)
+
+          scheduleCaching();
+        }
+
+        //---------------------------------------------------------------------
+        void Message::scheduleCaching() const
+        {
+          if (!mData) return; // nothing to do
+
+          if (mData->mTimer) {
+            mData->mTimer->cancel();
+            mData->mTimer.reset();
+          }
+
+          mData->mScheduledAt = zsLib::now();
+          mData->mTimer = Timer::create(ITimerDelegateProxy::create(UseStack::queueCore(), mThisWeak.lock()), UseSettings::getThreadMoveMessageToCacheTimeInSeconds(), false);
+        }
+
+        //---------------------------------------------------------------------
+        Message::MessageDataPtr Message::parseFromElement(
+                                                          UseAccountPtr account,
+                                                          ElementPtr messageBundleEl
+                                                          ) const
+        {
+          MessageDataPtr data(new ManagedMessageData);
+
+          try {
+            ElementPtr messageEl = ("message" == messageBundleEl->getValue() ? messageBundleEl : messageBundleEl->findFirstChildElementChecked("message"));
+            ElementPtr fromEl = messageEl->findFirstChildElementChecked("from");
+            ElementPtr sentEl = messageEl->findFirstChildElementChecked("sent");
+            ElementPtr mimeTypeEl = messageEl->findFirstChildElementChecked("mimeType");
+            ElementPtr bodyEl = messageEl->findFirstChildElementChecked("body");
+
+            data->mMessageID = messageEl->getAttributeValue("id");
+            data->mReplacesMessageID = messageEl->getAttributeValue("replaces");
+            data->mFromPeerURI = fromEl->getAttributeValue("id");
+            data->mMimeType = mimeTypeEl->getText();
+            data->mBody = bodyEl->getTextDecoded();
+            data->mSent = services::IHelper::stringToTime(sentEl->getText());
+
+            if ("message" != messageBundleEl->getValue()) {
+
+              if (account) {
+                UseContactPtr contact = UseContact::createFromPeerURI(Account::convert(account), data->mFromPeerURI);
+                if (contact) {
+                  IPeerFilePublicPtr peerFilePublic = contact->getPeerFilePublic();
+                  if (peerFilePublic) {
+                    data->mValidated = peerFilePublic->verifySignature(messageEl);
+                  }
+                }
+                if (data->mValidated) {
+                  ZS_LOG_TRACE(log("message received validated") + ZS_PARAM("message ID", data->mMessageID))
+                } else {
+                  ZS_LOG_WARNING(Debug, log("message received did not validate validated") + ZS_PARAM("message ID", data->mMessageID))
+                }
+              }
+
+              if ((mFlags & Flag_Validated) != 0) {
+                data->mValidated = true;
+              }
+
+              data->mBundleEl = messageBundleEl;
+            }
+          } catch (CheckFailed &) {
+            ZS_LOG_ERROR(Detail, log("message bundle parse element check failure"))
+            return MessageDataPtr();
+          }
+
+          if (Time() == data->mSent) {
+            ZS_LOG_ERROR(Detail, log("message bundle value out of range parse error"))
+            return MessageDataPtr();
+          }
+          if (data->mMessageID.size() < 1) {
+            ZS_LOG_ERROR(Detail, log("message id missing"))
+            return MessageDataPtr();
+          }
+          if (data->mFromPeerURI.size() < 1) {
+            ZS_LOG_ERROR(Detail, log("missing peer URI"))
+            return MessageDataPtr();
+          }
+          
+          return data;
+        }
+        
+        //---------------------------------------------------------------------
+        //---------------------------------------------------------------------
+        //---------------------------------------------------------------------
+        //---------------------------------------------------------------------
+        #pragma mark
+        #pragma mark Message::ManagedMessageData
+        #pragma mark
+
+        //---------------------------------------------------------------------
+        Message::ManagedMessageData::ManagedMessageData() :
+          mValidated(false)
+        {
         }
 
         //---------------------------------------------------------------------

@@ -37,8 +37,11 @@
 #include <openpeer/services/IICESocket.h>
 
 #include <zsLib/Exception.h>
+#include <zsLib/Timer.h>
 
 #define OPENPEER_CONVESATION_THREAD_BASE_THREAD_INDEX (3)
+
+#define OPENPEER_CORE_SETTING_THREAD_MOVE_MESSAGE_TO_CACHE_TIME_IN_SECONDS "openpeer/core/move-message-to-cache-time-in-seconds"
 
 namespace openpeer
 {
@@ -96,11 +99,23 @@ namespace openpeer
         #pragma mark Message
         #pragma mark
 
-        class Message
+        class Message : public SharedRecursiveLock,
+                        public ITimerDelegate
         {
-        public:
-          static ElementPtr toDebug(MessagePtr message);
+        private:
+          struct ManagedMessageData;
+          ZS_DECLARE_TYPEDEF_PTR(ManagedMessageData, MessageData)
 
+          enum Flags
+          {
+            Flag_Cached = 1,
+            Flag_Validated = 2,
+          };
+
+        protected:
+          Message();
+
+        public:
           static MessagePtr create(
                                    const char *messageID,
                                    const char *replacesMessageID,
@@ -116,37 +131,75 @@ namespace openpeer
                                    ElementPtr messageBundleEl
                                    );
 
+          static ElementPtr toDebug(MessagePtr message);
+
           ElementPtr messageBundleElement() const;
 
-          const String &messageID() const         {return mMessageID;}
-          const String &replacesMessageID() const {return mReplacesMessageID;}
-          const String &fromPeerURI() const       {return mFromPeerURI;}
-          const String &mimeType() const          {return mMimeType;}
-          const String &body() const              {return mBody;}
-          const Time &sent() const                {return mSent;}
-          bool validated() const                  {return mValidated;}
+          String messageID() const;
+          String replacesMessageID() const;
+          String fromPeerURI() const;
+          String mimeType() const;
+          String body() const;
+          Time sent() const;
+          bool validated() const;
 
           ElementPtr toDebug() const;
 
         protected:
+          //-------------------------------------------------------------------
+          #pragma mark
+          #pragma mark Message => ITimerDelegate
+          #pragma mark
+
+          void onTimer(TimerPtr timer);
+
+        private:
+          //-------------------------------------------------------------------
+          #pragma mark
+          #pragma mark Message => (internal)
+          #pragma mark
+
           Log::Params log(const char *message) const;
 
           ElementPtr constructBundleElement(IPeerFilesPtr signer) const;
 
-        protected:
-          MessageWeakPtr mThisWeak;
-          ElementPtr mBundleEl;
+          String getCookieName() const;
 
+          void moveToCache();
+          void restoreFromCache() const;
+          void scheduleCaching() const;
+
+          MessageDataPtr parseFromElement(
+                                          UseAccountPtr account,
+                                          ElementPtr messageBundleEl
+                                          ) const;
+
+        private:
           AutoPUID mID;
-          String mMessageID;
-          String mReplacesMessageID;
-          String mFromPeerURI;
-          String mMimeType;
-          String mBody;
-          Time mSent;
-          AutoBool mValidated;
-        };
+          MessageWeakPtr mThisWeak;
+          int mFlags;
 
+          struct ManagedMessageData
+          {
+            ElementPtr mBundleEl;
+
+            String mMessageID;
+            String mReplacesMessageID;
+            String mFromPeerURI;
+            String mMimeType;
+            String mBody;
+            Time mSent;
+            bool mValidated;
+
+            TimerPtr mTimer;
+            Time mScheduledAt;
+
+            ManagedMessageData();
+          };
+
+          mutable MessageDataPtr mData;
+        };
+        
         //---------------------------------------------------------------------
         //---------------------------------------------------------------------
         //---------------------------------------------------------------------
