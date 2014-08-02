@@ -213,17 +213,32 @@ namespace openpeer
         public:
           static ElementPtr toDebug(MessageReceiptsPtr receipts);
 
-          static MessageReceiptsPtr create(UINT version);
-          static MessageReceiptsPtr create(UINT version, const String &messageID);
-          static MessageReceiptsPtr create(UINT version, const MessageIDList &messageIDs);
-          static MessageReceiptsPtr create(UINT version, const MessageReceiptMap &messageReceipts);
+          static MessageReceiptsPtr create(
+                                           const char *receiptsElementName,
+                                           UINT version
+                                           );
+          static MessageReceiptsPtr create(
+                                           const char *receiptsElementName,
+                                           UINT version,
+                                           const String &messageID
+                                           );
+          static MessageReceiptsPtr create(
+                                           const char *receiptsElementName,
+                                           UINT version,
+                                           const MessageIDList &messageIDs
+                                           );
+          static MessageReceiptsPtr create(
+                                           const char *receiptsElementName,
+                                           UINT version,
+                                           const MessageReceiptMap &messageReceipts
+                                           );
 
           static MessageReceiptsPtr create(ElementPtr messageReceiptsEl);
 
           ElementPtr receiptsElement() const          {return constructReceiptsElement();}
 
           UINT version() const                        {return mVersion;}
-          const MessageReceiptMap &receipts() const  {return mReceipts;}
+          const MessageReceiptMap &receipts() const   {return mReceipts;}
 
           ElementPtr toDebug() const;
 
@@ -236,6 +251,8 @@ namespace openpeer
           MessageReceiptsWeakPtr mThisWeak;
 
           AutoPUID mID;
+
+          String mReceiptsElementName;
 
           UINT mVersion;
           MessageReceiptMap mReceipts;
@@ -633,8 +650,11 @@ namespace openpeer
           void addMessage(MessagePtr message);
           void addMessages(const MessageList &messages);
 
-          void setReceived(MessagePtr message);
-          void setReceived(const MessageReceiptMap &messages);
+          void setDelivered(MessagePtr message);
+          void setDelivered(const MessageReceiptMap &messages);
+
+          void setRead(MessagePtr message);
+          void setRead(const MessageReceiptMap &messages);
 
           void addDialogs(const DialogList &dialogs);
           void updateDialogs(const DialogList &dialogs);
@@ -646,7 +666,8 @@ namespace openpeer
           ThreadContactsPtr contacts() const                        {return mContacts;}
           const MessageList &messages() const                       {return mMessageList;}
           const MessageMap &messagesAsMap() const                   {return mMessageMap;}
-          MessageReceiptsPtr messageReceipts() const                {return mMessageReceipts;}
+          MessageReceiptsPtr messagesDelivered() const              {return mMessagesDelivered;}
+          MessageReceiptsPtr messagesRead() const                   {return mMessagesRead;}
           const DialogMap &dialogs() const                          {return mDialogs;}
 
           // obtain a list of changes since the last updateFrom was called
@@ -659,7 +680,8 @@ namespace openpeer
           const ContactURIList &contactsToRemoveRemoved() const     {return mContactsToRemoveRemoved;}
           const MessageList &messagedChanged() const                {return mMessagesChanged;}
           Time messagedChangedTime() const                          {return mMessagesChangedTime;}
-          const MessageReceiptMap &messageReceiptsChanged() const   {return mMessageReceiptsChanged;}
+          const MessageReceiptMap &messagesDeliveredChanged() const {return mMessagesDeliveredChanged;}
+          const MessageReceiptMap &messagesReadChanged() const      {return mMessagesReadChanged;}
           const DialogMap &dialogsChanged() const                   {return mDialogsChanged;}
           const DialogIDList &dialogsRemoved() const                {return mDialogsRemoved;}
           const ChangedDescriptionMap &descriptionsChanged() const  {return mDescriptionsChanged;}
@@ -677,6 +699,30 @@ namespace openpeer
           void resetChanged();
           void publishContact(UseContactPtr contact);
 
+          static void mergedChanged(
+                                    MessageReceiptsPtr oldReceipts,
+                                    MessageReceiptsPtr newReceipts,
+                                    MessageReceiptMap &ioChanged
+                                    );
+
+          void createReceiptDiffs(
+                                  ElementPtr inReceiptsEl,
+                                  const char *inSubElementName,
+                                  const MessageReceiptMap &inChanged,
+                                  MessageReceiptsPtr &ioReceipts
+                                  );
+
+          void setReceipts(
+                           MessageReceiptsPtr receipts,
+                           MessagePtr message,
+                           MessageReceiptMap &ioChanged
+                           );
+          void setReceipts(
+                           MessageReceiptsPtr receipts,
+                           const MessageReceiptMap &messages,
+                           MessageReceiptMap &ioChanged
+                           );
+
         protected:
           AutoPUID mID;
           ThreadWeakPtr mThisWeak;
@@ -693,7 +739,8 @@ namespace openpeer
           UINT mMessagesVersion;
           MessageList mMessageList;
           MessageMap mMessageMap;
-          MessageReceiptsPtr mMessageReceipts;
+          MessageReceiptsPtr mMessagesDelivered;
+          MessageReceiptsPtr mMessagesRead;
           UINT mDialogsVersion;
           DialogMap mDialogs;
 
@@ -708,7 +755,8 @@ namespace openpeer
           ContactURIList mContactsToRemoveRemoved;
           MessageList mMessagesChanged;
           Time mMessagesChangedTime;
-          MessageReceiptMap mMessageReceiptsChanged;
+          MessageReceiptMap mMessagesDeliveredChanged;
+          MessageReceiptMap mMessagesReadChanged;
           DialogMap mDialogsChanged;
           DialogIDList mDialogsRemoved;
           ChangedDescriptionMap mDescriptionsChanged;

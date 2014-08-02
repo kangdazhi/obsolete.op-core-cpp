@@ -690,22 +690,33 @@ namespace openpeer
         }
 
         //---------------------------------------------------------------------
-        MessageReceiptsPtr MessageReceipts::create(UINT version)
+        MessageReceiptsPtr MessageReceipts::create(
+                                                   const char *receiptsElementName,
+                                                   UINT version
+                                                   )
         {
           MessageReceiptMap receipts;
-          return create(version, receipts);
+          return create(receiptsElementName, version, receipts);
         }
 
         //---------------------------------------------------------------------
-        MessageReceiptsPtr MessageReceipts::create(UINT version, const String &messageID)
+        MessageReceiptsPtr MessageReceipts::create(
+                                                   const char *receiptsElementName,
+                                                   UINT version,
+                                                   const String &messageID
+                                                   )
         {
           MessageReceiptMap receipts;
           receipts[messageID] = zsLib::now();
-          return create(version, receipts);
+          return create(receiptsElementName, version, receipts);
         }
 
         //---------------------------------------------------------------------
-        MessageReceiptsPtr MessageReceipts::create(UINT version, const MessageIDList &messageIDs)
+        MessageReceiptsPtr MessageReceipts::create(
+                                                   const char *receiptsElementName,
+                                                   UINT version,
+                                                   const MessageIDList &messageIDs
+                                                   )
         {
           MessageReceiptMap receipts;
           for (MessageIDList::const_iterator iter = messageIDs.begin(); iter != messageIDs.end(); ++iter)
@@ -713,14 +724,19 @@ namespace openpeer
             const String &messageID = (*iter);
             receipts[messageID] = zsLib::now();
           }
-          return create(version, receipts);
+          return create(receiptsElementName, version, receipts);
         }
 
         //---------------------------------------------------------------------
-        MessageReceiptsPtr MessageReceipts::create(UINT version, const MessageReceiptMap &messageReceipts)
+        MessageReceiptsPtr MessageReceipts::create(
+                                                   const char *receiptsElementName,
+                                                   UINT version,
+                                                   const MessageReceiptMap &messageReceipts
+                                                   )
         {
           MessageReceiptsPtr pThis(new MessageReceipts);
           pThis->mThisWeak = pThis;
+          pThis->mReceiptsElementName = String(receiptsElementName);
           pThis->mVersion = version;
           pThis->mReceipts = messageReceipts;
 
@@ -734,14 +750,17 @@ namespace openpeer
 
           MessageReceiptsPtr pThis(new MessageReceipts);
           pThis->mThisWeak = pThis;
+          pThis->mReceiptsElementName = messageReceiptsEl->getValue();
 
           try {
             pThis->mVersion = Numeric<UINT>(messageReceiptsEl->getAttributeValue("version"));
-            ElementPtr receiptEl = messageReceiptsEl->findFirstChildElement("receipt");
-            while (receiptEl)
+            ElementPtr messagesEl = messageReceiptsEl->findFirstChildElementChecked("messages");
+
+            ElementPtr messageEl = messagesEl->findFirstChildElement("message");
+            while (messageEl)
             {
-              String id = receiptEl->getAttributeValue("id");
-              String timeStr = receiptEl->getText();
+              String id = messageEl->getAttributeValue("id");
+              String timeStr = messageEl->getText();
               ZS_LOG_TRACE(pThis->log("Parsing receipt") + ZS_PARAM("receipt ID", id) + ZS_PARAM("acknowledged at", timeStr))
               Time time = services::IHelper::stringToTime(timeStr);
 
@@ -753,7 +772,7 @@ namespace openpeer
               pThis->mReceipts[id] = time;
               ZS_LOG_TRACE(pThis->log("Found receipt") + ZS_PARAM("receipt ID", id) + ZS_PARAM("acknowledged at", time))
 
-              receiptEl = receiptEl->findNextSiblingElement("receipt");
+              messageEl = messageEl->findNextSiblingElement("message");
             }
           } catch(CheckFailed &) {
             return MessageReceiptsPtr();
@@ -770,6 +789,7 @@ namespace openpeer
           ElementPtr resultEl = Element::create("thread::MessageReceipts");
 
           IHelper::debugAppend(resultEl, "id", mID);
+          IHelper::debugAppend(resultEl, "receipts element name", mReceiptsElementName);
           IHelper::debugAppend(resultEl, "version", mVersion);
           IHelper::debugAppend(resultEl, "receipts", mReceipts.size());
 
@@ -787,15 +807,18 @@ namespace openpeer
         //---------------------------------------------------------------------
         ElementPtr MessageReceipts::constructReceiptsElement() const
         {
-          ElementPtr receiptsEl = Element::create("receipts");
+          ElementPtr receiptsEl = Element::create(mReceiptsElementName);
           receiptsEl->setAttribute("version", string(mVersion));
+
+          ElementPtr messagesEl = Element::create("messages");
+          receiptsEl->adoptAsLastChild(messagesEl);
 
           for (MessageReceiptMap::const_iterator iter = mReceipts.begin(); iter != mReceipts.end(); ++iter)
           {
             const String &messageID = (*iter).first;
             const Time &time = (*iter).second;
-            ElementPtr receiptEl = createElementWithNumber("receipt", messageID, services::IHelper::timeToString(time));
-            receiptsEl->adoptAsLastChild(receiptEl);
+            ElementPtr messageEl = createElementWithNumber("message", messageID, services::IHelper::timeToString(time));
+            messagesEl->adoptAsLastChild(messageEl);
           }
 
           return receiptsEl;
@@ -1806,8 +1829,13 @@ namespace openpeer
         //  <messages version="1">
         //   ...
         //  </messages>
-        //  <receipts version="1">
-        //   ...
+        //  <receipts>
+        //    <delivered>
+        //      ...
+        //    </delivered>
+        //    <read>
+        //      ...
+        //    </read>
         //  </receipts>
         //  <dialogs version="1">
         //   ...
@@ -1936,13 +1964,23 @@ namespace openpeer
             // every message found is a changed message...
             pThis->mMessagesChanged = pThis->mMessageList;
 
-            pThis->mMessageReceipts = MessageReceipts::create(threadEl->findFirstChildElementChecked("receipts"));
-            if (!pThis->mMessageReceipts) {
-              ZS_LOG_ERROR(Detail, pThis->log("unable to load receipts in this publication"))
-              return ThreadPtr();
-            }
+            ElementPtr receiptsEl = threadEl->findFirstChildElementChecked("receipts");
+
+            pThis->mMessagesDelivered = MessageReceipts::create(receiptsEl->findFirstChildElement("delivered"));
             // every message receipt is a changed message receipt
-            pThis->mMessageReceiptsChanged = pThis->mMessageReceipts->receipts();
+            if (pThis->mMessagesDelivered) {
+              pThis->mMessagesDeliveredChanged = pThis->mMessagesDelivered->receipts();
+            } else {
+              pThis->mMessagesDeliveredChanged = MessageReceiptMap();
+            }
+
+            pThis->mMessagesRead = MessageReceipts::create(receiptsEl->findFirstChildElement("read"));
+            // every message receipt is a changed message receipt
+            if (pThis->mMessagesRead) {
+              pThis->mMessagesReadChanged = pThis->mMessagesRead->receipts();
+            } else {
+              pThis->mMessagesReadChanged = MessageReceiptMap();
+            }
 
             ElementPtr dialogsEl = threadEl->findFirstChildElementChecked("dialogs");
             pThis->mDialogsVersion = getVersion(dialogsEl);
@@ -2005,7 +2043,8 @@ namespace openpeer
           ThreadContactsPtr contacts;
           UINT messagesVersion = 0;
           MessageList messages;
-          MessageReceiptsPtr receipts;
+          MessageReceiptsPtr delivered;
+          MessageReceiptsPtr read;
           UINT dialogsVersion = 0;
           DialogMap dialogs;
           DialogMap dialogsChanged;
@@ -2081,9 +2120,25 @@ namespace openpeer
             }
 
             ElementPtr receiptsEl = threadEl->findFirstChildElementChecked("receipts");
-            version = getVersion(receiptsEl);
-            if (version > mMessageReceipts->version()) {
-              receipts = MessageReceipts::create(receiptsEl);
+
+            ElementPtr deliveredEl = receiptsEl->findFirstChildElement("delivered");
+            version = getVersion(deliveredEl);
+            if (mMessagesDelivered) {
+              if (version > mMessagesDelivered->version()) {
+                delivered = MessageReceipts::create(deliveredEl);
+              }
+            } else {
+              delivered = MessageReceipts::create(deliveredEl);
+            }
+
+            ElementPtr readEl = receiptsEl->findFirstChildElement("read");
+            version = getVersion(readEl);
+            if (mMessagesRead) {
+              if (version > mMessagesRead->version()) {
+                read = MessageReceipts::create(readEl);
+              }
+            } else {
+              read = MessageReceipts::create(readEl);
             }
 
             ElementPtr dialogsEl = threadEl->findFirstChildElementChecked("dialogs");
@@ -2238,21 +2293,13 @@ namespace openpeer
             }
           }
 
-          if (receipts) {
+          if (delivered) {
             // figure out which message receipts have changed
-            const MessageReceiptMap &oldReceipts = mMessageReceipts->receipts();
-            const MessageReceiptMap &newReceipts = receipts->receipts();
-
-            for (MessageReceiptMap::const_iterator iter = newReceipts.begin(); iter != newReceipts.end(); ++iter)
-            {
-              const MessageID &id = (*iter).first;
-              const Time &time = (*iter).second;
-              MessageReceiptMap::const_iterator found = oldReceipts.find(id);
-              if (found == oldReceipts.end()) {
-                // did not have this receipt last time so it's new...
-                mMessageReceiptsChanged[id] = time;
-              }
-            }
+            mergedChanged(mMessagesDelivered, delivered, mMessagesDeliveredChanged);
+          }
+          if (read) {
+            // figure out which message receipts have changed
+            mergedChanged(mMessagesRead, read, mMessagesReadChanged);
           }
 
           if (dialogsVersion > mDialogsVersion) {
@@ -2387,7 +2434,6 @@ namespace openpeer
           pThis->mContacts = ThreadContacts::create(1, empty, empty, emptyIDs);
 
           pThis->mMessagesVersion = 1;
-          pThis->mMessageReceipts = MessageReceipts::create(1);
           pThis->mDialogsVersion = 1;
 
           DocumentPtr doc = Document::create();
@@ -2406,7 +2452,7 @@ namespace openpeer
           threadEl->adoptAsLastChild(pThis->mDetails->detailsElement()->clone());
           threadEl->adoptAsLastChild(pThis->mContacts->contactsElement()->clone());
           threadEl->adoptAsLastChild(messagesEl);
-          threadEl->adoptAsLastChild(pThis->mMessageReceipts->receiptsElement());
+          threadEl->adoptAsLastChild(Element::create("receipts"));
           threadEl->adoptAsLastChild(dialogsEl);
 
           String baseName = String("/threads/1.0/") + toString(threadType) + "/" + baseThreadID + "/" + hostThreadID + "/";
@@ -2590,13 +2636,10 @@ namespace openpeer
               }
             }
 
-            if (mMessageReceiptsChanged.size() > 0) {
-              ElementPtr receiptsEl = threadEl->findFirstChildElementChecked("receipts");
+            ElementPtr receiptsEl = threadEl->findFirstChildElementChecked("receipts");
 
-              mMessageReceipts = MessageReceipts::create(mMessageReceipts->version()+1, mMessageReceiptsChanged);
-
-              IDiff::createDiffs(IDiff::DiffAction_Replace, mChangesDoc, receiptsEl, false, mMessageReceipts->receiptsElement());
-            }
+            createReceiptDiffs(receiptsEl, "delivered", mMessagesDeliveredChanged, mMessagesDelivered);
+            createReceiptDiffs(receiptsEl, "read", mMessagesReadChanged, mMessagesRead);
 
             if ((mDialogsChanged.size() > 0) ||
                 (mDialogsRemoved.size() > 0)) {
@@ -2871,71 +2914,27 @@ namespace openpeer
         }
 
         //---------------------------------------------------------------------
-        void Thread::setReceived(MessagePtr message)
+        void Thread::setDelivered(MessagePtr message)
         {
-          ZS_THROW_INVALID_USAGE_IF((!mCanModify) || (!mModifying))
-
-          mMessageReceiptsChanged.clear();
-
-          mMessageReceiptsChanged[message->messageID()] = zsLib::now();
+          setReceipts(mMessagesDelivered, message, mMessagesDeliveredChanged);
         }
 
         //---------------------------------------------------------------------
-        void Thread::setReceived(const MessageReceiptMap &messages)
+        void Thread::setDelivered(const MessageReceiptMap &messages)
         {
-          ZS_THROW_INVALID_USAGE_IF((!mCanModify) || (!mModifying))
+          setReceipts(mMessagesDelivered, messages, mMessagesDeliveredChanged);
+        }
 
-          if (mMessageReceiptsChanged.size() > 0) {
-            // since there is already changes acknowledged just update the changes now...
-            mMessageReceiptsChanged = messages;
-            return;
-          }
+        //---------------------------------------------------------------------
+        void Thread::setRead(MessagePtr message)
+        {
+          setReceipts(mMessagesRead, message, mMessagesReadChanged);
+        }
 
-          bool changed = false;
-
-          // check if anything is added...
-          for (MessageReceiptMap::const_iterator iter = messages.begin(); iter != messages.end(); ++iter)
-          {
-            const MessageID &id = (*iter).first;
-            const Time &time = (*iter).second;
-            MessageReceiptMap::const_iterator found = mMessageReceipts->receipts().find(id);
-            if (found == mMessageReceipts->receipts().end()) {
-              changed = true;
-              break;
-            }
-            const Time &oldTime = (*found).second;
-            if (time != oldTime) {
-              changed = true;
-              break;
-            }
-          }
-
-          if (!changed) {
-            // check if anything is removed...
-            for (MessageReceiptMap::const_iterator iter = mMessageReceipts->receipts().begin(); iter != mMessageReceipts->receipts().end(); ++iter)
-            {
-              const MessageID &id = (*iter).first;
-              const Time &time = (*iter).second;
-              MessageReceiptMap::const_iterator found = messages.find(id);
-              if (found == messages.end()) {
-                changed = true;
-                break;
-              }
-              const Time &oldTime = (*found).second;
-              if (time != oldTime) {
-                changed = true;
-                break;
-              }
-            }
-          }
-
-          if (!changed) {
-            ZS_LOG_TRACE(log("no message receipts changed detected from previous received map (thus ignoring request to set received)"))
-            // nothing changed thus do not cause an update
-            return;
-          }
-
-          mMessageReceiptsChanged = messages;
+        //---------------------------------------------------------------------
+        void Thread::setRead(const MessageReceiptMap &messages)
+        {
+          setReceipts(mMessagesRead, messages, mMessagesReadChanged);
         }
 
         //---------------------------------------------------------------------
@@ -3006,7 +3005,8 @@ namespace openpeer
           IHelper::debugAppend(resultEl, "message version", mMessagesVersion);
           IHelper::debugAppend(resultEl, "message list", mMessageList.size());
           IHelper::debugAppend(resultEl, "message map", mMessageMap.size());
-          IHelper::debugAppend(resultEl, MessageReceipts::toDebug(mMessageReceipts));
+          IHelper::debugAppend(resultEl, MessageReceipts::toDebug(mMessagesDelivered));
+          IHelper::debugAppend(resultEl, MessageReceipts::toDebug(mMessagesRead));
           IHelper::debugAppend(resultEl, "dialog version", mDialogsVersion);
           IHelper::debugAppend(resultEl, "dialogs", mDialogs.size());
           IHelper::debugAppend(resultEl, "changes", (bool)mChangesDoc);
@@ -3019,7 +3019,8 @@ namespace openpeer
           IHelper::debugAppend(resultEl, "contacts to remove removed", mContactsToRemoveRemoved.size());
           IHelper::debugAppend(resultEl, "messages changed", mMessagesChanged.size());
           IHelper::debugAppend(resultEl, "messages changed time", mMessagesChangedTime);
-          IHelper::debugAppend(resultEl, "messages receipts changed", mMessageReceiptsChanged.size());
+          IHelper::debugAppend(resultEl, "messages receipts changed", mMessagesDeliveredChanged.size());
+          IHelper::debugAppend(resultEl, "messages receipts changed", mMessagesReadChanged.size());
           IHelper::debugAppend(resultEl, "dialogs changed", mDialogsChanged.size());
           IHelper::debugAppend(resultEl, "dialogs removed", mDialogsRemoved.size());
           IHelper::debugAppend(resultEl, "descriptions changed", mDescriptionsChanged.size());
@@ -3047,7 +3048,8 @@ namespace openpeer
           mContactsToRemoveChanged.clear();
           mContactsToRemoveRemoved.clear();
           mMessagesChanged.clear();
-          mMessageReceiptsChanged.clear();
+          mMessagesDeliveredChanged.clear();
+          mMessagesReadChanged.clear();
           mDialogsChanged.clear();
           mDialogsRemoved.clear();
           mDescriptionsChanged.clear();
@@ -3140,8 +3142,139 @@ namespace openpeer
           mContactPublications[contact->getPeerURI()] = contactPublication;
         }
 
+        //-----------------------------------------------------------------------
+        void Thread::mergedChanged(
+                                   MessageReceiptsPtr oldReceipts,
+                                   MessageReceiptsPtr newReceipts,
+                                   MessageReceiptMap &ioChanged
+                                   )
+        {
+          if (!newReceipts) return;
+
+          for (MessageReceiptMap::const_iterator iter = newReceipts->receipts().begin(); iter != newReceipts->receipts().end(); ++iter)
+          {
+            const MessageID &id = (*iter).first;
+            const Time &time = (*iter).second;
+            if (oldReceipts) {
+              MessageReceiptMap::const_iterator found = oldReceipts->receipts().find(id);
+              if (found != oldReceipts->receipts().end()) continue;
+            }
+            // did not have this receipt last time so it's new...
+            ioChanged[id] = time;
+          }
+        }
+
+        //---------------------------------------------------------------------
+        void Thread::createReceiptDiffs(
+                                        ElementPtr inReceiptsEl,
+                                        const char *inSubElementName,
+                                        const MessageReceiptMap &inChanged,
+                                        MessageReceiptsPtr &ioReceipts
+                                        )
+        {
+          ElementPtr subEl = inReceiptsEl->findFirstChildElement(inSubElementName);
+
+          if (inChanged.size() > 0) {
+            if (ioReceipts) {
+              ioReceipts = MessageReceipts::create(inSubElementName, ioReceipts->version()+1, inChanged);
+            } else {
+              ioReceipts = MessageReceipts::create(inSubElementName, 1, inChanged);
+            }
+
+            if (subEl) {
+              IDiff::createDiffs(IDiff::DiffAction_Replace, mChangesDoc, subEl, false, ioReceipts->receiptsElement());
+            } else {
+              IDiff::createDiffs(IDiff::DiffAction_AdoptAsLastChild, mChangesDoc, inReceiptsEl, false, ioReceipts->receiptsElement());
+            }
+          }
+        }
+
+        //---------------------------------------------------------------------
+        void Thread::setReceipts(
+                                 MessageReceiptsPtr receipts,
+                                 MessagePtr inMessage,
+                                 MessageReceiptMap &ioChanged
+                                 )
+        {
+          ZS_THROW_INVALID_USAGE_IF((!mCanModify) || (!mModifying))
+
+          MessageReceiptMap newlyChanged;
+
+          newlyChanged[inMessage->messageID()] = zsLib::now();
+          setReceipts(receipts, newlyChanged, ioChanged);
+        }
+
+        //---------------------------------------------------------------------
+        void Thread::setReceipts(
+                                 MessageReceiptsPtr receipts,
+                                 const MessageReceiptMap &inMessages,
+                                 MessageReceiptMap &ioChanged
+                                 )
+        {
+          ZS_THROW_INVALID_USAGE_IF((!mCanModify) || (!mModifying))
+
+          // only want to create a "changed" list if there is some new receipt
+          // that hasn't been previously acknowledged (otherwise a new version
+          // of receipts will be created each and every time).
+
+          if (ioChanged.size() > 0) {
+            // since there is already changes acknowledged just update the
+            // changes now...
+            ioChanged = inMessages;
+            return;
+          }
+
+          if (!receipts) {
+            // there is no previous receipts object thus a new one needs to
+            // be created.
+            ioChanged = inMessages;
+            return;
+          }
+
+          bool changed = false;
+
+          // check if anything is added or updated from previous...
+          for (MessageReceiptMap::const_iterator iter = inMessages.begin(); iter != inMessages.end(); ++iter)
+          {
+            const MessageID &id = (*iter).first;
+            const Time &time = (*iter).second;
+            MessageReceiptMap::const_iterator found = receipts->receipts().find(id);
+            if (found == receipts->receipts().end()) {
+              changed = true;
+              break;
+            }
+            const Time &oldTime = (*found).second;
+            if (time != oldTime) {
+              changed = true;
+              break;
+            }
+          }
+
+          if (!changed) {
+            // check if anything is removed...
+            for (MessageReceiptMap::const_iterator iter = receipts->receipts().begin(); iter != receipts->receipts().end(); ++iter)
+            {
+              const MessageID &id = (*iter).first;
+              MessageReceiptMap::const_iterator found = inMessages.find(id);
+              if (found == inMessages.end()) {
+                changed = true;
+                break;
+              }
+            }
+          }
+
+          if (!changed) {
+            ZS_LOG_TRACE(log("no message receipts changed detected from previous received map (thus ignoring request to set receipts)"))
+            // nothing changed thus do not cause an update
+            return;
+          }
+
+          ioChanged = inMessages;
+        }
+        
+
       }
-      
+
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------

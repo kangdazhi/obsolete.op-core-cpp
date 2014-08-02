@@ -215,6 +215,8 @@ namespace openpeer
                                          const char *callID,
                                          LocationDialogMap &outDialogs
                                          ) const = 0;
+
+        virtual void markAllMessagesRead() = 0;
       };
 
       //-------------------------------------------------------------------------
@@ -455,6 +457,8 @@ namespace openpeer
                                              const char *messageID,
                                              MessageDeliveryStates &outDeliveryState
                                              ) const;
+
+        virtual void markAllMessagesRead();
 
         //-----------------------------------------------------------------------
         #pragma mark

@@ -256,13 +256,13 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      void ConversationThreadHost::PeerContact::gatherMessageReceipts(MessageReceiptMap &receipts) const
+      void ConversationThreadHost::PeerContact::gatherMessagesDelivered(MessageReceiptMap &delivered) const
       {
         AutoRecursiveLock lock(*this);
         for (PeerLocationMap::const_iterator iter = mPeerLocations.begin(); iter != mPeerLocations.end(); ++iter)
         {
           const PeerLocationPtr &peerLocation = (*iter).second;
-          peerLocation->gatherMessageReceipts(receipts);
+          peerLocation->gatherMessagesDelivered(delivered);
         }
       }
 
@@ -780,8 +780,7 @@ namespace openpeer
           MessageDeliveryStatesMap::iterator found = mMessageDeliveryStates.find(message->messageID());
           if (found != mMessageDeliveryStates.end()) {
             MessageDeliveryStatePtr &deliveryState = (*found).second;
-            if ((IConversationThread::MessageDeliveryState_Delivered != deliveryState->mState) &&
-                (IConversationThread::MessageDeliveryState_Read != deliveryState->mState)) {
+            if (IConversationThread::MessageDeliveryState_Delivered > deliveryState->mState) {
               ZS_LOG_DEBUG(log("requires subscription because of undelivered message") + message->toDebug() + ZS_PARAM("was in delivery state", IConversationThread::toString(deliveryState->mState)))
               requiresSubscription = true;
             }
@@ -842,9 +841,9 @@ namespace openpeer
                 case IConversationThread::MessageDeliveryState_Discovering:   {
                   break;
                 }
+                case IConversationThread::MessageDeliveryState_UserNotAvailable:
                 case IConversationThread::MessageDeliveryState_Delivered:
-                case IConversationThread::MessageDeliveryState_Read:
-                case IConversationThread::MessageDeliveryState_UserNotAvailable: {
+                case IConversationThread::MessageDeliveryState_Read:          {
                   stopProcessing = true;
                   break;
                 }
@@ -974,9 +973,9 @@ namespace openpeer
 
         switch (mState) {
           case IConversationThread::MessageDeliveryState_Discovering:       break;  // not possible anyway
+          case IConversationThread::MessageDeliveryState_UserNotAvailable:
           case IConversationThread::MessageDeliveryState_Delivered:
-          case IConversationThread::MessageDeliveryState_Read:
-          case IConversationThread::MessageDeliveryState_UserNotAvailable:  mOuter.reset(); break;  // no longer require link to outer
+          case IConversationThread::MessageDeliveryState_Read:              mOuter.reset(); break;  // no longer require link to outer
         }
       }
 

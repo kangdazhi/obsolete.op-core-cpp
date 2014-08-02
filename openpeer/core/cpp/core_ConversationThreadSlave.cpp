@@ -529,6 +529,41 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      void ConversationThreadSlave::markAllMessagesRead()
+      {
+        AutoRecursiveLock lock(*this);
+        if ((isShutdown()) ||
+            (isShuttingDown())) {
+          ZS_LOG_DEBUG(log("cannot make read during shutdown"))
+          return;
+        }
+
+        if (!mSlaveThread) {
+          ZS_LOG_DEBUG(log("cannot mark read without a slave thread object"))
+          return;
+        }
+
+        if (!mHostThread) {
+          ZS_LOG_DEBUG(log("no host thread thus nothing to mark as read"))
+          return;
+        }
+
+        const MessageList &messagesChanged = mHostThread->messagedChanged();
+
+
+        mSlaveThread->updateBegin();
+
+        const MessagePtr &lastMessage = messagesChanged.back();
+        mSlaveThread->setRead(lastMessage);
+
+        publish(mSlaveThread->updateEnd(), false, true);
+
+        // kick the conversation thread step routine asynchronously to ensure
+        // the thread has a subscription state to its peer
+        IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
+      }
+
+      //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -716,80 +751,8 @@ namespace openpeer
         //.......................................................................
         // examine all the acknowledged messages
 
-        if (mSlaveThread) {
-          const MessageList &messages = mSlaveThread->messages();
-          const MessageMap &messagesMap = mSlaveThread->messagesAsMap();
-
-          // can only examine message receipts that are part of the slave thread...
-          const MessageReceiptMap &messageReceiptsChanged = mHostThread->messageReceiptsChanged();
-          for (MessageReceiptMap::const_iterator iter = messageReceiptsChanged.begin(); iter != messageReceiptsChanged.end(); ++iter)
-          {
-            const MessageID &id = (*iter).first;
-
-            ZS_LOG_TRACE(log("examining message receipt") + ZS_PARAM("receipt ID", id))
-
-            // check to see if this receipt has already been marked as delivered...
-            MessageDeliveryStatesMap::iterator found = mMessageDeliveryStates.find(id);
-            if (found != mMessageDeliveryStates.end()) {
-              MessageDeliveryStatePtr &deliveryState = (*found).second;
-
-              if ((IConversationThread::MessageDeliveryState_Delivered == deliveryState->mState) ||
-                  (IConversationThread::MessageDeliveryState_Read == deliveryState->mState)) {
-                ZS_LOG_DEBUG(log("message receipt was already notified as delivered or read thus no need to notify any further") + ZS_PARAM("message ID", id))
-                continue;
-              }
-            }
-
-            MessageMap::const_iterator foundInMap = messagesMap.find(id);
-            if (foundInMap == messagesMap.end()) {
-              ZS_LOG_WARNING(Detail, log("slave never sent this message to the host (message receipt acking a different slave?)") + ZS_PARAM("receipt ID", id))
-              continue;
-            }
-
-            bool foundMessageID = false;
-
-            // find this receipt on the message list... (might not exist if
-            // receipt is for a message from a different contact)
-            MessageList::const_reverse_iterator messageIter = messages.rbegin();
-            for (; messageIter != messages.rend(); ++messageIter)
-            {
-              const MessagePtr &message = (*messageIter);
-              if (message->messageID() == id) {
-                ZS_LOG_TRACE(log("found message matching receipt") + ZS_PARAM("receipt ID", id))
-                foundMessageID = true;
-              }
-
-              ZS_LOG_TRACE(log("processing slave message") + ZS_PARAM("found", foundMessageID) + message->toDebug())
-
-              if (foundMessageID) {
-                // first check if this delivery was already sent...
-                found = mMessageDeliveryStates.find(message->messageID());
-                if (found != mMessageDeliveryStates.end()) {
-                  // check to see if this message was already marked as delivered
-                  MessageDeliveryStatePtr &deliveryState = (*found).second;
-                  if ((IConversationThread::MessageDeliveryState_Delivered == deliveryState->mState) ||
-                      (IConversationThread::MessageDeliveryState_Read == deliveryState->mState)) {
-                    // stop notifying of delivered since it's alerady been marked as delivered
-                    ZS_LOG_DEBUG(log("message was already notified as delivered or read thus no need to notify any further") + message->toDebug())
-                    break;
-                  }
-
-                  ZS_LOG_DEBUG(log("message is now notified as delivered") + message->toDebug() + ZS_PARAM("was in state", IConversationThread::toString(deliveryState->mState)))
-
-                  // change the state to delivered since it wasn't delivered
-                  deliveryState->setState(IConversationThread::MessageDeliveryState_Delivered);
-                } else {
-                  ZS_LOG_DEBUG(log("message is now delivered") + message->toDebug())
-                  mMessageDeliveryStates[message->messageID()] = MessageDeliveryState::create(mThisWeak.lock(), IConversationThread::MessageDeliveryState_Delivered);
-                }
-
-                // this message is now considered acknowledged so tell the master thread of the new state...
-                baseThread->notifyMessageDeliveryStateChanged(id, IConversationThread::MessageDeliveryState_Delivered);
-              }
-            }
-          }
-        }
-
+        processReceiptsFromHostDocument(IConversationThread::MessageDeliveryState_Delivered, mHostThread->messagesDeliveredChanged());
+        processReceiptsFromHostDocument(IConversationThread::MessageDeliveryState_Read, mHostThread->messagesReadChanged());
 
         //.......................................................................
         // figure out what dialogs were incoming but need to be removed...
@@ -905,7 +868,7 @@ namespace openpeer
 
         if (messagesChanged.size() > 0) {
           const MessagePtr &lastMessage = messagesChanged.back();
-          mSlaveThread->setReceived(lastMessage);
+          mSlaveThread->setDelivered(lastMessage);
         }
 
 
@@ -1187,8 +1150,7 @@ namespace openpeer
               }
 
               MessageDeliveryStatePtr &deliveryState = (*found).second;
-              if ((IConversationThread::MessageDeliveryState_Delivered != deliveryState->mState) &&
-                  (IConversationThread::MessageDeliveryState_Read != deliveryState->mState)) {
+              if (IConversationThread::MessageDeliveryState_Delivered > deliveryState->mState) {
                 ZS_LOG_DEBUG(log("found message that has not delivered or read yet") + message->toDebug() + ZS_PARAM("state", IConversationThread::toString(deliveryState->mState)))
                 mustConvertToHost = true;
                 goto done_checking_for_undelivered_messages;
@@ -1396,9 +1358,8 @@ namespace openpeer
           MessageDeliveryStatesMap::iterator found = mMessageDeliveryStates.find(message->messageID());
           if (found != mMessageDeliveryStates.end()) {
             MessageDeliveryStatePtr &deliveryState = (*found).second;
-            if ((IConversationThread::MessageDeliveryState_Delivered != deliveryState->mState) &&
-                (IConversationThread::MessageDeliveryState_Read != deliveryState->mState)) {
-              ZS_LOG_TRACE(log("requires subscription because of undelivered message") + message->toDebug() + ZS_PARAM("was in delivery state", IConversationThread::toString(deliveryState->mState)))
+            if (IConversationThread::MessageDeliveryState_Delivered > deliveryState->mState) {
+              ZS_LOG_TRACE(log("requires subscription because of undelivered message") + message->toDebug() + ZS_PARAM("current delivery state", IConversationThread::toString(deliveryState->mState)))
               requiresSubscription = true;
             }
           } else {
@@ -1462,9 +1423,9 @@ namespace openpeer
                 case IConversationThread::MessageDeliveryState_Discovering:   {
                   break;
                 }
+                case IConversationThread::MessageDeliveryState_UserNotAvailable:
                 case IConversationThread::MessageDeliveryState_Delivered:
-                case IConversationThread::MessageDeliveryState_Read:
-                case IConversationThread::MessageDeliveryState_UserNotAvailable: {
+                case IConversationThread::MessageDeliveryState_Read:          {
                   stopProcessing = true;
                   break;
                 }
@@ -1507,6 +1468,33 @@ namespace openpeer
         ZS_LOG_BASIC(log("state changed") + ZS_PARAM("old state", toString(mCurrentState)) + ZS_PARAM("new state", toString(state)))
 
         mCurrentState = state;
+      }
+
+
+      //-----------------------------------------------------------------------
+      UseContactPtr ConversationThreadSlave::getHostContact() const
+      {
+        if (!mHostThread) {
+          ZS_LOG_WARNING(Detail, log("cannot obtain host contact because host thread is NULL"))
+          return UseContactPtr();
+        }
+        IPublicationPtr publication = mHostThread->publication();
+        if (!publication) {
+          ZS_LOG_ERROR(Detail, log("cannot obtain host contact because host thread publication is NULL"))
+          return ContactPtr();
+        }
+
+        UseAccountPtr account = mAccount.lock();
+        if (!account) {
+          ZS_LOG_WARNING(Detail, log("cannot obtain host contact because account is gone"))
+          return ContactPtr();
+        }
+
+        ContactPtr contact = account->findContact(publication->getCreatorLocation()->getPeer()->getPeerURI());
+        if (!contact) {
+          ZS_LOG_WARNING(Detail, log("cannot obtain host contact because contact was not found") + IPublication::toDebug(publication))
+        }
+        return contact;
       }
 
       //-----------------------------------------------------------------------
@@ -1557,31 +1545,93 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      UseContactPtr ConversationThreadSlave::getHostContact() const
+      void ConversationThreadSlave::processReceiptsFromHostDocument(
+                                                                    MessageDeliveryStates applyDeliveryState,
+                                                                    const MessageReceiptMap &messagesChanged
+                                                                    )
       {
-        if (!mHostThread) {
-          ZS_LOG_WARNING(Detail, log("cannot obtain host contact because host thread is NULL"))
-          return UseContactPtr();
-        }
-        IPublicationPtr publication = mHostThread->publication();
-        if (!publication) {
-          ZS_LOG_ERROR(Detail, log("cannot obtain host contact because host thread publication is NULL"))
-          return ContactPtr();
+        UseConversationThreadPtr baseThread = mBaseThread.lock();
+
+        if (!mSlaveThread) {
+          ZS_LOG_DEBUG(log("no slave thread object to process messages"))
+          return;
         }
 
-        UseAccountPtr account = mAccount.lock();
-        if (!account) {
-          ZS_LOG_WARNING(Detail, log("cannot obtain host contact because account is gone"))
-          return ContactPtr();
-        }
+        const MessageList &messages = mSlaveThread->messages();
+        const MessageMap &messagesMap = mSlaveThread->messagesAsMap();
 
-        ContactPtr contact = account->findContact(publication->getCreatorLocation()->getPeer()->getPeerURI());
-        if (!contact) {
-          ZS_LOG_WARNING(Detail, log("cannot obtain host contact because contact was not found") + IPublication::toDebug(publication))
+        // can only examine message receipts that are part of the slave thread...
+        for (MessageReceiptMap::const_iterator iter = messagesChanged.begin(); iter != messagesChanged.end(); ++iter)
+        {
+          const MessageID &id = (*iter).first;
+
+          ZS_LOG_TRACE(log("examining message delivery") + ZS_PARAM("message ID", id))
+
+          // check to see if this receipt has already been marked as delivered...
+          MessageDeliveryStatesMap::iterator found = mMessageDeliveryStates.find(id);
+          if (found != mMessageDeliveryStates.end()) {
+            MessageDeliveryStatePtr &deliveryState = (*found).second;
+
+            if (deliveryState->mState >= applyDeliveryState) {
+              ZS_LOG_DEBUG(log("message delivery state was already notified as a greater state (thus no need to notify any further)") + ZS_PARAM("message ID", id) + ZS_PARAM("current state", IConversationThread::toString(deliveryState->mState)) + ZS_PARAM("apply state", IConversationThread::toString(applyDeliveryState)))
+              continue;
+            }
+          }
+
+          MessageMap::const_iterator foundInMap = messagesMap.find(id);
+          if (foundInMap == messagesMap.end()) {
+            ZS_LOG_WARNING(Detail, log("slave never sent this message to the host (message delivery acking a different slave?)") + ZS_PARAM("message ID", id))
+            continue;
+          }
+
+          bool foundMessageID = false;
+
+          // Need to acknowledge of the delivery state of every message sent
+          // before the ACKed message since an acknowledgement on a later
+          // message is an acknowledgement of an earlier message.
+          //
+          // Any message sent after the found message cannot be acked.
+          MessageList::const_reverse_iterator messageIter = messages.rbegin();
+          for (; messageIter != messages.rend(); ++messageIter)
+          {
+            const MessagePtr &message = (*messageIter);
+            if (message->messageID() == id) {
+              ZS_LOG_TRACE(log("found message matching delivery") + ZS_PARAM("message ID", id))
+              foundMessageID = true;
+            }
+
+            ZS_LOG_TRACE(log("processing slave message") + ZS_PARAM("found", foundMessageID) + message->toDebug())
+
+            if (!foundMessageID) continue;
+
+            // first check if this delivery was already sent...
+            found = mMessageDeliveryStates.find(message->messageID());
+            if (found != mMessageDeliveryStates.end()) {
+              // check to see if this message was already marked as delivered
+              MessageDeliveryStatePtr &deliveryState = (*found).second;
+
+              if (deliveryState->mState >= applyDeliveryState) {
+                ZS_LOG_DEBUG(log("stopping backward list receipt acking because message delivery state was already notified as a greater state (thus no need to notify any further)") + ZS_PARAM("message ID", id) + ZS_PARAM("current state", IConversationThread::toString(deliveryState->mState)) + ZS_PARAM("apply state", IConversationThread::toString(applyDeliveryState)) + message->toDebug())
+                break;
+              }
+
+              ZS_LOG_DEBUG(log("message receipt is now processed") + ZS_PARAM("old state", IConversationThread::toString(deliveryState->mState)) + ZS_PARAM("apply state", IConversationThread::toString(applyDeliveryState)) + message->toDebug() )
+
+              // change the state to delivered since it wasn't delivered
+              deliveryState->setState(applyDeliveryState);
+            } else {
+              ZS_LOG_DEBUG(log("message is delivery state is now set") + ZS_PARAM("apply state", IConversationThread::toString(applyDeliveryState)) + message->toDebug())
+              mMessageDeliveryStates[message->messageID()] = MessageDeliveryState::create(mThisWeak.lock(), applyDeliveryState);
+            }
+
+            if (baseThread) {
+              // this message is now considered acknowledged so tell the master thread of the new state...
+              baseThread->notifyMessageDeliveryStateChanged(id, applyDeliveryState);
+            }
+          }
         }
-        return contact;
       }
-
+      
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -1640,9 +1690,9 @@ namespace openpeer
 
         switch (mState) {
           case IConversationThread::MessageDeliveryState_Discovering:       break;  // not possible anyway
+          case IConversationThread::MessageDeliveryState_UserNotAvailable:
           case IConversationThread::MessageDeliveryState_Delivered:
-          case IConversationThread::MessageDeliveryState_Read:
-          case IConversationThread::MessageDeliveryState_UserNotAvailable:  mOuter.reset(); break;  // no longer require link to outer
+          case IConversationThread::MessageDeliveryState_Read:              mOuter.reset(); break;  // no longer require link to outer
         }
       }
 

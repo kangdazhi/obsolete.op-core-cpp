@@ -624,6 +624,16 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      void ConversationThreadHost::markAllMessagesRead()
+      {
+        ZS_LOG_DEBUG(log("marking all messages as read for host"))
+
+        AutoRecursiveLock lock(*this);
+        get(mMarkAllRead) = true;
+        IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
+      }
+
+      //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -899,21 +909,29 @@ namespace openpeer
 
         setState(ConversationThreadHostState_Ready);
 
-        MessageReceiptMap receipts;
+        MessageReceiptMap delivered;
         ThreadContactMap contactsToAdd;
         ContactURIList contactsToRemove;
 
         for (PeerContactMap::iterator iter = mPeerContacts.begin(); iter != mPeerContacts.end(); ++iter)
         {
           PeerContactPtr &peerContact = (*iter).second;
-          peerContact->gatherMessageReceipts(receipts);
+          peerContact->gatherMessagesDelivered(delivered);
           peerContact->gatherContactsToAdd(contactsToAdd);
           peerContact->gatherContactsToRemove(contactsToRemove);
           peerContact->notifyStep();
         }
 
         mHostThread->updateBegin();
-        mHostThread->setReceived(receipts);
+        mHostThread->setDelivered(delivered);
+        if (mMarkAllRead) {
+          // to mark the same set of messages that were marked as delivered as
+          // received since at this point they are now one and the same
+          mHostThread->setRead(delivered);
+
+          // do not mark messages again as read until signalled to do so again
+          get(mMarkAllRead) = false;
+        }
         publish(mHostThread->updateEnd(), false, true);
 
         if ((contactsToAdd.size() > 0) ||

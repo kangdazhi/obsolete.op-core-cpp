@@ -131,7 +131,7 @@ namespace openpeer
 
           ContactConnectionStates getContactConnectionState() const;
 
-          void gatherMessageReceipts(MessageReceiptMap &receipts) const;
+          void gatherMessagesDelivered(MessageReceiptMap &delivered) const;
 
           void gatherContactsToAdd(ThreadContactMap &contacts) const;
           void gatherContactsToRemove(ContactURIList &contacts) const;

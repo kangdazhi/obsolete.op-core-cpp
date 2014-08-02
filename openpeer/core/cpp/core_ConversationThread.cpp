@@ -628,6 +628,18 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      void ConversationThread::markAllMessagesRead()
+      {
+        AutoRecursiveLock lock(*this);
+
+        for (ThreadMap::iterator iter = mThreads.begin(); iter != mThreads.end(); ++iter)
+        {
+          IConversationThreadHostSlaveBasePtr &thread = (*iter).second;
+          thread->markAllMessagesRead();
+        }
+      }
+
+      //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------

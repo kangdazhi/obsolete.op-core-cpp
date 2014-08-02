@@ -61,8 +61,10 @@ namespace openpeer
         public:
           typedef thread::MessageReceiptMap MessageReceiptMap;
 
+          typedef IConversationThread::MessageDeliveryStates MessageDeliveryStates;
+
           typedef String MessageID;
-          typedef std::map<MessageID, IConversationThread::MessageDeliveryStates> MessageDeliveryStatesMap;
+          typedef std::map<MessageID, MessageDeliveryStates> MessageDeliveryStatesMap;
 
           typedef String CallID;
           typedef std::map<CallID, UseCallPtr> CallHandlers;
@@ -116,7 +118,7 @@ namespace openpeer
                                      );
           void notifyPeerDisconnected(ILocationPtr peerLocation);
 
-          void gatherMessageReceipts(MessageReceiptMap &receipts) const;
+          void gatherMessagesDelivered(MessageReceiptMap &delivered) const;
 
           void gatherContactsToAdd(ThreadContactMap &contacts) const;
           void gatherContactsToRemove(ContactURIList &contacts) const;
@@ -163,6 +165,11 @@ namespace openpeer
           void cancel();
           void step();
 
+          void processReceiptsFromSlaveDocument(
+                                                ThreadPtr hostThread,
+                                                MessageDeliveryStates applyDeliveryState,
+                                                const MessageReceiptMap &messagesChanged
+                                                );
         protected:
           //-------------------------------------------------------------------
           #pragma mark

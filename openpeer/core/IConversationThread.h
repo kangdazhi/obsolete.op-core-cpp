@@ -200,6 +200,10 @@ namespace openpeer
                                            const char *messageID,
                                            MessageDeliveryStates &outDeliveryState
                                            ) const = 0;
+
+      //-----------------------------------------------------------------------
+      // PURPOSE: mark all received messages thus far as read
+      virtual void markAllMessagesRead() = 0;
     };
 
     //-------------------------------------------------------------------------

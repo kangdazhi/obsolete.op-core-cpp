@@ -208,6 +208,8 @@ namespace openpeer
                                          LocationDialogMap &outDialogs
                                          ) const;
 
+        virtual void markAllMessagesRead();
+
         //---------------------------------------------------------------------
         #pragma mark
         #pragma mark ConversationThreadHost => IConversationThreadHostForConversationThread
@@ -318,6 +320,7 @@ namespace openpeer
 
         MessageDeliveryStatesMap mMessageDeliveryStates;
 
+        AutoBool mMarkAllRead;
         PeerContactMap mPeerContacts;
       };
 

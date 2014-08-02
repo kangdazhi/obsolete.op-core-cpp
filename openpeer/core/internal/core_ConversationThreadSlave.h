@@ -105,6 +105,8 @@ namespace openpeer
         ZS_DECLARE_TYPEDEF_PTR(IContactForConversationThread, UseContact)
         ZS_DECLARE_TYPEDEF_PTR(IConversationThreadForSlave, UseConversationThread)
 
+        ZS_DECLARE_TYPEDEF_PTR(core::internal::thread::MessageReceiptMap, MessageReceiptMap)
+
         ZS_DECLARE_STRUCT_PTR(MessageDeliveryState)
 
         enum ConversationThreadSlaveStates
@@ -209,6 +211,8 @@ namespace openpeer
                                          const char *callID,
                                          LocationDialogMap &outDialogs
                                          ) const;
+
+        virtual void markAllMessagesRead();
 
         //---------------------------------------------------------------------
         #pragma mark
@@ -319,6 +323,11 @@ namespace openpeer
                      bool publishSlavePermissionPublication,
                      bool publishContacts
                      );
+
+        void processReceiptsFromHostDocument(
+                                             MessageDeliveryStates applyDeliveryState,
+                                             const MessageReceiptMap &messagesChanged
+                                             );
 
       public:
         //---------------------------------------------------------------------
