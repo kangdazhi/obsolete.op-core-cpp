@@ -368,12 +368,13 @@ namespace openpeer
             continue;
           }
 
+          Time statusTime;
           String statusHash;
           ElementPtr status;
 
-          baseThread->getLastContactStatus(contact, statusHash, status);
+          baseThread->getLastContactStatus(contact, statusTime, statusHash, status);
 
-          ThreadContactPtr threadContact = ThreadContact::create(1, contact, info.mIdentityContacts, statusHash, status);
+          ThreadContactPtr threadContact = ThreadContact::create(1, contact, info.mIdentityContacts, statusTime, statusHash, status);
           contactMap[contact->getPeerURI()] = threadContact;
         }
 
@@ -598,6 +599,7 @@ namespace openpeer
       void ConversationThreadSlave::setStatusInThread(
                                                       UseContactPtr selfContact,
                                                       const IdentityContactList &selfIdentityContacts,
+                                                      const Time &contactStatusTime,
                                                       const String &contactStatusInThreadOfSelfHash,
                                                       ElementPtr contactStatusInThreadOfSelf
                                                       )
@@ -615,7 +617,7 @@ namespace openpeer
         }
 
         ThreadContactMap contacts;
-        contacts[selfContact->getPeerURI()] = ThreadContact::create(1, selfContact, selfIdentityContacts, contactStatusInThreadOfSelfHash, contactStatusInThreadOfSelf);
+        contacts[selfContact->getPeerURI()] = ThreadContact::create(1, selfContact, selfIdentityContacts, contactStatusTime, contactStatusInThreadOfSelfHash, contactStatusInThreadOfSelf);
 
         mSlaveThread->updateBegin();
         mSlaveThread->setContacts(contacts);
@@ -761,7 +763,7 @@ namespace openpeer
             UseContactPtr contact = threadContact->contact();
 
             // notify of contact status updates (the host is the authoritative source of all statuses (except for the self contact but the base filters those updates)
-            baseThread->notifyContactStatus(mThisWeak.lock(), contact, threadContact->statusHash(), threadContact->status());
+            baseThread->notifyContactStatus(mThisWeak.lock(), contact, threadContact->statusTime(), threadContact->statusHash(), threadContact->status());
 
             bool hasPeerFilePulic = (bool)contact->getPeerFilePublic();
             if (hasPeerFilePulic) {

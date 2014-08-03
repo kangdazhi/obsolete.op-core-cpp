@@ -216,6 +216,7 @@ namespace openpeer
                                                  IConversationThread::MessageDeliveryStates state
                                                  );
           void notifyContactStatus(
+                                   const Time &statusTime,
                                    const String &statusHash,
                                    ElementPtr status
                                    );

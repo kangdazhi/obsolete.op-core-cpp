@@ -275,6 +275,7 @@ namespace openpeer
                                          UINT version,
                                          UseContactPtr contact,
                                          const IdentityContactList &identityContacts,
+                                         Time statusTime,
                                          const char *statusHash,
                                          ElementPtr status
                                          );
@@ -292,6 +293,7 @@ namespace openpeer
           UINT version() const                                {return mVersion;}
           UseContactPtr contact() const                       {return mContact;}
           const IdentityContactList &identityContacts() const {return mIdentityContacts;}
+          const Time &statusTime() const                      {return mStatusTime;}
           const String &statusHash() const                    {return mStatusHash;}
           const ElementPtr &status() const                    {return mStatus;}
 
@@ -310,6 +312,7 @@ namespace openpeer
           UseContactPtr mContact;
           IdentityContactList mIdentityContacts;
 
+          Time mStatusTime;
           String mStatusHash;
           ElementPtr mStatus;
         };

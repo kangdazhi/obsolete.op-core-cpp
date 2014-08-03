@@ -222,6 +222,7 @@ namespace openpeer
         virtual void setStatusInThread(
                                        UseContactPtr selfContact,
                                        const IdentityContactList &selfIdentityContacts,
+                                       const Time &contactStatusTime,
                                        const String &contactStatusInThreadOfSelfHash,
                                        ElementPtr contactStatusInThreadOfSelf
                                        ) = 0;
@@ -260,12 +261,14 @@ namespace openpeer
         virtual void notifyContactStatus(
                                          IConversationThreadHostSlaveBasePtr thread,
                                          UseContactPtr contact,
+                                         const Time &statusTime,
                                          const String &statusHash,
                                          ElementPtr status
                                          ) = 0;
 
         virtual bool getLastContactStatus(
                                           UseContactPtr contact,
+                                          Time &outStatusTime,
                                           String &outStatusHash,
                                           ElementPtr &outStatus
                                           ) = 0;
@@ -394,6 +397,7 @@ namespace openpeer
         struct ContactStatus
         {
           UseContactPtr mContact;
+          Time mStatusTime;
           String mStatusHash;
           ElementPtr mStatus;
         };
@@ -542,12 +546,14 @@ namespace openpeer
         virtual void notifyContactStatus(
                                          IConversationThreadHostSlaveBasePtr thread,
                                          UseContactPtr contact,
+                                         const Time &statusTime,
                                          const String &statusHash,
                                          ElementPtr status
                                          );
 
         virtual bool getLastContactStatus(
                                           UseContactPtr contact,
+                                          Time &outStatusTime,
                                           String &outStatusHash,
                                           ElementPtr &outStatus
                                           );

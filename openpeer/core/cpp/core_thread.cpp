@@ -68,7 +68,6 @@ namespace openpeer
     {
       namespace thread
       {
-        using services::IHelper;
         using zsLib::ITimerDelegateProxy;
 
         using zsLib::Numeric;
@@ -85,6 +84,7 @@ namespace openpeer
         ZS_DECLARE_TYPEDEF_PTR(IStackForInternal, UseStack)
         ZS_DECLARE_TYPEDEF_PTR(ISettingsForThread, UseSettings)
         ZS_DECLARE_TYPEDEF_PTR(IHelperForInternal, UseHelper)
+        ZS_DECLARE_TYPEDEF_PTR(services::IHelper, ServicesHelper)
 
         //---------------------------------------------------------------------
         //---------------------------------------------------------------------
@@ -409,7 +409,7 @@ namespace openpeer
         {
           ElementPtr resultEl = Element::create("thread::Message");
 
-          IHelper::debugAppend(resultEl, "id", mID);
+          ServicesHelper::debugAppend(resultEl, "id", mID);
 
           MessageDataPtr data;
 
@@ -419,12 +419,12 @@ namespace openpeer
             data = mData;
           }
 
-          IHelper::debugAppend(resultEl, "message id", data->mMessageID);
-          IHelper::debugAppend(resultEl, "replaces message id", data->mReplacesMessageID);
-          IHelper::debugAppend(resultEl, "from peer URI", data->mFromPeerURI);
-          IHelper::debugAppend(resultEl, "mime type", data->mMimeType);
-          IHelper::debugAppend(resultEl, "body", data->mBody);
-          IHelper::debugAppend(resultEl, "sent", data->mSent);
+          ServicesHelper::debugAppend(resultEl, "message id", data->mMessageID);
+          ServicesHelper::debugAppend(resultEl, "replaces message id", data->mReplacesMessageID);
+          ServicesHelper::debugAppend(resultEl, "from peer URI", data->mFromPeerURI);
+          ServicesHelper::debugAppend(resultEl, "mime type", data->mMimeType);
+          ServicesHelper::debugAppend(resultEl, "body", data->mBody);
+          ServicesHelper::debugAppend(resultEl, "sent", data->mSent);
 
           return resultEl;
         }
@@ -463,7 +463,7 @@ namespace openpeer
         Log::Params Message::log(const char *message) const
         {
           ElementPtr objectEl = Element::create("core::thread::Message");
-          IHelper::debugAppend(objectEl, "id", mID);
+          ServicesHelper::debugAppend(objectEl, "id", mID);
           return Log::Params(message, objectEl);
         }
 
@@ -477,7 +477,7 @@ namespace openpeer
             messageEl->setAttribute("replaces", mData->mReplacesMessageID);
           }
           ElementPtr fromEl = createElement("from", mData->mFromPeerURI);
-          ElementPtr sentEl = createElementWithNumber("sent", services::IHelper::timeToString(mData->mSent));
+          ElementPtr sentEl = createElementWithNumber("sent", ServicesHelper::timeToString(mData->mSent));
           ElementPtr mimeTypeEl = createElementWithText("mimeType", mData->mMimeType);
           ElementPtr bodyEl = createElementWithTextAndJSONEncode("body", mData->mBody);
 
@@ -606,7 +606,7 @@ namespace openpeer
             data->mFromPeerURI = fromEl->getAttributeValue("id");
             data->mMimeType = mimeTypeEl->getText();
             data->mBody = bodyEl->getTextDecoded();
-            data->mSent = services::IHelper::stringToTime(sentEl->getText());
+            data->mSent = ServicesHelper::stringToTime(sentEl->getText());
 
             if ("message" != messageBundleEl->getValue()) {
 
@@ -763,7 +763,7 @@ namespace openpeer
               String id = messageEl->getAttributeValue("id");
               String timeStr = messageEl->getText();
               ZS_LOG_TRACE(pThis->log("Parsing receipt") + ZS_PARAM("receipt ID", id) + ZS_PARAM("acknowledged at", timeStr))
-              Time time = services::IHelper::stringToTime(timeStr);
+              Time time = ServicesHelper::stringToTime(timeStr);
 
               if (Time() == time) {
                 ZS_LOG_ERROR(Detail, pThis->log("message receipt parse time invalid"))
@@ -789,10 +789,10 @@ namespace openpeer
         {
           ElementPtr resultEl = Element::create("thread::MessageReceipts");
 
-          IHelper::debugAppend(resultEl, "id", mID);
-          IHelper::debugAppend(resultEl, "receipts element name", mReceiptsElementName);
-          IHelper::debugAppend(resultEl, "version", mVersion);
-          IHelper::debugAppend(resultEl, "receipts", mReceipts.size());
+          ServicesHelper::debugAppend(resultEl, "id", mID);
+          ServicesHelper::debugAppend(resultEl, "receipts element name", mReceiptsElementName);
+          ServicesHelper::debugAppend(resultEl, "version", mVersion);
+          ServicesHelper::debugAppend(resultEl, "receipts", mReceipts.size());
 
           return resultEl;
         }
@@ -801,7 +801,7 @@ namespace openpeer
         Log::Params MessageReceipts::log(const char *message) const
         {
           ElementPtr objectEl = Element::create("core::thread::MessageReceipts");
-          IHelper::debugAppend(objectEl, "id", mID);
+          ServicesHelper::debugAppend(objectEl, "id", mID);
           return Log::Params(message, objectEl);
         }
 
@@ -818,7 +818,7 @@ namespace openpeer
           {
             const String &messageID = (*iter).first;
             const Time &time = (*iter).second;
-            ElementPtr messageEl = createElementWithNumber("message", messageID, services::IHelper::timeToString(time));
+            ElementPtr messageEl = createElementWithNumber("message", messageID, ServicesHelper::timeToString(time));
             messagesEl->adoptAsLastChild(messageEl);
           }
 
@@ -845,6 +845,7 @@ namespace openpeer
                                                UINT version,
                                                UseContactPtr contact,
                                                const IdentityContactList &identityContacts,
+                                               Time statusTime,
                                                const char *statusHash,
                                                ElementPtr status
                                                )
@@ -854,8 +855,13 @@ namespace openpeer
           ThreadContactPtr pThis(new ThreadContact);
           pThis->mContact = contact;
           pThis->mVersion = version;
+          pThis->mStatusTime = statusTime,
           pThis->mStatusHash = String(statusHash);
           pThis->mStatus = status ? status->clone()->toElement() : ElementPtr();
+          if ((Time() != statusTime) &&
+              (pThis->mStatus)) {
+            pThis->mStatus->setAttribute("created", ServicesHelper::timeToString(statusTime));
+          }
 
           IdentityContactList filtered;
 
@@ -929,9 +935,10 @@ namespace openpeer
             }
 
             ElementPtr statusEl = contactEl->findFirstChildElement("status");
+            Time statusTime = ServicesHelper::stringToTime(contactEl->getAttributeValue("created"));
             String statusHash = UseHelper::hash(statusEl);
 
-            return ThreadContact::create(version, contact, identityContacts, statusHash, statusEl);
+            return ThreadContact::create(version, contact, identityContacts, statusTime, statusHash, statusEl);
 
           } catch(Numeric<UINT>::ValueOutOfRange &) {
             ZS_LOG_WARNING(Detail, slog("unable to create thtead contact"))
@@ -986,12 +993,12 @@ namespace openpeer
         {
           ElementPtr resultEl = Element::create("core::thread::ThreadContact");
 
-          IHelper::debugAppend(resultEl, "id", mID);
-          IHelper::debugAppend(resultEl, "version", mVersion);
-          IHelper::debugAppend(resultEl, UseContact::toDebug(mContact));
-          IHelper::debugAppend(resultEl, "identity contacts", mIdentityContacts.size());
-          IHelper::debugAppend(resultEl, "status hash", mStatusHash);
-          IHelper::debugAppend(resultEl, "status", (bool)mStatus);
+          ServicesHelper::debugAppend(resultEl, "id", mID);
+          ServicesHelper::debugAppend(resultEl, "version", mVersion);
+          ServicesHelper::debugAppend(resultEl, UseContact::toDebug(mContact));
+          ServicesHelper::debugAppend(resultEl, "identity contacts", mIdentityContacts.size());
+          ServicesHelper::debugAppend(resultEl, "status hash", mStatusHash);
+          ServicesHelper::debugAppend(resultEl, "status", (bool)mStatus);
 
           return resultEl;
         }
@@ -1372,11 +1379,11 @@ namespace openpeer
         {
           ElementPtr resultEl = Element::create("core::thread::ThreadContacts");
 
-          IHelper::debugAppend(resultEl, "id", mID);
-          IHelper::debugAppend(resultEl, "version", mVersion);
-          IHelper::debugAppend(resultEl, "contacts", mContacts.size());
-          IHelper::debugAppend(resultEl, "add contacts", mAddContacts.size());
-          IHelper::debugAppend(resultEl, "remove contacts", mRemoveContacts.size());
+          ServicesHelper::debugAppend(resultEl, "id", mID);
+          ServicesHelper::debugAppend(resultEl, "version", mVersion);
+          ServicesHelper::debugAppend(resultEl, "contacts", mContacts.size());
+          ServicesHelper::debugAppend(resultEl, "add contacts", mAddContacts.size());
+          ServicesHelper::debugAppend(resultEl, "remove contacts", mRemoveContacts.size());
 
           return resultEl;
         }
@@ -1385,7 +1392,7 @@ namespace openpeer
         Log::Params ThreadContacts::log(const char *message) const
         {
           ElementPtr objectEl = Element::create("core::thread::ThreadContacts");
-          IHelper::debugAppend(objectEl, "id", mID);
+          ServicesHelper::debugAppend(objectEl, "id", mID);
           return Log::Params(message, objectEl);
         }
 
@@ -1864,15 +1871,15 @@ namespace openpeer
         {
           ElementPtr resultEl = Element::create("core::thread::Dialog");
 
-          IHelper::debugAppend(resultEl, "id", mID);
-          IHelper::debugAppend(resultEl, "version", mVersion);
-          IHelper::debugAppend(resultEl, "dialog ID", mDialogID);
-          IHelper::debugAppend(resultEl, "state", toString(mState));
-          IHelper::debugAppend(resultEl, "closed reason", toString(mClosedReason));
-          IHelper::debugAppend(resultEl, "closed reason message", mClosedReasonMessage);
-          IHelper::debugAppend(resultEl, "caller contact URI", mCallerContactURI);
-          IHelper::debugAppend(resultEl, "callee contact URI", mCalleeContactURI);
-          IHelper::debugAppend(resultEl, "replaces", mReplacesDialogID);
+          ServicesHelper::debugAppend(resultEl, "id", mID);
+          ServicesHelper::debugAppend(resultEl, "version", mVersion);
+          ServicesHelper::debugAppend(resultEl, "dialog ID", mDialogID);
+          ServicesHelper::debugAppend(resultEl, "state", toString(mState));
+          ServicesHelper::debugAppend(resultEl, "closed reason", toString(mClosedReason));
+          ServicesHelper::debugAppend(resultEl, "closed reason message", mClosedReasonMessage);
+          ServicesHelper::debugAppend(resultEl, "caller contact URI", mCallerContactURI);
+          ServicesHelper::debugAppend(resultEl, "callee contact URI", mCalleeContactURI);
+          ServicesHelper::debugAppend(resultEl, "replaces", mReplacesDialogID);
 
           return resultEl;
         }
@@ -1881,7 +1888,7 @@ namespace openpeer
         Log::Params Dialog::log(const char *message) const
         {
           ElementPtr objectEl = Element::create("core::thread::Dialog");
-          IHelper::debugAppend(objectEl, "id", mID);
+          ServicesHelper::debugAppend(objectEl, "id", mID);
           return Log::Params(message, objectEl);
         }
 
@@ -1898,11 +1905,11 @@ namespace openpeer
         {
           ElementPtr resultEl = Element::create("core::thread::Dialog::Codec");
 
-          IHelper::debugAppend(resultEl, "id", string(mCodecID));
-          IHelper::debugAppend(resultEl, "name", mName);
-          IHelper::debugAppend(resultEl, "ptime", mPTime);
-          IHelper::debugAppend(resultEl, "rate", mRate);
-          IHelper::debugAppend(resultEl, "channels", mChannels);
+          ServicesHelper::debugAppend(resultEl, "id", string(mCodecID));
+          ServicesHelper::debugAppend(resultEl, "name", mName);
+          ServicesHelper::debugAppend(resultEl, "ptime", mPTime);
+          ServicesHelper::debugAppend(resultEl, "rate", mRate);
+          ServicesHelper::debugAppend(resultEl, "channels", mChannels);
 
           return resultEl;
         }
@@ -1920,16 +1927,16 @@ namespace openpeer
         {
           ElementPtr resultEl = Element::create("core::thread::Dialog::Description");
 
-          IHelper::debugAppend(resultEl, "id", mDescriptionID);
-          IHelper::debugAppend(resultEl, "version", mVersion);
-          IHelper::debugAppend(resultEl, "type", mType);
-          IHelper::debugAppend(resultEl, "ssrc", mSSRC);
-          IHelper::debugAppend(resultEl, "cipher", mSecurityCipher);
-          IHelper::debugAppend(resultEl, "secret", mSecuritySecret);
-          IHelper::debugAppend(resultEl, "salt", mSecuritySalt);
-          IHelper::debugAppend(resultEl, "codecs", mCodecs.size());
-          IHelper::debugAppend(resultEl, "candidates", mCandidates.size());
-          IHelper::debugAppend(resultEl, "final", mFinal);
+          ServicesHelper::debugAppend(resultEl, "id", mDescriptionID);
+          ServicesHelper::debugAppend(resultEl, "version", mVersion);
+          ServicesHelper::debugAppend(resultEl, "type", mType);
+          ServicesHelper::debugAppend(resultEl, "ssrc", mSSRC);
+          ServicesHelper::debugAppend(resultEl, "cipher", mSecurityCipher);
+          ServicesHelper::debugAppend(resultEl, "secret", mSecuritySecret);
+          ServicesHelper::debugAppend(resultEl, "salt", mSecuritySalt);
+          ServicesHelper::debugAppend(resultEl, "codecs", mCodecs.size());
+          ServicesHelper::debugAppend(resultEl, "candidates", mCandidates.size());
+          ServicesHelper::debugAppend(resultEl, "final", mFinal);
 
           return resultEl;
         }
@@ -2018,7 +2025,7 @@ namespace openpeer
           ElementPtr replacesEl = createElement("replaces", replaces);
           ElementPtr stateEl = createElementWithText("state", toString(state));
           ElementPtr topicEl = createElementWithTextAndJSONEncode("topic", pThis->mTopic);
-          ElementPtr createdEl = createElementWithNumber("created", services::IHelper::timeToString(pThis->mCreated));
+          ElementPtr createdEl = createElementWithNumber("created", ServicesHelper::timeToString(pThis->mCreated));
           ElementPtr serverNameEl = createElementWithTextAndJSONEncode("server", pThis->mServerName);
 
           detailsEl->adoptAsLastChild(threadBaseEl);
@@ -2056,7 +2063,7 @@ namespace openpeer
             state.trim();
             pThis->mState = toConversationThreadState(state);
             pThis->mTopic = IMessageHelper::getElementTextAndDecode(detailsEl->findFirstChildElementChecked("topic"));
-            pThis->mCreated = services::IHelper::stringToTime(detailsEl->findFirstChildElementChecked("created")->getText());
+            pThis->mCreated = ServicesHelper::stringToTime(detailsEl->findFirstChildElementChecked("created")->getText());
             if (Time() == pThis->mCreated) {
               ZS_LOG_ERROR(Detail, pThis->log("details parse time value not valid"))
               return DetailsPtr();
@@ -2082,14 +2089,14 @@ namespace openpeer
         {
           ElementPtr resultEl = Element::create("core::thread::Details");
 
-          IHelper::debugAppend(resultEl, "id", mID);
-          IHelper::debugAppend(resultEl, "version", mVersion);
-          IHelper::debugAppend(resultEl, "base thread id", mBaseThreadID);
-          IHelper::debugAppend(resultEl, "host thread id", mHostThreadID);
-          IHelper::debugAppend(resultEl, "replaces thread id", mReplacesThreadID);
-          IHelper::debugAppend(resultEl, "state", toString(mState));
-          IHelper::debugAppend(resultEl, "topic", mTopic);
-          IHelper::debugAppend(resultEl, "created", mCreated);
+          ServicesHelper::debugAppend(resultEl, "id", mID);
+          ServicesHelper::debugAppend(resultEl, "version", mVersion);
+          ServicesHelper::debugAppend(resultEl, "base thread id", mBaseThreadID);
+          ServicesHelper::debugAppend(resultEl, "host thread id", mHostThreadID);
+          ServicesHelper::debugAppend(resultEl, "replaces thread id", mReplacesThreadID);
+          ServicesHelper::debugAppend(resultEl, "state", toString(mState));
+          ServicesHelper::debugAppend(resultEl, "topic", mTopic);
+          ServicesHelper::debugAppend(resultEl, "created", mCreated);
 
           return resultEl;
         }
@@ -2098,7 +2105,7 @@ namespace openpeer
         Log::Params Details::log(const char *message) const
         {
           ElementPtr objectEl = Element::create("core::thread::Details");
-          IHelper::debugAppend(objectEl, "id", mID);
+          ServicesHelper::debugAppend(objectEl, "id", mID);
           return Log::Params(message, objectEl);
         }
 
@@ -2192,8 +2199,8 @@ namespace openpeer
           pThis->mPublication = publication;
 
           SplitMap result;
-          services::IHelper::split(publication->getName(), result, '/');
-          String type = services::IHelper::get(result, OPENPEER_CONVERSATION_THREAD_TYPE_INDEX);
+          ServicesHelper::split(publication->getName(), result, '/');
+          String type = ServicesHelper::get(result, OPENPEER_CONVERSATION_THREAD_TYPE_INDEX);
 
           try {
             pThis->mType = toThreadTypes(type);
@@ -3327,42 +3334,42 @@ namespace openpeer
         {
           ElementPtr resultEl = Element::create("core::thread::Thread");
 
-          IHelper::debugAppend(resultEl, "id", mID);
-          IHelper::debugAppend(resultEl, "type", toString(mType));
-          IHelper::debugAppend(resultEl, "can modify", mCanModify);
-          IHelper::debugAppend(resultEl, "modifying", mModifying);
+          ServicesHelper::debugAppend(resultEl, "id", mID);
+          ServicesHelper::debugAppend(resultEl, "type", toString(mType));
+          ServicesHelper::debugAppend(resultEl, "can modify", mCanModify);
+          ServicesHelper::debugAppend(resultEl, "modifying", mModifying);
 
-          IHelper::debugAppend(resultEl, "must publish", mMustPublish);
-          IHelper::debugAppend(resultEl, IPublication::toDebug(mPublication));
-          IHelper::debugAppend(resultEl, IPublication::toDebug(mPermissionPublication));
-          IHelper::debugAppend(resultEl, "contact publications", mContactPublications.size());
-          IHelper::debugAppend(resultEl, "contact publications completed", mContactPublicationsCompleted.size());
+          ServicesHelper::debugAppend(resultEl, "must publish", mMustPublish);
+          ServicesHelper::debugAppend(resultEl, IPublication::toDebug(mPublication));
+          ServicesHelper::debugAppend(resultEl, IPublication::toDebug(mPermissionPublication));
+          ServicesHelper::debugAppend(resultEl, "contact publications", mContactPublications.size());
+          ServicesHelper::debugAppend(resultEl, "contact publications completed", mContactPublicationsCompleted.size());
 
-          IHelper::debugAppend(resultEl, Details::toDebug(mDetails));
-          IHelper::debugAppend(resultEl, ThreadContacts::toDebug(mContacts));
-          IHelper::debugAppend(resultEl, "message version", mMessagesVersion);
-          IHelper::debugAppend(resultEl, "message list", mMessageList.size());
-          IHelper::debugAppend(resultEl, "message map", mMessageMap.size());
-          IHelper::debugAppend(resultEl, MessageReceipts::toDebug(mMessagesDelivered));
-          IHelper::debugAppend(resultEl, MessageReceipts::toDebug(mMessagesRead));
-          IHelper::debugAppend(resultEl, "dialog version", mDialogsVersion);
-          IHelper::debugAppend(resultEl, "dialogs", mDialogs.size());
+          ServicesHelper::debugAppend(resultEl, Details::toDebug(mDetails));
+          ServicesHelper::debugAppend(resultEl, ThreadContacts::toDebug(mContacts));
+          ServicesHelper::debugAppend(resultEl, "message version", mMessagesVersion);
+          ServicesHelper::debugAppend(resultEl, "message list", mMessageList.size());
+          ServicesHelper::debugAppend(resultEl, "message map", mMessageMap.size());
+          ServicesHelper::debugAppend(resultEl, MessageReceipts::toDebug(mMessagesDelivered));
+          ServicesHelper::debugAppend(resultEl, MessageReceipts::toDebug(mMessagesRead));
+          ServicesHelper::debugAppend(resultEl, "dialog version", mDialogsVersion);
+          ServicesHelper::debugAppend(resultEl, "dialogs", mDialogs.size());
 
-          IHelper::debugAppend(resultEl, "details changed", mDetailsChanged);
-          IHelper::debugAppend(resultEl, "contacts changed", mContactsChanged.size());
-          IHelper::debugAppend(resultEl, "contacts removed", mContactsRemoved.size());
-          IHelper::debugAppend(resultEl, "contacts to add changed", mContactsToAddChanged.size());
-          IHelper::debugAppend(resultEl, "contacts to add removed", mContactsToAddRemoved.size());
-          IHelper::debugAppend(resultEl, "contacts to remove changed", mContactsToRemoveChanged.size());
-          IHelper::debugAppend(resultEl, "contacts to remove removed", mContactsToRemoveRemoved.size());
-          IHelper::debugAppend(resultEl, "messages changed", mMessagesChanged.size());
-          IHelper::debugAppend(resultEl, "messages changed time", mMessagesChangedTime);
-          IHelper::debugAppend(resultEl, "messages receipts changed", mMessagesDeliveredChanged.size());
-          IHelper::debugAppend(resultEl, "messages receipts changed", mMessagesReadChanged.size());
-          IHelper::debugAppend(resultEl, "dialogs changed", mDialogsChanged.size());
-          IHelper::debugAppend(resultEl, "dialogs removed", mDialogsRemoved.size());
-          IHelper::debugAppend(resultEl, "descriptions changed", mDescriptionsChanged.size());
-          IHelper::debugAppend(resultEl, "descriptions removed", mDescriptionsRemoved.size());
+          ServicesHelper::debugAppend(resultEl, "details changed", mDetailsChanged);
+          ServicesHelper::debugAppend(resultEl, "contacts changed", mContactsChanged.size());
+          ServicesHelper::debugAppend(resultEl, "contacts removed", mContactsRemoved.size());
+          ServicesHelper::debugAppend(resultEl, "contacts to add changed", mContactsToAddChanged.size());
+          ServicesHelper::debugAppend(resultEl, "contacts to add removed", mContactsToAddRemoved.size());
+          ServicesHelper::debugAppend(resultEl, "contacts to remove changed", mContactsToRemoveChanged.size());
+          ServicesHelper::debugAppend(resultEl, "contacts to remove removed", mContactsToRemoveRemoved.size());
+          ServicesHelper::debugAppend(resultEl, "messages changed", mMessagesChanged.size());
+          ServicesHelper::debugAppend(resultEl, "messages changed time", mMessagesChangedTime);
+          ServicesHelper::debugAppend(resultEl, "messages receipts changed", mMessagesDeliveredChanged.size());
+          ServicesHelper::debugAppend(resultEl, "messages receipts changed", mMessagesReadChanged.size());
+          ServicesHelper::debugAppend(resultEl, "dialogs changed", mDialogsChanged.size());
+          ServicesHelper::debugAppend(resultEl, "dialogs removed", mDialogsRemoved.size());
+          ServicesHelper::debugAppend(resultEl, "descriptions changed", mDescriptionsChanged.size());
+          ServicesHelper::debugAppend(resultEl, "descriptions removed", mDescriptionsRemoved.size());
           
           return resultEl;
         }
@@ -3371,7 +3378,7 @@ namespace openpeer
         Log::Params Thread::log(const char *message) const
         {
           ElementPtr objectEl = Element::create("core::thread::Thread");
-          IHelper::debugAppend(objectEl, "id", mID);
+          ServicesHelper::debugAppend(objectEl, "id", mID);
           return Log::Params(message, objectEl);
         }
 

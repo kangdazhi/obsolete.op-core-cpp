@@ -217,6 +217,7 @@ namespace openpeer
         virtual void setStatusInThread(
                                        UseContactPtr selfContact,
                                        const IdentityContactList &selfIdentityContacts,
+                                       const Time &contactStatusTime,
                                        const String &contactStatusInThreadOfSelfHash,
                                        ElementPtr contactStatusInThreadOfSelf
                                        );
@@ -253,6 +254,7 @@ namespace openpeer
                                                );
         void notifyContactStatus(
                                  UseContactPtr contact,
+                                 const Time &statusTime,
                                  const String &statusHash,
                                  ElementPtr status
                                  );

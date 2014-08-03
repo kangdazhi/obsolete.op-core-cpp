@@ -563,6 +563,7 @@ namespace openpeer
 
         ContactStatus &contactStatus = (*found).second;
 
+        contactStatus.mStatusTime = zsLib::now();
         contactStatus.mStatusHash = UseHelper::hash(contactStatusInThreadOfSelf);
         contactStatus.mStatus = contactStatusInThreadOfSelf;
 
@@ -571,7 +572,7 @@ namespace openpeer
           return;
         }
 
-        mLastOpenThread->setStatusInThread(self, mSelfIdentityContacts, contactStatus.mStatusHash, contactStatus.mStatus);
+        mLastOpenThread->setStatusInThread(self, mSelfIdentityContacts, contactStatus.mStatusTime, contactStatus.mStatusHash, contactStatus.mStatus);
       }
 
       //-----------------------------------------------------------------------
@@ -882,6 +883,7 @@ namespace openpeer
       void ConversationThread::notifyContactStatus(
                                                    IConversationThreadHostSlaveBasePtr thread,
                                                    UseContactPtr contact,
+                                                   const Time &statusTime,
                                                    const String &statusHash,
                                                    ElementPtr status
                                                    )
@@ -922,6 +924,13 @@ namespace openpeer
           return;
         }
 
+        if (Time() != contactStatus.mStatusTime) {
+          if (contactStatus.mStatusTime > statusTime) {
+            ZS_LOG_TRACE(log("contact status is older than current status") + ZS_PARAM("current status time", contactStatus.mStatusTime) + ZS_PARAM("new status time", statusTime))
+            return;
+          }
+        }
+
         contactStatus.mStatusHash = statusHash;
         contactStatus.mStatus = status;
 
@@ -942,12 +951,14 @@ namespace openpeer
       //-----------------------------------------------------------------------
       bool ConversationThread::getLastContactStatus(
                                                     UseContactPtr contact,
+                                                    Time &outStatusTime,
                                                     String &outStatusHash,
                                                     ElementPtr &outStatus
                                                     )
       {
         AutoRecursiveLock lock(*this);
 
+        outStatusTime = Time();
         outStatusHash = String();
         outStatus = ElementPtr();
 
@@ -956,6 +967,7 @@ namespace openpeer
 
         ContactStatus &contactStatus = (*found).second;
 
+        outStatusTime = contactStatus.mStatusTime;
         outStatusHash = contactStatus.mStatusHash;
         outStatus = contactStatus.mStatus;
         return true;

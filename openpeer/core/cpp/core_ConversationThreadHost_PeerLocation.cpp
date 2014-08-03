@@ -387,7 +387,7 @@ namespace openpeer
           ThreadContactMap::iterator found = contactsChanged.find(mPeerLocation->getPeerURI());
           if (found != contactsChanged.end()) {
             ThreadContactPtr threadContact = (*found).second;
-            outer->notifyContactStatus(threadContact->statusHash(), threadContact->status());
+            outer->notifyContactStatus(threadContact->statusTime(), threadContact->statusHash(), threadContact->status());
           }
         }
 

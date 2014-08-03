@@ -434,12 +434,13 @@ namespace openpeer
 
           UseContactPtr contact = Contact::convert(info.mContact);
 
+          Time statusTime;
           String statusHash;
           ElementPtr status;
 
-          baseThread->getLastContactStatus(contact, statusHash, status);
+          baseThread->getLastContactStatus(contact, statusTime, statusHash, status);
 
-          ThreadContactPtr threadContact = ThreadContact::create(1, contact, info.mIdentityContacts, statusHash, status);
+          ThreadContactPtr threadContact = ThreadContact::create(1, contact, info.mIdentityContacts, statusTime, statusHash, status);
 
           // remember this contact as needing to be added to the final list...
           contactMap[contact->getPeerURI()] = threadContact;
@@ -662,6 +663,7 @@ namespace openpeer
       void ConversationThreadHost::setStatusInThread(
                                                      UseContactPtr selfContact,
                                                      const IdentityContactList &selfIdentityContacts,
+                                                     const Time &contactStatusTime,
                                                      const String &contactStatusInThreadOfSelfHash,
                                                      ElementPtr contactStatusInThreadOfSelf
                                                      )
@@ -687,7 +689,7 @@ namespace openpeer
         }
 
         // replace selt with updated information
-        contacts[selfContact->getPeerURI()] = ThreadContact::create(1, selfContact, selfIdentityContacts, contactStatusInThreadOfSelfHash, contactStatusInThreadOfSelf);
+        contacts[selfContact->getPeerURI()] = ThreadContact::create(1, selfContact, selfIdentityContacts, contactStatusTime, contactStatusInThreadOfSelfHash, contactStatusInThreadOfSelf);
 
         // publish the lastest contact list
         mHostThread->updateBegin();
@@ -827,10 +829,13 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThreadHost::notifyContactStatus(
                                                        UseContactPtr contact,
+                                                       const Time &statusTime,
                                                        const String &statusHash,
                                                        ElementPtr status
                                                        )
       {
+        ZS_THROW_INVALID_ARGUMENT_IF(!contact)
+
         AutoRecursiveLock lock(*this);
 
         UseConversationThreadPtr baseThread = mBaseThread.lock();
@@ -838,7 +843,38 @@ namespace openpeer
           ZS_LOG_WARNING(Detail, log("unable to notify of contact status as base thread gone"))
           return;
         }
-        baseThread->notifyContactStatus(mThisWeak.lock(), contact, statusHash, status);
+
+        // copy the status of the peer to the slave
+        if (mHostThread) {
+          const ThreadContactMap &contacts = mHostThread->contacts()->contacts();
+          ThreadContactMap::const_iterator found = contacts.find(contact->getPeerURI());
+          if (found != contacts.end()) {
+
+            ThreadContactPtr existingContact = (*found).second;
+
+            bool update = true;
+
+            if (Time() != existingContact->statusTime()) {
+              if (existingContact->statusTime() > statusTime) {
+                ZS_LOG_WARNING(Detail, log("contact status is older than the current status") + ZS_PARAM("current status", existingContact->statusTime()) + ZS_PARAM("status time", statusTime))
+                update = false;
+              }
+            }
+
+            if (update) {
+              ThreadContactMap replacementContacts = contacts;
+
+              ThreadContactMap contacts;
+              replacementContacts[contact->getPeerURI()] = ThreadContact::create(1, contact, existingContact->identityContacts(), statusTime, statusHash, status);
+
+              mHostThread->updateBegin();
+              mHostThread->setContacts(contacts);
+              mHostThread->updateEnd(getPublicationRepostiory());
+            }
+          }
+        }
+
+        baseThread->notifyContactStatus(mThisWeak.lock(), contact, statusTime, statusHash, status);
       }
 
       //-----------------------------------------------------------------------
@@ -1107,12 +1143,13 @@ namespace openpeer
           const String contactID = (*iter).first;
           PeerContactPtr &peerContact = (*iter).second;
 
+          Time statusTime;
           String statusHash;
           ElementPtr status;
 
-          baseThread->getLastContactStatus(peerContact->getContact(), statusHash, status);
+          baseThread->getLastContactStatus(peerContact->getContact(), statusTime, statusHash, status);
 
-          ThreadContactPtr threadContact(ThreadContact::create(1, peerContact->getContact(), peerContact->getIdentityContacts(), statusHash, status));
+          ThreadContactPtr threadContact(ThreadContact::create(1, peerContact->getContact(), peerContact->getIdentityContacts(), statusTime, statusHash, status));
           contactMap[contactID] = threadContact;
         }
 

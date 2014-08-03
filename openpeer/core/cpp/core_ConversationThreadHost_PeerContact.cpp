@@ -585,6 +585,7 @@ namespace openpeer
 
       //-----------------------------------------------------------------------
       void ConversationThreadHost::PeerContact::notifyContactStatus(
+                                                                    const Time &statusTime,
                                                                     const String &statusHash,
                                                                     ElementPtr status
                                                                     )
@@ -599,7 +600,7 @@ namespace openpeer
           return;
         }
 
-        outer->notifyContactStatus(mContact, statusHash, status);
+        outer->notifyContactStatus(mContact, statusTime, statusHash, status);
       }
 
       //-----------------------------------------------------------------------
