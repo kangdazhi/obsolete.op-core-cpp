@@ -272,8 +272,11 @@ namespace openpeer
           static ElementPtr toDebug(ThreadContactPtr contact);
 
           static ThreadContactPtr create(
+                                         UINT version,
                                          UseContactPtr contact,
-                                         const IdentityContactList &identityContacts
+                                         const IdentityContactList &identityContacts,
+                                         const char *statusHash,
+                                         ElementPtr status
                                          );
 
           static ThreadContactPtr create(
@@ -281,20 +284,34 @@ namespace openpeer
                                          ElementPtr contactEl
                                          );
 
+          static ThreadContactPtr prepareNewContact(
+                                                    ThreadContactPtr oldContact,
+                                                    ThreadContactPtr newContact
+                                                    );
+
+          UINT version() const                                {return mVersion;}
           UseContactPtr contact() const                       {return mContact;}
           const IdentityContactList &identityContacts() const {return mIdentityContacts;}
+          const String &statusHash() const                    {return mStatusHash;}
+          const ElementPtr &status() const                    {return mStatus;}
 
           ElementPtr contactElement() const                   {return constructContactElement();}
 
           ElementPtr toDebug() const;
 
         protected:
+          static Log::Params slog(const char *message);
+
           ElementPtr constructContactElement() const;
 
         protected:
           AutoPUID mID;
+          UINT mVersion;
           UseContactPtr mContact;
           IdentityContactList mIdentityContacts;
+
+          String mStatusHash;
+          ElementPtr mStatus;
         };
 
         //---------------------------------------------------------------------
@@ -308,6 +325,11 @@ namespace openpeer
         class ThreadContacts
         {
         public:
+          typedef String ContactID;
+          typedef ElementPtr ContactElement;
+          typedef std::map<ContactID, ContactElement> ContactElementMap;
+
+        public:
           static ElementPtr toDebug(ThreadContactsPtr threadContacts);
 
           static ThreadContactsPtr create(
@@ -317,12 +339,20 @@ namespace openpeer
                                           const ContactURIList &removeContacts
                                           );
 
+          static ThreadContactsPtr createUpdateAndMakeDiffs(
+                                                            const ThreadContactList &contacts,
+                                                            const ThreadContactList &addContacts,
+                                                            const ContactURIList &removeContacts,
+                                                            ThreadContactsPtr existingContacts,
+                                                            ElementPtr ioContactsEl,
+                                                            DocumentPtr &changesDoc
+                                                            );
+
           static ThreadContactsPtr create(
                                           UseAccountPtr account,
-                                          ElementPtr contactsEl
+                                          ElementPtr contactsEl,
+                                          ThreadContactsPtr existingContacts = ThreadContactsPtr()
                                           );
-
-          ElementPtr contactsElement() const            {return mContactsEl;}
 
           UINT version() const                          {return mVersion;}
           const ThreadContactMap &contacts() const      {return mContacts;}
@@ -334,9 +364,34 @@ namespace openpeer
         protected:
           Log::Params log(const char *message) const;
 
+          static ThreadContactPtr getExistingIfUnchanged(
+                                                         const String &id,
+                                                         const ThreadContactMap &contacts,
+                                                         ElementPtr contactEl
+                                                         );
+
+          static void parseAllContacts(
+                                       ElementPtr contactsEl,
+                                       ContactElementMap &outContactElements
+                                       );
+
+          static bool applyChangeAsNeeded(
+                                          ElementPtr ioContactsEl,
+                                          const ContactElementMap &inContactElements,
+                                          const String &updatedDisposition,
+                                          const String &contactID,
+                                          ThreadContactPtr updatedContact,
+                                          DocumentPtr &ioChangesDoc
+                                          );
+
+          static ElementPtr prepareThreadContactReplacement(
+                                                            const String &updatedDisposition,
+                                                            const String &contactID,
+                                                            ThreadContactPtr updatedContact
+                                                            );
+
         protected:
           ThreadContactsWeakPtr mThisWeak;
-          ElementPtr mContactsEl;
 
           AutoPUID mID;
           UINT mVersion;
@@ -553,6 +608,7 @@ namespace openpeer
                                    const char *hostThreadID,
                                    const char *topic,
                                    const char *replaces,
+                                   const char *serverName,  // only set if local is a server otherwise pass in NULL
                                    ConversationThreadStates state
                                    );
 
@@ -566,6 +622,7 @@ namespace openpeer
           ConversationThreadStates state() const  {return mState;}
           const String &topic() const             {return mTopic;}
           Time created() const                    {return mCreated;}
+          const String &serverName() const        {return mServerName;}
 
           ElementPtr toDebug() const;
 
@@ -584,6 +641,7 @@ namespace openpeer
           ConversationThreadStates mState;
           String mTopic;
           Time mCreated;
+          String mServerName;
         };
 
         typedef Details::ConversationThreadStates ConversationThreadStates;
@@ -634,6 +692,7 @@ namespace openpeer
                                   const char *hostThreadID,
                                   const char *topic,
                                   const char *replaces,
+                                  const char *serverName,         // only set if local is a server
                                   ConversationThreadStates state,
                                   ILocationPtr peerHostLocation = ILocationPtr()
                                   );

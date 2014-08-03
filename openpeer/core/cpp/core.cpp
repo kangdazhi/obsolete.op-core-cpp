@@ -70,6 +70,50 @@ namespace openpeer
     }
 
     //-------------------------------------------------------------------------
+    bool RolodexContact::Avatar::operator==(const Avatar &rValue) const
+    {
+      if (mName != rValue.mName) return false;
+      if (mURL != rValue.mURL) return false;
+      if (mWidth != rValue.mWidth) return false;
+      if (mHeight != rValue.mHeight) return false;
+
+      return true;
+    }
+
+    //-------------------------------------------------------------------------
+    bool RolodexContact::Avatar::operator!=(const Avatar &rValue) const
+    {
+      return !(*this == rValue);
+    }
+
+    //-------------------------------------------------------------------------
+    bool RolodexContact::operator==(const RolodexContact &rValue) const
+    {
+      if (mIdentityURI != rValue.mIdentityURI) return false;
+      if (mIdentityProvider != rValue.mIdentityProvider) return false;
+      if (mName != rValue.mName) return false;
+      if (mProfileURL != rValue.mProfileURL) return false;
+      if (mVProfileURL != rValue.mVProfileURL) return false;
+      if (mAvatars.size() != rValue.mAvatars.size()) return false;
+
+      for (AvatarList::const_iterator iter1 = mAvatars.begin(), iter2 = rValue.mAvatars.begin(); iter1 != mAvatars.end() && iter2 != rValue.mAvatars.end(); ++iter1, ++iter2)
+      {
+        const Avatar &av1 = (*iter1);
+        const Avatar &av2 = (*iter1);
+        if (av1 != av2) return false;
+      }
+
+      return true;
+    }
+
+    //-------------------------------------------------------------------------
+    bool RolodexContact::operator!=(const RolodexContact &rValue) const
+    {
+      return !(*this == rValue);
+    }
+    
+
+    //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------
@@ -117,7 +161,32 @@ namespace openpeer
               (mProfileURL.hasData()) ||
               (mVProfileURL.hasData()) ||
               (mAvatars.size() > 0));
-    }    
+    }
+
+    //-------------------------------------------------------------------------
+    bool IdentityContact::operator==(const IdentityContact &rValue) const
+    {
+      const RolodexContact &rolo1 = *this;
+      const RolodexContact &rolo2 = rValue;
+
+      if (rolo1 != rolo2) return false;
+
+      if (mStableID != rValue.mStableID) return false;
+      if (mPeerFilePublic != rValue.mPeerFilePublic) return false;
+      if (mIdentityProofBundleEl != rValue.mIdentityProofBundleEl) return false;
+      if (mPriority != rValue.mPriority) return false;
+      if (mWeight != rValue.mWeight) return false;
+      if (mLastUpdated != rValue.mLastUpdated) return false;
+      if (mExpires != rValue.mExpires) return false;
+
+      return true;
+    }
+
+    //-------------------------------------------------------------------------
+    bool IdentityContact::operator!=(const IdentityContact &rValue) const
+    {
+      return !(*this == rValue);
+    }
 
     //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------

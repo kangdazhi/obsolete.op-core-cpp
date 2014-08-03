@@ -45,6 +45,21 @@ namespace openpeer
     namespace internal
     {
       typedef services::IHelper OPIHelper;
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark IHelperForInternal
+      #pragma mark
+
+      String IHelperForInternal::hash(ElementPtr element)
+      {
+        if (!element) return String();
+
+        String result = Helper::convertToString(element);
+        return OPIHelper::convertToString(*OPIHelper::hash(result));
+      }
 
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------

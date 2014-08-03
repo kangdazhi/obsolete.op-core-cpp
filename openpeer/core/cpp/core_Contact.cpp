@@ -110,6 +110,12 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      ForConversationThreadPtr IContactForConversationThread::getForSelf(AccountPtr account)
+      {
+        return Contact::getForSelf(account);
+      }
+
+      //-----------------------------------------------------------------------
       ForConversationThreadPtr IContactForConversationThread::createFromPeerURI(
                                                                                 AccountPtr inAccount,
                                                                                 const char *inPeerURI

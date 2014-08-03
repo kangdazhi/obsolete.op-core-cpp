@@ -215,6 +215,10 @@ namespace openpeer
                                                  const String &messageID,
                                                  IConversationThread::MessageDeliveryStates state
                                                  );
+          void notifyContactStatus(
+                                   const String &statusHash,
+                                   ElementPtr status
+                                   );
 
           void notifyStateChanged(PeerLocationPtr peerLocation);
 

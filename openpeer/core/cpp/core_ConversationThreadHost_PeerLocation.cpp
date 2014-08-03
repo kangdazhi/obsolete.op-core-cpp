@@ -376,8 +376,20 @@ namespace openpeer
         }
 
         //.......................................................................
-        // NOTE: We don't need to check contact changes because the outer will
-        //       automatically gather up all the contacts to add/remove.
+        // NOTE: We don't need to check contact to add/remove because the outer
+        //       will automatically gather up all the contacts to add/remove but
+        //       do need to check contact change status for the remote contact
+        //       updating it's own status.
+
+        // scope: check for the remote contact (and only the remote contact)
+        {
+          ThreadContactMap contactsChanged = mSlaveThread->contactsChanged();
+          ThreadContactMap::iterator found = contactsChanged.find(mPeerLocation->getPeerURI());
+          if (found != contactsChanged.end()) {
+            ThreadContactPtr threadContact = (*found).second;
+            outer->notifyContactStatus(threadContact->statusHash(), threadContact->status());
+          }
+        }
 
         //.......................................................................
         // scope: ensure all peer files are fetched for each contact

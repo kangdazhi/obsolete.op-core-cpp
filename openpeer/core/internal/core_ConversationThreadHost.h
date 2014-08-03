@@ -74,6 +74,7 @@ namespace openpeer
 
         static ForConversationThreadPtr create(
                                                ConversationThreadPtr baseThread,
+                                               const char *serverName,
                                                thread::Details::ConversationThreadStates state = thread::Details::ConversationThreadState_Open
                                                );
 
@@ -129,7 +130,8 @@ namespace openpeer
                                IMessageQueuePtr queue,
                                AccountPtr account,
                                ConversationThreadPtr baseThread,
-                               const char *threadID
+                               const char *threadID,
+                               const char *serverName
                                );
 
         ConversationThreadHost(Noop) :
@@ -156,6 +158,7 @@ namespace openpeer
 
         static ConversationThreadHostPtr create(
                                                 ConversationThreadPtr baseThread,
+                                                const char *serverName,
                                                 thread::Details::ConversationThreadStates state = thread::Details::ConversationThreadState_Open
                                                 );
 
@@ -189,6 +192,7 @@ namespace openpeer
         virtual bool sendMessages(const MessageList &messages);
 
         virtual Time getHostCreationTime() const;
+        virtual String getHostServerName() const;
 
         virtual bool safeToChangeContacts() const;
 
@@ -209,6 +213,13 @@ namespace openpeer
                                          ) const;
 
         virtual void markAllMessagesRead();
+
+        virtual void setStatusInThread(
+                                       UseContactPtr selfContact,
+                                       const IdentityContactList &selfIdentityContacts,
+                                       const String &contactStatusInThreadOfSelfHash,
+                                       ElementPtr contactStatusInThreadOfSelf
+                                       );
 
         //---------------------------------------------------------------------
         #pragma mark
@@ -240,6 +251,11 @@ namespace openpeer
                                                const String &messageID,
                                                IConversationThread::MessageDeliveryStates state
                                                );
+        void notifyContactStatus(
+                                 UseContactPtr contact,
+                                 const String &statusHash,
+                                 ElementPtr status
+                                 );
         virtual void notifyMessagePush(
                                        MessagePtr message,
                                        UseContactPtr toContact
@@ -313,6 +329,7 @@ namespace openpeer
         UseContactPtr mSelfContact;
 
         String mThreadID;
+        String mServerName;
 
         ConversationThreadHostStates mCurrentState;
 
@@ -338,6 +355,7 @@ namespace openpeer
 
         virtual ConversationThreadHostPtr createConversationThreadHost(
                                                                        ConversationThreadPtr baseThread,
+                                                                       const char *serverName,
                                                                        thread::Details::ConversationThreadStates state = thread::Details::ConversationThreadState_Open
                                                                        );
       };

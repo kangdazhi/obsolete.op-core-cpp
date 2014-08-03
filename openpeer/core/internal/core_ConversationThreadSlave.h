@@ -74,7 +74,8 @@ namespace openpeer
                                                ConversationThreadPtr baseThread,
                                                ILocationPtr peerLocation,
                                                IPublicationMetaDataPtr metaData,
-                                               const SplitMap &split
+                                               const SplitMap &split,
+                                               const char *serverName
                                                );
       };
 
@@ -138,7 +139,8 @@ namespace openpeer
                                 AccountPtr account,
                                 ILocationPtr peerLocation,
                                 ConversationThreadPtr baseThread,
-                                const char *threadID
+                                const char *threadID,
+                                const char *serverName
                                 );
         
         ConversationThreadSlave(Noop) :
@@ -193,6 +195,7 @@ namespace openpeer
         virtual bool sendMessages(const MessageList &messages);
 
         virtual Time getHostCreationTime() const;
+        virtual String getHostServerName() const;
 
         virtual bool safeToChangeContacts() const;
 
@@ -214,6 +217,13 @@ namespace openpeer
 
         virtual void markAllMessagesRead();
 
+        virtual void setStatusInThread(
+                                       UseContactPtr selfContact,
+                                       const IdentityContactList &selfIdentityContacts,
+                                       const String &contactStatusInThreadOfSelfHash,
+                                       ElementPtr contactStatusInThreadOfSelf
+                                       );
+
         //---------------------------------------------------------------------
         #pragma mark
         #pragma mark ConversationThreadSlave => IConversationThreadSlaveForConversationThread
@@ -223,7 +233,8 @@ namespace openpeer
                                                  ConversationThreadPtr baseThread,
                                                  ILocationPtr peerLocation,
                                                  IPublicationMetaDataPtr metaData,
-                                                 const SplitMap &split
+                                                 const SplitMap &split,
+                                                 const char *serverName
                                                  );
 
         //---------------------------------------------------------------------
@@ -376,6 +387,7 @@ namespace openpeer
         UseAccountWeakPtr mAccount;
 
         String mThreadID;
+        String mServerName;
         ILocationPtr mPeerLocation;
 
         ConversationThreadSlaveStates mCurrentState;
@@ -416,7 +428,8 @@ namespace openpeer
                                                                          ConversationThreadPtr baseThread,
                                                                          ILocationPtr peerLocation,
                                                                          IPublicationMetaDataPtr metaData,
-                                                                         const SplitMap &split
+                                                                         const SplitMap &split,
+                                                                         const char *serverName
                                                                          );
       };
 

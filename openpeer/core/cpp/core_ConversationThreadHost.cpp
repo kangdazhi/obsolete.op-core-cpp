@@ -99,10 +99,11 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ForConversationThreadPtr IConversationThreadHostForConversationThread::create(
                                                                                     ConversationThreadPtr baseThread,
+                                                                                    const char *serverName,
                                                                                     Details::ConversationThreadStates state
                                                                                     )
       {
-        return IConversationThreadHostFactory::singleton().createConversationThreadHost(baseThread, state);
+        return IConversationThreadHostFactory::singleton().createConversationThreadHost(baseThread, serverName, state);
       }
 
       //-----------------------------------------------------------------------
@@ -131,12 +132,14 @@ namespace openpeer
                                                      IMessageQueuePtr queue,
                                                      AccountPtr account,
                                                      ConversationThreadPtr baseThread,
-                                                     const char *threadID
+                                                     const char *threadID,
+                                                     const char *serverName
                                                      ) :
         MessageQueueAssociator(queue),
         SharedRecursiveLock(*baseThread),
         mThreadID(threadID ? String(threadID) : services::IHelper::randomString(32)),
         mBaseThread(baseThread),
+        mServerName(serverName),
         mCurrentState(ConversationThreadHostState_Pending),
         mAccount(account),
         mSelfContact(UseAccountPtr(account)->getSelfContact())
@@ -154,7 +157,7 @@ namespace openpeer
 
         UseConversationThreadPtr baseThread = mBaseThread.lock();
 
-        mHostThread = Thread::create(Account::convert(account), Thread::ThreadType_Host, account->getSelfLocation(), baseThread->getThreadID(), mThreadID, "", "", state);
+        mHostThread = Thread::create(Account::convert(account), Thread::ThreadType_Host, account->getSelfLocation(), baseThread->getThreadID(), mThreadID, "", "", mServerName, state);
         ZS_THROW_BAD_STATE_IF(!mHostThread)
 
         publish(true, true, true);
@@ -196,6 +199,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ConversationThreadHostPtr ConversationThreadHost::create(
                                                                ConversationThreadPtr inBaseThread,
+                                                               const char *serverName,
                                                                Details::ConversationThreadStates state
                                                                )
       {
@@ -207,7 +211,7 @@ namespace openpeer
           return ConversationThreadHostPtr();
         }
 
-        ConversationThreadHostPtr pThis(new ConversationThreadHost(UseStack::queueCore(), account, inBaseThread, NULL));
+        ConversationThreadHostPtr pThis(new ConversationThreadHost(UseStack::queueCore(), account, inBaseThread, NULL, serverName));
         pThis->mThisWeak = pThis;
         pThis->init(state);
         return pThis;
@@ -330,6 +334,14 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      String ConversationThreadHost::getHostServerName() const
+      {
+        AutoRecursiveLock lock(*this);
+        if (!mHostThread) return String();
+        return mHostThread->details()->serverName();
+      }
+
+      //-----------------------------------------------------------------------
       bool ConversationThreadHost::safeToChangeContacts() const
       {
         AutoRecursiveLock lock(*this);
@@ -394,7 +406,11 @@ namespace openpeer
         AutoRecursiveLock lock(*this);
         ZS_THROW_INVALID_ASSUMPTION_IF(!safeToChangeContacts())
 
-        bool foundSelf = false;
+        UseConversationThreadPtr baseThread = mBaseThread.lock();
+        if (!baseThread) {
+          ZS_LOG_WARNING(Detail, log("cannot add contacts as no base thread present"))
+          return;
+        }
 
         const ThreadContactMap &oldContacts = mHostThread->contacts()->contacts();
 
@@ -405,27 +421,24 @@ namespace openpeer
           const ContactProfileInfo &info = (*iter);
 
           UseContactPtr contact = Contact::convert(info.mContact);
-          if (contact->getPeerURI() == mSelfContact->getPeerURI()) {
-            ThreadContactPtr threadContact = ThreadContact::create(mSelfContact, info.mIdentityContacts);
 
-            // do not allow self to become a 'PeerContact'
-            foundSelf = true;
+          String statusHash;
+          ElementPtr status;
 
-            // make sure we are on the final list though...
-            contactMap[mSelfContact->getPeerURI()] = threadContact;
-            continue;
-          }
+          baseThread->getLastContactStatus(contact, statusHash, status);
 
-          ThreadContactPtr threadContact = ThreadContact::create(contact, info.mIdentityContacts);
+          ThreadContactPtr threadContact = ThreadContact::create(1, contact, info.mIdentityContacts, statusHash, status);
 
           // remember this contact as needing to be added to the final list...
           contactMap[contact->getPeerURI()] = threadContact;
 
-          PeerContactMap::iterator found = mPeerContacts.find(contact->getPeerURI());
-          if (found == mPeerContacts.end()) {
-            PeerContactPtr peerContact = PeerContact::create(getAssociatedMessageQueue(), mThisWeak.lock(), contact, info.mIdentityContacts);
-            if (peerContact) {
-              mPeerContacts[contact->getPeerURI()] = peerContact;
+          if (contact->getPeerURI() != mSelfContact->getPeerURI()) {
+            PeerContactMap::iterator found = mPeerContacts.find(contact->getPeerURI());
+            if (found == mPeerContacts.end()) {
+              PeerContactPtr peerContact = PeerContact::create(getAssociatedMessageQueue(), mThisWeak.lock(), contact, info.mIdentityContacts);
+              if (peerContact) {
+                mPeerContacts[contact->getPeerURI()] = peerContact;
+              }
             }
           }
         }
@@ -634,6 +647,47 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      void ConversationThreadHost::setStatusInThread(
+                                                     UseContactPtr selfContact,
+                                                     const IdentityContactList &selfIdentityContacts,
+                                                     const String &contactStatusInThreadOfSelfHash,
+                                                     ElementPtr contactStatusInThreadOfSelf
+                                                     )
+      {
+        AutoRecursiveLock lock(*this);
+        if ((isShutdown()) ||
+            (isShuttingDown())) {
+          ZS_LOG_DEBUG(log("cannot set status during shutdown"))
+          return;
+        }
+
+        if (!mHostThread) {
+          ZS_LOG_DEBUG(log("cannot set status without slave object"))
+          return;
+        }
+
+        // get the current list of contacts on the thread
+        ThreadContactMap contacts = mHostThread->contacts()->contacts();
+
+        if (contacts.end() == contacts.find(selfContact->getPeerURI())) {
+          ZS_LOG_WARNING(Detail, log("unable to find self contact in host thread thus cannot update self status"))
+          return;
+        }
+
+        // replace selt with updated information
+        contacts[selfContact->getPeerURI()] = ThreadContact::create(1, selfContact, selfIdentityContacts, contactStatusInThreadOfSelfHash, contactStatusInThreadOfSelf);
+
+        // publish the lastest contact list
+        mHostThread->updateBegin();
+        mHostThread->setContacts(contacts);
+        publish(mHostThread->updateEnd(), false, false);
+
+        // kick the conversation thread step routine asynchronously to ensure
+        // the thread has a subscription state to its peer
+        IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
+      }
+
+      //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -759,6 +813,23 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      void ConversationThreadHost::notifyContactStatus(
+                                                       UseContactPtr contact,
+                                                       const String &statusHash,
+                                                       ElementPtr status
+                                                       )
+      {
+        AutoRecursiveLock lock(*this);
+
+        UseConversationThreadPtr baseThread = mBaseThread.lock();
+        if (!baseThread) {
+          ZS_LOG_WARNING(Detail, log("unable to notify of contact status as base thread gone"))
+          return;
+        }
+        baseThread->notifyContactStatus(mThisWeak.lock(), contact, statusHash, status);
+      }
+
+      //-----------------------------------------------------------------------
       void ConversationThreadHost::notifyMessagePush(
                                                      MessagePtr message,
                                                      UseContactPtr toContact
@@ -792,7 +863,7 @@ namespace openpeer
           ZS_LOG_WARNING(Detail, log("unable to notify about contact state as base is gone"))
           return;
         }
-        baseThread->notifyContactState(mThisWeak.lock(), contact, state);
+        baseThread->notifyContactConnectionState(mThisWeak.lock(), contact, state);
       }
 
       //-----------------------------------------------------------------------
@@ -1034,6 +1105,12 @@ namespace openpeer
         AutoRecursiveLock lock(*this);
         ZS_THROW_INVALID_ASSUMPTION_IF(!safeToChangeContacts())
 
+        UseConversationThreadPtr baseThread = mBaseThread.lock();
+        if (!baseThread) {
+          ZS_LOG_WARNING(Detail, log("cannot remove contacts as no base thread present"))
+          return;
+        }
+
         ThreadContactMap contactMap;
 
         for (ContactURIList::const_iterator iter = contacts.begin(); iter != contacts.end(); ++iter)
@@ -1054,7 +1131,13 @@ namespace openpeer
         {
           const String contactID = (*iter).first;
           PeerContactPtr &peerContact = (*iter).second;
-          ThreadContactPtr threadContact(ThreadContact::create(peerContact->getContact(), peerContact->getIdentityContacts()));
+
+          String statusHash;
+          ElementPtr status;
+
+          baseThread->getLastContactStatus(peerContact->getContact(), statusHash, status);
+
+          ThreadContactPtr threadContact(ThreadContact::create(1, peerContact->getContact(), peerContact->getIdentityContacts(), statusHash, status));
           contactMap[contactID] = threadContact;
         }
 

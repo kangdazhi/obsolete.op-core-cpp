@@ -584,6 +584,25 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      void ConversationThreadHost::PeerContact::notifyContactStatus(
+                                                                    const String &statusHash,
+                                                                    ElementPtr status
+                                                                    )
+      {
+        ZS_LOG_DEBUG(log("notified contact status changed"))
+
+        AutoRecursiveLock lock(*this);
+
+        ConversationThreadHostPtr outer = mOuter.lock();
+        if (!outer) {
+          ZS_LOG_DEBUG(log("unable to notify of contact status as host thread is gone"))
+          return;
+        }
+
+        outer->notifyContactStatus(mContact, statusHash, status);
+      }
+
+      //-----------------------------------------------------------------------
       void ConversationThreadHost::PeerContact::notifyStateChanged(PeerLocationPtr peerLocation)
       {
         AutoRecursiveLock lock(*this);

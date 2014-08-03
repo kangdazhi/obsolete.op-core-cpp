@@ -92,6 +92,9 @@ namespace openpeer
         String mURL;
         int mWidth;
         int mHeight;
+
+        bool operator==(const Avatar &rValue) const;
+        bool operator!=(const Avatar &rValue) const;
       };
       typedef std::list<Avatar> AvatarList;
 
@@ -114,6 +117,9 @@ namespace openpeer
 
       RolodexContact();
       bool hasData() const;
+
+      bool operator==(const RolodexContact &rValue) const;
+      bool operator!=(const RolodexContact &rValue) const;
     };
     
     //-------------------------------------------------------------------------
@@ -140,6 +146,9 @@ namespace openpeer
       IdentityContact();
       IdentityContact(const RolodexContact &);
       bool hasData() const;
+
+      bool operator==(const IdentityContact &rValue) const;
+      bool operator!=(const IdentityContact &rValue) const;
     };
 
     ZS_DECLARE_TYPEDEF_PTR(std::list<IdentityContact>, IdentityContactList)
