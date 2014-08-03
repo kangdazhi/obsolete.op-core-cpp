@@ -270,7 +270,7 @@ namespace openpeer
 
         mSlaveThread->updateBegin();
         mSlaveThread->addMessages(messages);
-        publish(mSlaveThread->updateEnd(), false, true);
+        mSlaveThread->updateEnd(getPublicationRepostiory());
 
         // kick the conversation thread step routine asynchronously to ensure
         // the thread has a subscription state to its peer
@@ -379,7 +379,7 @@ namespace openpeer
 
         mSlaveThread->updateBegin();
         mSlaveThread->setContactsToAdd(contactMap);
-        publish(mSlaveThread->updateEnd(), false, true);
+        mSlaveThread->updateEnd(getPublicationRepostiory());
 
         IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
       }
@@ -399,7 +399,7 @@ namespace openpeer
 
         mSlaveThread->updateBegin();
         mSlaveThread->setContactsToRemove(contactIDList);
-        publish(mSlaveThread->updateEnd(), false, true);
+        mSlaveThread->updateEnd(getPublicationRepostiory());
 
         IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
       }
@@ -462,7 +462,7 @@ namespace openpeer
         // publish the changes now...
         mSlaveThread->updateBegin();
         mSlaveThread->updateDialogs(additions);
-        publish(mSlaveThread->updateEnd(), false, true);
+        mSlaveThread->updateEnd(getPublicationRepostiory());
 
         IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
         return true;
@@ -493,7 +493,7 @@ namespace openpeer
         // publish the changes now...
         mSlaveThread->updateBegin();
         mSlaveThread->updateDialogs(updates);
-        publish(mSlaveThread->updateEnd(), false, true);
+        mSlaveThread->updateEnd(getPublicationRepostiory());
 
         IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
       }
@@ -526,7 +526,7 @@ namespace openpeer
         // publish the changes now...
         mSlaveThread->updateBegin();
         mSlaveThread->removeDialogs(removeCallIDs);
-        publish(mSlaveThread->updateEnd(), false, true);
+        mSlaveThread->updateEnd(getPublicationRepostiory());
 
         IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
       }
@@ -587,7 +587,7 @@ namespace openpeer
         const MessagePtr &lastMessage = messagesChanged.back();
         mSlaveThread->setRead(lastMessage);
 
-        publish(mSlaveThread->updateEnd(), false, true);
+        mSlaveThread->updateEnd(getPublicationRepostiory());
 
         // kick the conversation thread step routine asynchronously to ensure
         // the thread has a subscription state to its peer
@@ -619,7 +619,7 @@ namespace openpeer
 
         mSlaveThread->updateBegin();
         mSlaveThread->setContacts(contacts);
-        publish(mSlaveThread->updateEnd(), false, true);
+        mSlaveThread->updateEnd(getPublicationRepostiory());
 
         // kick the conversation thread step routine asynchronously to ensure
         // the thread has a subscription state to its peer
@@ -902,9 +902,6 @@ namespace openpeer
         //.......................................................................
         // create the slave thread if it's not created
 
-        bool mustPublish = false;
-        bool mustPublishPermission = false;
-
         if (!mSlaveThread) {
           mSlaveThread = Thread::create(
                                         Account::convert(account),
@@ -924,8 +921,6 @@ namespace openpeer
             cancel();
             return;
           }
-
-          mustPublishPermission = mustPublish = true;
         }
 
 
@@ -993,10 +988,7 @@ namespace openpeer
         //.......................................................................
         // publish the changes
 
-        bool changesMade = mSlaveThread->updateEnd();
-        mustPublish = changesMade || mustPublish;
-
-        publish(mustPublish, mustPublishPermission, true);
+        mSlaveThread->updateEnd(getPublicationRepostiory());
 
         step();
 
@@ -1566,50 +1558,15 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      void ConversationThreadSlave::publish(
-                                            bool publishSlavePublication,
-                                            bool publishSlavePermissionPublication,
-                                            bool publishContacts
-                                            )
+      IPublicationRepositoryPtr ConversationThreadSlave::getPublicationRepostiory()
       {
         UseAccountPtr account = mAccount.lock();
         if (!account) {
           ZS_LOG_WARNING(Detail, log("account is gone thus cannot publish any publications"))
-          return;
+          return IPublicationRepositoryPtr();
         }
 
-        IPublicationRepositoryPtr repo = account->getRepository();
-        if (!repo) {
-          ZS_LOG_WARNING(Detail, log("publication repository was NULL thus cannot publish any publications"))
-          return;
-        }
-
-        if (!mSlaveThread) {
-          ZS_LOG_WARNING(Detail, log("slave thread is not available thus cannot publish any publications"))
-          return;
-        }
-
-        if (publishContacts) {
-          thread::ContactPublicationMap publishDocuments;
-          mSlaveThread->getContactPublicationsToPublish(publishDocuments);
-          for (thread::ContactPublicationMap::iterator iter = publishDocuments.begin(); iter != publishDocuments.end(); ++iter)
-          {
-            IPublicationPtr contactPublication = (*iter).second;
-
-            ZS_LOG_DEBUG(log("publishing host contact document"))
-            repo->publish(IPublicationPublisherDelegateProxy::createNoop(getAssociatedMessageQueue()), contactPublication);
-          }
-        }
-
-        if (publishSlavePermissionPublication) {
-          ZS_LOG_DEBUG(log("publishing slave thread permission document"))
-          repo->publish(IPublicationPublisherDelegateProxy::createNoop(getAssociatedMessageQueue()), mSlaveThread->permissionPublication());
-        }
-
-        if (publishSlavePublication) {
-          ZS_LOG_DEBUG(log("publishing slave thread document"))
-          repo->publish(IPublicationPublisherDelegateProxy::createNoop(getAssociatedMessageQueue()), mSlaveThread->publication());
-        }
+        return account->getRepository();
       }
 
       //-----------------------------------------------------------------------

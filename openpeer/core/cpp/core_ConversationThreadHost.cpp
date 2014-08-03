@@ -157,10 +157,22 @@ namespace openpeer
 
         UseConversationThreadPtr baseThread = mBaseThread.lock();
 
-        mHostThread = Thread::create(Account::convert(account), Thread::ThreadType_Host, account->getSelfLocation(), baseThread->getThreadID(), mThreadID, "", "", mServerName, state);
+        mHostThread = Thread::create(
+                                     Account::convert(account),
+                                     Thread::ThreadType_Host,
+                                     account->getSelfLocation(),
+                                     baseThread->getThreadID(),
+                                     mThreadID,
+                                     "",
+                                     "",
+                                     mServerName,
+                                     state
+                                     );
+
         ZS_THROW_BAD_STATE_IF(!mHostThread)
 
-        publish(true, true, true);
+        mHostThread->updateBegin();
+        mHostThread->updateEnd(getPublicationRepostiory());
 
         step();
       }
@@ -319,7 +331,7 @@ namespace openpeer
 
         mHostThread->updateBegin();
         mHostThread->addMessages(messages);
-        publish(mHostThread->updateEnd(), false, true);
+        mHostThread->updateEnd(getPublicationRepostiory());
 
         step();
         return true;
@@ -446,7 +458,7 @@ namespace openpeer
         // publish changes...
         mHostThread->updateBegin();
         mHostThread->setContacts(contactMap);
-        publish(mHostThread->updateEnd(), true, true);
+        mHostThread->updateEnd(getPublicationRepostiory());
 
         IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
       }
@@ -474,7 +486,7 @@ namespace openpeer
 
         mHostThread->updateBegin();
         mHostThread->setContacts(contactMap);
-        publish(mHostThread->updateEnd(), true, true);
+        mHostThread->updateEnd(getPublicationRepostiory());
 
         IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
       }
@@ -558,7 +570,7 @@ namespace openpeer
         // publish the changes now...
         mHostThread->updateBegin();
         mHostThread->updateDialogs(additions);
-        publish(mHostThread->updateEnd(), true, true);
+        mHostThread->updateEnd(getPublicationRepostiory());
 
         IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
         return true;
@@ -586,7 +598,7 @@ namespace openpeer
         // publish the changes now...
         mHostThread->updateBegin();
         mHostThread->updateDialogs(updates);
-        publish(mHostThread->updateEnd(), true, true);
+        mHostThread->updateEnd(getPublicationRepostiory());
 
         IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
       }
@@ -617,7 +629,7 @@ namespace openpeer
         // publish the changes now...
         mHostThread->updateBegin();
         mHostThread->removeDialogs(removals);
-        publish(mHostThread->updateEnd(), true, true);
+        mHostThread->updateEnd(getPublicationRepostiory());
 
         IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
       }
@@ -680,7 +692,7 @@ namespace openpeer
         // publish the lastest contact list
         mHostThread->updateBegin();
         mHostThread->setContacts(contacts);
-        publish(mHostThread->updateEnd(), false, false);
+        mHostThread->updateEnd(getPublicationRepostiory());
 
         // kick the conversation thread step routine asynchronously to ensure
         // the thread has a subscription state to its peer
@@ -709,7 +721,7 @@ namespace openpeer
 
         mHostThread->updateBegin();
         mHostThread->setState(Details::ConversationThreadState_Closed);
-        publish(mHostThread->updateEnd(), false, true);
+        mHostThread->updateEnd(getPublicationRepostiory());
       }
 
       //-----------------------------------------------------------------------
@@ -782,7 +794,7 @@ namespace openpeer
         // any received messages have to be republished to the host thread...
         mHostThread->updateBegin();
         mHostThread->addMessages(messages);
-        publish(mHostThread->updateEnd(), false, true);
+        mHostThread->updateEnd(getPublicationRepostiory());
       }
 
       //-----------------------------------------------------------------------
@@ -1003,7 +1015,7 @@ namespace openpeer
           // do not mark messages again as read until signalled to do so again
           get(mMarkAllRead) = false;
         }
-        publish(mHostThread->updateEnd(), false, true);
+        mHostThread->updateEnd(getPublicationRepostiory());
 
         if ((contactsToAdd.size() > 0) ||
             (contactsToRemove.size() > 0)) {
@@ -1051,52 +1063,15 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      void ConversationThreadHost::publish(
-                                           bool publishHostPublication,
-                                           bool publishHostPermissionPublication,
-                                           bool publishContacts
-                                           )
+      IPublicationRepositoryPtr ConversationThreadHost::getPublicationRepostiory()
       {
-        AutoRecursiveLock lock(*this);
-
         UseAccountPtr account = mAccount.lock();
         if (!account) {
-          ZS_LOG_WARNING(Detail, log("account is gone thus cannot publish any publications"))
-          return;
+          ZS_LOG_WARNING(Detail, log("account is gone thus get publication repository"))
+          return IPublicationRepositoryPtr();
         }
 
-        IPublicationRepositoryPtr repo = account->getRepository();
-        if (!repo) {
-          ZS_LOG_WARNING(Detail, log("publication repository was NULL thus cannot publish any publications"))
-          return;
-        }
-
-        if (!mHostThread) {
-          ZS_LOG_WARNING(Detail, log("host thread is not available thus cannot publish any publications"))
-          return;
-        }
-
-        if (publishContacts) {
-          thread::ContactPublicationMap publishDocuments;
-          mHostThread->getContactPublicationsToPublish(publishDocuments);
-          for (thread::ContactPublicationMap::iterator iter = publishDocuments.begin(); iter != publishDocuments.end(); ++iter)
-          {
-            IPublicationPtr contactPublication = (*iter).second;
-
-            ZS_LOG_DEBUG(log("publishing host contact document"))
-            repo->publish(IPublicationPublisherDelegateProxy::createNoop(getAssociatedMessageQueue()), contactPublication);
-          }
-        }
-
-        if (publishHostPermissionPublication) {
-          ZS_LOG_DEBUG(log("publishing host thread permission document"))
-          repo->publish(IPublicationPublisherDelegateProxy::createNoop(getAssociatedMessageQueue()), mHostThread->permissionPublication());
-        }
-
-        if (publishHostPublication) {
-          ZS_LOG_DEBUG(log("publishing host thread document"))
-          repo->publish(IPublicationPublisherDelegateProxy::createNoop(getAssociatedMessageQueue()), mHostThread->publication());
-        }
+        return account->getRepository();
       }
 
       //-----------------------------------------------------------------------
@@ -1144,7 +1119,7 @@ namespace openpeer
         // publish changes...
         mHostThread->updateBegin();
         mHostThread->setContacts(contactMap);
-        publish(mHostThread->updateEnd(), true, true);
+        mHostThread->updateEnd(getPublicationRepostiory());
       }
 
       //-----------------------------------------------------------------------

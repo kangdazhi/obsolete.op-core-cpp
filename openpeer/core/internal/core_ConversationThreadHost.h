@@ -290,11 +290,7 @@ namespace openpeer
 
         void setState(ConversationThreadHostStates state);
 
-        void publish(
-                     bool publishHostPublication,
-                     bool publishHostPermissionPublication,
-                     bool publishContacts
-                     );
+        IPublicationRepositoryPtr getPublicationRepostiory();
 
         void removeContacts(const ContactURIList &contacts);
 

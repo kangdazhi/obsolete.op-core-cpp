@@ -2164,6 +2164,7 @@ namespace openpeer
           mType(ThreadType_Host),
           mCanModify(false),
           mModifying(false),
+          mMustPublish(true),
           mMessagesVersion(0),
           mDialogsVersion(0),
           mDetailsChanged(false)
@@ -2791,22 +2792,22 @@ namespace openpeer
         {
           ZS_THROW_INVALID_USAGE_IF(!mCanModify)
           ZS_THROW_INVALID_USAGE_IF(mModifying)
-          ZS_THROW_BAD_STATE_IF(mChangesDoc)
 
           mModifying = true;
 
           resetChanged();
-          mChangesDoc.reset();
         }
 
         //---------------------------------------------------------------------
-        bool Thread::updateEnd()
+        bool Thread::updateEnd(IPublicationRepositoryPtr repository)
         {
           ZS_THROW_INVALID_USAGE_IF(!mCanModify)
           ZS_THROW_INVALID_USAGE_IF(!mModifying)
 
           mModifying = false;
           bool contactsAddedOrRemoved = false;
+
+          DocumentPtr changesDoc;
 
           // scope: figure out difference document (needs to be scoped because
           //        of publication lock returned from getXML(...) could cause
@@ -2819,7 +2820,7 @@ namespace openpeer
             // have the details changed since last time?
             if (mDetailsChanged) {
               ElementPtr detailsEl = threadEl->findFirstChildElementChecked("details");
-              IDiff::createDiffs(IDiff::DiffAction_Replace, mChangesDoc, detailsEl, false, mDetails->detailsElement()->clone());
+              IDiff::createDiffs(IDiff::DiffAction_Replace, changesDoc, detailsEl, false, mDetails->detailsElement()->clone());
             }
 
             // have any contacts changed...
@@ -2913,7 +2914,7 @@ namespace openpeer
               convert(addContacts, addContactsAsList);
 
               // this is the replacement "contacts" object
-              mContacts = ThreadContacts::createUpdateAndMakeDiffs(contactsAsList, addContactsAsList, removeContacts, mContacts, threadEl->findFirstChildElementChecked("contacts"), mChangesDoc);
+              mContacts = ThreadContacts::createUpdateAndMakeDiffs(contactsAsList, addContactsAsList, removeContacts, mContacts, threadEl->findFirstChildElementChecked("contacts"), changesDoc);
               ZS_THROW_BAD_STATE_IF(!mContacts)
             }
 
@@ -2926,13 +2927,13 @@ namespace openpeer
               setEl->setAttribute("version", string(mMessagesVersion));
 
               // put the corrected version on the messages element...
-              IDiff::createDiffsForAttributes(mChangesDoc, messagesEl, false, setEl);
+              IDiff::createDiffsForAttributes(changesDoc, messagesEl, false, setEl);
 
               // add the messages to the messages element
               for (MessageList::iterator iter = mMessagesChanged.begin(); iter != mMessagesChanged.end(); ++iter)
               {
                 MessagePtr &message = (*iter);
-                IDiff::createDiffs(IDiff::DiffAction_AdoptAsLastChild, mChangesDoc, messagesEl, false, message->messageBundleElement());
+                IDiff::createDiffs(IDiff::DiffAction_AdoptAsLastChild, changesDoc, messagesEl, false, message->messageBundleElement());
 
                 // remember these messages in the thread document...
                 mMessageList.push_back(message);
@@ -2942,8 +2943,8 @@ namespace openpeer
 
             ElementPtr receiptsEl = threadEl->findFirstChildElementChecked("receipts");
 
-            createReceiptDiffs(receiptsEl, "delivered", mMessagesDeliveredChanged, mMessagesDelivered);
-            createReceiptDiffs(receiptsEl, "read", mMessagesReadChanged, mMessagesRead);
+            createReceiptDiffs(changesDoc, receiptsEl, "delivered", mMessagesDeliveredChanged, mMessagesDelivered);
+            createReceiptDiffs(changesDoc, receiptsEl, "read", mMessagesReadChanged, mMessagesRead);
 
             if ((mDialogsChanged.size() > 0) ||
                 (mDialogsRemoved.size() > 0)) {
@@ -2955,7 +2956,7 @@ namespace openpeer
               ElementPtr setEl = Element::create();
               setEl->setAttribute("version", string(mDialogsVersion));
 
-              IDiff::createDiffsForAttributes(mChangesDoc, dialogsEl, false, setEl);
+              IDiff::createDiffsForAttributes(changesDoc, dialogsEl, false, setEl);
 
               for (DialogMap::iterator iter = mDialogsChanged.begin(); iter != mDialogsChanged.end(); ++iter)
               {
@@ -2974,7 +2975,7 @@ namespace openpeer
                   ElementPtr signatureEl = dialogBundleEl->findFirstChildElement("Signature");
                   if (dialogEl->getAttributeValue("id") == id) {
                     // found the element to "replace"... so create a diff...
-                    IDiff::createDiffs(IDiff::DiffAction_Replace, mChangesDoc, dialogBundleEl, false, dialog->dialogBundleElement()->clone());
+                    IDiff::createDiffs(IDiff::DiffAction_Replace, changesDoc, dialogBundleEl, false, dialog->dialogBundleElement()->clone());
                     found = true;
                     break;
                   }
@@ -2983,7 +2984,7 @@ namespace openpeer
 
                 if (!found) {
                   // this dialog needs to be added isntead
-                  IDiff::createDiffs(IDiff::DiffAction_AdoptAsLastChild, mChangesDoc, dialogsEl, false, dialog->dialogBundleElement()->clone());
+                  IDiff::createDiffs(IDiff::DiffAction_AdoptAsLastChild, changesDoc, dialogsEl, false, dialog->dialogBundleElement()->clone());
                 }
               }
 
@@ -3003,7 +3004,7 @@ namespace openpeer
                   ElementPtr dialogEl = dialogBundleEl->findFirstChildElement("dialog");
                   if (dialogEl->getAttributeValue("id") == id) {
                     // found the element to "replace"... so create a diff...
-                    IDiff::createDiffs(IDiff::DiffAction_Remove, mChangesDoc, dialogBundleEl, false);
+                    IDiff::createDiffs(IDiff::DiffAction_Remove, changesDoc, dialogBundleEl, false);
                     break;
                   }
                   dialogBundleEl = dialogBundleEl->findNextSiblingElement("dialogBundle");
@@ -3011,12 +3012,12 @@ namespace openpeer
               }
             }
 
-            if (!mChangesDoc) return false;  // nothing to do
           }
 
-          // the changes need to be adopted/processed by the document
-          mPublication->update(mChangesDoc);
-          mChangesDoc.reset();
+          if (changesDoc) {
+            // the changes need to be adopted/processed by the document
+            mPublication->update(changesDoc);
+          }
 
           // check if the permissions document needs updating too...
           if (contactsAddedOrRemoved) {
@@ -3045,8 +3046,6 @@ namespace openpeer
             }
           }
 
-          resetChanged();
-
           // scope: double check if any contacts can be published at this time
           {
             const ThreadContactMap &contacts = mContacts->contacts();
@@ -3056,6 +3055,11 @@ namespace openpeer
               publishContact(contact->contact());
             }
           }
+
+          resetChanged();
+
+          publish(repository, mMustPublish || (bool)changesDoc, mMustPublish || contactsAddedOrRemoved);
+          mMustPublish = false;
 
           return true;
         }
@@ -3278,22 +3282,43 @@ namespace openpeer
         }
 
         //---------------------------------------------------------------------
-        void Thread::getContactPublicationsToPublish(ContactPublicationMap &outContactPublications)
+        void Thread::publish(
+                             IPublicationRepositoryPtr repository,
+                             bool publication,
+                             bool permissions
+                             )
         {
-          for (ContactPublicationMap::iterator iter = mContactPublications.begin(); iter != mContactPublications.end(); ++iter)
+          if (!repository) {
+            ZS_LOG_WARNING(Detail, log("publication repository is not available"))
+            return;
+          }
+
+          // scope: publish contacts
           {
-            const String &contactURI = (*iter).first;
-            IPublicationPtr &publication = (*iter).second;
-            if (!publication) {
-              ZS_LOG_TRACE(log("contact already published"))
-              continue;
+            ContactPublicationMap &publishDocuments = mContactPublications;
+            for (thread::ContactPublicationMap::iterator iter = publishDocuments.begin(); iter != publishDocuments.end(); ++iter)
+            {
+              const String &uri = (*iter).first;
+              IPublicationPtr contactPublication = (*iter).second;
+
+              // remember that this publication was published
+              mContactPublicationsCompleted[uri] = IPublicationPtr();
+
+              ZS_LOG_DEBUG(log("publishing host contact document"))
+              repository->publish(IPublicationPublisherDelegateProxy::createNoop(UseStack::queueCore()), contactPublication);
             }
 
-            // transfer ownership of publication to caller
-            outContactPublications[contactURI] = publication;
+            mContactPublications.clear();
+          }
 
-            // make sure it will never be published again
-            publication.reset();
+          if (permissions) {
+            ZS_LOG_DEBUG(log("publishing thread permission document"))
+            repository->publish(IPublicationPublisherDelegateProxy::createNoop(UseStack::queueCore()), mPermissionPublication);
+          }
+
+          if (publication) {
+            ZS_LOG_DEBUG(log("publishing thread document"))
+            repository->publish(IPublicationPublisherDelegateProxy::createNoop(UseStack::queueCore()), mPublication);
           }
         }
 
@@ -3306,9 +3331,13 @@ namespace openpeer
           IHelper::debugAppend(resultEl, "type", toString(mType));
           IHelper::debugAppend(resultEl, "can modify", mCanModify);
           IHelper::debugAppend(resultEl, "modifying", mModifying);
+
+          IHelper::debugAppend(resultEl, "must publish", mMustPublish);
           IHelper::debugAppend(resultEl, IPublication::toDebug(mPublication));
           IHelper::debugAppend(resultEl, IPublication::toDebug(mPermissionPublication));
           IHelper::debugAppend(resultEl, "contact publications", mContactPublications.size());
+          IHelper::debugAppend(resultEl, "contact publications completed", mContactPublicationsCompleted.size());
+
           IHelper::debugAppend(resultEl, Details::toDebug(mDetails));
           IHelper::debugAppend(resultEl, ThreadContacts::toDebug(mContacts));
           IHelper::debugAppend(resultEl, "message version", mMessagesVersion);
@@ -3318,7 +3347,7 @@ namespace openpeer
           IHelper::debugAppend(resultEl, MessageReceipts::toDebug(mMessagesRead));
           IHelper::debugAppend(resultEl, "dialog version", mDialogsVersion);
           IHelper::debugAppend(resultEl, "dialogs", mDialogs.size());
-          IHelper::debugAppend(resultEl, "changes", (bool)mChangesDoc);
+
           IHelper::debugAppend(resultEl, "details changed", mDetailsChanged);
           IHelper::debugAppend(resultEl, "contacts changed", mContactsChanged.size());
           IHelper::debugAppend(resultEl, "contacts removed", mContactsRemoved.size());
@@ -3401,7 +3430,7 @@ namespace openpeer
             return;
           }
 
-          if (mContactPublications.end() != mContactPublications.find(contact->getPeerURI())) {
+          if (mContactPublicationsCompleted.end() != mContactPublicationsCompleted.find(contact->getPeerURI())) {
             ZS_LOG_TRACE(log("contact already published") + UseContact::toDebug(contact))
             return;
           }
@@ -3475,6 +3504,7 @@ namespace openpeer
 
         //---------------------------------------------------------------------
         void Thread::createReceiptDiffs(
+                                        DocumentPtr &ioChangesDoc,
                                         ElementPtr inReceiptsEl,
                                         const char *inSubElementName,
                                         const MessageReceiptMap &inChanged,
@@ -3490,7 +3520,7 @@ namespace openpeer
               ioReceipts = MessageReceipts::create(inSubElementName, 1, inChanged);
             }
 
-            IDiff::createDiffs(IDiff::DiffAction_Replace, mChangesDoc, subEl, false, ioReceipts->receiptsElement());
+            IDiff::createDiffs(IDiff::DiffAction_Replace, ioChangesDoc, subEl, false, ioReceipts->receiptsElement());
           }
         }
 

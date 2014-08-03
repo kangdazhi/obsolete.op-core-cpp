@@ -698,7 +698,7 @@ namespace openpeer
                                   );
 
           void updateBegin();
-          bool updateEnd();
+          bool updateEnd(IPublicationRepositoryPtr repository);
 
           void setState(Details::ConversationThreadStates state);
 
@@ -746,7 +746,13 @@ namespace openpeer
           const ChangedDescriptionMap &descriptionsChanged() const  {return mDescriptionsChanged;}
           const DescriptionIDList &descriptionsRemoved() const      {return mDescriptionsRemoved;}
 
-          void getContactPublicationsToPublish(ContactPublicationMap &outContactPublications);
+          const ContactPublicationMap &getContactPublicationsToPublish() {return mContactPublications;}
+
+          void publish(
+                       IPublicationRepositoryPtr repository,
+                       bool publication,
+                       bool permissions
+                       );
 
           String getContactDocumentName(UseContactPtr contact) const;
 
@@ -765,6 +771,7 @@ namespace openpeer
                                     );
 
           void createReceiptDiffs(
+                                  DocumentPtr &ioChangesDoc,
                                   ElementPtr inReceiptsEl,
                                   const char *inSubElementName,
                                   const MessageReceiptMap &inChanged,
@@ -783,15 +790,18 @@ namespace openpeer
                            );
 
         protected:
-          AutoPUID mID;
           ThreadWeakPtr mThisWeak;
+
+          AutoPUID mID;
           ThreadTypes mType;
           bool mCanModify;
           bool mModifying;
 
+          bool mMustPublish;
           IPublicationPtr mPublication;
           IPublicationPtr mPermissionPublication;
           ContactPublicationMap mContactPublications;
+          ContactPublicationMap mContactPublicationsCompleted;
 
           DetailsPtr mDetails;
           ThreadContactsPtr mContacts;
@@ -802,8 +812,6 @@ namespace openpeer
           MessageReceiptsPtr mMessagesRead;
           UINT mDialogsVersion;
           DialogMap mDialogs;
-
-          DocumentPtr mChangesDoc;
 
           bool mDetailsChanged;
           ThreadContactMap mContactsChanged;

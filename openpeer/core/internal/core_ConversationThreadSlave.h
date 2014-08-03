@@ -329,11 +329,7 @@ namespace openpeer
         void setState(ConversationThreadSlaveStates state);
 
         UseContactPtr getHostContact() const;
-        void publish(
-                     bool publishSlavePublication,
-                     bool publishSlavePermissionPublication,
-                     bool publishContacts
-                     );
+        IPublicationRepositoryPtr getPublicationRepostiory();
 
         void processReceiptsFromHostDocument(
                                              MessageDeliveryStates applyDeliveryState,
