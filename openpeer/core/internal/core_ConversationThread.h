@@ -258,12 +258,23 @@ namespace openpeer
                                                   ContactConnectionStates state
                                                   ) = 0;
 
+        static bool shouldUpdateContactStatus(
+                                              const Time &existingStatusTime,
+                                              const String &existingStatusHash,
+                                              const ElementPtr &existingStatus,
+                                              const Time &newStatusTime,
+                                              const String &newStatusHash,
+                                              const ElementPtr &newContactStatus,
+                                              bool forceUpdate = false
+                                              );
+
         virtual void notifyContactStatus(
                                          IConversationThreadHostSlaveBasePtr thread,
                                          UseContactPtr contact,
                                          const Time &statusTime,
                                          const String &statusHash,
-                                         ElementPtr status
+                                         ElementPtr status,
+                                         bool forceUpdate = false
                                          ) = 0;
 
         virtual bool getLastContactStatus(
@@ -357,6 +368,7 @@ namespace openpeer
       public:
         friend interaction IConversationThreadFactory;
         friend interaction IConversationThread;
+        friend interaction IConversationThreadForHostOrSlave;
 
         ZS_DECLARE_TYPEDEF_PTR(IAccountForConversationThread, UseAccount)
         ZS_DECLARE_TYPEDEF_PTR(ICallForConversationThread, UseCall)
@@ -543,12 +555,23 @@ namespace openpeer
                                                   ContactConnectionStates state
                                                   );
 
+        static bool shouldUpdateContactStatus(
+                                              const Time &existingStatusTime,
+                                              const String &existingStatusHash,
+                                              const ElementPtr &existingStatus,
+                                              const Time &newStatusTime,
+                                              const String &newStatusHash,
+                                              const ElementPtr &newContactStatus,
+                                              bool forceUpdate = false
+                                              );
+
         virtual void notifyContactStatus(
                                          IConversationThreadHostSlaveBasePtr thread,
                                          UseContactPtr contact,
                                          const Time &statusTime,
                                          const String &statusHash,
-                                         ElementPtr status
+                                         ElementPtr status,
+                                         bool forceUpdate = false
                                          );
 
         virtual bool getLastContactStatus(
@@ -634,6 +657,7 @@ namespace openpeer
         virtual bool isShutdown() const {AutoRecursiveLock lock(*this); return ConversationThreadState_Shutdown == mCurrentState;}
 
         Log::Params log(const char *message) const;
+        static Log::Params slog(const char *message);
 
         virtual ElementPtr toDebug() const;
 

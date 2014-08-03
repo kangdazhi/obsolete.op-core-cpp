@@ -38,6 +38,8 @@
 #include <openpeer/core/internal/core_Helper.h>
 #include <openpeer/core/internal/core_Stack.h>
 
+#include <openpeer/core/IConversationThreadComposingStatus.h>
+
 #include <openpeer/stack/IPublication.h>
 #include <openpeer/stack/IHelper.h>
 
@@ -64,9 +66,10 @@ namespace openpeer
 
       typedef IStackForInternal UseStack;
 
-      using services::IHelper;
-
       using namespace core::internal::thread;
+
+      ZS_DECLARE_TYPEDEF_PTR(IHelperForInternal, UseHelper)
+      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, ServicesHelper)
 
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -442,18 +445,29 @@ namespace openpeer
 
           ThreadContactPtr threadContact = ThreadContact::create(1, contact, info.mIdentityContacts, statusTime, statusHash, status);
 
-          // remember this contact as needing to be added to the final list...
-          contactMap[contact->getPeerURI()] = threadContact;
-
           if (contact->getPeerURI() != mSelfContact->getPeerURI()) {
             PeerContactMap::iterator found = mPeerContacts.find(contact->getPeerURI());
             if (found == mPeerContacts.end()) {
               PeerContactPtr peerContact = PeerContact::create(getAssociatedMessageQueue(), mThisWeak.lock(), contact, info.mIdentityContacts);
               if (peerContact) {
+                if (Time() == statusTime) {
+                  statusTime = zsLib::now();
+                  status.reset();
+                  IConversationThreadComposingStatus::updateComposingStatus(status, IConversationThreadComposingStatus::ComposingState_Gone);
+                  statusHash = UseHelper::hash(status);
+
+                  // force the base thread to accept this contact status (if this is the open thread)
+                  baseThread->notifyContactStatus(mThisWeak.lock(), contact, statusTime, statusHash, status, true);
+
+                  threadContact = ThreadContact::create(1, contact, info.mIdentityContacts, statusTime, statusHash, status);
+                }
                 mPeerContacts[contact->getPeerURI()] = peerContact;
               }
             }
           }
+
+          // remember this contact as needing to be added to the final list...
+          contactMap[contact->getPeerURI()] = threadContact;
         }
 
         // publish changes...
@@ -831,7 +845,8 @@ namespace openpeer
                                                        UseContactPtr contact,
                                                        const Time &statusTime,
                                                        const String &statusHash,
-                                                       ElementPtr status
+                                                       ElementPtr status,
+                                                       bool forceUpdate
                                                        )
       {
         ZS_THROW_INVALID_ARGUMENT_IF(!contact)
@@ -852,16 +867,7 @@ namespace openpeer
 
             ThreadContactPtr existingContact = (*found).second;
 
-            bool update = true;
-
-            if (Time() != existingContact->statusTime()) {
-              if (existingContact->statusTime() > statusTime) {
-                ZS_LOG_WARNING(Detail, log("contact status is older than the current status") + ZS_PARAM("current status", existingContact->statusTime()) + ZS_PARAM("status time", statusTime))
-                update = false;
-              }
-            }
-
-            if (update) {
+            if (UseConversationThread::shouldUpdateContactStatus(existingContact->statusTime(), existingContact->statusHash(), existingContact->status(), statusTime, statusHash, status, forceUpdate)) {
               ThreadContactMap replacementContacts = contacts;
 
               ThreadContactMap contacts;
@@ -874,7 +880,7 @@ namespace openpeer
           }
         }
 
-        baseThread->notifyContactStatus(mThisWeak.lock(), contact, statusTime, statusHash, status);
+        baseThread->notifyContactStatus(mThisWeak.lock(), contact, statusTime, statusHash, status, forceUpdate);
       }
 
       //-----------------------------------------------------------------------
@@ -956,9 +962,9 @@ namespace openpeer
         if (baseThread) baseThreadID = baseThread->getThreadID();
 
         ElementPtr objectEl = Element::create("core::ConversationThreadHost");
-        IHelper::debugAppend(objectEl, "id", mID);
-        IHelper::debugAppend(objectEl, "base thread id", baseThreadID);
-        IHelper::debugAppend(objectEl, "thread id", mThreadID);
+        ServicesHelper::debugAppend(objectEl, "id", mID);
+        ServicesHelper::debugAppend(objectEl, "base thread id", baseThreadID);
+        ServicesHelper::debugAppend(objectEl, "thread id", mThreadID);
         return Log::Params(message, objectEl);
       }
 
@@ -970,13 +976,13 @@ namespace openpeer
 
         ElementPtr resultEl = Element::create("core::ConversationThreadHost");
 
-        IHelper::debugAppend(resultEl, "id", mID);
-        IHelper::debugAppend(resultEl, "host thread id", mThreadID);
-        IHelper::debugAppend(resultEl, "base thread id", base ? base->getThreadID() : String());
-        IHelper::debugAppend(resultEl, "state", toString(mCurrentState));
-        IHelper::debugAppend(resultEl, "delivery states", mMessageDeliveryStates.size());
-        IHelper::debugAppend(resultEl, "peer contacts", mPeerContacts.size());
-        IHelper::debugAppend(resultEl, Thread::toDebug(mHostThread));
+        ServicesHelper::debugAppend(resultEl, "id", mID);
+        ServicesHelper::debugAppend(resultEl, "host thread id", mThreadID);
+        ServicesHelper::debugAppend(resultEl, "base thread id", base ? base->getThreadID() : String());
+        ServicesHelper::debugAppend(resultEl, "state", toString(mCurrentState));
+        ServicesHelper::debugAppend(resultEl, "delivery states", mMessageDeliveryStates.size());
+        ServicesHelper::debugAppend(resultEl, "peer contacts", mPeerContacts.size());
+        ServicesHelper::debugAppend(resultEl, Thread::toDebug(mHostThread));
 
         return resultEl;
       }

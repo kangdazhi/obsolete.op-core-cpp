@@ -34,6 +34,9 @@
 #include <openpeer/core/internal/core_ConversationThread.h>
 #include <openpeer/core/internal/core_Account.h>
 #include <openpeer/core/internal/core_Contact.h>
+#include <openpeer/core/internal/core_Helper.h>
+
+#include <openpeer/core/IConversationThreadComposingStatus.h>
 
 #include <openpeer/services/IHelper.h>
 #include <openpeer/services/ISettings.h>
@@ -53,10 +56,12 @@ namespace openpeer
       ZS_DECLARE_TYPEDEF_PTR(ConversationThreadHost::UseContact, UseContact)
       ZS_DECLARE_TYPEDEF_PTR(ConversationThreadHost::UseConversationThread, UseConversationThread)
 
-      using services::IHelper;
       ZS_DECLARE_TYPEDEF_PTR(services::ISettings, UseSettings)
 
       using namespace core::internal::thread;
+
+      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
+      ZS_DECLARE_TYPEDEF_PTR(core::internal::IHelperForInternal, UseHelper)
 
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -91,7 +96,8 @@ namespace openpeer
         mCurrentState(PeerContactState_Pending),
         mOuter(host),
         mContact(contact),
-        mIdentityContacts(identityContacts)
+        mIdentityContacts(identityContacts),
+        mReportedContactStatus(true)  // upon adding the outer will automatically report a "gone" status thus no need to report again
       {
         ZS_LOG_DETAIL(log("created") + UseContact::toDebug(contact))
       }
@@ -171,11 +177,14 @@ namespace openpeer
             ZS_LOG_WARNING(Detail, log("failed to create peer location") + ILocation::toDebug(peerLocation))
             return;
           }
+
           ZS_LOG_DEBUG(log("created new oeer location") + UseContact::toDebug(mContact))
           mPeerLocations[location->getLocationID()] = location;
         }
 
         location->notifyPublicationUpdated(peerLocation, metaData, split);
+
+        IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
       }
 
       //-----------------------------------------------------------------------
@@ -600,6 +609,7 @@ namespace openpeer
           return;
         }
 
+        mReportedContactStatus = true;
         outer->notifyContactStatus(mContact, statusTime, statusHash, status);
       }
 
@@ -651,8 +661,8 @@ namespace openpeer
         }
 
         ElementPtr objectEl = Element::create("core::ConversationThreadHost::PeerContact");
-        IHelper::debugAppend(objectEl, "id", mID);
-        IHelper::debugAppend(objectEl, "peer uri", peerURI);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "peer uri", peerURI);
         return Log::Params(message, objectEl);
       }
 
@@ -663,25 +673,26 @@ namespace openpeer
 
         ElementPtr resultEl = Element::create("core::ConversationThreadHost::PeerContact");
 
-        IHelper::debugAppend(resultEl, "id", mID);
+        UseServicesHelper::debugAppend(resultEl, "id", mID);
+        UseServicesHelper::debugAppend(resultEl, "graceful shutdown reference", (bool)mGracefulShutdownReference);
 
-        IHelper::debugAppend(resultEl, "state", toString(mCurrentState));
+        UseServicesHelper::debugAppend(resultEl, "state", toString(mCurrentState));
 
-        IHelper::debugAppend(resultEl, UseContact::toDebug(mContact));
+        UseServicesHelper::debugAppend(resultEl, UseContact::toDebug(mContact));
+        UseServicesHelper::debugAppend(resultEl, "identity contacts", mIdentityContacts.size());
+        UseServicesHelper::debugAppend(resultEl, "reported contact status", mReportedContactStatus);
 
-        IHelper::debugAppend(resultEl, "identity contacts", mIdentityContacts.size());
+        UseServicesHelper::debugAppend(resultEl, "backgrounding subsscription id", mBackgroundingSubscription ? mBackgroundingSubscription->getID() : 0);
+        UseServicesHelper::debugAppend(resultEl, "backgrounding notifier id", mBackgroundingNotifier ? mBackgroundingNotifier->getID() : 0);
+        UseServicesHelper::debugAppend(resultEl, "backgrounding now", mBackgroundingNow);
 
-        IHelper::debugAppend(resultEl, "backgrounding subsscription id", mBackgroundingSubscription ? mBackgroundingSubscription->getID() : 0);
-        IHelper::debugAppend(resultEl, "backgrounding notifier id", mBackgroundingNotifier ? mBackgroundingNotifier->getID() : 0);
-        IHelper::debugAppend(resultEl, "backgrounding now", mBackgroundingNow);
+        UseServicesHelper::debugAppend(resultEl, IPeerSubscription::toDebug(mSlaveSubscription));
 
-        IHelper::debugAppend(resultEl, IPeerSubscription::toDebug(mSlaveSubscription));
+        UseServicesHelper::debugAppend(resultEl, "locations", mPeerLocations.size());
 
-        IHelper::debugAppend(resultEl, "locations", mPeerLocations.size());
+        UseServicesHelper::debugAppend(resultEl, "delivery states", mMessageDeliveryStates.size());
 
-        IHelper::debugAppend(resultEl, "delivery states", mMessageDeliveryStates.size());
-
-        IHelper::debugAppend(resultEl, "auto find timer", (bool)mAutoFindTimer);
+        UseServicesHelper::debugAppend(resultEl, "auto find timer", (bool)mAutoFindTimer);
 
         return resultEl;
       }
@@ -755,6 +766,8 @@ namespace openpeer
           cancel();
           return;
         }
+
+        stepNotifyContactStatus();
 
         ThreadPtr hostThread = outer->getHostThread();
         if (!hostThread) {
@@ -893,6 +906,35 @@ namespace openpeer
         }
 
         outer->notifyContactState(mContact, getContactConnectionState());
+      }
+
+      //-----------------------------------------------------------------------
+      void ConversationThreadHost::PeerContact::stepNotifyContactStatus()
+      {
+        ConversationThreadHostPtr outer = mOuter.lock();
+        ZS_THROW_INVALID_ASSUMPTION_IF(!outer)
+
+        // see if need to report a status based upon locations having arrived or locations having gone
+        if (mReportedContactStatus) {
+          if (mPeerLocations.size() > 0) return;
+        } else {
+          if (mPeerLocations.size() < 1) return;
+        }
+
+        bool reportGone = (mPeerLocations.size() < 1);
+
+        Time statusTime;
+        ElementPtr status;
+
+        if (reportGone) {
+          statusTime = zsLib::now();
+          IConversationThreadComposingStatus::updateComposingStatus(status, IConversationThreadComposingStatus::ComposingState_Gone);
+        }
+
+        String hashStatus = UseHelper::hash(status);
+        outer->notifyContactStatus(mContact, statusTime, hashStatus, status, true);
+
+        mReportedContactStatus = (!reportGone);
       }
 
       //-----------------------------------------------------------------------

@@ -276,6 +276,7 @@ namespace openpeer
 
           void cancel();
           void step();
+          void stepNotifyContactStatus();
           void setState(PeerContactStates state);
 
           PeerLocationPtr findPeerLocation(ILocationPtr peerLocation) const;
@@ -288,15 +289,17 @@ namespace openpeer
           #pragma mark ConversationThreadHost::PeerContact => (data)
           #pragma mark
 
-          AutoPUID mID;
           PeerContactWeakPtr mThisWeak;
-          PeerContactPtr mGracefulShutdownReference;
           ConversationThreadHostWeakPtr mOuter;
+
+          AutoPUID mID;
+          PeerContactPtr mGracefulShutdownReference;
 
           PeerContactStates mCurrentState;
 
           UseContactPtr mContact;
           IdentityContactList mIdentityContacts;
+          bool mReportedContactStatus;
 
           IBackgroundingSubscriptionPtr mBackgroundingSubscription;
           IBackgroundingNotifierPtr mBackgroundingNotifier;

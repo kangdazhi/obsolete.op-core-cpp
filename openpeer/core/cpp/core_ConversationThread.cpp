@@ -39,6 +39,8 @@
 #include <openpeer/core/internal/core_Helper.h>
 #include <openpeer/core/internal/core_Stack.h>
 
+#include <openpeer/core/IConversationThreadComposingStatus.h>
+
 #include <openpeer/stack/IHelper.h>
 
 #include <openpeer/services/IHelper.h>
@@ -116,6 +118,28 @@ namespace openpeer
         if (!hostOrSlave) return ElementPtr();
         if (hostOrSlave->isHost()) return UseConversationThreadHost::toDebug(UseConversationThreadHostPtr(hostOrSlave->toHost()));
         return UseConversationThreadSlave::toDebug(hostOrSlave->toSlave());
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark IConversationThreadForHostOrSlave
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      bool IConversationThreadForHostOrSlave::shouldUpdateContactStatus(
+                                                                        const Time &existingStatusTime,
+                                                                        const String &existingStatusHash,
+                                                                        const ElementPtr &existingStatus,
+                                                                        const Time &newStatusTime,
+                                                                        const String &newStatusHash,
+                                                                        const ElementPtr &newContactStatus,
+                                                                        bool forceUpdate
+                                                                        )
+      {
+        return ConversationThread::shouldUpdateContactStatus(existingStatusTime, existingStatusHash, existingStatus, newStatusTime, newStatusHash, newContactStatus, forceUpdate);
       }
 
       //-----------------------------------------------------------------------
@@ -880,12 +904,63 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      bool ConversationThread::shouldUpdateContactStatus(
+                                                         const Time &existingStatusTime,
+                                                         const String &existingStatusHash,
+                                                         const ElementPtr &existingStatus,
+                                                         const Time &newStatusTime,
+                                                         const String &newStatusHash,
+                                                         const ElementPtr &newContactStatus,
+                                                         bool forceUpdate
+                                                         )
+      {
+        if (forceUpdate) {
+          ZS_LOG_TRACE(slog("should update contact status as being forced to update"))
+          return true;
+        }
+
+        if (IConversationThreadComposingStatus::ComposingState_Gone == IConversationThreadComposingStatus::getComposingStatus(existingStatus)) {
+          if (IConversationThreadComposingStatus::ComposingState_Gone != IConversationThreadComposingStatus::getComposingStatus(newContactStatus)) {
+            ZS_LOG_TRACE(slog("should update contact status as old status was gone but new status is not gone") + ZS_PARAM("new status", IConversationThreadComposingStatus::toString(IConversationThreadComposingStatus::getComposingStatus(newContactStatus))))
+            return true;
+          }
+        }
+
+        if (Time() == existingStatusTime) {
+          if (Time() != newStatusTime) {
+            ZS_LOG_TRACE(slog("should update contact status as new status has a time set (but old did not)") + ZS_PARAM("new status time", newStatusTime))
+            return true;
+          }
+        } else {
+          if (Time() == newStatusTime) {
+            ZS_LOG_WARNING(Trace, slog("should NOT update contact status as new status does not contain a status time but existing status has a time") + ZS_PARAM("existing status time", existingStatusTime))
+            return false;
+          }
+        }
+
+        if (existingStatusHash == newStatusHash) {
+          ZS_LOG_WARNING(Trace, slog("should NOT update contact status as status has not actually changed") + ZS_PARAM("existing status hash", existingStatusHash) + ZS_PARAM("new status hash", newStatusHash))
+          return false;
+        }
+
+        if (IConversationThreadComposingStatus::ComposingState_None == IConversationThreadComposingStatus::getComposingStatus(existingStatus)) {
+          if (IConversationThreadComposingStatus::ComposingState_None != IConversationThreadComposingStatus::getComposingStatus(newContactStatus)) {
+            ZS_LOG_TRACE(slog("should update contact status as new status has status (but old did not)") + ZS_PARAM("new status", IConversationThreadComposingStatus::toString(IConversationThreadComposingStatus::getComposingStatus(newContactStatus))))
+            return true;
+          }
+        }
+
+        return existingStatusTime < newStatusTime;
+      }
+
+      //-----------------------------------------------------------------------
       void ConversationThread::notifyContactStatus(
                                                    IConversationThreadHostSlaveBasePtr thread,
                                                    UseContactPtr contact,
                                                    const Time &statusTime,
                                                    const String &statusHash,
-                                                   ElementPtr status
+                                                   ElementPtr status,
+                                                   bool forceUpdate
                                                    )
       {
         AutoRecursiveLock lock(*this);
@@ -919,16 +994,9 @@ namespace openpeer
 
         ContactStatus &contactStatus = (*found).second;
 
-        if (contactStatus.mStatusHash == statusHash) {
-          ZS_LOG_TRACE(log("contact status did not change") + UseContact::toDebug(contact))
+        if (!shouldUpdateContactStatus(contactStatus.mStatusTime, contactStatus.mStatusHash, contactStatus.mStatus, statusTime, statusHash, status, forceUpdate)) {
+          ZS_LOG_TRACE(log("contact status should not update") + ZS_PARAM("existing status time", contactStatus.mStatusTime) + ZS_PARAM("existing status hash", contactStatus.mStatusHash) + ZS_PARAM("existing status", (bool)contactStatus.mStatus) + ZS_PARAM("new status time", statusTime) + ZS_PARAM("new status hash", statusHash) + ZS_PARAM("new status", (bool)status) + UseContact::toDebug(contact))
           return;
-        }
-
-        if (Time() != contactStatus.mStatusTime) {
-          if (contactStatus.mStatusTime > statusTime) {
-            ZS_LOG_TRACE(log("contact status is older than current status") + ZS_PARAM("current status time", contactStatus.mStatusTime) + ZS_PARAM("new status time", statusTime))
-            return;
-          }
         }
 
         contactStatus.mStatusHash = statusHash;
@@ -970,7 +1038,7 @@ namespace openpeer
         outStatusTime = contactStatus.mStatusTime;
         outStatusHash = contactStatus.mStatusHash;
         outStatus = contactStatus.mStatus;
-        return true;
+        return (bool)outStatus;
       }
 
       //-----------------------------------------------------------------------
@@ -1419,6 +1487,13 @@ namespace openpeer
       {
         ElementPtr objectEl = Element::create("core::ConversationThread");
         ServicesHelper::debugAppend(objectEl, "id", mID);
+        return Log::Params(message, objectEl);
+      }
+
+      //-----------------------------------------------------------------------
+      Log::Params ConversationThread::slog(const char *message)
+      {
+        ElementPtr objectEl = Element::create("core::ConversationThread");
         return Log::Params(message, objectEl);
       }
 

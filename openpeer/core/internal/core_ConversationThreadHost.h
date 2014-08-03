@@ -256,7 +256,8 @@ namespace openpeer
                                  UseContactPtr contact,
                                  const Time &statusTime,
                                  const String &statusHash,
-                                 ElementPtr status
+                                 ElementPtr status,
+                                 bool forceUpdate = false
                                  );
         virtual void notifyMessagePush(
                                        MessagePtr message,
