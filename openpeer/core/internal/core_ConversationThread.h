@@ -44,7 +44,9 @@
 
 #define OPENPEER_CONVERSATION_THREAD_MAX_WAIT_DELIVERY_TIME_BEFORE_PUSH_IN_SECONDS (30)
 
-#define OPENPEER_CORE_SETTINGS_CONVERSATION_THREAD_HOST_BACKGROUNDING_PHASE "openpeer/core/backgrounding-phase-conversation-thread"
+#define OPENPEER_CORE_SETTING_CONVERSATION_THREAD_HOST_BACKGROUNDING_PHASE "openpeer/core/backgrounding-phase-conversation-thread"
+
+#define OPENPEER_CORE_SETTING_CONVERSATION_THREAD_HOST_INACTIVE_CLOSE_TIME_IN_SECONDS "openpeer/core/conversation-thread-host-inactive-close-time-in-seconds"
 
 namespace openpeer
 {
@@ -363,7 +365,8 @@ namespace openpeer
                                   public IConversationThreadForCall,
                                   public IConversationThreadForHost,
                                   public IConversationThreadForSlave,
-                                  public IWakeDelegate
+                                  public IWakeDelegate,
+                                  public ITimerDelegate
       {
       public:
         friend interaction IConversationThreadFactory;
@@ -645,6 +648,13 @@ namespace openpeer
 
         virtual void onWake() {step();}
 
+        //-----------------------------------------------------------------------
+        #pragma mark
+        #pragma mark ConversationThread => ITimerDelegate
+        #pragma mark
+
+        virtual void onTimer(TimerPtr timer) {step();}
+
       protected:
         //-----------------------------------------------------------------------
         #pragma mark
@@ -675,8 +685,9 @@ namespace openpeer
         #pragma mark ConversationThread => (data)
         #pragma mark
 
-        AutoPUID mID;
         ConversationThreadWeakPtr mThisWeak;
+
+        AutoPUID mID;
         ConversationThreadPtr mGracefulShutdownReference;
 
         IConversationThreadDelegatePtr mDelegate;
@@ -691,6 +702,9 @@ namespace openpeer
 
         IConversationThreadHostSlaveBasePtr mOpenThread;      // if there is an open thread, this is valid
         IConversationThreadHostSlaveBasePtr mLastOpenThread;  // if there is was an open thread, this is valid
+
+        TimerPtr mTimer;
+        Duration mOpenThreadInactivityTimeout;
 
         IConversationThreadHostSlaveBasePtr mHandleThreadChanged;
         DWORD mHandleContactsChangedCRC;

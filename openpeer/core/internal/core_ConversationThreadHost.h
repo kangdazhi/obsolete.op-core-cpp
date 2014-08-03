@@ -78,6 +78,8 @@ namespace openpeer
                                                thread::Details::ConversationThreadStates state = thread::Details::ConversationThreadState_Open
                                                );
 
+        virtual Time getLastActivity() const = 0;
+
         virtual void close() = 0;
       };
 
@@ -227,6 +229,8 @@ namespace openpeer
         #pragma mark ConversationThreadHost => IConversationThreadHostForConversationThread
         #pragma mark
 
+        virtual Time getLastActivity() const;
+
         virtual void close();
 
         //---------------------------------------------------------------------
@@ -318,8 +322,9 @@ namespace openpeer
         #pragma mark ConversationThreadHost => (data)
         #pragma mark
 
-        AutoPUID mID;
         ConversationThreadHostWeakPtr mThisWeak;
+
+        AutoPUID mID;
         ConversationThreadHostPtr mGracefulShutdownReference;
 
         UseConversationThreadWeakPtr mBaseThread;
@@ -330,14 +335,16 @@ namespace openpeer
         String mThreadID;
         String mServerName;
 
-        ConversationThreadHostStates mCurrentState;
+        Time mLastActivity;
 
-        ThreadPtr mHostThread;
+        ConversationThreadHostStates mCurrentState;
 
         MessageDeliveryStatesMap mMessageDeliveryStates;
 
         AutoBool mMarkAllRead;
         PeerContactMap mPeerContacts;
+
+        ThreadPtr mHostThread;
       };
 
       //-----------------------------------------------------------------------

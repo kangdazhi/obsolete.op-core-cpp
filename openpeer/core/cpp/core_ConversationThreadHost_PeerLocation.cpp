@@ -57,7 +57,7 @@ namespace openpeer
 
       ZS_DECLARE_TYPEDEF_PTR(ConversationThreadHost::UseAccount, UseAccount)
 
-      using services::IHelper;
+      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
 
       using namespace core::internal::thread;
 
@@ -551,9 +551,9 @@ namespace openpeer
         String locationID = mPeerLocation->getLocationID();
 
         ElementPtr objectEl = Element::create("core::ConversationThreadHost::PeerLocation");
-        IHelper::debugAppend(objectEl, "id", mID);
-        IHelper::debugAppend(objectEl, "peer uri", peerURI);
-        IHelper::debugAppend(objectEl, "peer location id", locationID);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "peer uri", peerURI);
+        UseServicesHelper::debugAppend(objectEl, "peer location id", locationID);
         return Log::Params(message, objectEl);
       }
 
@@ -564,19 +564,19 @@ namespace openpeer
 
         ElementPtr resultEl = Element::create("core::ConversationThreadHost::PeerLocation");
 
-        IHelper::debugAppend(resultEl, "id", mID);
+        UseServicesHelper::debugAppend(resultEl, "id", mID);
 
-        IHelper::debugAppend(resultEl, ILocation::toDebug(mPeerLocation));
+        UseServicesHelper::debugAppend(resultEl, ILocation::toDebug(mPeerLocation));
 
-        IHelper::debugAppend(resultEl, Thread::toDebug(mSlaveThread));
+        UseServicesHelper::debugAppend(resultEl, Thread::toDebug(mSlaveThread));
 
-        IHelper::debugAppend(resultEl, IConversationThreadDocumentFetcher::toDebug(mFetcher));
+        UseServicesHelper::debugAppend(resultEl, IConversationThreadDocumentFetcher::toDebug(mFetcher));
 
-        IHelper::debugAppend(resultEl, "message delivery states", mMessageDeliveryStates.size());
+        UseServicesHelper::debugAppend(resultEl, "message delivery states", mMessageDeliveryStates.size());
 
-        IHelper::debugAppend(resultEl, "incoming call handlers", mIncomingCallHandlers.size());
+        UseServicesHelper::debugAppend(resultEl, "incoming call handlers", mIncomingCallHandlers.size());
 
-        IHelper::debugAppend(resultEl, "previously fetched contacts", mPreviouslyFetchedContacts.size());
+        UseServicesHelper::debugAppend(resultEl, "previously fetched contacts", mPreviouslyFetchedContacts.size());
 
         return resultEl;
       }

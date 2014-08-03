@@ -44,7 +44,8 @@ namespace openpeer
   {
     namespace internal
     {
-      typedef services::IHelper OPIHelper;
+      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
+
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -58,7 +59,7 @@ namespace openpeer
         if (!element) return String();
 
         String result = Helper::convertToString(element);
-        return OPIHelper::convertToString(*OPIHelper::hash(result));
+        return UseServicesHelper::convertToString(*UseServicesHelper::hash(result));
       }
 
       //-----------------------------------------------------------------------
@@ -72,13 +73,13 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ElementPtr Helper::createElement(const String &elementStr)
       {
-        return OPIHelper::toJSON(elementStr);
+        return UseServicesHelper::toJSON(elementStr);
       }
 
       //-----------------------------------------------------------------------
       String Helper::convertToString(const ElementPtr &element)
       {
-        return OPIHelper::toString(element);
+        return UseServicesHelper::toString(element);
       }
 
       //-----------------------------------------------------------------------

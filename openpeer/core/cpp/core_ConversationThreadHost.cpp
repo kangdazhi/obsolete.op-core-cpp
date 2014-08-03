@@ -69,7 +69,7 @@ namespace openpeer
       using namespace core::internal::thread;
 
       ZS_DECLARE_TYPEDEF_PTR(IHelperForInternal, UseHelper)
-      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, ServicesHelper)
+      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
 
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -140,12 +140,13 @@ namespace openpeer
                                                      ) :
         MessageQueueAssociator(queue),
         SharedRecursiveLock(*baseThread),
-        mThreadID(threadID ? String(threadID) : services::IHelper::randomString(32)),
         mBaseThread(baseThread),
-        mServerName(serverName),
-        mCurrentState(ConversationThreadHostState_Pending),
         mAccount(account),
-        mSelfContact(UseAccountPtr(account)->getSelfContact())
+        mSelfContact(UseAccountPtr(account)->getSelfContact()),
+        mThreadID(threadID ? String(threadID) : UseServicesHelper::randomString(32)),
+        mServerName(serverName),
+        mLastActivity(zsLib::now()),
+        mCurrentState(ConversationThreadHostState_Pending)
       {
         ZS_LOG_BASIC(log("created"))
       }
@@ -332,6 +333,8 @@ namespace openpeer
 
         ZS_THROW_BAD_STATE_IF(!mHostThread)
 
+        mLastActivity = zsLib::now();
+
         mHostThread->updateBegin();
         mHostThread->addMessages(messages);
         mHostThread->updateEnd(getPublicationRepostiory());
@@ -427,6 +430,8 @@ namespace openpeer
           return;
         }
 
+        mLastActivity = zsLib::now();
+
         const ThreadContactMap &oldContacts = mHostThread->contacts()->contacts();
 
         ThreadContactMap contactMap = oldContacts;
@@ -484,6 +489,8 @@ namespace openpeer
         AutoRecursiveLock lock(*this);
 
         ZS_THROW_INVALID_ASSUMPTION_IF(!safeToChangeContacts())
+
+        mLastActivity = zsLib::now();
 
         const ThreadContactMap &oldContacts = mHostThread->contacts()->contacts();
 
@@ -558,6 +565,8 @@ namespace openpeer
           return false;
         }
 
+        mLastActivity = zsLib::now();
+
         AutoRecursiveLock lock(*this);
         if (!mHostThread) {
           ZS_LOG_DEBUG(log("no host thread to clean call from..."))
@@ -596,6 +605,8 @@ namespace openpeer
       {
         AutoRecursiveLock lock(*this);
 
+        mLastActivity = zsLib::now();
+
         if (!mHostThread) {
           ZS_LOG_DEBUG(log("no host thread to clean call from..."))
           return;
@@ -624,6 +635,8 @@ namespace openpeer
         ZS_LOG_DEBUG(log("call cleanup called") + ZS_PARAM("call ID", UseCall::toDebug(call)))
 
         AutoRecursiveLock lock(*this);
+
+        mLastActivity = zsLib::now();
 
         if (!mHostThread) {
           ZS_LOG_DEBUG(log("no host thread to clean call from..."))
@@ -669,6 +682,9 @@ namespace openpeer
         ZS_LOG_DEBUG(log("marking all messages as read for host"))
 
         AutoRecursiveLock lock(*this);
+
+        mLastActivity = zsLib::now();
+
         get(mMarkAllRead) = true;
         IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
       }
@@ -683,6 +699,9 @@ namespace openpeer
                                                      )
       {
         AutoRecursiveLock lock(*this);
+
+        mLastActivity = zsLib::now();
+
         if ((isShutdown()) ||
             (isShuttingDown())) {
           ZS_LOG_DEBUG(log("cannot set status during shutdown"))
@@ -722,6 +741,20 @@ namespace openpeer
       #pragma mark
       #pragma mark ConversationThreadHost => IConversationThreadHostForConversationThread
       #pragma mark
+
+      //-----------------------------------------------------------------------
+      Time ConversationThreadHost::getLastActivity() const
+      {
+        AutoRecursiveLock lock(*this);
+        if (mHostThread) {
+          if (mHostThread->dialogs().size() > 0) {
+            ZS_LOG_TRACE(log("dialogs are present so thread is considered active"))
+            return zsLib::now();
+          }
+        }
+
+        return mLastActivity;
+      }
 
       //-----------------------------------------------------------------------
       void ConversationThreadHost::close()
@@ -786,6 +819,8 @@ namespace openpeer
       {
         AutoRecursiveLock lock(*this);
 
+        mLastActivity = zsLib::now();
+
         UseConversationThreadPtr baseThread = mBaseThread.lock();
         if (!baseThread) {
           ZS_LOG_DEBUG(log("unable to notify of messages received since conversation thread host object is gone"))
@@ -821,6 +856,8 @@ namespace openpeer
       {
         AutoRecursiveLock lock(*this);
 
+        mLastActivity = zsLib::now();
+
         MessageDeliveryStatesMap::iterator found = mMessageDeliveryStates.find(messageID);
         if (found != mMessageDeliveryStates.end()) {
           IConversationThread::MessageDeliveryStates &deliveryState = (*found).second;
@@ -852,6 +889,8 @@ namespace openpeer
         ZS_THROW_INVALID_ARGUMENT_IF(!contact)
 
         AutoRecursiveLock lock(*this);
+
+        mLastActivity = zsLib::now();
 
         UseConversationThreadPtr baseThread = mBaseThread.lock();
         if (!baseThread) {
@@ -962,9 +1001,9 @@ namespace openpeer
         if (baseThread) baseThreadID = baseThread->getThreadID();
 
         ElementPtr objectEl = Element::create("core::ConversationThreadHost");
-        ServicesHelper::debugAppend(objectEl, "id", mID);
-        ServicesHelper::debugAppend(objectEl, "base thread id", baseThreadID);
-        ServicesHelper::debugAppend(objectEl, "thread id", mThreadID);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "base thread id", baseThreadID);
+        UseServicesHelper::debugAppend(objectEl, "thread id", mThreadID);
         return Log::Params(message, objectEl);
       }
 
@@ -976,13 +1015,27 @@ namespace openpeer
 
         ElementPtr resultEl = Element::create("core::ConversationThreadHost");
 
-        ServicesHelper::debugAppend(resultEl, "id", mID);
-        ServicesHelper::debugAppend(resultEl, "host thread id", mThreadID);
-        ServicesHelper::debugAppend(resultEl, "base thread id", base ? base->getThreadID() : String());
-        ServicesHelper::debugAppend(resultEl, "state", toString(mCurrentState));
-        ServicesHelper::debugAppend(resultEl, "delivery states", mMessageDeliveryStates.size());
-        ServicesHelper::debugAppend(resultEl, "peer contacts", mPeerContacts.size());
-        ServicesHelper::debugAppend(resultEl, Thread::toDebug(mHostThread));
+        UseServicesHelper::debugAppend(resultEl, "id", mID);
+        UseServicesHelper::debugAppend(resultEl, "graceful shutdown reference", (bool)mGracefulShutdownReference);
+
+        UseServicesHelper::debugAppend(resultEl, "base thread id", base ? base->getThreadID() : String());
+        UseServicesHelper::debugAppend(resultEl, "account", (bool)mAccount.lock());
+
+        UseServicesHelper::debugAppend(resultEl, "self contact", mSelfContact ? mSelfContact->getPeerURI() : String());
+
+        UseServicesHelper::debugAppend(resultEl, "host thread id", mThreadID);
+        UseServicesHelper::debugAppend(resultEl, "server name", mServerName);
+
+        UseServicesHelper::debugAppend(resultEl, "last activity", mLastActivity);
+
+        UseServicesHelper::debugAppend(resultEl, "state", toString(mCurrentState));
+
+        UseServicesHelper::debugAppend(resultEl, "delivery states", mMessageDeliveryStates.size());
+
+        UseServicesHelper::debugAppend(resultEl, "mark all read", mMarkAllRead);
+        UseServicesHelper::debugAppend(resultEl, "peer contacts", mPeerContacts.size());
+
+        UseServicesHelper::debugAppend(resultEl, Thread::toDebug(mHostThread));
 
         return resultEl;
       }

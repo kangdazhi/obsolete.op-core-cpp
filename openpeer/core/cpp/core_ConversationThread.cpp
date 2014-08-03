@@ -44,6 +44,7 @@
 #include <openpeer/stack/IHelper.h>
 
 #include <openpeer/services/IHelper.h>
+#include <openpeer/services/ISettings.h>
 
 #include <cryptopp/crc.h>
 
@@ -70,8 +71,9 @@ namespace openpeer
 
       typedef CryptoPP::CRC32 CRC32;
 
-      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, ServicesHelper)
+      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
       ZS_DECLARE_TYPEDEF_PTR(IHelperForInternal, UseHelper)
+      ZS_DECLARE_TYPEDEF_PTR(services::ISettings, UseSettings)
 
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -205,6 +207,7 @@ namespace openpeer
         mServerName(serverName),
         mCurrentState(ConversationThreadState_Pending),
         mMustNotifyAboutNewThread(false),
+        mOpenThreadInactivityTimeout(Seconds(UseSettings::getUInt(OPENPEER_CORE_SETTING_CONVERSATION_THREAD_HOST_INACTIVE_CLOSE_TIME_IN_SECONDS))),
         mHandleContactsChangedCRC(0)
       {
         ZS_LOG_BASIC(log("created"))
@@ -213,7 +216,10 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThread::init()
       {
+        AutoRecursiveLock lock(*this);
+
         ZS_LOG_DEBUG(log("initialized"))
+        mTimer = Timer::create(mThisWeak.lock(), mOpenThreadInactivityTimeout);
         IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
       }
 
@@ -1486,7 +1492,7 @@ namespace openpeer
       Log::Params ConversationThread::log(const char *message) const
       {
         ElementPtr objectEl = Element::create("core::ConversationThread");
-        ServicesHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
         return Log::Params(message, objectEl);
       }
 
@@ -1504,21 +1510,44 @@ namespace openpeer
 
         ElementPtr resultEl = Element::create("core::ConversationThread");
 
-        ServicesHelper::debugAppend(resultEl, "id", mID);
-        ServicesHelper::debugAppend(resultEl, "thread id", mThreadID);
-        ServicesHelper::debugAppend(resultEl, "current state", toString(mCurrentState));
-        ServicesHelper::debugAppend(resultEl, "must notify", mMustNotifyAboutNewThread);
-        ServicesHelper::debugAppend(resultEl, IConversationThreadHostSlaveBase::toDebug(mOpenThread));
-        ServicesHelper::debugAppend(resultEl, IConversationThreadHostSlaveBase::toDebug(mLastOpenThread));
-        ServicesHelper::debugAppend(resultEl, IConversationThreadHostSlaveBase::toDebug(mHandleThreadChanged));
-        ServicesHelper::debugAppend(resultEl, "crc", mHandleContactsChangedCRC);
-        ServicesHelper::debugAppend(resultEl, "threads", mThreads.size());
-        ServicesHelper::debugAppend(resultEl, "received or pushed", mReceivedOrPushedMessages.size());
-        ServicesHelper::debugAppend(resultEl, "delivery states", mMessageDeliveryStates.size());
-        ServicesHelper::debugAppend(resultEl, "pending delivery", mPendingDeliveryMessages.size());
-        ServicesHelper::debugAppend(resultEl, "pending calls", mPendingCalls.size());
-        ServicesHelper::debugAppend(resultEl, "call handlers", mCallHandlers.size());
-        ServicesHelper::debugAppend(resultEl, "last reported", mLastReportedContactConnectionStates.size());
+        UseServicesHelper::debugAppend(resultEl, "id", mID);
+        UseServicesHelper::debugAppend(resultEl, "graceful shutdown reference", (bool)mGracefulShutdownReference);
+
+        UseServicesHelper::debugAppend(resultEl, "delegate", (bool)mDelegate);
+
+        UseServicesHelper::debugAppend(resultEl, "account", (bool)mAccount.lock());
+
+        UseServicesHelper::debugAppend(resultEl, "thread id", mThreadID);
+        UseServicesHelper::debugAppend(resultEl, "server name", mServerName);
+
+        UseServicesHelper::debugAppend(resultEl, "current state", toString(mCurrentState));
+        UseServicesHelper::debugAppend(resultEl, "must notify", mMustNotifyAboutNewThread);
+
+        UseServicesHelper::debugAppend(resultEl, IConversationThreadHostSlaveBase::toDebug(mOpenThread));
+        UseServicesHelper::debugAppend(resultEl, IConversationThreadHostSlaveBase::toDebug(mLastOpenThread));
+
+        UseServicesHelper::debugAppend(resultEl, "timer", mTimer ? mTimer->getID() : 0);
+        UseServicesHelper::debugAppend(resultEl, "inactivity timeout (s)", mOpenThreadInactivityTimeout);
+
+        UseServicesHelper::debugAppend(resultEl, IConversationThreadHostSlaveBase::toDebug(mHandleThreadChanged));
+        UseServicesHelper::debugAppend(resultEl, "crc", mHandleContactsChangedCRC);
+
+        UseServicesHelper::debugAppend(resultEl, "threads", mThreads.size());
+
+        UseServicesHelper::debugAppend(resultEl, "received or pushed", mReceivedOrPushedMessages.size());
+
+        UseServicesHelper::debugAppend(resultEl, "delivery states", mMessageDeliveryStates.size());
+        UseServicesHelper::debugAppend(resultEl, "pending delivery", mPendingDeliveryMessages.size());
+
+        UseServicesHelper::debugAppend(resultEl, "pending calls", mPendingCalls.size());
+
+        UseServicesHelper::debugAppend(resultEl, "call handlers", mCallHandlers.size());
+
+        UseServicesHelper::debugAppend(resultEl, "self identity contacts", mSelfIdentityContacts.size());
+
+
+        UseServicesHelper::debugAppend(resultEl, "last reported connection states", mLastReportedContactConnectionStates.size());
+        UseServicesHelper::debugAppend(resultEl, "last reported contact status", mLastReportedContactStatuses.size());
 
         return resultEl;
       }
@@ -1566,6 +1595,11 @@ namespace openpeer
 
         mOpenThread.reset();
         mLastOpenThread.reset();
+
+        if (mTimer) {
+          mTimer->cancel();
+          mTimer.reset();
+        }
 
         mThreads.clear();
 
@@ -1763,6 +1797,20 @@ namespace openpeer
             }
 
             mLastOpenThread = mOpenThread;
+          }
+        } else {
+          // do not require an open thread but will keep it open if it's active
+          if (mOpenThread) {
+            if (mOpenThread->isHost()) {
+              UseConversationThreadHostPtr host = mOpenThread->toHost();
+
+              Time lastActivity = host->getLastActivity();
+              if (lastActivity + mOpenThreadInactivityTimeout < zsLib::now()) {
+                ZS_LOG_DEBUG(log("thread is inactive so closing open host thread now"))
+                host->close();
+                mOpenThread.reset();
+              }
+            }
           }
         }
 

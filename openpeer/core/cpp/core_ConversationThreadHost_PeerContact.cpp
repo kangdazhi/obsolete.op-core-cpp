@@ -107,7 +107,7 @@ namespace openpeer
       {
         AutoRecursiveLock lock(*this);
 
-        mBackgroundingSubscription = IBackgrounding::subscribe(mThisWeak.lock(), UseSettings::getUInt(OPENPEER_CORE_SETTINGS_CONVERSATION_THREAD_HOST_BACKGROUNDING_PHASE));
+        mBackgroundingSubscription = IBackgrounding::subscribe(mThisWeak.lock(), UseSettings::getUInt(OPENPEER_CORE_SETTING_CONVERSATION_THREAD_HOST_BACKGROUNDING_PHASE));
 
         ULONG autoFindSeconds = services::ISettings::getUInt(OPENPEER_CORE_SETTING_CONVERSATION_THREAD_HOST_PEER_CONTACT);
 

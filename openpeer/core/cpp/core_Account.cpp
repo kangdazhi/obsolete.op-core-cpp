@@ -59,7 +59,7 @@ namespace openpeer
 
       typedef IStackForInternal UseStack;
 
-      using services::IHelper;
+      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
 
       typedef zsLib::XML::Exceptions::CheckFailed CheckFailed;
 
@@ -256,7 +256,7 @@ namespace openpeer
           lockboxDomain = reloginInformation->findFirstChildElementChecked("lockboxDomain")->getTextDecoded();
           accountID = reloginInformation->findFirstChildElementChecked("accountID")->getTextDecoded();
           grantID = reloginInformation->findFirstChildElementChecked("grantID")->getTextDecoded();
-          lockboxKey = IHelper::convertFromBase64(reloginInformation->findFirstChildElementChecked("lockboxKey")->getTextDecoded());
+          lockboxKey = UseServicesHelper::convertFromBase64(reloginInformation->findFirstChildElementChecked("lockboxKey")->getTextDecoded());
         } catch (CheckFailed &) {
           return AccountPtr();
         }
@@ -267,7 +267,7 @@ namespace openpeer
           return AccountPtr();
         }
 
-        if (IHelper::isEmpty(lockboxKey)) {
+        if (UseServicesHelper::isEmpty(lockboxKey)) {
           ZS_LOG_ERROR(Detail, pThis->log("lockbox key specified in relogin information is not valid"))
           return AccountPtr();
         }
@@ -349,7 +349,7 @@ namespace openpeer
         reloginEl->adoptAsLastChild(IMessageHelper::createElementWithTextAndJSONEncode("lockboxDomain", lockboxDomain));
         reloginEl->adoptAsLastChild(IMessageHelper::createElementWithTextAndJSONEncode("accountID", accountID));
         reloginEl->adoptAsLastChild(IMessageHelper::createElementWithTextAndJSONEncode("grantID", grantID));
-        reloginEl->adoptAsLastChild(IMessageHelper::createElementWithTextAndJSONEncode("lockboxKey", services::IHelper::convertToBase64(*lockboxKey)));
+        reloginEl->adoptAsLastChild(IMessageHelper::createElementWithTextAndJSONEncode("lockboxKey", UseServicesHelper::convertToBase64(*lockboxKey)));
 
         return reloginEl;
       }
@@ -1144,8 +1144,8 @@ namespace openpeer
           return ConversationThreadPtr();
         }
 
-        String baseThreadID = services::IHelper::get(split, OPENPEER_CONVERSATION_THREAD_BASE_THREAD_ID_INDEX);
-        String hostThreadID = services::IHelper::get(split, OPENPEER_CONVERSATION_THREAD_HOST_THREAD_ID_INDEX);
+        String baseThreadID = UseServicesHelper::get(split, OPENPEER_CONVERSATION_THREAD_BASE_THREAD_ID_INDEX);
+        String hostThreadID = UseServicesHelper::get(split, OPENPEER_CONVERSATION_THREAD_HOST_THREAD_ID_INDEX);
         if ((baseThreadID.size() < 1) ||
             (hostThreadID.size() < 1)) {
           ZS_LOG_WARNING(Debug, log("converation thread publication did not have a thread ID") + IPublicationMetaData::toDebug(metaData))
@@ -1177,8 +1177,8 @@ namespace openpeer
                                           const SplitMap &split
                                           )
       {
-        String baseThreadID = services::IHelper::get(split, OPENPEER_CONVERSATION_THREAD_BASE_THREAD_ID_INDEX);
-        String hostThreadID = services::IHelper::get(split, OPENPEER_CONVERSATION_THREAD_HOST_THREAD_ID_INDEX);
+        String baseThreadID = UseServicesHelper::get(split, OPENPEER_CONVERSATION_THREAD_BASE_THREAD_ID_INDEX);
+        String hostThreadID = UseServicesHelper::get(split, OPENPEER_CONVERSATION_THREAD_HOST_THREAD_ID_INDEX);
         if ((baseThreadID.size() < 1) ||
             (hostThreadID.size() < 1)) {
           ZS_LOG_WARNING(Debug, log("converation thread publication did not have a thread ID") + IPublicationMetaData::toDebug(metaData))
@@ -1208,7 +1208,7 @@ namespace openpeer
       Log::Params Account::log(const char *message) const
       {
         ElementPtr objectEl = Element::create("core::Account");
-        IHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
         return Log::Params(message, objectEl);
       }
 
@@ -1225,38 +1225,38 @@ namespace openpeer
 
         ElementPtr resultEl = Element::create("core::Account");
 
-        IHelper::debugAppend(resultEl, "id", mID);
-        IHelper::debugAppend(resultEl, "state", toString(mCurrentState));
-        IHelper::debugAppend(resultEl, "error code", mLastErrorCode);
-        IHelper::debugAppend(resultEl, "error reason", mLastErrorReason);
+        UseServicesHelper::debugAppend(resultEl, "id", mID);
+        UseServicesHelper::debugAppend(resultEl, "state", toString(mCurrentState));
+        UseServicesHelper::debugAppend(resultEl, "error code", mLastErrorCode);
+        UseServicesHelper::debugAppend(resultEl, "error reason", mLastErrorReason);
 
-        IHelper::debugAppend(resultEl, "delegate", (bool)mDelegate);
+        UseServicesHelper::debugAppend(resultEl, "delegate", (bool)mDelegate);
 
-        IHelper::debugAppend(resultEl, "conversation thread delegate", (bool)mConversationThreadDelegate);
-        IHelper::debugAppend(resultEl, "call delegate", (bool)mCallDelegate);
+        UseServicesHelper::debugAppend(resultEl, "conversation thread delegate", (bool)mConversationThreadDelegate);
+        UseServicesHelper::debugAppend(resultEl, "call delegate", (bool)mCallDelegate);
 
-        IHelper::debugAppend(resultEl, "backgrounding subscription", mBackgroundingSubscription ? mBackgroundingSubscription->getID() : 0);
+        UseServicesHelper::debugAppend(resultEl, "backgrounding subscription", mBackgroundingSubscription ? mBackgroundingSubscription->getID() : 0);
 
-        IHelper::debugAppend(resultEl, stack::IAccount::toDebug(mStackAccount.get()));
+        UseServicesHelper::debugAppend(resultEl, stack::IAccount::toDebug(mStackAccount.get()));
 
-        IHelper::debugAppend(resultEl, stack::IServiceNamespaceGrantSession::toDebug(mGrantSession));
+        UseServicesHelper::debugAppend(resultEl, stack::IServiceNamespaceGrantSession::toDebug(mGrantSession));
 
-        IHelper::debugAppend(resultEl, stack::IServiceLockboxSession::toDebug(mLockboxSession.get()));
-        IHelper::debugAppend(resultEl, "force new lockbox account", mLockboxForceCreateNewAccount ? String("true") : String());
-        IHelper::debugAppend(resultEl, "identities", mIdentities.size());
+        UseServicesHelper::debugAppend(resultEl, stack::IServiceLockboxSession::toDebug(mLockboxSession.get()));
+        UseServicesHelper::debugAppend(resultEl, "force new lockbox account", mLockboxForceCreateNewAccount ? String("true") : String());
+        UseServicesHelper::debugAppend(resultEl, "identities", mIdentities.size());
 
-        IHelper::debugAppend(resultEl, stack::IPeerSubscription::toDebug(mPeerSubscription));
+        UseServicesHelper::debugAppend(resultEl, stack::IPeerSubscription::toDebug(mPeerSubscription));
 
-        IHelper::debugAppend(resultEl, UseContact::toDebug(mSelfContact));
+        UseServicesHelper::debugAppend(resultEl, UseContact::toDebug(mSelfContact));
 
-        IHelper::debugAppend(resultEl, "contacts", mContacts.size());
-        IHelper::debugAppend(resultEl, "contact subscription", mContactSubscriptions.size());
+        UseServicesHelper::debugAppend(resultEl, "contacts", mContacts.size());
+        UseServicesHelper::debugAppend(resultEl, "contact subscription", mContactSubscriptions.size());
 
-        IHelper::debugAppend(resultEl, "conversations", mConversationThreads.size());
+        UseServicesHelper::debugAppend(resultEl, "conversations", mConversationThreads.size());
 
-        IHelper::debugAppend(resultEl, "call transport", (bool)mCallTransport.get());
+        UseServicesHelper::debugAppend(resultEl, "call transport", (bool)mCallTransport.get());
 
-        IHelper::debugAppend(resultEl, "subscribers permission document", (bool)mSubscribersPermissionDocument);
+        UseServicesHelper::debugAppend(resultEl, "subscribers permission document", (bool)mSubscribersPermissionDocument);
 
         return resultEl;
       }

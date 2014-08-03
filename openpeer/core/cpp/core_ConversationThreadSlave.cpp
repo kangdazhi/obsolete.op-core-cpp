@@ -64,7 +64,7 @@ namespace openpeer
       typedef IStackForInternal UseStack;
       typedef ConversationThreadSlave::UseContactPtr UseContactPtr;
 
-      using services::IHelper;
+      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
 
       ZS_DECLARE_TYPEDEF_PTR(services::ISettings, UseSettings)
 
@@ -130,7 +130,7 @@ namespace openpeer
         SharedRecursiveLock(*baseThread),
         mBaseThread(baseThread),
         mAccount(account),
-        mThreadID(threadID ? String(threadID) : services::IHelper::randomString(32)),
+        mThreadID(threadID ? String(threadID) : UseServicesHelper::randomString(32)),
         mServerName(serverName),
         mPeerLocation(peerLocation),
         mCurrentState(ConversationThreadSlaveState_Pending),
@@ -145,7 +145,7 @@ namespace openpeer
         AutoRecursiveLock lock(*this);
         mFetcher = IConversationThreadDocumentFetcher::create(mThisWeak.lock(), mAccount.lock()->getRepository());
 
-        mBackgroundingSubscription = IBackgrounding::subscribe(mThisWeak.lock(), UseSettings::getUInt(OPENPEER_CORE_SETTINGS_CONVERSATION_THREAD_HOST_BACKGROUNDING_PHASE));
+        mBackgroundingSubscription = IBackgrounding::subscribe(mThisWeak.lock(), UseSettings::getUInt(OPENPEER_CORE_SETTING_CONVERSATION_THREAD_HOST_BACKGROUNDING_PHASE));
       }
 
       //-----------------------------------------------------------------------
@@ -650,7 +650,7 @@ namespace openpeer
         AccountPtr account = baseThread->getAccount();
         if (!account) return ConversationThreadSlavePtr();
 
-        String hostThreadID = services::IHelper::get(split, OPENPEER_CONVERSATION_THREAD_HOST_THREAD_ID_INDEX);
+        String hostThreadID = UseServicesHelper::get(split, OPENPEER_CONVERSATION_THREAD_HOST_THREAD_ID_INDEX);
         ZS_THROW_INVALID_ARGUMENT_IF(hostThreadID.size() < 1)
 
         ConversationThreadSlavePtr pThis(new ConversationThreadSlave(UseStack::queueCore(), account, peerLocation, inBaseThread, hostThreadID, serverName));
@@ -1270,9 +1270,9 @@ namespace openpeer
         if (baseThread) baseThreadID = baseThread->getThreadID();
 
         ElementPtr objectEl = Element::create("core::ConversationThreadSlave");
-        IHelper::debugAppend(objectEl, "id", mID);
-        IHelper::debugAppend(objectEl, "base thread id", baseThreadID);
-        IHelper::debugAppend(objectEl, "slave thread id", mThreadID);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "base thread id", baseThreadID);
+        UseServicesHelper::debugAppend(objectEl, "slave thread id", mThreadID);
         return Log::Params(message, objectEl);
       }
 
@@ -1285,32 +1285,32 @@ namespace openpeer
 
         ElementPtr resultEl = Element::create("core::ConversationThreadSlave");
 
-        IHelper::debugAppend(resultEl, "id", mID);
-        IHelper::debugAppend(resultEl, "base thread id", base ? base->getThreadID() : String());
-        IHelper::debugAppend(resultEl, "account id", (bool)account);
+        UseServicesHelper::debugAppend(resultEl, "id", mID);
+        UseServicesHelper::debugAppend(resultEl, "base thread id", base ? base->getThreadID() : String());
+        UseServicesHelper::debugAppend(resultEl, "account id", (bool)account);
 
-        IHelper::debugAppend(resultEl, "slave thread id", mThreadID);
-        IHelper::debugAppend(resultEl, ILocation::toDebug(mPeerLocation));
+        UseServicesHelper::debugAppend(resultEl, "slave thread id", mThreadID);
+        UseServicesHelper::debugAppend(resultEl, ILocation::toDebug(mPeerLocation));
 
-        IHelper::debugAppend(resultEl, "state", toString(mCurrentState));
+        UseServicesHelper::debugAppend(resultEl, "state", toString(mCurrentState));
 
-        IHelper::debugAppend(resultEl, IConversationThreadDocumentFetcher::toDebug(mFetcher));
+        UseServicesHelper::debugAppend(resultEl, IConversationThreadDocumentFetcher::toDebug(mFetcher));
 
-        IHelper::debugAppend(resultEl, Thread::toDebug(mHostThread));
-        IHelper::debugAppend(resultEl, Thread::toDebug(mSlaveThread));
+        UseServicesHelper::debugAppend(resultEl, Thread::toDebug(mHostThread));
+        UseServicesHelper::debugAppend(resultEl, Thread::toDebug(mSlaveThread));
 
-        IHelper::debugAppend(resultEl, "backgrounding subscription id", mBackgroundingSubscription ? mBackgroundingSubscription->getID() : 0);
-        IHelper::debugAppend(resultEl, "backgrounding notifier id", mBackgroundingNotifier ? mBackgroundingNotifier->getID() : 0);
-        IHelper::debugAppend(resultEl, "backgrounding now", mBackgroundingNow);
+        UseServicesHelper::debugAppend(resultEl, "backgrounding subscription id", mBackgroundingSubscription ? mBackgroundingSubscription->getID() : 0);
+        UseServicesHelper::debugAppend(resultEl, "backgrounding notifier id", mBackgroundingNotifier ? mBackgroundingNotifier->getID() : 0);
+        UseServicesHelper::debugAppend(resultEl, "backgrounding now", mBackgroundingNow);
 
-        IHelper::debugAppend(resultEl, IPeerSubscription::toDebug(mHostSubscription));
+        UseServicesHelper::debugAppend(resultEl, IPeerSubscription::toDebug(mHostSubscription));
 
-        IHelper::debugAppend(resultEl, "convert to host", mConvertedToHostBecauseOriginalHostLikelyGoneForever);
+        UseServicesHelper::debugAppend(resultEl, "convert to host", mConvertedToHostBecauseOriginalHostLikelyGoneForever);
 
-        IHelper::debugAppend(resultEl, "delivery states", mMessageDeliveryStates.size());
+        UseServicesHelper::debugAppend(resultEl, "delivery states", mMessageDeliveryStates.size());
 
-        IHelper::debugAppend(resultEl, "incoming call handlers", mIncomingCallHandlers.size());
-        IHelper::debugAppend(resultEl, "previously fetched contacts", mPreviouslyFetchedContacts.size());
+        UseServicesHelper::debugAppend(resultEl, "incoming call handlers", mIncomingCallHandlers.size());
+        UseServicesHelper::debugAppend(resultEl, "previously fetched contacts", mPreviouslyFetchedContacts.size());
 
         return resultEl;
       }

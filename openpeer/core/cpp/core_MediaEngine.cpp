@@ -73,7 +73,7 @@ namespace openpeer
 
       typedef IStackForInternal UseStack;
 
-      using services::IHelper;
+      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
 
       typedef zsLib::ThreadPtr ThreadPtr;
       
@@ -2669,7 +2669,7 @@ namespace openpeer
       Log::Params MediaEngine::log(const char *message) const
       {
         ElementPtr objectEl = Element::create("core::MediaEngine");
-        IHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
         return Log::Params(message, objectEl);
       }
 
@@ -2762,8 +2762,8 @@ namespace openpeer
       Log::Params MediaEngine::RedirectTransport::log(const char *message)
       {
         ElementPtr objectEl = Element::create("core::MediaEngine::RedirectTransport");
-        IHelper::debugAppend(objectEl, "id", mID);
-        IHelper::debugAppend(objectEl, "type", mTransportType);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "type", mTransportType);
         return Log::Params(message, objectEl);
       }
     }
