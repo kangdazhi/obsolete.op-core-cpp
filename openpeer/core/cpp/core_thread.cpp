@@ -1617,7 +1617,7 @@ namespace openpeer
             return ThreadPtr();
           }
 
-          AutoRecursiveLockPtr lock;
+          IPublicationLockerPtr lock;
           DocumentPtr doc = publication->getJSON(lock);
           if (!doc) {
             ZS_LOG_ERROR(Detail, pThis->log("thread was unable to get from publication"))
@@ -1726,7 +1726,7 @@ namespace openpeer
 
           ZS_THROW_INVALID_ARGUMENT_IF(publication->getName() != mPublication->getName())
 
-          AutoRecursiveLockPtr lock;
+          IPublicationLockerPtr lock;
           DocumentPtr doc = publication->getJSON(lock);
           if (!doc) {
             ZS_LOG_ERROR(Detail, log("publication document was NULL"))
@@ -2175,6 +2175,8 @@ namespace openpeer
           pThis->mPublication = IPublication::create(creatorLocation, name, "text/x-json-openpeer", doc, publishRelationships, ILocation::getForLocal(stackAccount));
           pThis->mPermissionPublication = IPublication::create(creatorLocation, permissionName, "text/x-json-openpeer-permissions", relationships, publishEmptyRelationships, ILocation::getForLocal(stackAccount));
 
+          doc.reset();  // been adopted
+
           return pThis;
         }
 
@@ -2203,7 +2205,7 @@ namespace openpeer
           //        of publication lock returned from getXML(...) could cause
           //        unintended deadlock
           {
-            AutoRecursiveLockPtr lock;
+            IPublicationLockerPtr lock;
             DocumentPtr doc = mPublication->getJSON(lock);
             ElementPtr threadEl = doc->findFirstChildElementChecked("thread");
 
@@ -2869,6 +2871,7 @@ namespace openpeer
           }
 
           IPublicationPtr contactPublication = IPublication::create(mPublication->getCreatorLocation(), name, "text/x-json-openpeer", doc, publishRelationships, mPublication->getPublishedLocation());
+          doc.reset();  // been adopted
 
           ZS_LOG_DEBUG(log("publishing contact") + UseContact::toDebug(contact) + IPublication::toDebug(contactPublication))
 
