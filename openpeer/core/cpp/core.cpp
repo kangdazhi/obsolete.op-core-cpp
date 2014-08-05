@@ -31,7 +31,14 @@
 
 #include <openpeer/core/core.h>
 #include <openpeer/core/internal/core.h>
+#include <openpeer/core/internal/core_Helper.h>
+
+#include <openpeer/core/IConversationThreadComposingStatus.h>
+
+#include <openpeer/services/IHelper.h>
+
 #include <zsLib/Log.h>
+#include <zsLib/XML.h>
 
 namespace openpeer { namespace core { ZS_IMPLEMENT_SUBSYSTEM(openpeer_core) } }
 namespace openpeer { namespace core { ZS_IMPLEMENT_SUBSYSTEM(openpeer_media) } }
@@ -43,6 +50,87 @@ namespace openpeer
 {
   namespace core
   {
+    ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
+
+    namespace internal
+    {
+      ZS_DECLARE_TYPEDEF_PTR(IHelperForInternal, UseHelper)
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark ContactStatusInfo
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      ContactStatusInfo::ContactStatusInfo()
+      {
+      }
+
+      //-----------------------------------------------------------------------
+      ContactStatusInfo::ContactStatusInfo(const ElementPtr &statusEl)
+      {
+        mStatusEl = statusEl ? statusEl->clone()->toElement() : ElementPtr();
+        if (mStatusEl) {
+          mCreated = UseServicesHelper::stringToTime(statusEl->getAttributeValue("created"));
+          if (Time() == mCreated) mCreated = zsLib::now();
+        }
+        mStatusHash = UseHelper::hash(statusEl);
+      }
+
+      //-----------------------------------------------------------------------
+      ContactStatusInfo::ContactStatusInfo(const ContactStatusInfo &rValue)
+      {
+        mStatusEl = rValue.mStatusEl ? rValue.mStatusEl->clone()->toElement() : ElementPtr();
+        mStatusHash = rValue.mStatusHash;
+        mCreated = rValue.mCreated;
+      }
+
+      //-----------------------------------------------------------------------
+      bool ContactStatusInfo::hasData() const
+      {
+        return ((Time() != mCreated) ||
+                ((bool)mStatusEl) ||
+                (mStatusHash.hasData()));
+      }
+
+      //-----------------------------------------------------------------------
+      ElementPtr ContactStatusInfo::toDebug() const
+      {
+        ElementPtr resultEl = Element::create("core::ContactStatusInfo");
+
+        IConversationThreadComposingStatus::ComposingStates status = IConversationThreadComposingStatus::getComposingStatus(mStatusEl);
+
+        if (IConversationThreadComposingStatus::ComposingState_None != status) {
+          UseServicesHelper::debugAppend(resultEl, "composing status", IConversationThreadComposingStatus::toString(status));
+        }
+
+        UseServicesHelper::debugAppend(resultEl, "created", mCreated);
+        UseServicesHelper::debugAppend(resultEl, "status", (bool)mStatusEl);
+        UseServicesHelper::debugAppend(resultEl, "status hash", mStatusHash);
+
+        return resultEl;
+      }
+
+      //-----------------------------------------------------------------------
+      bool ContactStatusInfo::operator==(const ContactStatusInfo &rValue) const
+      {
+        if (mCreated != rValue.mCreated) return false;
+        if (mStatusHash != rValue.mStatusHash) return false;
+        if (((bool)mStatusEl) != ((bool)rValue.mStatusEl)) return false;
+
+        return true;
+      }
+
+      //-----------------------------------------------------------------------
+      bool ContactStatusInfo::operator!=(const ContactStatusInfo &rValue) const
+      {
+        return !((*this) == rValue);
+      }
+    }
+
     //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------

@@ -132,16 +132,12 @@ namespace openpeer
 
       //-----------------------------------------------------------------------
       bool IConversationThreadForHostOrSlave::shouldUpdateContactStatus(
-                                                                        const Time &existingStatusTime,
-                                                                        const String &existingStatusHash,
-                                                                        const ElementPtr &existingStatus,
-                                                                        const Time &newStatusTime,
-                                                                        const String &newStatusHash,
-                                                                        const ElementPtr &newContactStatus,
+                                                                        const ContactStatusInfo &existingStatus,
+                                                                        const ContactStatusInfo &newStatus,
                                                                         bool forceUpdate
                                                                         )
       {
-        return ConversationThread::shouldUpdateContactStatus(existingStatusTime, existingStatusHash, existingStatus, newStatusTime, newStatusHash, newContactStatus, forceUpdate);
+        return ConversationThread::shouldUpdateContactStatus(existingStatus, newStatus, forceUpdate);
       }
 
       //-----------------------------------------------------------------------
@@ -564,7 +560,7 @@ namespace openpeer
 
         const ContactStatus &status = (*found).second;
 
-        return status.mStatus ? status.mStatus->clone()->toElement() : ElementPtr();
+        return status.mStatus.mStatusEl ? status.mStatus.mStatusEl->clone()->toElement() : ElementPtr();
       }
 
       //-----------------------------------------------------------------------
@@ -593,16 +589,14 @@ namespace openpeer
 
         ContactStatus &contactStatus = (*found).second;
 
-        contactStatus.mStatusTime = zsLib::now();
-        contactStatus.mStatusHash = UseHelper::hash(contactStatusInThreadOfSelf);
-        contactStatus.mStatus = contactStatusInThreadOfSelf;
+        contactStatus.mStatus = ContactStatusInfo(contactStatusInThreadOfSelf);
 
         if (!mLastOpenThread) {
           ZS_LOG_WARNING(Detail, log("no conversation thread was ever openned"))
           return;
         }
 
-        mLastOpenThread->setStatusInThread(self, mSelfIdentityContacts, contactStatus.mStatusTime, contactStatus.mStatusHash, contactStatus.mStatus);
+        mLastOpenThread->setStatusInThread(self, mSelfIdentityContacts, contactStatus.mStatus);
       }
 
       //-----------------------------------------------------------------------
@@ -911,12 +905,8 @@ namespace openpeer
 
       //-----------------------------------------------------------------------
       bool ConversationThread::shouldUpdateContactStatus(
-                                                         const Time &existingStatusTime,
-                                                         const String &existingStatusHash,
-                                                         const ElementPtr &existingStatus,
-                                                         const Time &newStatusTime,
-                                                         const String &newStatusHash,
-                                                         const ElementPtr &newContactStatus,
+                                                         const ContactStatusInfo &existingStatus,
+                                                         const ContactStatusInfo &newStatus,
                                                          bool forceUpdate
                                                          )
       {
@@ -925,47 +915,45 @@ namespace openpeer
           return true;
         }
 
-        if (IConversationThreadComposingStatus::ComposingState_Gone == IConversationThreadComposingStatus::getComposingStatus(existingStatus)) {
-          if (IConversationThreadComposingStatus::ComposingState_Gone != IConversationThreadComposingStatus::getComposingStatus(newContactStatus)) {
-            ZS_LOG_TRACE(slog("should update contact status as old status was gone but new status is not gone") + ZS_PARAM("new status", IConversationThreadComposingStatus::toString(IConversationThreadComposingStatus::getComposingStatus(newContactStatus))))
+        if (IConversationThreadComposingStatus::ComposingState_Gone == IConversationThreadComposingStatus::getComposingStatus(existingStatus.mStatusEl)) {
+          if (IConversationThreadComposingStatus::ComposingState_Gone != IConversationThreadComposingStatus::getComposingStatus(newStatus.mStatusEl)) {
+            ZS_LOG_TRACE(slog("should update contact status as old status was gone but new status is not gone") + ZS_PARAM("new status", newStatus.toDebug()) + ZS_PARAM("existing status", newStatus.toDebug()))
             return true;
           }
         }
 
-        if (Time() == existingStatusTime) {
-          if (Time() != newStatusTime) {
-            ZS_LOG_TRACE(slog("should update contact status as new status has a time set (but old did not)") + ZS_PARAM("new status time", newStatusTime))
+        if (Time() == existingStatus.mCreated) {
+          if (Time() != newStatus.mCreated) {
+            ZS_LOG_TRACE(slog("should update contact status as new status has a time set (but old did not)") + ZS_PARAM("new status", newStatus.toDebug()) + ZS_PARAM("existing status", newStatus.toDebug()))
             return true;
           }
         } else {
-          if (Time() == newStatusTime) {
-            ZS_LOG_WARNING(Trace, slog("should NOT update contact status as new status does not contain a status time but existing status has a time") + ZS_PARAM("existing status time", existingStatusTime))
+          if (Time() == newStatus.mCreated) {
+            ZS_LOG_WARNING(Trace, slog("should NOT update contact status as new status does not contain a status time but existing status has a time") + ZS_PARAM("new status", newStatus.toDebug()) + ZS_PARAM("existing status", newStatus.toDebug()))
             return false;
           }
         }
 
-        if (existingStatusHash == newStatusHash) {
-          ZS_LOG_WARNING(Trace, slog("should NOT update contact status as status has not actually changed") + ZS_PARAM("existing status hash", existingStatusHash) + ZS_PARAM("new status hash", newStatusHash))
+        if (existingStatus == newStatus) {
+          ZS_LOG_WARNING(Trace, slog("should NOT update contact status as status has not actually changed") + ZS_PARAM("new status", newStatus.toDebug()) + ZS_PARAM("existing status", newStatus.toDebug()))
           return false;
         }
 
-        if (IConversationThreadComposingStatus::ComposingState_None == IConversationThreadComposingStatus::getComposingStatus(existingStatus)) {
-          if (IConversationThreadComposingStatus::ComposingState_None != IConversationThreadComposingStatus::getComposingStatus(newContactStatus)) {
-            ZS_LOG_TRACE(slog("should update contact status as new status has status (but old did not)") + ZS_PARAM("new status", IConversationThreadComposingStatus::toString(IConversationThreadComposingStatus::getComposingStatus(newContactStatus))))
+        if (IConversationThreadComposingStatus::ComposingState_None == IConversationThreadComposingStatus::getComposingStatus(existingStatus.mStatusEl)) {
+          if (IConversationThreadComposingStatus::ComposingState_None != IConversationThreadComposingStatus::getComposingStatus(newStatus.mStatusEl)) {
+            ZS_LOG_TRACE(slog("should update contact status as new status has status (but old did not)") + ZS_PARAM("new status", newStatus.toDebug()) + ZS_PARAM("existing status", newStatus.toDebug()))
             return true;
           }
         }
 
-        return existingStatusTime < newStatusTime;
+        return existingStatus.mCreated < newStatus.mCreated;
       }
 
       //-----------------------------------------------------------------------
       void ConversationThread::notifyContactStatus(
                                                    IConversationThreadHostSlaveBasePtr thread,
                                                    UseContactPtr contact,
-                                                   const Time &statusTime,
-                                                   const String &statusHash,
-                                                   ElementPtr status,
+                                                   const ContactStatusInfo &status,
                                                    bool forceUpdate
                                                    )
       {
@@ -1000,12 +988,11 @@ namespace openpeer
 
         ContactStatus &contactStatus = (*found).second;
 
-        if (!shouldUpdateContactStatus(contactStatus.mStatusTime, contactStatus.mStatusHash, contactStatus.mStatus, statusTime, statusHash, status, forceUpdate)) {
-          ZS_LOG_TRACE(log("contact status should not update") + ZS_PARAM("existing status time", contactStatus.mStatusTime) + ZS_PARAM("existing status hash", contactStatus.mStatusHash) + ZS_PARAM("existing status", (bool)contactStatus.mStatus) + ZS_PARAM("new status time", statusTime) + ZS_PARAM("new status hash", statusHash) + ZS_PARAM("new status", (bool)status) + UseContact::toDebug(contact))
+        if (!shouldUpdateContactStatus(contactStatus.mStatus, status, forceUpdate)) {
+          ZS_LOG_TRACE(log("contact status should not update") + ZS_PARAM("existing status", contactStatus.mStatus.toDebug()) + ZS_PARAM("new status", status.toDebug()) + UseContact::toDebug(contact))
           return;
         }
 
-        contactStatus.mStatusHash = statusHash;
         contactStatus.mStatus = status;
 
         ZS_LOG_DEBUG(log("contact status changed") + UseContact::toDebug(contact))
@@ -1025,26 +1012,20 @@ namespace openpeer
       //-----------------------------------------------------------------------
       bool ConversationThread::getLastContactStatus(
                                                     UseContactPtr contact,
-                                                    Time &outStatusTime,
-                                                    String &outStatusHash,
-                                                    ElementPtr &outStatus
+                                                    ContactStatusInfo &outStatus
                                                     )
       {
         AutoRecursiveLock lock(*this);
 
-        outStatusTime = Time();
-        outStatusHash = String();
-        outStatus = ElementPtr();
+        outStatus = ContactStatusInfo();
 
         ContactStatusMap::iterator found = mLastReportedContactStatuses.find(contact->getPeerURI());
         if (found == mLastReportedContactStatuses.end()) return false;
 
         ContactStatus &contactStatus = (*found).second;
 
-        outStatusTime = contactStatus.mStatusTime;
-        outStatusHash = contactStatus.mStatusHash;
         outStatus = contactStatus.mStatus;
-        return (bool)outStatus;
+        return outStatus.hasData();
       }
 
       //-----------------------------------------------------------------------
@@ -1805,8 +1786,9 @@ namespace openpeer
               UseConversationThreadHostPtr host = mOpenThread->toHost();
 
               Time lastActivity = host->getLastActivity();
-              if (lastActivity + mOpenThreadInactivityTimeout < zsLib::now()) {
-                ZS_LOG_DEBUG(log("thread is inactive so closing open host thread now"))
+              Time now = zsLib::now();
+              if (lastActivity + mOpenThreadInactivityTimeout < now) {
+                ZS_LOG_DEBUG(log("thread is inactive so closing open host thread now") + ZS_PARAM("last activity", lastActivity) + ZS_PARAM("now", now) + ZS_PARAM("inactivity timeout (s)", mOpenThreadInactivityTimeout))
                 host->close();
                 mOpenThread.reset();
               }

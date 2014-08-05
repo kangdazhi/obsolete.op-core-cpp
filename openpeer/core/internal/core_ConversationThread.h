@@ -224,9 +224,7 @@ namespace openpeer
         virtual void setStatusInThread(
                                        UseContactPtr selfContact,
                                        const IdentityContactList &selfIdentityContacts,
-                                       const Time &contactStatusTime,
-                                       const String &contactStatusInThreadOfSelfHash,
-                                       ElementPtr contactStatusInThreadOfSelf
+                                       const ContactStatusInfo &statusOfSelf
                                        ) = 0;
       };
 
@@ -261,29 +259,21 @@ namespace openpeer
                                                   ) = 0;
 
         static bool shouldUpdateContactStatus(
-                                              const Time &existingStatusTime,
-                                              const String &existingStatusHash,
-                                              const ElementPtr &existingStatus,
-                                              const Time &newStatusTime,
-                                              const String &newStatusHash,
-                                              const ElementPtr &newContactStatus,
+                                              const ContactStatusInfo &existingStatus,
+                                              const ContactStatusInfo &newStatus,
                                               bool forceUpdate = false
                                               );
 
         virtual void notifyContactStatus(
                                          IConversationThreadHostSlaveBasePtr thread,
                                          UseContactPtr contact,
-                                         const Time &statusTime,
-                                         const String &statusHash,
-                                         ElementPtr status,
+                                         const ContactStatusInfo &status,
                                          bool forceUpdate = false
                                          ) = 0;
 
         virtual bool getLastContactStatus(
                                           UseContactPtr contact,
-                                          Time &outStatusTime,
-                                          String &outStatusHash,
-                                          ElementPtr &outStatus
+                                          ContactStatusInfo &outStatus
                                           ) = 0;
 
         virtual void notifyMessageReceived(MessagePtr message) = 0;
@@ -412,9 +402,7 @@ namespace openpeer
         struct ContactStatus
         {
           UseContactPtr mContact;
-          Time mStatusTime;
-          String mStatusHash;
-          ElementPtr mStatus;
+          ContactStatusInfo mStatus;
         };
         typedef std::map<ContactID, ContactStatus> ContactStatusMap;
 
@@ -559,29 +547,21 @@ namespace openpeer
                                                   );
 
         static bool shouldUpdateContactStatus(
-                                              const Time &existingStatusTime,
-                                              const String &existingStatusHash,
-                                              const ElementPtr &existingStatus,
-                                              const Time &newStatusTime,
-                                              const String &newStatusHash,
-                                              const ElementPtr &newContactStatus,
+                                              const ContactStatusInfo &existingStatus,
+                                              const ContactStatusInfo &newStatus,
                                               bool forceUpdate = false
                                               );
 
         virtual void notifyContactStatus(
                                          IConversationThreadHostSlaveBasePtr thread,
                                          UseContactPtr contact,
-                                         const Time &statusTime,
-                                         const String &statusHash,
-                                         ElementPtr status,
+                                         const ContactStatusInfo &status,
                                          bool forceUpdate = false
                                          );
 
         virtual bool getLastContactStatus(
                                           UseContactPtr contact,
-                                          Time &outStatusTime,
-                                          String &outStatusHash,
-                                          ElementPtr &outStatus
+                                          ContactStatusInfo &outStatus
                                           );
 
         virtual void notifyMessageReceived(MessagePtr message);

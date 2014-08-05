@@ -176,8 +176,9 @@ namespace openpeer
           #pragma mark ConversationThreadHost::PeerLocation => (data)
           #pragma mark
 
-          AutoPUID mID;
           PeerLocationWeakPtr mThisWeak;
+
+          AutoPUID mID;
           PeerContactWeakPtr mOuter;
           bool mShutdown;
 

@@ -387,7 +387,7 @@ namespace openpeer
           ThreadContactMap::iterator found = contactsChanged.find(mPeerLocation->getPeerURI());
           if (found != contactsChanged.end()) {
             ThreadContactPtr threadContact = (*found).second;
-            outer->notifyContactStatus(threadContact->statusTime(), threadContact->statusHash(), threadContact->status());
+            outer->notifyContactStatus(threadContact->status());
           }
         }
 
@@ -565,6 +565,8 @@ namespace openpeer
         ElementPtr resultEl = Element::create("core::ConversationThreadHost::PeerLocation");
 
         UseServicesHelper::debugAppend(resultEl, "id", mID);
+        UseServicesHelper::debugAppend(resultEl, "outer", (bool)mOuter.lock());
+        UseServicesHelper::debugAppend(resultEl, "shutdown", mShutdown);
 
         UseServicesHelper::debugAppend(resultEl, ILocation::toDebug(mPeerLocation));
 

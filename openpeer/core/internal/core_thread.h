@@ -275,9 +275,7 @@ namespace openpeer
                                          UINT version,
                                          UseContactPtr contact,
                                          const IdentityContactList &identityContacts,
-                                         Time statusTime,
-                                         const char *statusHash,
-                                         ElementPtr status
+                                         const ContactStatusInfo &status
                                          );
 
           static ThreadContactPtr create(
@@ -293,9 +291,7 @@ namespace openpeer
           UINT version() const                                {return mVersion;}
           UseContactPtr contact() const                       {return mContact;}
           const IdentityContactList &identityContacts() const {return mIdentityContacts;}
-          const Time &statusTime() const                      {return mStatusTime;}
-          const String &statusHash() const                    {return mStatusHash;}
-          const ElementPtr &status() const                    {return mStatus;}
+          const ContactStatusInfo &status() const             {return mStatus;}
 
           ElementPtr contactElement() const                   {return constructContactElement();}
 
@@ -312,9 +308,7 @@ namespace openpeer
           UseContactPtr mContact;
           IdentityContactList mIdentityContacts;
 
-          Time mStatusTime;
-          String mStatusHash;
-          ElementPtr mStatus;
+          ContactStatusInfo mStatus;
         };
 
         //---------------------------------------------------------------------
@@ -388,6 +382,7 @@ namespace openpeer
                                           );
 
           static ElementPtr prepareThreadContactReplacement(
+                                                            ElementPtr contactEl,
                                                             const String &updatedDisposition,
                                                             const String &contactID,
                                                             ThreadContactPtr updatedContact

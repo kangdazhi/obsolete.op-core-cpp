@@ -593,11 +593,7 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      void ConversationThreadHost::PeerContact::notifyContactStatus(
-                                                                    const Time &statusTime,
-                                                                    const String &statusHash,
-                                                                    ElementPtr status
-                                                                    )
+      void ConversationThreadHost::PeerContact::notifyContactStatus(const ContactStatusInfo &status)
       {
         ZS_LOG_DEBUG(log("notified contact status changed"))
 
@@ -610,7 +606,7 @@ namespace openpeer
         }
 
         mReportedContactStatus = true;
-        outer->notifyContactStatus(mContact, statusTime, statusHash, status);
+        outer->notifyContactStatus(mContact, status);
       }
 
       //-----------------------------------------------------------------------
@@ -905,7 +901,7 @@ namespace openpeer
           }
         }
 
-        outer->notifyContactState(mContact, getContactConnectionState());
+        outer->notifyContactConnectionState(mContact, getContactConnectionState());
       }
 
       //-----------------------------------------------------------------------
@@ -923,16 +919,15 @@ namespace openpeer
 
         bool reportGone = (mPeerLocations.size() < 1);
 
-        Time statusTime;
-        ElementPtr status;
+        ContactStatusInfo status;
 
         if (reportGone) {
-          statusTime = zsLib::now();
-          IConversationThreadComposingStatus::updateComposingStatus(status, IConversationThreadComposingStatus::ComposingState_Gone);
+          ElementPtr statusEl;
+          IConversationThreadComposingStatus::updateComposingStatus(statusEl, IConversationThreadComposingStatus::ComposingState_Gone);
+          status = ContactStatusInfo(statusEl);
         }
 
-        String hashStatus = UseHelper::hash(status);
-        outer->notifyContactStatus(mContact, statusTime, hashStatus, status, true);
+        outer->notifyContactStatus(mContact, status, true);
 
         mReportedContactStatus = (!reportGone);
       }

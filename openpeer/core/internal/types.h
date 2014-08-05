@@ -131,6 +131,24 @@ namespace openpeer
       ZS_DECLARE_USING_PROXY(services, IICESocketSessionDelegate)
       ZS_DECLARE_USING_PROXY(services, IWakeDelegate)
 
+      struct ContactStatusInfo
+      {
+        Time mCreated;
+        ElementPtr mStatusEl;
+        String mStatusHash;
+
+        ContactStatusInfo();
+        ContactStatusInfo(const ElementPtr &statusEl);
+        ContactStatusInfo(const ContactStatusInfo &rValue);
+
+        bool hasData() const;
+
+        ElementPtr toDebug() const;
+
+        bool operator==(const ContactStatusInfo &rValue) const;
+        bool operator!=(const ContactStatusInfo &rValue) const;
+      };
+
       ZS_DECLARE_INTERACTION_PTR(ICallTransport)
       ZS_DECLARE_INTERACTION_PTR(IConversationThreadHostSlaveBase)
       ZS_DECLARE_INTERACTION_PTR(IConversationThreadDocumentFetcher)

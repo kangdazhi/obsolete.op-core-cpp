@@ -95,6 +95,7 @@ namespace openpeer
                                       public MessageQueueAssociator,
                                       public SharedRecursiveLock,
                                       public IConversationThreadHostForConversationThread,
+                                      public IBackgroundingDelegate,
                                       public IWakeDelegate
       {
       public:
@@ -219,9 +220,7 @@ namespace openpeer
         virtual void setStatusInThread(
                                        UseContactPtr selfContact,
                                        const IdentityContactList &selfIdentityContacts,
-                                       const Time &contactStatusTime,
-                                       const String &contactStatusInThreadOfSelfHash,
-                                       ElementPtr contactStatusInThreadOfSelf
+                                       const ContactStatusInfo &statusOfSelf
                                        );
 
         //---------------------------------------------------------------------
@@ -232,6 +231,22 @@ namespace openpeer
         virtual Time getLastActivity() const;
 
         virtual void close();
+
+        //-------------------------------------------------------------------
+        #pragma mark
+        #pragma mark ConversationThreadHost => IBackgroundingDelegate
+        #pragma mark
+
+        virtual void onBackgroundingGoingToBackground(
+                                                      IBackgroundingSubscriptionPtr subscription,
+                                                      IBackgroundingNotifierPtr notifier
+                                                      );
+
+        virtual void onBackgroundingGoingToBackgroundNow(IBackgroundingSubscriptionPtr subscription);
+
+        virtual void onBackgroundingReturningFromBackground(IBackgroundingSubscriptionPtr subscription);
+
+        virtual void onBackgroundingApplicationWillQuit(IBackgroundingSubscriptionPtr subscription);
 
         //---------------------------------------------------------------------
         #pragma mark
@@ -258,9 +273,7 @@ namespace openpeer
                                                );
         void notifyContactStatus(
                                  UseContactPtr contact,
-                                 const Time &statusTime,
-                                 const String &statusHash,
-                                 ElementPtr status,
+                                 const ContactStatusInfo &status,
                                  bool forceUpdate = false
                                  );
         virtual void notifyMessagePush(
@@ -269,10 +282,10 @@ namespace openpeer
                                        );
 
         void notifyStateChanged(PeerContactPtr peerContact);
-        void notifyContactState(
-                                UseContactPtr contact,
-                                ContactConnectionStates state
-                                );
+        void notifyContactConnectionState(
+                                          UseContactPtr contact,
+                                          ContactConnectionStates state
+                                          );
 
         bool hasCallPlacedTo(UseContactPtr toContact);
 
@@ -336,6 +349,9 @@ namespace openpeer
         String mServerName;
 
         Time mLastActivity;
+        IBackgroundingSubscriptionPtr mBackgroundingSubscription;
+        IBackgroundingNotifierPtr mBackgroundingNotifier;
+        AutoBool mBackgroundingNow;
 
         ConversationThreadHostStates mCurrentState;
 

@@ -1,6 +1,6 @@
 /*
 
- Copyright (c) 2013, SMB Phone Inc.
+ Copyright (c) 2014, Hookflash Inc.
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -282,7 +282,7 @@ namespace openpeer
       Time ConversationThreadSlave::getHostCreationTime() const
       {
         AutoRecursiveLock lock(*this);
-        if (mHostThread) return Time();
+        if (!mHostThread) return Time();
         return mHostThread->details()->created();
       }
 
@@ -290,7 +290,7 @@ namespace openpeer
       String ConversationThreadSlave::getHostServerName() const
       {
         AutoRecursiveLock lock(*this);
-        if (mHostThread) return String();
+        if (!mHostThread) return String();
         return mHostThread->details()->serverName();
       }
 
@@ -368,13 +368,11 @@ namespace openpeer
             continue;
           }
 
-          Time statusTime;
-          String statusHash;
-          ElementPtr status;
+          ContactStatusInfo status;
 
-          baseThread->getLastContactStatus(contact, statusTime, statusHash, status);
+          baseThread->getLastContactStatus(contact, status);
 
-          ThreadContactPtr threadContact = ThreadContact::create(1, contact, info.mIdentityContacts, statusTime, statusHash, status);
+          ThreadContactPtr threadContact = ThreadContact::create(1, contact, info.mIdentityContacts, status);
           contactMap[contact->getPeerURI()] = threadContact;
         }
 
@@ -599,9 +597,7 @@ namespace openpeer
       void ConversationThreadSlave::setStatusInThread(
                                                       UseContactPtr selfContact,
                                                       const IdentityContactList &selfIdentityContacts,
-                                                      const Time &contactStatusTime,
-                                                      const String &contactStatusInThreadOfSelfHash,
-                                                      ElementPtr contactStatusInThreadOfSelf
+                                                      const ContactStatusInfo &statusOfSelf
                                                       )
       {
         AutoRecursiveLock lock(*this);
@@ -617,7 +613,7 @@ namespace openpeer
         }
 
         ThreadContactMap contacts;
-        contacts[selfContact->getPeerURI()] = ThreadContact::create(1, selfContact, selfIdentityContacts, contactStatusTime, contactStatusInThreadOfSelfHash, contactStatusInThreadOfSelf);
+        contacts[selfContact->getPeerURI()] = ThreadContact::create(1, selfContact, selfIdentityContacts, statusOfSelf);
 
         mSlaveThread->updateBegin();
         mSlaveThread->setContacts(contacts);
@@ -763,7 +759,7 @@ namespace openpeer
             UseContactPtr contact = threadContact->contact();
 
             // notify of contact status updates (the host is the authoritative source of all statuses (except for the self contact but the base filters those updates)
-            baseThread->notifyContactStatus(mThisWeak.lock(), contact, threadContact->statusTime(), threadContact->statusHash(), threadContact->status());
+            baseThread->notifyContactStatus(mThisWeak.lock(), contact, threadContact->status());
 
             bool hasPeerFilePulic = (bool)contact->getPeerFilePublic();
             if (hasPeerFilePulic) {
