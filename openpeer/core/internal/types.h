@@ -97,6 +97,7 @@ namespace openpeer
       ZS_DECLARE_USING_PTR(stack, IPeerSubscriptionDelegate)
       ZS_DECLARE_USING_PTR(stack, ILocation)
       ZS_DECLARE_USING_PTR(stack, IPublication)
+      ZS_DECLARE_USING_PTR(stack, IPublicationLocker)
       ZS_DECLARE_USING_PTR(stack, IPublicationMetaData)
       ZS_DECLARE_USING_PTR(stack, IPublicationFetcher)
       ZS_DECLARE_USING_PTR(stack, IPublicationPublisher)

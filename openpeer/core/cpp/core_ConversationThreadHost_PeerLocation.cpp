@@ -337,7 +337,7 @@ namespace openpeer
         zsLib::RegEx e("^\\/contacts\\/1\\.0\\/.*$");
         if (e.hasMatch(publication->getName())) {
           // this it a public peer file document to process
-          AutoRecursiveLockPtr locker;
+          IPublicationLockerPtr locker;
           DocumentPtr doc = publication->getJSON(locker);
           if (!doc) {
             ZS_LOG_WARNING(Detail, log("failed to get peer file contact") + IPublication::toDebug(publication))
