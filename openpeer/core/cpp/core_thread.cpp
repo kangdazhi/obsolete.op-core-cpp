@@ -539,6 +539,7 @@ namespace openpeer
           ICache::store(getCookieName(), Time(), output.get());
 
           mFlags = mFlags | Flag_Cached;
+          mData.reset();
         }
 
         //---------------------------------------------------------------------
