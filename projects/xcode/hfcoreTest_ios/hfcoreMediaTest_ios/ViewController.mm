@@ -22,7 +22,9 @@
     
     mediaEngine->setCaptureRenderView((__bridge void*)_imgView1);
     mediaEngine->setChannelRenderView((__bridge void*)_imgView2);
-    
+  
+    _surfacesSet = YES;
+  
     bool saveToLibrary = true;
     NSDateFormatter *formatter;
     NSString *fileName;
@@ -81,21 +83,34 @@
 
 -(IBAction)test5
 {
-  openpeer::core::IMediaEnginePtr mediaEngine = openpeer::core::IMediaEngine::singleton();
+    openpeer::core::IMediaEnginePtr mediaEngine = openpeer::core::IMediaEngine::singleton();
   
-  if (mediaEngine->getCameraType() == openpeer::core::IMediaEngine::CameraType_Front)
-    mediaEngine->setCameraType(openpeer::core::IMediaEngine::CameraType_Back);
-  else if (mediaEngine->getCameraType() == openpeer::core::IMediaEngine::CameraType_Back)
-    mediaEngine->setCameraType(openpeer::core::IMediaEngine::CameraType_Front);
+    if (mediaEngine->getCameraType() == openpeer::core::IMediaEngine::CameraType_Front)
+        mediaEngine->setCameraType(openpeer::core::IMediaEngine::CameraType_Back);
+    else if (mediaEngine->getCameraType() == openpeer::core::IMediaEngine::CameraType_Back)
+        mediaEngine->setCameraType(openpeer::core::IMediaEngine::CameraType_Front);
 }
 
 -(IBAction)test6
 {
-  openpeer::core::IMediaEnginePtr mediaEngine = openpeer::core::IMediaEngine::singleton();
-  if (mediaEngine->getLoudspeakerEnabled())
-    mediaEngine->setLoudspeakerEnabled(false);
-  else
-    mediaEngine->setLoudspeakerEnabled(true);
+    openpeer::core::IMediaEnginePtr mediaEngine = openpeer::core::IMediaEngine::singleton();
+    /*
+     if (mediaEngine->getLoudspeakerEnabled())
+        mediaEngine->setLoudspeakerEnabled(false);
+     else
+        mediaEngine->setLoudspeakerEnabled(true);
+     */
+    if (_surfacesSet)
+    {
+        mediaEngine->setCaptureRenderView(NULL);
+        mediaEngine->setChannelRenderView(NULL);
+    }
+    else
+    {
+        mediaEngine->setCaptureRenderView((__bridge void*)_imgView1);
+        mediaEngine->setChannelRenderView((__bridge void*)_imgView2);
+    }
+    _surfacesSet = !_surfacesSet;
 }
 
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
@@ -108,6 +123,8 @@
 //    const char* buffer = [documents UTF8String];
 //    const char* receiverIPAddress = [receiverIPAddressTextField.text UTF8String];
 //    const char* receiverIPAddress = "127.0.0.1";
+  
+    _surfacesSet = NO;
   
     mediaEngineDelegatePtr = MediaEngineDelegateWrapper::create();
   
