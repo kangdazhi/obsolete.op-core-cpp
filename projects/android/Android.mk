@@ -49,11 +49,13 @@ LOCAL_SRC_FILES := $(SOURCE_PATH)/core_Account_ContactSubscription.cpp \
 		   $(SOURCE_PATH)/core_CallTransport.cpp \
 		   $(SOURCE_PATH)/core_Contact.cpp \
 		   $(SOURCE_PATH)/core_ConversationThread.cpp \
+		   $(SOURCE_PATH)/core_ConversationThreadComposingStatus.cpp \
 		   $(SOURCE_PATH)/core_ConversationThreadDocumentFetcher.cpp \
 		   $(SOURCE_PATH)/core_ConversationThreadHost.cpp \
 		   $(SOURCE_PATH)/core_ConversationThreadHost_PeerContact.cpp \
 		   $(SOURCE_PATH)/core_ConversationThreadHost_PeerLocation.cpp \
 		   $(SOURCE_PATH)/core_ConversationThreadSlave.cpp \
+		   $(SOURCE_PATH)/core_ConversationThreadSystemMessage.cpp \
 		   $(SOURCE_PATH)/core_Factory.cpp \
 		   $(SOURCE_PATH)/core_Helper.cpp \
 		   $(SOURCE_PATH)/core_Identity.cpp \
