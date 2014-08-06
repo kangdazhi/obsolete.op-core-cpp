@@ -1073,20 +1073,19 @@ namespace openpeer
         bool stateChanged = false;
 
         MessageDeliveryStatesMap::iterator found = mMessageDeliveryStates.find(messageID);
-        if (found != mMessageDeliveryStates.end()) {
-          MessageDeliveryStates &deliveryState = (*found).second;
-          if (state > deliveryState) {
-            ZS_LOG_DEBUG(log("message delivery state has changed") + ZS_PARAM("message ID", messageID) + ZS_PARAM("old delivery state", IConversationThread::toString(deliveryState)) + ZS_PARAM("new delivery state", IConversationThread::toString(state)))
-            // this state has a higher priority than the old state
-            deliveryState = state;
-            stateChanged = true;
-          } else {
-            ZS_LOG_DEBUG(log("message delivery state is being ignored since it has less significance") + ZS_PARAM("message ID", messageID) + ZS_PARAM("old delivery state", IConversationThread::toString(deliveryState)) + ZS_PARAM("new delivery state", IConversationThread::toString(state)))
-          }
-        } else {
-          ZS_LOG_DEBUG(log("message delivery state has changed") + ZS_PARAM("message ID", messageID) + ZS_PARAM("delivery state", IConversationThread::toString(state)))
-          mMessageDeliveryStates[messageID] = state;
+        if (found == mMessageDeliveryStates.end()) {
+          ZS_LOG_DEBUG(log("message delivery state has changed for message not sent from self contact (likely sent by a slave and thus ignoring)") + ZS_PARAM("message ID", messageID) + ZS_PARAM("delivery state", IConversationThread::toString(state)))
+          return;
+        }
+
+        MessageDeliveryStates &deliveryState = (*found).second;
+        if (state > deliveryState) {
+          ZS_LOG_DEBUG(log("message delivery state has changed") + ZS_PARAM("message ID", messageID) + ZS_PARAM("old delivery state", IConversationThread::toString(deliveryState)) + ZS_PARAM("new delivery state", IConversationThread::toString(state)))
+          // this state has a higher priority than the old state
+          deliveryState = state;
           stateChanged = true;
+        } else {
+          ZS_LOG_DEBUG(log("message delivery state is being ignored since it has less significance") + ZS_PARAM("message ID", messageID) + ZS_PARAM("old delivery state", IConversationThread::toString(deliveryState)) + ZS_PARAM("new delivery state", IConversationThread::toString(state)))
         }
 
         if (stateChanged) {
@@ -1115,9 +1114,21 @@ namespace openpeer
           return;
         }
 
-        MessageReceivedMap::iterator found = mReceivedOrPushedMessages.find(message->messageID());
-        if (found == mReceivedOrPushedMessages.end()) {
-          mReceivedOrPushedMessages[message->messageID()] = message;
+        // scope: filter out messages not sent by the self contact
+        {
+          MessageDeliveryStatesMap::iterator found = mMessageDeliveryStates.find(message->messageID());
+          if (found == mMessageDeliveryStates.end()) {
+            ZS_LOG_DEBUG(log("notified to push for message not sent from self contact (likely sent by a slave and thus ignoring)") + message->toDebug())
+            return;
+          }
+        }
+
+        // scope: remember this was one of the messages received or pushed (so getMessage will work)
+        {
+          MessageReceivedMap::iterator found = mReceivedOrPushedMessages.find(message->messageID());
+          if (found == mReceivedOrPushedMessages.end()) {
+            mReceivedOrPushedMessages[message->messageID()] = message;
+          }
         }
 
         try {
