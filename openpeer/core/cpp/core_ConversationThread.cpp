@@ -995,7 +995,7 @@ namespace openpeer
 
         contactStatus.mStatus = status;
 
-        ZS_LOG_DEBUG(log("contact status changed") + UseContact::toDebug(contact))
+        ZS_LOG_DEBUG(log("contact status changed") + UseContact::toDebug(contact) + contactStatus.mStatus.toDebug())
 
         if (!mDelegate) {
           ZS_LOG_WARNING(Detail, log("conversation thread delegate not found"))

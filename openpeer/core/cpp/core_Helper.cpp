@@ -59,7 +59,7 @@ namespace openpeer
         if (!element) return String();
 
         String result = Helper::convertToString(element);
-        return UseServicesHelper::convertToString(*UseServicesHelper::hash(result));
+        return UseServicesHelper::convertToHex(*UseServicesHelper::hash(result));
       }
 
       //-----------------------------------------------------------------------

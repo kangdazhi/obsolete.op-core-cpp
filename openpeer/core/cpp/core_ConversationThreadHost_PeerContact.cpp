@@ -97,7 +97,7 @@ namespace openpeer
         mOuter(host),
         mContact(contact),
         mIdentityContacts(identityContacts),
-        mReportedContactStatus(true)  // upon adding the outer will automatically report a "gone" status thus no need to report again
+        mReportedContactStatus(false)  // upon adding the outer will automatically report a "gone" status thus no need to report again
       {
         ZS_LOG_DETAIL(log("created") + UseContact::toDebug(contact))
       }
