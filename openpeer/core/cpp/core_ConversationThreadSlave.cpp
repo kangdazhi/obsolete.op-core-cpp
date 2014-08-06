@@ -579,11 +579,16 @@ namespace openpeer
           return;
         }
 
-        const MessageList &messagesChanged = mHostThread->messagedChanged();
+        const MessageList &messages = mHostThread->messages();
+
+        if (messages.size() < 1) {
+          ZS_LOG_DEBUG(log("no messages to mark as read"))
+          return;
+        }
 
         mSlaveThread->updateBegin();
 
-        const MessagePtr &lastMessage = messagesChanged.back();
+        const MessagePtr &lastMessage = messages.back();
         mSlaveThread->setRead(lastMessage);
 
         mSlaveThread->updateEnd(getPublicationRepostiory());

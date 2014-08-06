@@ -591,6 +591,8 @@ namespace openpeer
 
         contactStatus.mStatus = ContactStatusInfo(contactStatusInThreadOfSelf);
 
+        ZS_LOG_DEBUG(log("changing contact status for self") + contactStatus.mStatus.toDebug())
+
         if (!mLastOpenThread) {
           ZS_LOG_WARNING(Detail, log("no conversation thread was ever openned"))
           return;
@@ -1023,6 +1025,8 @@ namespace openpeer
         if (found == mLastReportedContactStatuses.end()) return false;
 
         ContactStatus &contactStatus = (*found).second;
+
+        ZS_LOG_TRACE(log("getting contact status") + UseContact::toDebug(contact) + contactStatus.mStatus.toDebug())
 
         outStatus = contactStatus.mStatus;
         return outStatus.hasData();
