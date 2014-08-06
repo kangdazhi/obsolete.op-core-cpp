@@ -64,6 +64,9 @@ LOCAL_SRC_FILES := $(SOURCE_PATH)/core_Account_ContactSubscription.cpp \
 		   $(SOURCE_PATH)/core.cpp \
 		   $(SOURCE_PATH)/core_thread.cpp \
 		   $(SOURCE_PATH)/core_MediaEngine.cpp \
+		   $(SOURCE_PATH)/core_PushMessaging.cpp \
+		   $(SOURCE_PATH)/core_PushMessaging_PushQuery.cpp \
+		   $(SOURCE_PATH)/core_PushMessaging_RegisterQuery.cpp \
 		   $(SOURCE_PATH)/../test/TestMediaEngine.cpp \
 		   $(SOURCE_PATH)/../test/boost_replacement.cpp
 
