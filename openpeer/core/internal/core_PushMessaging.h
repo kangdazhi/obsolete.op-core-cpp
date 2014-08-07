@@ -134,15 +134,16 @@ namespace openpeer
         virtual void shutdown();
 
         virtual IPushMessagingRegisterQueryPtr registerDevice(
-                                                              IPushMessagingRegisterQueryDelegatePtr delegate,
-                                                              const char *deviceToken,
-                                                              Time expires,
-                                                              const char *mappedType,
-                                                              bool unreadBadge,
-                                                              const char *sound,
-                                                              const char *action,
-                                                              const char *launchImage,
-                                                              unsigned int priority
+                                                              IPushMessagingRegisterQueryDelegatePtr inDelegate,
+                                                              const char *inDeviceToken,
+                                                              Time inExpires,
+                                                              const char *inMappedType,
+                                                              bool inUnreadBadge,
+                                                              const char *inSound,
+                                                              const char *inAction,
+                                                              const char *inLaunchImage,
+                                                              unsigned int inPriority,
+                                                              const ValueNameList &inValueNames
                                                               );
 
         virtual IPushMessagingQueryPtr push(
@@ -158,6 +159,8 @@ namespace openpeer
                                         String &outUpdatedToVersion,
                                         PushMessageList &outNewMessages
                                         );
+
+        static NameValueMapPtr getValues(const PushInfo &pushInfo);
 
         virtual void markPushMessageRead(const char *messageID);
         virtual void deletePushMessage(const char *messageID);

@@ -78,7 +78,8 @@ namespace openpeer
                                                   const char *sound,
                                                   const char *action,
                                                   const char *launchImage,
-                                                  unsigned int priority
+                                                  unsigned int priority,
+                                                  const ValueNameList &valueNames
                                                   ) :
         MessageQueueAssociator(queue),
         SharedRecursiveLock(SharedRecursiveLock::create()),
@@ -91,6 +92,7 @@ namespace openpeer
         mAction(action),
         mLaunchImage(launchImage),
         mPriority(priority),
+        mValueNames(valueNames),
 
         mLastErrorCode(0)
       {
@@ -132,10 +134,11 @@ namespace openpeer
                                                                            const char *sound,
                                                                            const char *action,
                                                                            const char *launchImage,
-                                                                           unsigned int priority
+                                                                           unsigned int priority,
+                                                                           const ValueNameList &valueNames
                                                                            )
       {
-        RegisterQueryPtr pThis(new RegisterQuery(UseStack::queueCore(), lock, delegate, deviceToken, expires, mappedType, unreadBadge, sound, action, launchImage, priority));
+        RegisterQueryPtr pThis(new RegisterQuery(UseStack::queueCore(), lock, delegate, deviceToken, expires, mappedType, unreadBadge, sound, action, launchImage, priority, valueNames));
         pThis->init();
         return pThis;
       }
@@ -149,7 +152,7 @@ namespace openpeer
 
         AutoRecursiveLock lock(*this);
 
-        mQuery = mailbox->registerDevice(mThisWeak.lock(), mDeviceToken, services::ISettings::getString(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MAILBOX_FOLDER), mExpires, mMappedType, mUnreadBadge, mSound, mAction, mLaunchImage, mPriority);
+        mQuery = mailbox->registerDevice(mThisWeak.lock(), mDeviceToken, services::ISettings::getString(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MAILBOX_FOLDER), mExpires, mMappedType, mUnreadBadge, mSound, mAction, mLaunchImage, mPriority, mValueNames);
 
         get(mHadQuery) = true;
       }

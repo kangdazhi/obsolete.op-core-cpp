@@ -88,13 +88,18 @@ namespace openpeer
       typedef std::list<PushStateContactDetail> PushStateContactDetailList;
       typedef std::map<PushStates, PushStateContactDetailList> PushStateDetailMap;
       
+      typedef String ValueName;
+      typedef std::list<ValueName> ValueNameList;
+
+      typedef String Name;
       typedef String Value;
-      typedef std::list<Value> ValueList;
+      typedef std::map<Name, Value> NameValueMap;
+      ZS_DECLARE_PTR(NameValueMap)
 
       struct PushInfo
       {
-        String mServiceType;  // e.g. "apns" or "gcm"
-        ValueList mValues;    // values related to mapped type for given service
+        String mServiceType;  // e.g. "apns", "gcm", or all
+        ElementPtr mValues;   // "values" data associateed with push messages (use "getValues(...)" to extract data
         ElementPtr mCustom;   // extended push related custom push data
       };
 
@@ -128,39 +133,54 @@ namespace openpeer
 
       static ElementPtr toDebug(IPushMessagingPtr push);
 
+      //-----------------------------------------------------------------------
+      // PURPOSE: create a connection to the push messaging service
       static IPushMessagingPtr create(
                                       IPushMessagingDelegatePtr delegate,
                                       IPushMessagingDatabaseAbstractionDelegatePtr databaseDelegate,
                                       IAccountPtr account
                                       );
 
+      //-----------------------------------------------------------------------
+      // PURPOSE: get the push messaging object instance ID
       virtual PUID getID() const = 0;
 
+      //-----------------------------------------------------------------------
+      // PURPOSE: get the current state of the push messaging service
       virtual PushMessagingStates getState(
                                            WORD *outErrorCode = NULL,
                                            String *outErrorReason = NULL
                                            ) const = 0;
 
+      //-----------------------------------------------------------------------
+      // PURPOSE: shutdown the connection to the push messaging service
       virtual void shutdown() = 0;
 
+      //-----------------------------------------------------------------------
+      // PURPOSE: register or unregister for push messages
       virtual IPushMessagingRegisterQueryPtr registerDevice(
-                                                            IPushMessagingRegisterQueryDelegatePtr delegate,
-                                                            const char *deviceToken,
-                                                            Time expires,             // how long should the subscription for push messaging last
-                                                            const char *mappedType,   // for APNS maps to "loc-key"
-                                                            bool unreadBadge,         // true causes total unread messages to be displayed in badge
-                                                            const char *sound,        // what sound to play upon receiving a message. For APNS, maps to "sound" field
-                                                            const char *action,       // for APNS, maps to "action-loc-key"
-                                                            const char *launchImage,  // for APNS, maps to "launch-image"
-                                                            unsigned int priority     // for APNS, maps to push priority
+                                                            IPushMessagingRegisterQueryDelegatePtr inDelegate,
+                                                            const char *inDeviceToken,        // a token used for pushing to this particular service
+                                                            Time inExpires,                   // how long should the subscription for push messaging last; pass in Time() to remove a previous subscription
+                                                            const char *inMappedType,         // for APNS maps to "loc-key"
+                                                            bool inUnreadBadge,               // true causes total unread messages to be displayed in badge
+                                                            const char *inSound,              // what sound to play upon receiving a message. For APNS, maps to "sound" field
+                                                            const char *inAction,             // for APNS, maps to "action-loc-key"
+                                                            const char *inLaunchImage,        // for APNS, maps to "launch-image"
+                                                            unsigned int inPriority,          // for APNS, maps to push priority
+                                                            const ValueNameList &inValueNames // list of values requested from each push from the push server (in order they should be delivered); empty = all values
                                                             ) = 0;
 
+      //-----------------------------------------------------------------------
+      // PURPOSE: send a push message to a contact list
       virtual IPushMessagingQueryPtr push(
                                           IPushMessagingQueryDelegatePtr delegate,
                                           const ContactList &toContactList,
                                           const PushMessage &message
                                           ) = 0;
 
+      //-----------------------------------------------------------------------
+      // PURPOSE: cause a check to refresh data contained within the server
       virtual void recheckNow() = 0;
 
       //-----------------------------------------------------------------------
@@ -183,7 +203,18 @@ namespace openpeer
                                       PushMessageList &outNewMessages
                                       ) = 0;
 
+      //-----------------------------------------------------------------------
+      // PURPOSE: extract a list of name / value pairs contained within
+      //          a push info structure
+      // RETURNS: a pointer to the name value map
+      static NameValueMapPtr getValues(const PushInfo &pushInfo);
+
+      //-----------------------------------------------------------------------
+      // PURPOSE: mark an individual message as having been read
       virtual void markPushMessageRead(const char *messageID) = 0;
+
+      //-----------------------------------------------------------------------
+      // PURPOSE: delete an individual message
       virtual void deletePushMessage(const char *messageID) = 0;
     };
 

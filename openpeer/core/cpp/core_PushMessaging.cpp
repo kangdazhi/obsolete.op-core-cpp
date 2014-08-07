@@ -39,6 +39,7 @@
 #include <openpeer/stack/IBootstrappedNetwork.h>
 #include <openpeer/stack/IServicePushMailbox.h>
 #include <openpeer/stack/IHelper.h>
+#include <openpeer/stack/message/IMessageHelper.h>
 
 #include <openpeer/services/IHelper.h>
 #include <openpeer/services/ISettings.h>
@@ -62,7 +63,8 @@ namespace openpeer
 
       ZS_DECLARE_TYPEDEF_PTR(IStackForInternal, UseStack)
 
-      using services::IHelper;
+      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
+      ZS_DECLARE_TYPEDEF_PTR(stack::message::IMessageHelper, UseMessageHelper)
 
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -87,7 +89,7 @@ namespace openpeer
           DestType destValue;
 
           destValue.mServiceType = sourceValue.mServiceType;
-          destValue.mValues = sourceValue.mValues;
+          destValue.mValues = sourceValue.mValues ? sourceValue.mValues->clone()->toElement() : ElementPtr();
           destValue.mCustom = sourceValue.mCustom ? sourceValue.mCustom->clone()->toElement() : ElementPtr();
 
           dest.push_back(destValue);
@@ -109,7 +111,7 @@ namespace openpeer
           DestType destValue;
 
           destValue.mServiceType = sourceValue.mServiceType;
-          destValue.mValues = sourceValue.mValues;
+          destValue.mValues = sourceValue.mValues ? sourceValue.mValues->clone()->toElement() : ElementPtr();
           destValue.mCustom = sourceValue.mCustom ? sourceValue.mCustom->clone()->toElement() : ElementPtr();
 
           dest.push_back(destValue);
@@ -217,20 +219,21 @@ namespace openpeer
 
       //-----------------------------------------------------------------------
       IPushMessagingRegisterQueryPtr PushMessaging::registerDevice(
-                                                                   IPushMessagingRegisterQueryDelegatePtr delegate,
-                                                                   const char *deviceToken,
-                                                                   Time expires,
-                                                                   const char *mappedType,
-                                                                   bool unreadBadge,
-                                                                   const char *sound,
-                                                                   const char *action,
-                                                                   const char *launchImage,
-                                                                   unsigned int priority
+                                                                   IPushMessagingRegisterQueryDelegatePtr inDelegate,
+                                                                   const char *inDeviceToken,
+                                                                   Time inExpires,
+                                                                   const char *inMappedType,
+                                                                   bool inUnreadBadge,
+                                                                   const char *inSound,
+                                                                   const char *inAction,
+                                                                   const char *inLaunchImage,
+                                                                   unsigned int inPriority,
+                                                                   const ValueNameList &inValueNames
                                                                    )
       {
-        ZS_LOG_DEBUG(log("register called") + ZS_PARAM("device token", deviceToken) + ZS_PARAM("expires", expires) + ZS_PARAM("mapped type", mappedType) + ZS_PARAM("unread badge", unreadBadge) + ZS_PARAM("sound", sound) + ZS_PARAM("action", action) + ZS_PARAM("launch image", launchImage) + ZS_PARAM("priority", priority))
+        ZS_LOG_DEBUG(log("register called") + ZS_PARAM("delegate", (bool)inDelegate) + ZS_PARAM("device token", inDeviceToken) + ZS_PARAM("expires", inExpires) + ZS_PARAM("mapped type", inMappedType) + ZS_PARAM("unread badge", inUnreadBadge) + ZS_PARAM("sound", inSound) + ZS_PARAM("action", inAction) + ZS_PARAM("launch image", inLaunchImage) + ZS_PARAM("priority", inPriority) + ZS_PARAM("value names", inValueNames.size()))
 
-        RegisterQueryPtr query = RegisterQuery::create(getAssociatedMessageQueue(), *this, delegate, deviceToken, expires, mappedType, unreadBadge, sound, action, launchImage, priority);
+        RegisterQueryPtr query = RegisterQuery::create(getAssociatedMessageQueue(), *this, inDelegate, inDeviceToken, inExpires, inMappedType, inUnreadBadge, inSound, inAction, inLaunchImage, inPriority, inValueNames);
         if (mMailbox) query->attachMailbox(mMailbox);
 
         AutoRecursiveLock lock(*this);
@@ -346,6 +349,29 @@ namespace openpeer
         }
 
         return true;
+      }
+
+      //-----------------------------------------------------------------------
+      PushMessaging::NameValueMapPtr PushMessaging::getValues(const PushInfo &pushInfo)
+      {
+        NameValueMapPtr result(new NameValueMap);
+
+        if (pushInfo.mValues) {
+          ElementPtr valueEl = pushInfo.mValues->getFirstChildElement();
+          while (valueEl) {
+            String name = valueEl->getValue();
+            String value = UseMessageHelper::getElementTextAndDecode(valueEl);
+
+            if (name.hasData()) {
+              (*result)[name] = value;
+            }
+
+            valueEl = valueEl->getNextSiblingElement();
+          }
+        }
+
+        ZS_LOG_DEBUG(slog("get values") + ZS_PARAM("values", (bool)pushInfo.mValues) + ZS_PARAM("total found", result->size()))
+        return result;
       }
 
       //-----------------------------------------------------------------------
@@ -475,7 +501,7 @@ namespace openpeer
       Log::Params PushMessaging::log(const char *message) const
       {
         ElementPtr objectEl = Element::create("core::PushMessaging");
-        IHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
         return Log::Params(message, objectEl);
       }
 
@@ -492,21 +518,21 @@ namespace openpeer
 
         ElementPtr resultEl = Element::create("core::PushMessaging");
 
-        IHelper::debugAppend(resultEl, "id", mID);
-        IHelper::debugAppend(resultEl, "graceful shutdown reference", (bool)mGracefulShutdownReference);
+        UseServicesHelper::debugAppend(resultEl, "id", mID);
+        UseServicesHelper::debugAppend(resultEl, "graceful shutdown reference", (bool)mGracefulShutdownReference);
 
-        IHelper::debugAppend(resultEl, "delegate", (bool)mDelegate);
+        UseServicesHelper::debugAppend(resultEl, "delegate", (bool)mDelegate);
 
-        IHelper::debugAppend(resultEl, "account", mAccount ? mAccount->getID() : 0);
-        IHelper::debugAppend(resultEl, "account subscription", mAccountSubscription ? mAccountSubscription->getID() : 0);
-        IHelper::debugAppend(resultEl, "previously ready", mPreviouslyReady);
+        UseServicesHelper::debugAppend(resultEl, "account", mAccount ? mAccount->getID() : 0);
+        UseServicesHelper::debugAppend(resultEl, "account subscription", mAccountSubscription ? mAccountSubscription->getID() : 0);
+        UseServicesHelper::debugAppend(resultEl, "previously ready", mPreviouslyReady);
 
-        IHelper::debugAppend(resultEl, "current state", toString(mCurrentState));
-        IHelper::debugAppend(resultEl, "last error", mLastError);
-        IHelper::debugAppend(resultEl, "last error reason", mLastErrorReason);
+        UseServicesHelper::debugAppend(resultEl, "current state", toString(mCurrentState));
+        UseServicesHelper::debugAppend(resultEl, "last error", mLastError);
+        UseServicesHelper::debugAppend(resultEl, "last error reason", mLastErrorReason);
 
-        IHelper::debugAppend(resultEl, "pending attachment push queries", mPendingAttachmentPushQueries.size());
-        IHelper::debugAppend(resultEl, "pending attachment register queries", mPendingAttachmentRegisterQueries.size());
+        UseServicesHelper::debugAppend(resultEl, "pending attachment push queries", mPendingAttachmentPushQueries.size());
+        UseServicesHelper::debugAppend(resultEl, "pending attachment register queries", mPendingAttachmentRegisterQueries.size());
 
         return resultEl;
       }
@@ -799,14 +825,14 @@ namespace openpeer
         if (dest.mFullMessage.isEmpty()) {
           if (source.mFullMessage) {
             if (0 == strncmp(source.mMimeType, OPENPEER_CORE_PUSH_MESSAGING_MIMETYPE_FILTER_PREFIX, strlen(OPENPEER_CORE_PUSH_MESSAGING_MIMETYPE_FILTER_PREFIX))) {
-              dest.mFullMessage = IHelper::convertToString(*source.mFullMessage);
+              dest.mFullMessage = UseServicesHelper::convertToString(*source.mFullMessage);
             }
           }
         }
 
         if (!dest.mRawFullMessage) {
           if (source.mFullMessage) {
-            dest.mRawFullMessage = IHelper::clone(source.mFullMessage);
+            dest.mRawFullMessage = UseServicesHelper::clone(source.mFullMessage);
           }
         }
 
@@ -897,9 +923,9 @@ namespace openpeer
 
         if (!dest.mFullMessage) {
           if (source.mFullMessage.hasData()) {
-            dest.mFullMessage = IHelper::convertToBuffer(source.mFullMessage);
+            dest.mFullMessage = UseServicesHelper::convertToBuffer(source.mFullMessage);
           } else if (source.mRawFullMessage) {
-            dest.mFullMessage = IHelper::clone(source.mRawFullMessage);
+            dest.mFullMessage = UseServicesHelper::clone(source.mRawFullMessage);
           }
         }
 
@@ -1050,6 +1076,12 @@ namespace openpeer
                                              )
     {
       return internal::IPushMessagingFactory::singleton().create(delegate, databaseDelegate, account);
+    }
+
+    //-------------------------------------------------------------------------
+    IPushMessaging::NameValueMapPtr IPushMessaging::getValues(const PushInfo &pushInfo)
+    {
+      return internal::PushMessaging::getValues(pushInfo);
     }
 
     //-------------------------------------------------------------------------

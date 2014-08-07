@@ -57,6 +57,7 @@ namespace openpeer
                               public stack::IServicePushMailboxRegisterQueryDelegate
         {
         public:
+          typedef IPushMessaging::ValueNameList ValueNameList;
           ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxRegisterQuery, IServicePushMailboxRegisterQuery)
 
         protected:
@@ -71,7 +72,8 @@ namespace openpeer
                         const char *sound,
                         const char *action,
                         const char *launchImage,
-                        unsigned int priority
+                        unsigned int priority,
+                        const ValueNameList &valueNames
                         );
 
           void init();
@@ -95,7 +97,8 @@ namespace openpeer
                                          const char *sound,
                                          const char *action,
                                          const char *launchImage,
-                                         unsigned int priority
+                                         unsigned int priority,
+                                         const ValueNameList &valueNames
                                          );
 
           void attachMailbox(IServicePushMailboxSessionPtr mailbox);
@@ -150,6 +153,7 @@ namespace openpeer
           String mAction;
           String mLaunchImage;
           unsigned int mPriority;
+          ValueNameList mValueNames;
 
           WORD mLastErrorCode;
           String mLastErrorReason;
