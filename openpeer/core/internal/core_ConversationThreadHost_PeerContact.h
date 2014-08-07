@@ -129,9 +129,9 @@ namespace openpeer
           UseContactPtr getContact() const;
           const IdentityContactList &getIdentityContacts() const;
 
-          ContactStates getContactState() const;
+          ContactConnectionStates getContactConnectionState() const;
 
-          void gatherMessageReceipts(MessageReceiptMap &receipts) const;
+          void gatherMessagesDelivered(MessageReceiptMap &delivered) const;
 
           void gatherContactsToAdd(ThreadContactMap &contacts) const;
           void gatherContactsToRemove(ContactURIList &contacts) const;
@@ -215,6 +215,7 @@ namespace openpeer
                                                  const String &messageID,
                                                  IConversationThread::MessageDeliveryStates state
                                                  );
+          void notifyContactStatus(const ContactStatusInfo &status);
 
           void notifyStateChanged(PeerLocationPtr peerLocation);
 
@@ -271,6 +272,7 @@ namespace openpeer
 
           void cancel();
           void step();
+          void stepNotifyContactStatus();
           void setState(PeerContactStates state);
 
           PeerLocationPtr findPeerLocation(ILocationPtr peerLocation) const;
@@ -283,15 +285,17 @@ namespace openpeer
           #pragma mark ConversationThreadHost::PeerContact => (data)
           #pragma mark
 
-          AutoPUID mID;
           PeerContactWeakPtr mThisWeak;
-          PeerContactPtr mGracefulShutdownReference;
           ConversationThreadHostWeakPtr mOuter;
+
+          AutoPUID mID;
+          PeerContactPtr mGracefulShutdownReference;
 
           PeerContactStates mCurrentState;
 
           UseContactPtr mContact;
           IdentityContactList mIdentityContacts;
+          bool mReportedContactStatus;
 
           IBackgroundingSubscriptionPtr mBackgroundingSubscription;
           IBackgroundingNotifierPtr mBackgroundingNotifier;

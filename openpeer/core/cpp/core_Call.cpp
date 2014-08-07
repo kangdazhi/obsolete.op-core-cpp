@@ -69,7 +69,7 @@ namespace openpeer
 
       ZS_DECLARE_TYPEDEF_PTR(ICallForConversationThread::ForConversationThread, ForConversationThread)
 
-      using services::IHelper;
+      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
 
       using zsLib::ITimerDelegateProxy;
       using zsLib::Milliseconds;
@@ -856,7 +856,7 @@ namespace openpeer
       Log::Params Call::log(const char *message) const
       {
         ElementPtr objectEl = Element::create("core::Call");
-        IHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
         return Log::Params(message, objectEl);
       }
 
@@ -865,46 +865,46 @@ namespace openpeer
       {
         ElementPtr resultEl = Element::create("core::Call");
 
-        IHelper::debugAppend(resultEl, "id", mID);
-        IHelper::debugAppend(resultEl, "call id (s)", mCallID);
-        IHelper::debugAppend(resultEl, "has audio", mHasAudio);
-        IHelper::debugAppend(resultEl, "has video", mHasVideo);
-        IHelper::debugAppend(resultEl, "incoming", mIncomingCall);
-        IHelper::debugAppend(resultEl, "caller", UseContact::toDebug(mCaller));
-        IHelper::debugAppend(resultEl, "callee", UseContact::toDebug(mCallee));
+        UseServicesHelper::debugAppend(resultEl, "id", mID);
+        UseServicesHelper::debugAppend(resultEl, "call id (s)", mCallID);
+        UseServicesHelper::debugAppend(resultEl, "has audio", mHasAudio);
+        UseServicesHelper::debugAppend(resultEl, "has video", mHasVideo);
+        UseServicesHelper::debugAppend(resultEl, "incoming", mIncomingCall);
+        UseServicesHelper::debugAppend(resultEl, "caller", UseContact::toDebug(mCaller));
+        UseServicesHelper::debugAppend(resultEl, "callee", UseContact::toDebug(mCallee));
 
         if (callData)
         {
           AutoRecursiveLock lock(mLock);
 
-          IHelper::debugAppend(resultEl, "state", ICall::toString(mCurrentState));
-          IHelper::debugAppend(resultEl, "closed reason", ICall::toString(mClosedReason));
-          IHelper::debugAppend(resultEl, "notified", mIncomingNotifiedThreadOfPreparing);
-          IHelper::debugAppend(resultEl, "locations", mCallLocations.size());
-          IHelper::debugAppend(resultEl, "place call", mPlaceCall);
-          IHelper::debugAppend(resultEl, "ring called", mRingCalled);
-          IHelper::debugAppend(resultEl, "answer called", mAnswerCalled);
-          IHelper::debugAppend(resultEl, "local on hold", mLocalOnHold);
-          IHelper::debugAppend(resultEl, "creation", mCreationTime);
-          IHelper::debugAppend(resultEl, "ring", mRingTime);
-          IHelper::debugAppend(resultEl, "answer", mAnswerTime);
-          IHelper::debugAppend(resultEl, "closed", mClosedTime);
-          IHelper::debugAppend(resultEl, "first closed", mFirstClosedRemoteCallTime);
+          UseServicesHelper::debugAppend(resultEl, "state", ICall::toString(mCurrentState));
+          UseServicesHelper::debugAppend(resultEl, "closed reason", ICall::toString(mClosedReason));
+          UseServicesHelper::debugAppend(resultEl, "notified", mIncomingNotifiedThreadOfPreparing);
+          UseServicesHelper::debugAppend(resultEl, "locations", mCallLocations.size());
+          UseServicesHelper::debugAppend(resultEl, "place call", mPlaceCall);
+          UseServicesHelper::debugAppend(resultEl, "ring called", mRingCalled);
+          UseServicesHelper::debugAppend(resultEl, "answer called", mAnswerCalled);
+          UseServicesHelper::debugAppend(resultEl, "local on hold", mLocalOnHold);
+          UseServicesHelper::debugAppend(resultEl, "creation", mCreationTime);
+          UseServicesHelper::debugAppend(resultEl, "ring", mRingTime);
+          UseServicesHelper::debugAppend(resultEl, "answer", mAnswerTime);
+          UseServicesHelper::debugAppend(resultEl, "closed", mClosedTime);
+          UseServicesHelper::debugAppend(resultEl, "first closed", mFirstClosedRemoteCallTime);
         }
 
-        IHelper::debugAppend(resultEl, "media check timer", (bool)mMediaCheckTimer.get());
+        UseServicesHelper::debugAppend(resultEl, "media check timer", (bool)mMediaCheckTimer.get());
 
-        IHelper::debugAppend(resultEl, "audio socket", (bool)mAudioSocket.get());
-        IHelper::debugAppend(resultEl, "video socket", (bool)mVideoSocket.get());
+        UseServicesHelper::debugAppend(resultEl, "audio socket", (bool)mAudioSocket.get());
+        UseServicesHelper::debugAppend(resultEl, "video socket", (bool)mVideoSocket.get());
 
-        IHelper::debugAppend(resultEl, "audio socket subscription", (bool)mAudioRTPSocketSubscription.get());
-        IHelper::debugAppend(resultEl, "video socket subscription", (bool)mVideoRTPSocketSubscription.get());
+        UseServicesHelper::debugAppend(resultEl, "audio socket subscription", (bool)mAudioRTPSocketSubscription.get());
+        UseServicesHelper::debugAppend(resultEl, "video socket subscription", (bool)mVideoRTPSocketSubscription.get());
 
-        IHelper::debugAppend(resultEl, "media hold", mMediaHolding.get());
-        IHelper::debugAppend(resultEl, "picked location", (bool)mPickedLocation.get());
-        IHelper::debugAppend(resultEl, "early location", (bool)mEarlyLocation.get());
+        UseServicesHelper::debugAppend(resultEl, "media hold", mMediaHolding.get());
+        UseServicesHelper::debugAppend(resultEl, "picked location", (bool)mPickedLocation.get());
+        UseServicesHelper::debugAppend(resultEl, "early location", (bool)mEarlyLocation.get());
 
-        IHelper::debugAppend(resultEl, "notified destroyed", mNotifiedCallTransportDestroyed.get());
+        UseServicesHelper::debugAppend(resultEl, "notified destroyed", mNotifiedCallTransportDestroyed.get());
 
         return resultEl;
       }
@@ -2505,7 +2505,7 @@ namespace openpeer
       Log::Params Call::CallLocation::log(const char *message) const
       {
         ElementPtr objectEl = Element::create("core::Call::CallLocation");
-        IHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
         return Log::Params(message, objectEl);
       }
 
@@ -2517,20 +2517,20 @@ namespace openpeer
       {
         ElementPtr resultEl = Element::create("core::Call::CallLocation");
 
-        IHelper::debugAppend(resultEl, "id", mID);
-        IHelper::debugAppend(resultEl, "location id", mLocationID);
-        IHelper::debugAppend(resultEl, "audio", mHasAudio);
-        IHelper::debugAppend(resultEl, "video", mHasAudio);
+        UseServicesHelper::debugAppend(resultEl, "id", mID);
+        UseServicesHelper::debugAppend(resultEl, "location id", mLocationID);
+        UseServicesHelper::debugAppend(resultEl, "audio", mHasAudio);
+        UseServicesHelper::debugAppend(resultEl, "video", mHasAudio);
 
         if (normal)
         {
           AutoRecursiveLock lock(mLock);
-          IHelper::debugAppend(resultEl, Dialog::toDebug(mRemoteDialog));
+          UseServicesHelper::debugAppend(resultEl, Dialog::toDebug(mRemoteDialog));
         }
         if (media)
         {
-          IHelper::debugAppend(resultEl, "audio rtp socket session", mAudioRTPSocketSession.get() ? mAudioRTPSocketSession.get()->getID() : 0);
-          IHelper::debugAppend(resultEl, "video rtp socket session", mVideoRTPSocketSession.get() ? mVideoRTPSocketSession.get()->getID() : 0);
+          UseServicesHelper::debugAppend(resultEl, "audio rtp socket session", mAudioRTPSocketSession.get() ? mAudioRTPSocketSession.get()->getID() : 0);
+          UseServicesHelper::debugAppend(resultEl, "video rtp socket session", mVideoRTPSocketSession.get() ? mVideoRTPSocketSession.get()->getID() : 0);
         }
 
         return resultEl;

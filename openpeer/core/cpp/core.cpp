@@ -31,7 +31,14 @@
 
 #include <openpeer/core/core.h>
 #include <openpeer/core/internal/core.h>
+#include <openpeer/core/internal/core_Helper.h>
+
+#include <openpeer/core/IConversationThreadComposingStatus.h>
+
+#include <openpeer/services/IHelper.h>
+
 #include <zsLib/Log.h>
+#include <zsLib/XML.h>
 
 namespace openpeer { namespace core { ZS_IMPLEMENT_SUBSYSTEM(openpeer_core) } }
 namespace openpeer { namespace core { ZS_IMPLEMENT_SUBSYSTEM(openpeer_media) } }
@@ -43,6 +50,87 @@ namespace openpeer
 {
   namespace core
   {
+    ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
+
+    namespace internal
+    {
+      ZS_DECLARE_TYPEDEF_PTR(IHelperForInternal, UseHelper)
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark ContactStatusInfo
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      ContactStatusInfo::ContactStatusInfo()
+      {
+      }
+
+      //-----------------------------------------------------------------------
+      ContactStatusInfo::ContactStatusInfo(const ElementPtr &statusEl)
+      {
+        mStatusEl = statusEl ? statusEl->clone()->toElement() : ElementPtr();
+        if (mStatusEl) {
+          mCreated = UseServicesHelper::stringToTime(statusEl->getAttributeValue("created"));
+          if (Time() == mCreated) mCreated = zsLib::now();
+        }
+        mStatusHash = UseHelper::hash(statusEl);
+      }
+
+      //-----------------------------------------------------------------------
+      ContactStatusInfo::ContactStatusInfo(const ContactStatusInfo &rValue)
+      {
+        mStatusEl = rValue.mStatusEl ? rValue.mStatusEl->clone()->toElement() : ElementPtr();
+        mStatusHash = rValue.mStatusHash;
+        mCreated = rValue.mCreated;
+      }
+
+      //-----------------------------------------------------------------------
+      bool ContactStatusInfo::hasData() const
+      {
+        return ((Time() != mCreated) ||
+                ((bool)mStatusEl) ||
+                (mStatusHash.hasData()));
+      }
+
+      //-----------------------------------------------------------------------
+      ElementPtr ContactStatusInfo::toDebug() const
+      {
+        ElementPtr resultEl = Element::create("core::ContactStatusInfo");
+
+        IConversationThreadComposingStatus::ComposingStates status = IConversationThreadComposingStatus::getComposingStatus(mStatusEl);
+
+        if (IConversationThreadComposingStatus::ComposingState_None != status) {
+          UseServicesHelper::debugAppend(resultEl, "composing status", IConversationThreadComposingStatus::toString(status));
+        }
+
+        UseServicesHelper::debugAppend(resultEl, "created", mCreated);
+        UseServicesHelper::debugAppend(resultEl, "status", (bool)mStatusEl);
+        UseServicesHelper::debugAppend(resultEl, "status hash", mStatusHash);
+
+        return resultEl;
+      }
+
+      //-----------------------------------------------------------------------
+      bool ContactStatusInfo::operator==(const ContactStatusInfo &rValue) const
+      {
+        if (mCreated != rValue.mCreated) return false;
+        if (mStatusHash != rValue.mStatusHash) return false;
+        if (((bool)mStatusEl) != ((bool)rValue.mStatusEl)) return false;
+
+        return true;
+      }
+
+      //-----------------------------------------------------------------------
+      bool ContactStatusInfo::operator!=(const ContactStatusInfo &rValue) const
+      {
+        return !((*this) == rValue);
+      }
+    }
+
     //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------
@@ -68,6 +156,50 @@ namespace openpeer
               (mVProfileURL.hasData()) ||
               (mAvatars.size() > 0));
     }
+
+    //-------------------------------------------------------------------------
+    bool RolodexContact::Avatar::operator==(const Avatar &rValue) const
+    {
+      if (mName != rValue.mName) return false;
+      if (mURL != rValue.mURL) return false;
+      if (mWidth != rValue.mWidth) return false;
+      if (mHeight != rValue.mHeight) return false;
+
+      return true;
+    }
+
+    //-------------------------------------------------------------------------
+    bool RolodexContact::Avatar::operator!=(const Avatar &rValue) const
+    {
+      return !(*this == rValue);
+    }
+
+    //-------------------------------------------------------------------------
+    bool RolodexContact::operator==(const RolodexContact &rValue) const
+    {
+      if (mIdentityURI != rValue.mIdentityURI) return false;
+      if (mIdentityProvider != rValue.mIdentityProvider) return false;
+      if (mName != rValue.mName) return false;
+      if (mProfileURL != rValue.mProfileURL) return false;
+      if (mVProfileURL != rValue.mVProfileURL) return false;
+      if (mAvatars.size() != rValue.mAvatars.size()) return false;
+
+      for (AvatarList::const_iterator iter1 = mAvatars.begin(), iter2 = rValue.mAvatars.begin(); iter1 != mAvatars.end() && iter2 != rValue.mAvatars.end(); ++iter1, ++iter2)
+      {
+        const Avatar &av1 = (*iter1);
+        const Avatar &av2 = (*iter1);
+        if (av1 != av2) return false;
+      }
+
+      return true;
+    }
+
+    //-------------------------------------------------------------------------
+    bool RolodexContact::operator!=(const RolodexContact &rValue) const
+    {
+      return !(*this == rValue);
+    }
+    
 
     //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------
@@ -117,7 +249,32 @@ namespace openpeer
               (mProfileURL.hasData()) ||
               (mVProfileURL.hasData()) ||
               (mAvatars.size() > 0));
-    }    
+    }
+
+    //-------------------------------------------------------------------------
+    bool IdentityContact::operator==(const IdentityContact &rValue) const
+    {
+      const RolodexContact &rolo1 = *this;
+      const RolodexContact &rolo2 = rValue;
+
+      if (rolo1 != rolo2) return false;
+
+      if (mStableID != rValue.mStableID) return false;
+      if (mPeerFilePublic != rValue.mPeerFilePublic) return false;
+      if (mIdentityProofBundleEl != rValue.mIdentityProofBundleEl) return false;
+      if (mPriority != rValue.mPriority) return false;
+      if (mWeight != rValue.mWeight) return false;
+      if (mLastUpdated != rValue.mLastUpdated) return false;
+      if (mExpires != rValue.mExpires) return false;
+
+      return true;
+    }
+
+    //-------------------------------------------------------------------------
+    bool IdentityContact::operator!=(const IdentityContact &rValue) const
+    {
+      return !(*this == rValue);
+    }
 
     //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------

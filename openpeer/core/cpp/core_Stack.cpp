@@ -75,7 +75,7 @@ namespace openpeer
 {
   namespace core
   {
-    using services::IHelper;
+    ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
     using services::IMessageQueueManager;
 
     //-------------------------------------------------------------------------
@@ -325,7 +325,7 @@ namespace openpeer
       {
         StackPtr singleton = Stack::singleton();
         if (!singleton) {
-          return services::IHelper::getServiceQueue();
+          return UseServicesHelper::getServiceQueue();
         }
         return singleton->getQueueServices();
       }
@@ -409,8 +409,8 @@ namespace openpeer
                         IMediaEngineDelegatePtr mediaEngineDelegate
                         )
       {
-        services::IHelper::setSocketThreadPriority();
-        services::IHelper::setTimerThreadPriority();
+        UseServicesHelper::setSocketThreadPriority();
+        UseServicesHelper::setTimerThreadPriority();
 
         AutoRecursiveLock lock(mLock);
 
@@ -482,19 +482,19 @@ namespace openpeer
           splitChar = ":";
         }
 
-        if (!services::IHelper::isValidDomain(fakeDomain)) {
+        if (!UseServicesHelper::isValidDomain(fakeDomain)) {
           // if you are hitting this it's because your app ID value was set wrong
           ZS_LOG_WARNING(Basic, slog("illegal application ID value") + ZS_PARAM("application ID", applicationID))
           ZS_THROW_INVALID_ARGUMENT(slog("Illegal application ID value"))
         }
 
         String appID(applicationID);
-        String random = services::IHelper::randomString(20);
-        String time = services::IHelper::timeToString(expires);
+        String random = UseServicesHelper::randomString(20);
+        String time = UseServicesHelper::timeToString(expires);
 
         String merged = appID + splitChar + random + splitChar + time;
 
-        String hash = services::IHelper::convertToHex(*services::IHelper::hmac(*services::IHelper::convertToBuffer(applicationIDSharedSecret), merged));
+        String hash = UseServicesHelper::convertToHex(*UseServicesHelper::hmac(*UseServicesHelper::convertToBuffer(applicationIDSharedSecret), merged));
 
         String final = merged + splitChar + hash;
 
@@ -522,8 +522,8 @@ namespace openpeer
 
         char splitter = *splitChar.c_str();
 
-        IHelper::SplitMap split;
-        IHelper::split(authorizedApplicationID, split, splitter);
+        UseServicesHelper::SplitMap split;
+        UseServicesHelper::split(authorizedApplicationID, split, splitter);
 
         if (split.size() < 3) {
           ZS_LOG_WARNING(Detail, slog("authorized application id is not in a valid format") + ZS_PARAM("authorized application id", authorizedApplicationID))
@@ -532,7 +532,7 @@ namespace openpeer
 
         String timeStr = (*(split.find(split.size()-2))).second;
 
-        Time expires = IHelper::stringToTime(timeStr);
+        Time expires = UseServicesHelper::stringToTime(timeStr);
         if (Time() == expires) {
           ZS_LOG_WARNING(Detail, slog("authorized application id time segment is not in a valid format") + ZS_PARAM("authorized application id", authorizedApplicationID) + ZS_PARAM("time str", timeStr))
           return Time();
@@ -689,7 +689,7 @@ namespace openpeer
       IMessageQueuePtr Stack::getQueueServices() const
       {
         AutoRecursiveLock lock(mLock);
-        return services::IHelper::getServiceQueue();
+        return UseServicesHelper::getServiceQueue();
       }
 
       //-----------------------------------------------------------------------

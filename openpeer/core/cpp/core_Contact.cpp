@@ -56,7 +56,7 @@ namespace openpeer
       ZS_DECLARE_TYPEDEF_PTR(IContactForConversationThread::ForConversationThread, ForConversationThread)
       ZS_DECLARE_TYPEDEF_PTR(IContactForCall::ForCall, ForCall)
 
-      using services::IHelper;
+      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
 
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -107,6 +107,12 @@ namespace openpeer
       ElementPtr IContactForConversationThread::toDebug(ForConversationThreadPtr contact)
       {
         return Contact::toDebug(Contact::convert(contact));
+      }
+
+      //-----------------------------------------------------------------------
+      ForConversationThreadPtr IContactForConversationThread::getForSelf(AccountPtr account)
+      {
+        return Contact::getForSelf(account);
       }
 
       //-----------------------------------------------------------------------
@@ -429,7 +435,7 @@ namespace openpeer
       Log::Params Contact::log(const char *message) const
       {
         ElementPtr objectEl = Element::create("core::Contact");
-        IHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
         return Log::Params(message, objectEl);
       }
 
@@ -444,9 +450,9 @@ namespace openpeer
       {
         ElementPtr resultEl = Element::create("core::Contact");
 
-        IHelper::debugAppend(resultEl, "id", mID);
-        IHelper::debugAppend(resultEl, IPeer::toDebug(mPeer));
-        IHelper::debugAppend(resultEl, "is self", isSelf());
+        UseServicesHelper::debugAppend(resultEl, "id", mID);
+        UseServicesHelper::debugAppend(resultEl, IPeer::toDebug(mPeer));
+        UseServicesHelper::debugAppend(resultEl, "is self", isSelf());
 
         return resultEl;
       }

@@ -74,8 +74,11 @@ namespace openpeer
 
         static ForConversationThreadPtr create(
                                                ConversationThreadPtr baseThread,
+                                               const char *serverName,
                                                thread::Details::ConversationThreadStates state = thread::Details::ConversationThreadState_Open
                                                );
+
+        virtual Time getLastActivity() const = 0;
 
         virtual void close() = 0;
       };
@@ -92,6 +95,7 @@ namespace openpeer
                                       public MessageQueueAssociator,
                                       public SharedRecursiveLock,
                                       public IConversationThreadHostForConversationThread,
+                                      public IBackgroundingDelegate,
                                       public IWakeDelegate
       {
       public:
@@ -129,7 +133,8 @@ namespace openpeer
                                IMessageQueuePtr queue,
                                AccountPtr account,
                                ConversationThreadPtr baseThread,
-                               const char *threadID
+                               const char *threadID,
+                               const char *serverName
                                );
 
         ConversationThreadHost(Noop) :
@@ -156,6 +161,7 @@ namespace openpeer
 
         static ConversationThreadHostPtr create(
                                                 ConversationThreadPtr baseThread,
+                                                const char *serverName,
                                                 thread::Details::ConversationThreadStates state = thread::Details::ConversationThreadState_Open
                                                 );
 
@@ -189,6 +195,7 @@ namespace openpeer
         virtual bool sendMessages(const MessageList &messages);
 
         virtual Time getHostCreationTime() const;
+        virtual String getHostServerName() const;
 
         virtual bool safeToChangeContacts() const;
 
@@ -197,7 +204,7 @@ namespace openpeer
         virtual void addContacts(const ContactProfileInfoList &contacts);
         virtual void removeContacts(const ContactList &contacts);
 
-        virtual ContactStates getContactState(UseContactPtr contact) const;
+        virtual ContactConnectionStates getContactConnectionState(UseContactPtr contact) const;
 
         virtual bool placeCalls(const PendingCallMap &pendingCalls);
         virtual void notifyCallStateChanged(UseCallPtr call);
@@ -208,12 +215,38 @@ namespace openpeer
                                          LocationDialogMap &outDialogs
                                          ) const;
 
+        virtual void markAllMessagesRead();
+
+        virtual void setStatusInThread(
+                                       UseContactPtr selfContact,
+                                       const IdentityContactList &selfIdentityContacts,
+                                       const ContactStatusInfo &statusOfSelf
+                                       );
+
         //---------------------------------------------------------------------
         #pragma mark
         #pragma mark ConversationThreadHost => IConversationThreadHostForConversationThread
         #pragma mark
 
+        virtual Time getLastActivity() const;
+
         virtual void close();
+
+        //-------------------------------------------------------------------
+        #pragma mark
+        #pragma mark ConversationThreadHost => IBackgroundingDelegate
+        #pragma mark
+
+        virtual void onBackgroundingGoingToBackground(
+                                                      IBackgroundingSubscriptionPtr subscription,
+                                                      IBackgroundingNotifierPtr notifier
+                                                      );
+
+        virtual void onBackgroundingGoingToBackgroundNow(IBackgroundingSubscriptionPtr subscription);
+
+        virtual void onBackgroundingReturningFromBackground(IBackgroundingSubscriptionPtr subscription);
+
+        virtual void onBackgroundingApplicationWillQuit(IBackgroundingSubscriptionPtr subscription);
 
         //---------------------------------------------------------------------
         #pragma mark
@@ -238,16 +271,21 @@ namespace openpeer
                                                const String &messageID,
                                                IConversationThread::MessageDeliveryStates state
                                                );
+        void notifyContactStatus(
+                                 UseContactPtr contact,
+                                 const ContactStatusInfo &status,
+                                 bool forceUpdate = false
+                                 );
         virtual void notifyMessagePush(
                                        MessagePtr message,
                                        UseContactPtr toContact
                                        );
 
         void notifyStateChanged(PeerContactPtr peerContact);
-        void notifyContactState(
-                                UseContactPtr contact,
-                                ContactStates state
-                                );
+        void notifyContactConnectionState(
+                                          UseContactPtr contact,
+                                          ContactConnectionStates state
+                                          );
 
         bool hasCallPlacedTo(UseContactPtr toContact);
 
@@ -272,11 +310,7 @@ namespace openpeer
 
         void setState(ConversationThreadHostStates state);
 
-        void publish(
-                     bool publishHostPublication,
-                     bool publishHostPermissionPublication,
-                     bool publishContacts
-                     );
+        IPublicationRepositoryPtr getPublicationRepostiory();
 
         void removeContacts(const ContactURIList &contacts);
 
@@ -301,8 +335,9 @@ namespace openpeer
         #pragma mark ConversationThreadHost => (data)
         #pragma mark
 
-        AutoPUID mID;
         ConversationThreadHostWeakPtr mThisWeak;
+
+        AutoPUID mID;
         ConversationThreadHostPtr mGracefulShutdownReference;
 
         UseConversationThreadWeakPtr mBaseThread;
@@ -311,14 +346,21 @@ namespace openpeer
         UseContactPtr mSelfContact;
 
         String mThreadID;
+        String mServerName;
+
+        Time mLastActivity;
+        IBackgroundingSubscriptionPtr mBackgroundingSubscription;
+        IBackgroundingNotifierPtr mBackgroundingNotifier;
+        AutoBool mBackgroundingNow;
 
         ConversationThreadHostStates mCurrentState;
 
-        ThreadPtr mHostThread;
-
         MessageDeliveryStatesMap mMessageDeliveryStates;
 
+        AutoBool mMarkAllRead;
         PeerContactMap mPeerContacts;
+
+        ThreadPtr mHostThread;
       };
 
       //-----------------------------------------------------------------------
@@ -335,6 +377,7 @@ namespace openpeer
 
         virtual ConversationThreadHostPtr createConversationThreadHost(
                                                                        ConversationThreadPtr baseThread,
+                                                                       const char *serverName,
                                                                        thread::Details::ConversationThreadStates state = thread::Details::ConversationThreadState_Open
                                                                        );
       };

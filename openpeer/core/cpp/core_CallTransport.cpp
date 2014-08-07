@@ -58,7 +58,7 @@ namespace openpeer
       typedef IStackForInternal UseStack;
       typedef ICallTransportForAccount::ForAccountPtr ForAccountPtr;
 
-      using services::IHelper;
+      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
 
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -557,7 +557,7 @@ namespace openpeer
       Log::Params CallTransport::log(const char *message) const
       {
         ElementPtr objectEl = Element::create("core::CallTransport");
-        IHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
         return Log::Params(message, objectEl);
       }
 
@@ -568,24 +568,24 @@ namespace openpeer
 
         ElementPtr resultEl = Element::create("core::CallTransport");
 
-        IHelper::debugAppend(resultEl, "id", mID);
-        IHelper::debugAppend(resultEl, "state", ICallTransport::toString(mCurrentState));
-        IHelper::debugAppend(resultEl, "turn servers", mTURNServers.size());
-        IHelper::debugAppend(resultEl, "stun", mSTUNServers.size());
-        IHelper::debugAppend(resultEl, "total calls", mTotalCalls);
-        IHelper::debugAppend(resultEl, "socket cleanup timer", (bool)mSocketCleanupTimer);
-        IHelper::debugAppend(resultEl, "started", mStarted);
-        IHelper::debugAppend(resultEl, UseCall::toDebug(mFocus.lock()));
-        IHelper::debugAppend(resultEl, "focus call id", mFocusCallID);
-        IHelper::debugAppend(resultEl, "focus location id", mFocusLocationID);
-        IHelper::debugAppend(resultEl, "has audio", mHasAudio);
-        IHelper::debugAppend(resultEl, "has video", mHasAudio);
-        IHelper::debugAppend(resultEl, "blocked until", mBlockUntilStartStopCompleted);
-        IHelper::debugAppend(resultEl, "audio", TransportSocket::toDebug(mAudioSocket));
-        IHelper::debugAppend(resultEl, "video", TransportSocket::toDebug(mVideoSocket));
-        IHelper::debugAppend(resultEl, "audio socket id", mAudioSocketID);
-        IHelper::debugAppend(resultEl, "video socket id", mVideoSocketID);
-        IHelper::debugAppend(resultEl, "obsolete sockets", mObsoleteSockets.size());
+        UseServicesHelper::debugAppend(resultEl, "id", mID);
+        UseServicesHelper::debugAppend(resultEl, "state", ICallTransport::toString(mCurrentState));
+        UseServicesHelper::debugAppend(resultEl, "turn servers", mTURNServers.size());
+        UseServicesHelper::debugAppend(resultEl, "stun", mSTUNServers.size());
+        UseServicesHelper::debugAppend(resultEl, "total calls", mTotalCalls);
+        UseServicesHelper::debugAppend(resultEl, "socket cleanup timer", (bool)mSocketCleanupTimer);
+        UseServicesHelper::debugAppend(resultEl, "started", mStarted);
+        UseServicesHelper::debugAppend(resultEl, UseCall::toDebug(mFocus.lock()));
+        UseServicesHelper::debugAppend(resultEl, "focus call id", mFocusCallID);
+        UseServicesHelper::debugAppend(resultEl, "focus location id", mFocusLocationID);
+        UseServicesHelper::debugAppend(resultEl, "has audio", mHasAudio);
+        UseServicesHelper::debugAppend(resultEl, "has video", mHasAudio);
+        UseServicesHelper::debugAppend(resultEl, "blocked until", mBlockUntilStartStopCompleted);
+        UseServicesHelper::debugAppend(resultEl, "audio", TransportSocket::toDebug(mAudioSocket));
+        UseServicesHelper::debugAppend(resultEl, "video", TransportSocket::toDebug(mVideoSocket));
+        UseServicesHelper::debugAppend(resultEl, "audio socket id", mAudioSocketID);
+        UseServicesHelper::debugAppend(resultEl, "video socket id", mVideoSocketID);
+        UseServicesHelper::debugAppend(resultEl, "obsolete sockets", mObsoleteSockets.size());
 
         return resultEl;
       }
@@ -1080,7 +1080,7 @@ namespace openpeer
       Log::Params CallTransport::TransportSocket::log(const char *message) const
       {
         ElementPtr objectEl = Element::create("core::CallTransport::TransportSocket");
-        IHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
         return Log::Params(message, objectEl);
       }
 
@@ -1089,8 +1089,8 @@ namespace openpeer
       {
         ElementPtr resultEl = Element::create("core::CallTransport::TransportSocket");
 
-        IHelper::debugAppend(resultEl, "id", mID);
-        IHelper::debugAppend(resultEl, "rtp socket id", mRTPSocket ? mRTPSocket->getID() : 0);
+        UseServicesHelper::debugAppend(resultEl, "id", mID);
+        UseServicesHelper::debugAppend(resultEl, "rtp socket id", mRTPSocket ? mRTPSocket->getID() : 0);
 
         return resultEl;
       }

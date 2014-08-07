@@ -81,6 +81,8 @@ namespace openpeer
 
         static ElementPtr toDebug(ForConversationThreadPtr contact);
 
+        static ForConversationThreadPtr getForSelf(AccountPtr account);
+
         static ForConversationThreadPtr createFromPeerURI(
                                                           AccountPtr account,
                                                           const char *peerURI

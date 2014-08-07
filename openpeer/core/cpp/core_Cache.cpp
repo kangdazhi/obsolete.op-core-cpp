@@ -45,7 +45,7 @@ namespace openpeer
   {
     namespace internal
     {
-      using services::IHelper;
+      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
 
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -211,7 +211,7 @@ namespace openpeer
       Log::Params Cache::log(const char *message) const
       {
         ElementPtr objectEl = Element::create("core::Cache");
-        IHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
         return Log::Params(message, objectEl);
       }
 

@@ -62,15 +62,17 @@ namespace openpeer
         public:
           friend class Account;
 
-          typedef std::pair<IContactPtr, ContactStates> ContactStateChangedEvent;
+          typedef std::pair<IContactPtr, ContactConnectionStates> ContactConnectionStateChangedEvent;
 
-          typedef std::list<ContactStateChangedEvent> ContactStateChangedList;
+          typedef std::list<ContactConnectionStateChangedEvent> ContactConnectionStateChangedList;
+          typedef std::list<IContactPtr> ContactStatusChangedList;
 
           struct FilteredEvents
           {
             IConversationThreadPtr mConversationThread;
             AutoBool mFiredContactsChanged;
-            ContactStateChangedList mFiredContactStateChanges;
+            ContactConnectionStateChangedList mFiredContactConnectionStateChanges;
+            ContactStatusChangedList mFiredContactStatusChanged;
           };
 
           typedef std::map<PUID, FilteredEvents> FilteredEventMap;
@@ -110,11 +112,16 @@ namespace openpeer
           virtual void onConversationThreadNew(IConversationThreadPtr conversationThread);
 
           virtual void onConversationThreadContactsChanged(IConversationThreadPtr conversationThread);
-          virtual void onConversationThreadContactStateChanged(
-                                                               IConversationThreadPtr conversationThread,
-                                                               IContactPtr contact,
-                                                               ContactStates state
-                                                               );
+          virtual void onConversationThreadContactConnectionStateChanged(
+                                                                         IConversationThreadPtr conversationThread,
+                                                                         IContactPtr contact,
+                                                                         ContactConnectionStates state
+                                                                         );
+
+          virtual void onConversationThreadContactStatusChanged(
+                                                                IConversationThreadPtr conversationThread,
+                                                                IContactPtr contact
+                                                                );
 
           virtual void onConversationThreadMessage(
                                                    IConversationThreadPtr conversationThread,

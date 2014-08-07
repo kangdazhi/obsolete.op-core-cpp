@@ -44,7 +44,7 @@ namespace openpeer
   {
     namespace internal
     {
-      using services::IHelper;
+      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
 
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -172,7 +172,7 @@ namespace openpeer
         String name = metaData->getName();
 
         SplitMap result;
-        services::IHelper::split(name, result, '/');
+        UseServicesHelper::split(name, result, '/');
 
         if (result.size() < 6) {
           ZS_LOG_WARNING(Debug, log("subscription path is too short") + IPublicationMetaData::toDebug(metaData))
@@ -227,7 +227,7 @@ namespace openpeer
         String name = metaData->getName();
 
         SplitMap result;
-        services::IHelper::split(name, result, '/');
+        UseServicesHelper::split(name, result, '/');
 
         if (result.size() < 6) {
           ZS_LOG_WARNING(Debug, log("subscription path is too short") + ZS_PARAM("path", name))
@@ -261,9 +261,9 @@ namespace openpeer
       Log::Params Account::LocationSubscription::log(const char *message) const
       {
         ElementPtr objectEl = Element::create("core::Account::LocationSubscription");
-        IHelper::debugAppend(objectEl, "id", mID);
-        IHelper::debugAppend(objectEl, "peer uri", getPeerURI());
-        IHelper::debugAppend(objectEl, "location id", getLocationID());
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "peer uri", getPeerURI());
+        UseServicesHelper::debugAppend(objectEl, "location id", getLocationID());
         return Log::Params(message, objectEl);
       }
 
@@ -274,11 +274,11 @@ namespace openpeer
 
         ElementPtr resultEl = Element::create("core::Account::LocationSubscription");
 
-        IHelper::debugAppend(resultEl, "id", mID);
-        IHelper::debugAppend(resultEl, "state", toString(mCurrentState));
-        IHelper::debugAppend(resultEl, ILocation::toDebug(mPeerLocation));
-        IHelper::debugAppend(resultEl, IPublicationSubscription::toDebug(mPublicationSubscription));
-        IHelper::debugAppend(resultEl, "conversation thread", mConversationThreads.size());
+        UseServicesHelper::debugAppend(resultEl, "id", mID);
+        UseServicesHelper::debugAppend(resultEl, "state", toString(mCurrentState));
+        UseServicesHelper::debugAppend(resultEl, ILocation::toDebug(mPeerLocation));
+        UseServicesHelper::debugAppend(resultEl, IPublicationSubscription::toDebug(mPublicationSubscription));
+        UseServicesHelper::debugAppend(resultEl, "conversation thread", mConversationThreads.size());
 
         return resultEl;
       }

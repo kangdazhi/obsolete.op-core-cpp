@@ -57,7 +57,7 @@ namespace openpeer
 
       ZS_DECLARE_TYPEDEF_PTR(ConversationThreadHost::UseAccount, UseAccount)
 
-      using services::IHelper;
+      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
 
       using namespace core::internal::thread;
 
@@ -202,7 +202,7 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      void ConversationThreadHost::PeerLocation::gatherMessageReceipts(MessageReceiptMap &receipts) const
+      void ConversationThreadHost::PeerLocation::gatherMessagesDelivered(MessageReceiptMap &delivered) const
       {
         typedef zsLib::Time Time;
 
@@ -223,7 +223,7 @@ namespace openpeer
         Time when = mSlaveThread->messagedChangedTime();
 
         // remember out when this message was received
-        receipts[lastMessage->messageID()] = when;
+        delivered[lastMessage->messageID()] = when;
       }
 
       //-----------------------------------------------------------------------
@@ -337,7 +337,7 @@ namespace openpeer
         zsLib::RegEx e("^\\/contacts\\/1\\.0\\/.*$");
         if (e.hasMatch(publication->getName())) {
           // this it a public peer file document to process
-          AutoRecursiveLockPtr locker;
+          IPublicationLockerPtr locker;
           DocumentPtr doc = publication->getJSON(locker);
           if (!doc) {
             ZS_LOG_WARNING(Detail, log("failed to get peer file contact") + IPublication::toDebug(publication))
@@ -376,8 +376,20 @@ namespace openpeer
         }
 
         //.......................................................................
-        // NOTE: We don't need to check contact changes because the outer will
-        //       automatically gather up all the contacts to add/remove.
+        // NOTE: We don't need to check contact to add/remove because the outer
+        //       will automatically gather up all the contacts to add/remove but
+        //       do need to check contact change status for the remote contact
+        //       updating it's own status.
+
+        // scope: check for the remote contact (and only the remote contact)
+        {
+          ThreadContactMap contactsChanged = mSlaveThread->contactsChanged();
+          ThreadContactMap::iterator found = contactsChanged.find(mPeerLocation->getPeerURI());
+          if (found != contactsChanged.end()) {
+            ThreadContactPtr threadContact = (*found).second;
+            outer->notifyContactStatus(threadContact->status());
+          }
+        }
 
         //.......................................................................
         // scope: ensure all peer files are fetched for each contact
@@ -497,81 +509,12 @@ namespace openpeer
         //.......................................................................
         // examine all the newly received messages
 
+        const MessageList &messagesChanged = mSlaveThread->messagedChanged();
+        outer->notifyMessagesReceived(messagesChanged);
+
         ThreadPtr hostThread = outer->getHostThread();
-        if (hostThread) {
-          const MessageList &messagesChanged = mSlaveThread->messagedChanged();
-          outer->notifyMessagesReceived(messagesChanged);
-
-          // examine all the acknowledged messages
-          const MessageList &messages = hostThread->messages();
-          const MessageMap &messagesMap = hostThread->messagesAsMap();
-
-          // can only examine message receipts that are part of the slave thread...
-          const MessageReceiptMap &messageReceiptsChanged = mSlaveThread->messageReceiptsChanged();
-          for (MessageReceiptMap::const_iterator iter = messageReceiptsChanged.begin(); iter != messageReceiptsChanged.end(); ++iter)
-          {
-            const MessageID &id = (*iter).first;
-
-            ZS_LOG_TRACE(log("examining message receipt") + ZS_PARAM("receipt ID", id))
-
-            // check to see if this receipt has already been marked as delivered...
-            MessageDeliveryStatesMap::iterator found = mMessageDeliveryStates.find(id);
-            if (found != mMessageDeliveryStates.end()) {
-              IConversationThread::MessageDeliveryStates &deliveryState = (*found).second;
-              if (IConversationThread::MessageDeliveryState_Delivered == deliveryState) {
-                ZS_LOG_DEBUG(log("message receipt was already notified as delivered thus no need to notify any further") + ZS_PARAM("message ID", id))
-                continue;
-              }
-            }
-
-            MessageMap::const_iterator foundInMap = messagesMap.find(id);
-            if (foundInMap == messagesMap.end()) {
-              ZS_LOG_WARNING(Detail, log("host never send this message to the slave (what is slave acking?)") + ZS_PARAM("receipt ID", id))
-              continue;
-            }
-
-            bool foundMessageID = false;
-
-            // Find this receipt on the host's message list... (might not exist if
-            // receipt is for a message from a different contact)
-            MessageList::const_reverse_iterator messageIter = messages.rbegin();
-            for (; messageIter != messages.rend(); ++messageIter)
-            {
-              const MessagePtr &message = (*messageIter);
-              if (message->messageID() == id) {
-                ZS_LOG_TRACE(log("found message matching receipt") + ZS_PARAM("receipt ID", id))
-                foundMessageID = true;
-              }
-
-              ZS_LOG_TRACE(log("processing host message") + ZS_PARAM("found", foundMessageID) + message->toDebug())
-
-              if (foundMessageID) {
-                // first check if this delivery was already sent...
-                found = mMessageDeliveryStates.find(message->messageID());
-                if (found != mMessageDeliveryStates.end()) {
-                  // check to see if this message was already marked as delivered
-                  IConversationThread::MessageDeliveryStates &deliveryState = (*found).second;
-                  if (IConversationThread::MessageDeliveryState_Delivered == deliveryState) {
-                    // stop notifying of delivered since it's alerady been marked as delivered
-                    ZS_LOG_DEBUG(log("message was already notified as delivered thus no need to notify any further") + message->toDebug())
-                    break;
-                  }
-
-                  ZS_LOG_DEBUG(log("message is now notified as delivered") + message->toDebug() + ZS_PARAM("was in state", IConversationThread::toString(deliveryState)))
-
-                  // change the state to delivered since it wasn't delivered
-                  deliveryState = IConversationThread::MessageDeliveryState_Delivered;
-                } else {
-                  ZS_LOG_DEBUG(log("message is now delivered") + message->toDebug())
-                  mMessageDeliveryStates[message->messageID()] = IConversationThread::MessageDeliveryState_Delivered;
-                }
-
-                // this message is now considered acknowledged so tell the master thread of the new state...
-                outer->notifyMessageDeliveryStateChanged(id, IConversationThread::MessageDeliveryState_Delivered);
-              }
-            }
-          }
-        }
+        processReceiptsFromSlaveDocument(hostThread, IConversationThread::MessageDeliveryState_Delivered, mSlaveThread->messagesDeliveredChanged());
+        processReceiptsFromSlaveDocument(hostThread, IConversationThread::MessageDeliveryState_Read, mSlaveThread->messagesReadChanged());
 
         outer->notifyStateChanged(mThisWeak.lock());
       }
@@ -608,9 +551,9 @@ namespace openpeer
         String locationID = mPeerLocation->getLocationID();
 
         ElementPtr objectEl = Element::create("core::ConversationThreadHost::PeerLocation");
-        IHelper::debugAppend(objectEl, "id", mID);
-        IHelper::debugAppend(objectEl, "peer uri", peerURI);
-        IHelper::debugAppend(objectEl, "peer location id", locationID);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "peer uri", peerURI);
+        UseServicesHelper::debugAppend(objectEl, "peer location id", locationID);
         return Log::Params(message, objectEl);
       }
 
@@ -621,19 +564,21 @@ namespace openpeer
 
         ElementPtr resultEl = Element::create("core::ConversationThreadHost::PeerLocation");
 
-        IHelper::debugAppend(resultEl, "id", mID);
+        UseServicesHelper::debugAppend(resultEl, "id", mID);
+        UseServicesHelper::debugAppend(resultEl, "outer", (bool)mOuter.lock());
+        UseServicesHelper::debugAppend(resultEl, "shutdown", mShutdown);
 
-        IHelper::debugAppend(resultEl, ILocation::toDebug(mPeerLocation));
+        UseServicesHelper::debugAppend(resultEl, ILocation::toDebug(mPeerLocation));
 
-        IHelper::debugAppend(resultEl, Thread::toDebug(mSlaveThread));
+        UseServicesHelper::debugAppend(resultEl, Thread::toDebug(mSlaveThread));
 
-        IHelper::debugAppend(resultEl, IConversationThreadDocumentFetcher::toDebug(mFetcher));
+        UseServicesHelper::debugAppend(resultEl, IConversationThreadDocumentFetcher::toDebug(mFetcher));
 
-        IHelper::debugAppend(resultEl, "message delivery states", mMessageDeliveryStates.size());
+        UseServicesHelper::debugAppend(resultEl, "message delivery states", mMessageDeliveryStates.size());
 
-        IHelper::debugAppend(resultEl, "incoming call handlers", mIncomingCallHandlers.size());
+        UseServicesHelper::debugAppend(resultEl, "incoming call handlers", mIncomingCallHandlers.size());
 
-        IHelper::debugAppend(resultEl, "previously fetched contacts", mPreviouslyFetchedContacts.size());
+        UseServicesHelper::debugAppend(resultEl, "previously fetched contacts", mPreviouslyFetchedContacts.size());
 
         return resultEl;
       }
@@ -695,6 +640,95 @@ namespace openpeer
           return;
         }
 
+      }
+
+      //-----------------------------------------------------------------------
+      void ConversationThreadHost::PeerLocation::processReceiptsFromSlaveDocument(
+                                                                                  ThreadPtr hostThread,
+                                                                                  MessageDeliveryStates applyDeliveryState,
+                                                                                  const MessageReceiptMap &messagesChanged
+                                                                                  )
+      {
+        if (!hostThread) return;
+
+        PeerContactPtr outer = mOuter.lock();
+
+        // examine all the acknowledged messages
+        const MessageList &messages = hostThread->messages();
+        const MessageMap &messagesMap = hostThread->messagesAsMap();
+
+        // can only examine message receipts that are part of the slave thread...
+        for (MessageReceiptMap::const_iterator iter = messagesChanged.begin(); iter != messagesChanged.end(); ++iter)
+        {
+          const MessageID &id = (*iter).first;
+
+          ZS_LOG_TRACE(log("examining message receipt") + ZS_PARAM("receipt ID", id))
+
+          // check to see if this receipt has already been marked as delivered...
+          MessageDeliveryStatesMap::iterator found = mMessageDeliveryStates.find(id);
+          if (found != mMessageDeliveryStates.end()) {
+            IConversationThread::MessageDeliveryStates &deliveryState = (*found).second;
+            if (deliveryState >= applyDeliveryState) {
+              ZS_LOG_DEBUG(log("message delivery state was already notified as a greater state (thus no need to notify any further)") + ZS_PARAM("message ID", id) + ZS_PARAM("current state", IConversationThread::toString(deliveryState)) + ZS_PARAM("apply state", IConversationThread::toString(applyDeliveryState)))
+              continue;
+            }
+          }
+
+          MessageMap::const_iterator foundInMap = messagesMap.find(id);
+          if (foundInMap == messagesMap.end()) {
+            ZS_LOG_WARNING(Detail, log("host never sent this message to the slave (what is slave acking?)") + ZS_PARAM("receipt ID", id))
+            continue;
+          }
+
+          bool foundMessageID = false;
+
+
+          // Need to acknowledge of the delivery state of every message sent
+          // before the ACKed message since an acknowledgement on a later
+          // message is an acknowledgement of an earlier message.
+          //
+          // Any message sent after the found message cannot be acked.
+
+          MessageList::const_reverse_iterator messageIter = messages.rbegin();
+          for (; messageIter != messages.rend(); ++messageIter)
+          {
+            const MessagePtr &message = (*messageIter);
+            if (message->messageID() == id) {
+              ZS_LOG_TRACE(log("found message matching receipt") + ZS_PARAM("receipt ID", id))
+              foundMessageID = true;
+            }
+
+            ZS_LOG_TRACE(log("processing host message") + ZS_PARAM("found", foundMessageID) + message->toDebug())
+
+            if (foundMessageID) {
+              // first check if this delivery was already sent...
+              found = mMessageDeliveryStates.find(message->messageID());
+              if (found != mMessageDeliveryStates.end()) {
+                // check to see if this message was already marked as delivered
+                IConversationThread::MessageDeliveryStates &deliveryState = (*found).second;
+
+                if (deliveryState >= applyDeliveryState) {
+                  // stop notifying of delivered since it's alerady been marked as delivered
+                  ZS_LOG_DEBUG(log("stopping backward list receipt acking because message delivery state was already notified as a greater state (thus no need to notify any further)") + ZS_PARAM("message ID", id) + ZS_PARAM("current state", IConversationThread::toString(deliveryState)) + ZS_PARAM("apply state", IConversationThread::toString(applyDeliveryState)) + message->toDebug())
+                  break;
+                }
+
+                ZS_LOG_DEBUG(log("message is now notified as delivered") + ZS_PARAM("current state", IConversationThread::toString(deliveryState)) + ZS_PARAM("apply state", IConversationThread::toString(applyDeliveryState)) + message->toDebug())
+
+                // change the state to delivered since it wasn't delivered
+                deliveryState = applyDeliveryState;
+              } else {
+                ZS_LOG_DEBUG(log("message is now delivered") + message->toDebug())
+                mMessageDeliveryStates[message->messageID()] = applyDeliveryState;
+              }
+
+              if (outer) {
+                // this message is now considered acknowledged so tell the master thread of the new state...
+                outer->notifyMessageDeliveryStateChanged(id, applyDeliveryState);
+              }
+            }
+          }
+        }
       }
 
       //-----------------------------------------------------------------------

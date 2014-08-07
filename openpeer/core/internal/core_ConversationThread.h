@@ -44,7 +44,9 @@
 
 #define OPENPEER_CONVERSATION_THREAD_MAX_WAIT_DELIVERY_TIME_BEFORE_PUSH_IN_SECONDS (30)
 
-#define OPENPEER_CORE_SETTINGS_CONVERSATION_THREAD_HOST_BACKGROUNDING_PHASE "openpeer/core/backgrounding-phase-conversation-thread"
+#define OPENPEER_CORE_SETTING_CONVERSATION_THREAD_HOST_BACKGROUNDING_PHASE "openpeer/core/backgrounding-phase-conversation-thread"
+
+#define OPENPEER_CORE_SETTING_CONVERSATION_THREAD_HOST_INACTIVE_CLOSE_TIME_IN_SECONDS "openpeer/core/conversation-thread-host-inactive-close-time-in-seconds"
 
 namespace openpeer
 {
@@ -163,7 +165,7 @@ namespace openpeer
         typedef std::map<CallID, UseCallPtr> PendingCallMap;
 
         typedef IConversationThreadForCall::LocationDialogMap LocationDialogMap;
-        typedef IConversationThread::ContactStates ContactStates;
+        typedef IConversationThread::ContactConnectionStates ContactConnectionStates;
 
         static ElementPtr toDebug(IConversationThreadHostSlaveBasePtr hostOrSlave);
 
@@ -195,6 +197,7 @@ namespace openpeer
         virtual void notifyPeerDisconnected(ILocationPtr peerLocation) = 0;
 
         virtual Time getHostCreationTime() const = 0;
+        virtual String getHostServerName() const = 0;
 
         virtual bool safeToChangeContacts() const = 0;
 
@@ -203,7 +206,7 @@ namespace openpeer
         virtual void addContacts(const ContactProfileInfoList &contacts) = 0;
         virtual void removeContacts(const ContactList &contacts) = 0;
 
-        virtual ContactStates getContactState(UseContactPtr contact) const = 0;
+        virtual ContactConnectionStates getContactConnectionState(UseContactPtr contact) const = 0;
 
         virtual bool sendMessages(const MessageList &messages) = 0;
 
@@ -215,6 +218,14 @@ namespace openpeer
                                          const char *callID,
                                          LocationDialogMap &outDialogs
                                          ) const = 0;
+
+        virtual void markAllMessagesRead() = 0;
+
+        virtual void setStatusInThread(
+                                       UseContactPtr selfContact,
+                                       const IdentityContactList &selfIdentityContacts,
+                                       const ContactStatusInfo &statusOfSelf
+                                       ) = 0;
       };
 
       //-------------------------------------------------------------------------
@@ -232,7 +243,7 @@ namespace openpeer
         ZS_DECLARE_TYPEDEF_PTR(ICallForConversationThread, UseCall)
         ZS_DECLARE_TYPEDEF_PTR(IContactForConversationThread, UseContact)
 
-        typedef IConversationThread::ContactStates ContactStates;
+        typedef IConversationThread::ContactConnectionStates ContactConnectionStates;
 
         virtual AccountPtr getAccount() const = 0;
         virtual stack::IPublicationRepositoryPtr getRepository() const = 0;
@@ -241,11 +252,29 @@ namespace openpeer
 
         virtual void notifyStateChanged(IConversationThreadHostSlaveBasePtr thread) = 0;
 
-        virtual void notifyContactState(
-                                        IConversationThreadHostSlaveBasePtr thread,
-                                        UseContactPtr contact,
-                                        ContactStates state
-                                        ) = 0;
+        virtual void notifyContactConnectionState(
+                                                  IConversationThreadHostSlaveBasePtr thread,
+                                                  UseContactPtr contact,
+                                                  ContactConnectionStates state
+                                                  ) = 0;
+
+        static bool shouldUpdateContactStatus(
+                                              const ContactStatusInfo &existingStatus,
+                                              const ContactStatusInfo &newStatus,
+                                              bool forceUpdate = false
+                                              );
+
+        virtual void notifyContactStatus(
+                                         IConversationThreadHostSlaveBasePtr thread,
+                                         UseContactPtr contact,
+                                         const ContactStatusInfo &status,
+                                         bool forceUpdate = false
+                                         ) = 0;
+
+        virtual bool getLastContactStatus(
+                                          UseContactPtr contact,
+                                          ContactStatusInfo &outStatus
+                                          ) = 0;
 
         virtual void notifyMessageReceived(MessagePtr message) = 0;
         virtual void notifyMessageDeliveryStateChanged(
@@ -326,11 +355,13 @@ namespace openpeer
                                   public IConversationThreadForCall,
                                   public IConversationThreadForHost,
                                   public IConversationThreadForSlave,
-                                  public IWakeDelegate
+                                  public IWakeDelegate,
+                                  public ITimerDelegate
       {
       public:
         friend interaction IConversationThreadFactory;
         friend interaction IConversationThread;
+        friend interaction IConversationThreadForHostOrSlave;
 
         ZS_DECLARE_TYPEDEF_PTR(IAccountForConversationThread, UseAccount)
         ZS_DECLARE_TYPEDEF_PTR(ICallForConversationThread, UseCall)
@@ -348,7 +379,7 @@ namespace openpeer
 
         static const char *toString(ConversationThreadStates state);
 
-        typedef IConversationThread::ContactStates ContactStates;
+        typedef IConversationThread::ContactConnectionStates ContactConnectionStates;
 
         typedef String MessageID;
         typedef std::map<MessageID, MessageDeliveryStates> MessageDeliveryStatesMap;
@@ -365,14 +396,22 @@ namespace openpeer
         typedef std::map<CallID, CallHandlerPair> CallHandlerMap;
 
         typedef String ContactID;
-        typedef std::pair<UseContactPtr, ContactStates> ContactStatePair;
-        typedef std::map<ContactID, ContactStatePair> ContactStateMap;
+        typedef std::pair<UseContactPtr, ContactConnectionStates> ContactConnectionStatePair;
+        typedef std::map<ContactID, ContactConnectionStatePair> ContactConnectionStateMap;
+
+        struct ContactStatus
+        {
+          UseContactPtr mContact;
+          ContactStatusInfo mStatus;
+        };
+        typedef std::map<ContactID, ContactStatus> ContactStatusMap;
 
       protected:
         ConversationThread(
                            IMessageQueuePtr queue,
                            AccountPtr account,
-                           const char *threadID
+                           const char *threadID,
+                           const char *serverName
                            );
         
         ConversationThread(Noop) :
@@ -420,16 +459,20 @@ namespace openpeer
         virtual IAccountPtr getAssociatedAccount() const;
 
         virtual ContactListPtr getContacts() const;
-
-        virtual IdentityContactListPtr getIdentityContactList(IContactPtr contact) const;
-        virtual ContactStates getContactState(IContactPtr contact) const;
-
         virtual void addContacts(const ContactProfileInfoList &contactProfileInfos);
         virtual void removeContacts(const ContactList &contacts);
+
+        virtual IdentityContactListPtr getIdentityContactList(IContactPtr contact) const;
+        virtual ContactConnectionStates getContactConnectionState(IContactPtr contact) const;
+
+        virtual ElementPtr getContactStatus(IContactPtr contact) const;
+
+        virtual void setStatusInThread(ElementPtr contactStatusInThreadOfSelf);
 
         // sending a message will cause the message to be delivered to all the contacts currently in the conversation
         virtual void sendMessage(
                                  const char *messageID,
+                                 const char *replacesMessageID,
                                  const char *messageType,
                                  const char *message,
                                  bool signMessage
@@ -438,10 +481,12 @@ namespace openpeer
         // returns false if the message ID is not known
         virtual bool getMessage(
                                 const char *messageID,
+                                String &outReplacesMessageID,
                                 IContactPtr &outFrom,
                                 String &outMessageType,
                                 String &outMessage,
-                                Time &outTime
+                                Time &outTime,
+                                bool &outValidated
                                 ) const;
 
         // returns false if the message ID is not known
@@ -449,6 +494,8 @@ namespace openpeer
                                              const char *messageID,
                                              MessageDeliveryStates &outDeliveryState
                                              ) const;
+
+        virtual void markAllMessagesRead();
 
         //-----------------------------------------------------------------------
         #pragma mark
@@ -493,11 +540,29 @@ namespace openpeer
 
         virtual void notifyStateChanged(IConversationThreadHostSlaveBasePtr thread);
 
-        virtual void notifyContactState(
-                                        IConversationThreadHostSlaveBasePtr thread,
-                                        UseContactPtr contact,
-                                        ContactStates state
-                                        );
+        virtual void notifyContactConnectionState(
+                                                  IConversationThreadHostSlaveBasePtr thread,
+                                                  UseContactPtr contact,
+                                                  ContactConnectionStates state
+                                                  );
+
+        static bool shouldUpdateContactStatus(
+                                              const ContactStatusInfo &existingStatus,
+                                              const ContactStatusInfo &newStatus,
+                                              bool forceUpdate = false
+                                              );
+
+        virtual void notifyContactStatus(
+                                         IConversationThreadHostSlaveBasePtr thread,
+                                         UseContactPtr contact,
+                                         const ContactStatusInfo &status,
+                                         bool forceUpdate = false
+                                         );
+
+        virtual bool getLastContactStatus(
+                                          UseContactPtr contact,
+                                          ContactStatusInfo &outStatus
+                                          );
 
         virtual void notifyMessageReceived(MessagePtr message);
         virtual void notifyMessageDeliveryStateChanged(
@@ -563,6 +628,13 @@ namespace openpeer
 
         virtual void onWake() {step();}
 
+        //-----------------------------------------------------------------------
+        #pragma mark
+        #pragma mark ConversationThread => ITimerDelegate
+        #pragma mark
+
+        virtual void onTimer(TimerPtr timer) {step();}
+
       protected:
         //-----------------------------------------------------------------------
         #pragma mark
@@ -575,6 +647,7 @@ namespace openpeer
         virtual bool isShutdown() const {AutoRecursiveLock lock(*this); return ConversationThreadState_Shutdown == mCurrentState;}
 
         Log::Params log(const char *message) const;
+        static Log::Params slog(const char *message);
 
         virtual ElementPtr toDebug() const;
 
@@ -592,8 +665,9 @@ namespace openpeer
         #pragma mark ConversationThread => (data)
         #pragma mark
 
-        AutoPUID mID;
         ConversationThreadWeakPtr mThisWeak;
+
+        AutoPUID mID;
         ConversationThreadPtr mGracefulShutdownReference;
 
         IConversationThreadDelegatePtr mDelegate;
@@ -601,12 +675,16 @@ namespace openpeer
         UseAccountWeakPtr mAccount;
 
         String mThreadID;
+        String mServerName;
 
         ConversationThreadStates mCurrentState;
         bool mMustNotifyAboutNewThread;
 
         IConversationThreadHostSlaveBasePtr mOpenThread;      // if there is an open thread, this is valid
         IConversationThreadHostSlaveBasePtr mLastOpenThread;  // if there is was an open thread, this is valid
+
+        TimerPtr mTimer;
+        Duration mOpenThreadInactivityTimeout;
 
         IConversationThreadHostSlaveBasePtr mHandleThreadChanged;
         DWORD mHandleContactsChangedCRC;
@@ -622,8 +700,11 @@ namespace openpeer
 
         CallHandlerMap mCallHandlers;
 
+        IdentityContactList mSelfIdentityContacts;
+
         // used to remember the last notified state for a contact
-        ContactStateMap mLastReportedContactStates;
+        ContactConnectionStateMap mLastReportedContactConnectionStates;
+        ContactStatusMap mLastReportedContactStatuses;
       };
 
       //-----------------------------------------------------------------------

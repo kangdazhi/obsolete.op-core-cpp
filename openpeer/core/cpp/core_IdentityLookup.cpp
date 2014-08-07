@@ -58,7 +58,7 @@ namespace openpeer
     {
       typedef IStackForInternal UseStack;
 
-      using services::IHelper;
+      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
 
       typedef stack::message::IdentityInfoList StackIdentityInfoList;
       typedef stack::message::IdentityInfo StackIdentityInfo;
@@ -232,7 +232,7 @@ namespace openpeer
         ZS_THROW_INVALID_ARGUMENT_IF(!delegate)
         ZS_THROW_INVALID_ARGUMENT_IF(!identityServiceDomain)
 
-        ZS_THROW_INVALID_ARGUMENT_IF(!services::IHelper::isValidDomain(identityServiceDomain))
+        ZS_THROW_INVALID_ARGUMENT_IF(!UseServicesHelper::isValidDomain(identityServiceDomain))
 
         IdentityLookupPtr pThis(new IdentityLookup(UseStack::queueCore(), Account::convert(account), delegate, identityServiceDomain));
         pThis->mThisWeak = pThis;
@@ -529,7 +529,7 @@ namespace openpeer
         ZS_THROW_BAD_STATE_IF(!originalRequest)
 
         String originalDomain = originalRequest->domain();
-        ZS_THROW_BAD_STATE_IF(!services::IHelper::isValidDomain(originalDomain))
+        ZS_THROW_BAD_STATE_IF(!UseServicesHelper::isValidDomain(originalDomain))
 
         IBootstrappedNetworkPtr network = IBootstrappedNetwork::prepare(originalDomain);
         ZS_THROW_BAD_STATE_IF(!originalRequest)
@@ -789,7 +789,7 @@ namespace openpeer
       Log::Params IdentityLookup::log(const char *message) const
       {
         ElementPtr objectEl = Element::create("core::IdentityLookup");
-        IHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
         return Log::Params(message, objectEl);
       }
 
@@ -806,18 +806,18 @@ namespace openpeer
 
         ElementPtr resultEl = Element::create("core::IdentityLookup");
 
-        IHelper::debugAppend(resultEl, "id", mID);
-        IHelper::debugAppend(resultEl, "delegate", (bool)mDelegate);
-        IHelper::debugAppend(resultEl, "error code", mErrorCode);
-        IHelper::debugAppend(resultEl, "error reason", mErrorReason);
-        IHelper::debugAppend(resultEl, "identity service domain", mIdentityServiceDomain);
-        IHelper::debugAppend(resultEl, "bootstrapped networks", mBootstrappedNetworks.size());
-        IHelper::debugAppend(resultEl, "monitors", mMonitors.size());
-        IHelper::debugAppend(resultEl, "type identifiers", mDomainOrLegacyTypeIdentifiers.size());
-        IHelper::debugAppend(resultEl, "concat domains", mConcatDomains.size());
-        IHelper::debugAppend(resultEl, "safe char domains", mSafeCharDomains.size());
-        IHelper::debugAppend(resultEl, "type to domains", mTypeToDomainMap.size());
-        IHelper::debugAppend(resultEl, "results", mResults.size());
+        UseServicesHelper::debugAppend(resultEl, "id", mID);
+        UseServicesHelper::debugAppend(resultEl, "delegate", (bool)mDelegate);
+        UseServicesHelper::debugAppend(resultEl, "error code", mErrorCode);
+        UseServicesHelper::debugAppend(resultEl, "error reason", mErrorReason);
+        UseServicesHelper::debugAppend(resultEl, "identity service domain", mIdentityServiceDomain);
+        UseServicesHelper::debugAppend(resultEl, "bootstrapped networks", mBootstrappedNetworks.size());
+        UseServicesHelper::debugAppend(resultEl, "monitors", mMonitors.size());
+        UseServicesHelper::debugAppend(resultEl, "type identifiers", mDomainOrLegacyTypeIdentifiers.size());
+        UseServicesHelper::debugAppend(resultEl, "concat domains", mConcatDomains.size());
+        UseServicesHelper::debugAppend(resultEl, "safe char domains", mSafeCharDomains.size());
+        UseServicesHelper::debugAppend(resultEl, "type to domains", mTypeToDomainMap.size());
+        UseServicesHelper::debugAppend(resultEl, "results", mResults.size());
 
         return resultEl;
       }

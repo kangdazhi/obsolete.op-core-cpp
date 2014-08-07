@@ -39,9 +39,12 @@
 #include <openpeer/core/internal/core_Helper.h>
 #include <openpeer/core/internal/core_Stack.h>
 
+#include <openpeer/core/IConversationThreadComposingStatus.h>
+
 #include <openpeer/stack/IHelper.h>
 
 #include <openpeer/services/IHelper.h>
+#include <openpeer/services/ISettings.h>
 
 #include <cryptopp/crc.h>
 
@@ -64,11 +67,13 @@ namespace openpeer
 
       typedef IStackForInternal UseStack;
 
-      using services::IHelper;
-
       using namespace core::internal::thread;
 
       typedef CryptoPP::CRC32 CRC32;
+
+      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
+      ZS_DECLARE_TYPEDEF_PTR(IHelperForInternal, UseHelper)
+      ZS_DECLARE_TYPEDEF_PTR(services::ISettings, UseSettings)
 
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -115,6 +120,24 @@ namespace openpeer
         if (!hostOrSlave) return ElementPtr();
         if (hostOrSlave->isHost()) return UseConversationThreadHost::toDebug(UseConversationThreadHostPtr(hostOrSlave->toHost()));
         return UseConversationThreadSlave::toDebug(hostOrSlave->toSlave());
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark IConversationThreadForHostOrSlave
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      bool IConversationThreadForHostOrSlave::shouldUpdateContactStatus(
+                                                                        const ContactStatusInfo &existingStatus,
+                                                                        const ContactStatusInfo &newStatus,
+                                                                        bool forceUpdate
+                                                                        )
+      {
+        return ConversationThread::shouldUpdateContactStatus(existingStatus, newStatus, forceUpdate);
       }
 
       //-----------------------------------------------------------------------
@@ -169,15 +192,18 @@ namespace openpeer
       ConversationThread::ConversationThread(
                                              IMessageQueuePtr queue,
                                              AccountPtr account,
-                                             const char *threadID
+                                             const char *threadID,
+                                             const char *serverName
                                              ) :
         MessageQueueAssociator(queue),
         SharedRecursiveLock(*account),
         mAccount(account),
         mDelegate(UseAccountPtr(account)->getConversationThreadDelegate()),
         mThreadID(threadID ? String(threadID) : services::IHelper::randomString(32)),
+        mServerName(serverName),
         mCurrentState(ConversationThreadState_Pending),
         mMustNotifyAboutNewThread(false),
+        mOpenThreadInactivityTimeout(Seconds(UseSettings::getUInt(OPENPEER_CORE_SETTING_CONVERSATION_THREAD_HOST_INACTIVE_CLOSE_TIME_IN_SECONDS))),
         mHandleContactsChangedCRC(0)
       {
         ZS_LOG_BASIC(log("created"))
@@ -186,7 +212,10 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void ConversationThread::init()
       {
+        AutoRecursiveLock lock(*this);
+
         ZS_LOG_DEBUG(log("initialized"))
+        mTimer = Timer::create(mThisWeak.lock(), mOpenThreadInactivityTimeout);
         IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
       }
 
@@ -261,8 +290,9 @@ namespace openpeer
 
         UseAccountPtr account(inAccount);
 
-        ConversationThreadPtr pThis(new ConversationThread(UseStack::queueCore(), inAccount, NULL));
+        ConversationThreadPtr pThis(new ConversationThread(UseStack::queueCore(), inAccount, NULL, NULL));
         pThis->mThisWeak = pThis;
+        pThis->mSelfIdentityContacts = identityContacts;
 
         AutoRecursiveLock lock(*pThis);
         pThis->init();
@@ -354,51 +384,6 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      IdentityContactListPtr ConversationThread::getIdentityContactList(IContactPtr contact) const
-      {
-        ZS_THROW_INVALID_ARGUMENT_IF(!contact)
-
-        IdentityContactListPtr result(new IdentityContactList);
-
-        AutoRecursiveLock lock(*this);
-
-        if (!mLastOpenThread) {
-          ZS_LOG_WARNING(Detail, log("cannot get identity contacts as no contacts have been added to this conversation thread"))
-          return result;
-        }
-
-        ThreadContactMap contacts;
-        mLastOpenThread->getContacts(contacts);
-
-        ThreadContactMap::iterator found = contacts.find(contact->getPeerURI());
-        if (found == contacts.end()) {
-          ZS_LOG_WARNING(Detail, log("cannot get identity contacts as contact was not found") + IContact::toDebug(contact))
-          return result;
-        }
-        const ThreadContactPtr &threadContact = (*found).second;
-
-        (*result) = threadContact->identityContacts();
-        return result;
-      }
-
-      //-----------------------------------------------------------------------
-      IConversationThread::ContactStates ConversationThread::getContactState(IContactPtr inContact) const
-      {
-        ZS_THROW_INVALID_ARGUMENT_IF(!inContact)
-
-        ContactPtr contact = Contact::convert(inContact);
-
-        AutoRecursiveLock lock(*this);
-
-        if (!mLastOpenThread) {
-          ZS_LOG_WARNING(Detail, log("no conversation thread was ever openned"))
-          return IConversationThread::ContactState_NotApplicable;
-        }
-
-        return mLastOpenThread->getContactState(contact);
-      }
-
-      //-----------------------------------------------------------------------
       void ConversationThread::addContacts(const ContactProfileInfoList &inputContacts)
       {
         if (inputContacts.size() < 1) {
@@ -411,7 +396,7 @@ namespace openpeer
         AutoRecursiveLock lock(*this);
 
         if (!mLastOpenThread) {
-          mOpenThread = IConversationThreadHostForConversationThread::create(mThisWeak.lock());
+          mOpenThread = IConversationThreadHostForConversationThread::create(mThisWeak.lock(), mServerName);
           ZS_THROW_BAD_STATE_IF(!mOpenThread)
           mThreads[mOpenThread->getThreadID()] = mOpenThread;
           mLastOpenThread = mOpenThread;
@@ -439,7 +424,7 @@ namespace openpeer
         }
 
         // not safe to add contacts, we need to create a newly open thread...
-        mOpenThread = IConversationThreadHostForConversationThread::create(mThisWeak.lock());
+        mOpenThread = IConversationThreadHostForConversationThread::create(mThisWeak.lock(), mServerName);
         ZS_THROW_BAD_STATE_IF(!mOpenThread)
         mThreads[mOpenThread->getThreadID()] = mOpenThread;
 
@@ -487,7 +472,7 @@ namespace openpeer
         }
 
         // not safe to add contacts, we need to create a newly open thread...
-        mOpenThread = IConversationThreadHostForConversationThread::create(mThisWeak.lock());
+        mOpenThread = IConversationThreadHostForConversationThread::create(mThisWeak.lock(), mServerName);
         ZS_THROW_BAD_STATE_IF(!mOpenThread)
         mThreads[mOpenThread->getThreadID()] = mOpenThread;
         mLastOpenThread = mOpenThread;
@@ -509,10 +494,117 @@ namespace openpeer
         //***********************************************************************
         // HERE - check if trying to remove "self"
       }
+      
+      //-----------------------------------------------------------------------
+      IdentityContactListPtr ConversationThread::getIdentityContactList(IContactPtr inContact) const
+      {
+        ZS_THROW_INVALID_ARGUMENT_IF(!inContact)
+
+        IdentityContactListPtr result(new IdentityContactList);
+
+        AutoRecursiveLock lock(*this);
+
+        UseContactPtr contact = UseContactPtr(Contact::convert(inContact));
+        if (contact->isSelf()) {
+          if (mSelfIdentityContacts.size() > 0) {
+            *result = mSelfIdentityContacts;
+            return result;
+          }
+        }
+
+        if (!mLastOpenThread) {
+          ZS_LOG_WARNING(Detail, log("cannot get identity contacts as no contacts have been added to this conversation thread"))
+          return result;
+        }
+
+        ThreadContactMap contacts;
+        mLastOpenThread->getContacts(contacts);
+
+        ThreadContactMap::iterator found = contacts.find(contact->getPeerURI());
+        if (found == contacts.end()) {
+          ZS_LOG_WARNING(Detail, log("cannot get identity contacts as contact was not found") + UseContact::toDebug(contact))
+          return result;
+        }
+        const ThreadContactPtr &threadContact = (*found).second;
+
+        (*result) = threadContact->identityContacts();
+        return result;
+      }
+
+      //-----------------------------------------------------------------------
+      IConversationThread::ContactConnectionStates ConversationThread::getContactConnectionState(IContactPtr inContact) const
+      {
+        ZS_THROW_INVALID_ARGUMENT_IF(!inContact)
+
+        ContactPtr contact = Contact::convert(inContact);
+
+        AutoRecursiveLock lock(*this);
+
+        if (!mLastOpenThread) {
+          ZS_LOG_WARNING(Detail, log("no conversation thread was ever openned"))
+          return IConversationThread::ContactConnectionState_NotApplicable;
+        }
+
+        return mLastOpenThread->getContactConnectionState(contact);
+      }
+
+      //-----------------------------------------------------------------------
+      ElementPtr ConversationThread::getContactStatus(IContactPtr contact) const
+      {
+        ZS_THROW_INVALID_ARGUMENT_IF(!contact)
+
+        AutoRecursiveLock lock(*this);
+        ContactStatusMap::const_iterator found = mLastReportedContactStatuses.find(contact->getPeerURI());
+
+        if (found == mLastReportedContactStatuses.end()) return ElementPtr();
+
+        const ContactStatus &status = (*found).second;
+
+        return status.mStatus.mStatusEl ? status.mStatus.mStatusEl->clone()->toElement() : ElementPtr();
+      }
+
+      //-----------------------------------------------------------------------
+      void ConversationThread::setStatusInThread(ElementPtr contactStatusInThreadOfSelf)
+      {
+        AutoRecursiveLock lock(*this);
+
+        contactStatusInThreadOfSelf = contactStatusInThreadOfSelf ? contactStatusInThreadOfSelf->clone()->toElement() : ElementPtr();
+
+        UseAccountPtr account = mAccount.lock();
+        if (!account) {
+          ZS_LOG_WARNING(Detail, log("account is gone thus unable to set status"))
+          return;
+        }
+
+        UseContactPtr self = UseContact::getForSelf(Account::convert(account));
+
+        ContactStatusMap::iterator found = mLastReportedContactStatuses.find(self->getPeerURI());
+        if (found == mLastReportedContactStatuses.end()) {
+          ContactStatus contactStatus;
+          contactStatus.mContact = self;
+
+          mLastReportedContactStatuses[self->getPeerURI()] = contactStatus;
+          found = mLastReportedContactStatuses.find(self->getPeerURI());
+        }
+
+        ContactStatus &contactStatus = (*found).second;
+
+        contactStatus.mStatus = ContactStatusInfo(contactStatusInThreadOfSelf);
+
+        ZS_LOG_DEBUG(log("changing contact status for self") + contactStatus.mStatus.toDebug())
+
+        if (!mLastOpenThread) {
+          ZS_LOG_WARNING(Detail, log("no conversation thread was ever openned"))
+          return;
+        }
+
+        mLastOpenThread->setStatusInThread(self, mSelfIdentityContacts, contactStatus.mStatus);
+      }
 
       //-----------------------------------------------------------------------
       void ConversationThread::sendMessage(
                                            const char *messageID,
+                                           const char *replacesMessageID,
                                            const char *messageType,
                                            const char *body,
                                            bool signMessage
@@ -522,8 +614,6 @@ namespace openpeer
         ZS_THROW_INVALID_ARGUMENT_IF('\0' == *messageID)
         ZS_THROW_INVALID_ARGUMENT_IF(!messageType)
         ZS_THROW_INVALID_ARGUMENT_IF('\0' == *messageType)
-        ZS_THROW_INVALID_ARGUMENT_IF(!body)
-        ZS_THROW_INVALID_ARGUMENT_IF('\0' == *body)
 
         AutoRecursiveLock lock(*this);
 
@@ -539,7 +629,7 @@ namespace openpeer
           return;
         }
 
-        MessagePtr message = Message::create(messageID, UseContactPtr(account->getSelfContact())->getPeerURI(), messageType, body, zsLib::now(), signMessage ? peerFiles : IPeerFilesPtr());
+        MessagePtr message = Message::create(messageID, replacesMessageID, UseContactPtr(account->getSelfContact())->getPeerURI(), messageType, body, zsLib::now(), signMessage ? peerFiles : IPeerFilesPtr());
         if (!message) {
           ZS_LOG_ERROR(Detail, log("failed to create message object") + ZS_PARAM("message ID", messageID))
           return;
@@ -554,10 +644,12 @@ namespace openpeer
       //-----------------------------------------------------------------------
       bool ConversationThread::getMessage(
                                           const char *messageID,
+                                          String &outReplacesMessageID,
                                           IContactPtr &outFrom,
                                           String &outMessageType,
                                           String &outMessage,
-                                          Time &outTime
+                                          Time &outTime,
+                                          bool &outValidated
                                           ) const
       {
         AutoRecursiveLock lock(*this);
@@ -584,10 +676,12 @@ namespace openpeer
           return false;
         }
 
+        outReplacesMessageID = message->replacesMessageID();
         outFrom = contact;
         outMessageType = message->mimeType();
         outMessage = message->body();
         outTime = message->sent();
+        outValidated = message->validated();
 
         ZS_LOG_DEBUG(log("obtained message information") + ZS_PARAM("message ID", messageID) + ZS_PARAM("peer URI", peerURI) + IContact::toDebug(contact) + ZS_PARAM("type", outMessageType) + ZS_PARAM("message", outMessage) + ZS_PARAM("time", outTime))
         return true;
@@ -611,6 +705,18 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      void ConversationThread::markAllMessagesRead()
+      {
+        AutoRecursiveLock lock(*this);
+
+        for (ThreadMap::iterator iter = mThreads.begin(); iter != mThreads.end(); ++iter)
+        {
+          IConversationThreadHostSlaveBasePtr &thread = (*iter).second;
+          thread->markAllMessagesRead();
+        }
+      }
+
+      //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -626,7 +732,7 @@ namespace openpeer
                                                        const SplitMap &split
                                                        )
       {
-        ConversationThreadPtr pThis(new ConversationThread(UseStack::queueCore(), inAccount, services::IHelper::get(split, OPENPEER_CONVERSATION_THREAD_BASE_THREAD_ID_INDEX)));
+        ConversationThreadPtr pThis(new ConversationThread(UseStack::queueCore(), inAccount, services::IHelper::get(split, OPENPEER_CONVERSATION_THREAD_BASE_THREAD_ID_INDEX), NULL));
         pThis->mThisWeak = pThis;
         pThis->mMustNotifyAboutNewThread = true;
 
@@ -664,7 +770,7 @@ namespace openpeer
 
           ZS_LOG_DEBUG(log("creating a new conversation thread slave for updated publication") + ZS_PARAM("host thread ID", hostThreadID) + IPublicationMetaData::toDebug(metaData))
 
-          UseConversationThreadSlavePtr slave = UseConversationThreadSlave::create(mThisWeak.lock(), peerLocation, metaData, split);
+          UseConversationThreadSlavePtr slave = UseConversationThreadSlave::create(mThisWeak.lock(), peerLocation, metaData, split, mServerName);
           if (!slave) {
             ZS_LOG_WARNING(Detail, log("slave was not created for host document") + IPublicationMetaData::toDebug(metaData))
             return;
@@ -755,25 +861,25 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      void ConversationThread::notifyContactState(
-                                                  IConversationThreadHostSlaveBasePtr thread,
-                                                  UseContactPtr contact,
-                                                  ContactStates state
-                                                  )
+      void ConversationThread::notifyContactConnectionState(
+                                                            IConversationThreadHostSlaveBasePtr thread,
+                                                            UseContactPtr contact,
+                                                            ContactConnectionStates state
+                                                            )
       {
         AutoRecursiveLock lock(*this);
 
         if (mLastOpenThread != thread) {
-          ZS_LOG_TRACE(log("will not notify about contact states if not the last opened thread") + ZS_PARAM("from host/slave thead ID", thread->getThreadID()) + UseContact::toDebug(contact) + ZS_PARAM("reported state", IConversationThread::toString(state)))
+          ZS_LOG_TRACE(log("will not notify about contact connection states if not the last opened thread") + ZS_PARAM("from host/slave thead ID", thread->getThreadID()) + UseContact::toDebug(contact) + ZS_PARAM("reported state", IConversationThread::toString(state)))
           return;
         }
 
         bool changed = false;
-        ContactStates lastState = IConversationThread::ContactState_NotApplicable;
+        ContactConnectionStates lastState = IConversationThread::ContactConnectionState_NotApplicable;
 
-        ContactStateMap::iterator found = mLastReportedContactStates.find(contact->getPeerURI());
-        if (found != mLastReportedContactStates.end()) {
-          ContactStatePair &statePair = (*found).second;
+        ContactConnectionStateMap::iterator found = mLastReportedContactConnectionStates.find(contact->getPeerURI());
+        if (found != mLastReportedContactConnectionStates.end()) {
+          ContactConnectionStatePair &statePair = (*found).second;
           lastState = statePair.second;
           changed = (lastState != state);
         } else {
@@ -782,7 +888,7 @@ namespace openpeer
 
         if (!changed) return;
 
-        ZS_LOG_DEBUG(log("contact state changed") + ZS_PARAM("old state", IConversationThread::toString(lastState)) + ZS_PARAM("new state", IConversationThread::toString(state)) + UseContact::toDebug(contact))
+        ZS_LOG_DEBUG(log("contact connection state changed") + ZS_PARAM("old state", IConversationThread::toString(lastState)) + ZS_PARAM("new state", IConversationThread::toString(state)) + UseContact::toDebug(contact))
 
         if (!mDelegate) {
           ZS_LOG_WARNING(Detail, log("conversation thread delegate not found"))
@@ -790,13 +896,140 @@ namespace openpeer
         }
 
         // remember the last reported state so it isn't repeated
-        mLastReportedContactStates[contact->getPeerURI()] = ContactStatePair(contact, state);
+        mLastReportedContactConnectionStates[contact->getPeerURI()] = ContactConnectionStatePair(contact, state);
 
         try {
-          mDelegate->onConversationThreadContactStateChanged(mThisWeak.lock(), Contact::convert(contact), state);
+          mDelegate->onConversationThreadContactConnectionStateChanged(mThisWeak.lock(), Contact::convert(contact), state);
         } catch (IConversationThreadDelegateProxy::Exceptions::DelegateGone &) {
           ZS_LOG_WARNING(Detail, log("conversation thread delegate gone"))
         }
+      }
+
+      //-----------------------------------------------------------------------
+      bool ConversationThread::shouldUpdateContactStatus(
+                                                         const ContactStatusInfo &existingStatus,
+                                                         const ContactStatusInfo &newStatus,
+                                                         bool forceUpdate
+                                                         )
+      {
+        if (forceUpdate) {
+          ZS_LOG_TRACE(slog("should update contact status as being forced to update"))
+          return true;
+        }
+
+        if (IConversationThreadComposingStatus::ComposingState_Gone == IConversationThreadComposingStatus::getComposingStatus(existingStatus.mStatusEl)) {
+          if (IConversationThreadComposingStatus::ComposingState_Gone != IConversationThreadComposingStatus::getComposingStatus(newStatus.mStatusEl)) {
+            ZS_LOG_TRACE(slog("should update contact status as old status was gone but new status is not gone") + ZS_PARAM("new status", newStatus.toDebug()) + ZS_PARAM("existing status", newStatus.toDebug()))
+            return true;
+          }
+        }
+
+        if (Time() == existingStatus.mCreated) {
+          if (Time() != newStatus.mCreated) {
+            ZS_LOG_TRACE(slog("should update contact status as new status has a time set (but old did not)") + ZS_PARAM("new status", newStatus.toDebug()) + ZS_PARAM("existing status", newStatus.toDebug()))
+            return true;
+          }
+        } else {
+          if (Time() == newStatus.mCreated) {
+            ZS_LOG_WARNING(Trace, slog("should NOT update contact status as new status does not contain a status time but existing status has a time") + ZS_PARAM("new status", newStatus.toDebug()) + ZS_PARAM("existing status", newStatus.toDebug()))
+            return false;
+          }
+        }
+
+        if (existingStatus == newStatus) {
+          ZS_LOG_WARNING(Trace, slog("should NOT update contact status as status has not actually changed") + ZS_PARAM("new status", newStatus.toDebug()) + ZS_PARAM("existing status", newStatus.toDebug()))
+          return false;
+        }
+
+        if (IConversationThreadComposingStatus::ComposingState_None == IConversationThreadComposingStatus::getComposingStatus(existingStatus.mStatusEl)) {
+          if (IConversationThreadComposingStatus::ComposingState_None != IConversationThreadComposingStatus::getComposingStatus(newStatus.mStatusEl)) {
+            ZS_LOG_TRACE(slog("should update contact status as new status has status (but old did not)") + ZS_PARAM("new status", newStatus.toDebug()) + ZS_PARAM("existing status", newStatus.toDebug()))
+            return true;
+          }
+        }
+
+        return existingStatus.mCreated < newStatus.mCreated;
+      }
+
+      //-----------------------------------------------------------------------
+      void ConversationThread::notifyContactStatus(
+                                                   IConversationThreadHostSlaveBasePtr thread,
+                                                   UseContactPtr contact,
+                                                   const ContactStatusInfo &status,
+                                                   bool forceUpdate
+                                                   )
+      {
+        AutoRecursiveLock lock(*this);
+
+        if (mLastOpenThread != thread) {
+          ZS_LOG_TRACE(log("will not notify about contact status if not the last opened thread") + ZS_PARAM("from host/slave thead ID", thread->getThreadID()) + UseContact::toDebug(contact))
+          return;
+        }
+
+        UseAccountPtr account = mAccount.lock();
+        if (!account) {
+          ZS_LOG_WARNING(Detail, log("account is gone thus unable to update status"))
+          return;
+        }
+
+        UseContactPtr self = UseContact::getForSelf(Account::convert(account));
+
+        if (self->getPeerURI() == contact->getPeerURI()) {
+          ZS_LOG_WARNING(Trace, log("cannot adopt remote status of self contact") + UseContact::toDebug(self))
+          return;
+        }
+
+        ContactStatusMap::iterator found = mLastReportedContactStatuses.find(contact->getPeerURI());
+        if (found == mLastReportedContactStatuses.end()) {
+          ContactStatus contactStatus;
+          contactStatus.mContact = contact;
+
+          mLastReportedContactStatuses[contact->getPeerURI()] = contactStatus;
+          found = mLastReportedContactStatuses.find(contact->getPeerURI());
+        }
+
+        ContactStatus &contactStatus = (*found).second;
+
+        if (!shouldUpdateContactStatus(contactStatus.mStatus, status, forceUpdate)) {
+          ZS_LOG_TRACE(log("contact status should not update") + ZS_PARAM("existing status", contactStatus.mStatus.toDebug()) + ZS_PARAM("new status", status.toDebug()) + UseContact::toDebug(contact))
+          return;
+        }
+
+        contactStatus.mStatus = status;
+
+        ZS_LOG_DEBUG(log("contact status changed") + UseContact::toDebug(contact) + contactStatus.mStatus.toDebug())
+
+        if (!mDelegate) {
+          ZS_LOG_WARNING(Detail, log("conversation thread delegate not found"))
+          return;
+        }
+
+        try {
+          mDelegate->onConversationThreadContactStatusChanged(mThisWeak.lock(), Contact::convert(contact));
+        } catch (IConversationThreadDelegateProxy::Exceptions::DelegateGone &) {
+          ZS_LOG_WARNING(Detail, log("conversation thread delegate gone"))
+        }
+      }
+
+      //-----------------------------------------------------------------------
+      bool ConversationThread::getLastContactStatus(
+                                                    UseContactPtr contact,
+                                                    ContactStatusInfo &outStatus
+                                                    )
+      {
+        AutoRecursiveLock lock(*this);
+
+        outStatus = ContactStatusInfo();
+
+        ContactStatusMap::iterator found = mLastReportedContactStatuses.find(contact->getPeerURI());
+        if (found == mLastReportedContactStatuses.end()) return false;
+
+        ContactStatus &contactStatus = (*found).second;
+
+        ZS_LOG_TRACE(log("getting contact status") + UseContact::toDebug(contact) + contactStatus.mStatus.toDebug())
+
+        outStatus = contactStatus.mStatus;
+        return outStatus.hasData();
       }
 
       //-----------------------------------------------------------------------
@@ -844,20 +1077,19 @@ namespace openpeer
         bool stateChanged = false;
 
         MessageDeliveryStatesMap::iterator found = mMessageDeliveryStates.find(messageID);
-        if (found != mMessageDeliveryStates.end()) {
-          MessageDeliveryStates &deliveryState = (*found).second;
-          if (state > deliveryState) {
-            ZS_LOG_DEBUG(log("message delivery state has changed") + ZS_PARAM("message ID", messageID) + ZS_PARAM("old delivery state", IConversationThread::toString(deliveryState)) + ZS_PARAM("new delivery state", IConversationThread::toString(state)))
-            // this state has a higher priority than the old state
-            deliveryState = state;
-            stateChanged = true;
-          } else {
-            ZS_LOG_DEBUG(log("message delivery state is being ignored since it has less significance") + ZS_PARAM("message ID", messageID) + ZS_PARAM("old delivery state", IConversationThread::toString(deliveryState)) + ZS_PARAM("new delivery state", IConversationThread::toString(state)))
-          }
-        } else {
-          ZS_LOG_DEBUG(log("message delivery state has changed") + ZS_PARAM("message ID", messageID) + ZS_PARAM("delivery state", IConversationThread::toString(state)))
-          mMessageDeliveryStates[messageID] = state;
+        if (found == mMessageDeliveryStates.end()) {
+          ZS_LOG_DEBUG(log("message delivery state has changed for message not sent from self contact (likely sent by a slave and thus ignoring)") + ZS_PARAM("message ID", messageID) + ZS_PARAM("delivery state", IConversationThread::toString(state)))
+          return;
+        }
+
+        MessageDeliveryStates &deliveryState = (*found).second;
+        if (state > deliveryState) {
+          ZS_LOG_DEBUG(log("message delivery state has changed") + ZS_PARAM("message ID", messageID) + ZS_PARAM("old delivery state", IConversationThread::toString(deliveryState)) + ZS_PARAM("new delivery state", IConversationThread::toString(state)))
+          // this state has a higher priority than the old state
+          deliveryState = state;
           stateChanged = true;
+        } else {
+          ZS_LOG_DEBUG(log("message delivery state is being ignored since it has less significance") + ZS_PARAM("message ID", messageID) + ZS_PARAM("old delivery state", IConversationThread::toString(deliveryState)) + ZS_PARAM("new delivery state", IConversationThread::toString(state)))
         }
 
         if (stateChanged) {
@@ -886,9 +1118,21 @@ namespace openpeer
           return;
         }
 
-        MessageReceivedMap::iterator found = mReceivedOrPushedMessages.find(message->messageID());
-        if (found == mReceivedOrPushedMessages.end()) {
-          mReceivedOrPushedMessages[message->messageID()] = message;
+        // scope: filter out messages not sent by the self contact
+        {
+          MessageDeliveryStatesMap::iterator found = mMessageDeliveryStates.find(message->messageID());
+          if (found == mMessageDeliveryStates.end()) {
+            ZS_LOG_DEBUG(log("notified to push for message not sent from self contact (likely sent by a slave and thus ignoring)") + message->toDebug())
+            return;
+          }
+        }
+
+        // scope: remember this was one of the messages received or pushed (so getMessage will work)
+        {
+          MessageReceivedMap::iterator found = mReceivedOrPushedMessages.find(message->messageID());
+          if (found == mReceivedOrPushedMessages.end()) {
+            mReceivedOrPushedMessages[message->messageID()] = message;
+          }
         }
 
         try {
@@ -1074,7 +1318,7 @@ namespace openpeer
 
         const ThreadContactMap &originalContacts = contacts->contacts();
 
-        UseConversationThreadHostPtr newClosedHost = UseConversationThreadHost::create(mThisWeak.lock(), thread::Details::ConversationThreadState_Closed);
+        UseConversationThreadHostPtr newClosedHost = UseConversationThreadHost::create(mThisWeak.lock(), mServerName, thread::Details::ConversationThreadState_Closed);
         ZS_THROW_BAD_STATE_IF(!newClosedHost)
         mThreads[newClosedHost->getThreadID()] = newClosedHost;
 
@@ -1244,7 +1488,14 @@ namespace openpeer
       Log::Params ConversationThread::log(const char *message) const
       {
         ElementPtr objectEl = Element::create("core::ConversationThread");
-        IHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
+        return Log::Params(message, objectEl);
+      }
+
+      //-----------------------------------------------------------------------
+      Log::Params ConversationThread::slog(const char *message)
+      {
+        ElementPtr objectEl = Element::create("core::ConversationThread");
         return Log::Params(message, objectEl);
       }
 
@@ -1255,21 +1506,44 @@ namespace openpeer
 
         ElementPtr resultEl = Element::create("core::ConversationThread");
 
-        IHelper::debugAppend(resultEl, "id", mID);
-        IHelper::debugAppend(resultEl, "thread id", mThreadID);
-        IHelper::debugAppend(resultEl, "current state", toString(mCurrentState));
-        IHelper::debugAppend(resultEl, "must notify", mMustNotifyAboutNewThread);
-        IHelper::debugAppend(resultEl, IConversationThreadHostSlaveBase::toDebug(mOpenThread));
-        IHelper::debugAppend(resultEl, IConversationThreadHostSlaveBase::toDebug(mLastOpenThread));
-        IHelper::debugAppend(resultEl, IConversationThreadHostSlaveBase::toDebug(mHandleThreadChanged));
-        IHelper::debugAppend(resultEl, "crc", mHandleContactsChangedCRC);
-        IHelper::debugAppend(resultEl, "threads", mThreads.size());
-        IHelper::debugAppend(resultEl, "received or pushed", mReceivedOrPushedMessages.size());
-        IHelper::debugAppend(resultEl, "delivery states", mMessageDeliveryStates.size());
-        IHelper::debugAppend(resultEl, "pending delivery", mPendingDeliveryMessages.size());
-        IHelper::debugAppend(resultEl, "pending calls", mPendingCalls.size());
-        IHelper::debugAppend(resultEl, "call handlers", mCallHandlers.size());
-        IHelper::debugAppend(resultEl, "last reported", mLastReportedContactStates.size());
+        UseServicesHelper::debugAppend(resultEl, "id", mID);
+        UseServicesHelper::debugAppend(resultEl, "graceful shutdown reference", (bool)mGracefulShutdownReference);
+
+        UseServicesHelper::debugAppend(resultEl, "delegate", (bool)mDelegate);
+
+        UseServicesHelper::debugAppend(resultEl, "account", (bool)mAccount.lock());
+
+        UseServicesHelper::debugAppend(resultEl, "thread id", mThreadID);
+        UseServicesHelper::debugAppend(resultEl, "server name", mServerName);
+
+        UseServicesHelper::debugAppend(resultEl, "current state", toString(mCurrentState));
+        UseServicesHelper::debugAppend(resultEl, "must notify", mMustNotifyAboutNewThread);
+
+        UseServicesHelper::debugAppend(resultEl, IConversationThreadHostSlaveBase::toDebug(mOpenThread));
+        UseServicesHelper::debugAppend(resultEl, IConversationThreadHostSlaveBase::toDebug(mLastOpenThread));
+
+        UseServicesHelper::debugAppend(resultEl, "timer", mTimer ? mTimer->getID() : 0);
+        UseServicesHelper::debugAppend(resultEl, "inactivity timeout (s)", mOpenThreadInactivityTimeout);
+
+        UseServicesHelper::debugAppend(resultEl, IConversationThreadHostSlaveBase::toDebug(mHandleThreadChanged));
+        UseServicesHelper::debugAppend(resultEl, "crc", mHandleContactsChangedCRC);
+
+        UseServicesHelper::debugAppend(resultEl, "threads", mThreads.size());
+
+        UseServicesHelper::debugAppend(resultEl, "received or pushed", mReceivedOrPushedMessages.size());
+
+        UseServicesHelper::debugAppend(resultEl, "delivery states", mMessageDeliveryStates.size());
+        UseServicesHelper::debugAppend(resultEl, "pending delivery", mPendingDeliveryMessages.size());
+
+        UseServicesHelper::debugAppend(resultEl, "pending calls", mPendingCalls.size());
+
+        UseServicesHelper::debugAppend(resultEl, "call handlers", mCallHandlers.size());
+
+        UseServicesHelper::debugAppend(resultEl, "self identity contacts", mSelfIdentityContacts.size());
+
+
+        UseServicesHelper::debugAppend(resultEl, "last reported connection states", mLastReportedContactConnectionStates.size());
+        UseServicesHelper::debugAppend(resultEl, "last reported contact status", mLastReportedContactStatuses.size());
 
         return resultEl;
       }
@@ -1318,6 +1592,11 @@ namespace openpeer
         mOpenThread.reset();
         mLastOpenThread.reset();
 
+        if (mTimer) {
+          mTimer->cancel();
+          mTimer.reset();
+        }
+
         mThreads.clear();
 
         mReceivedOrPushedMessages.clear();
@@ -1339,6 +1618,13 @@ namespace openpeer
           return;
         }
 
+        UseAccountPtr account = mAccount.lock();
+        if (!account) {
+          ZS_LOG_WARNING(Detail, log("account is gone thus unable step"))
+          cancel();
+          return;
+        }
+
         ZS_LOG_TRACE(log("step continued"))
 
         setState(ConversationThreadState_Ready);
@@ -1347,24 +1633,73 @@ namespace openpeer
         UINT totalOpen = 0;
         IConversationThreadHostSlaveBasePtr mostRecentOpen;
         Time mostRecentOpenTime;
+        String mostRecentServerName;
         for (ThreadMap::iterator iter = mThreads.begin(); iter != mThreads.end(); ++iter)
         {
           IConversationThreadHostSlaveBasePtr &thread = (*iter).second;
-          if (thread->isHostThreadOpen()) {
+          String hostServerName = thread->getHostServerName();
+
+          // scope: check if new thread should be used
+          {
+            if (!thread->isHostThreadOpen()) continue;
+
             ++totalOpen;
+
             if (1 == totalOpen) {
-              mostRecentOpen = thread;
-              mostRecentOpenTime = thread->getHostCreationTime();
-            } else {
-              Time created = thread->getHostCreationTime();
-              if (created > mostRecentOpenTime) {
-                ZS_LOG_TRACE(log("thread found is the most recent (thus choosing)") + IConversationThreadHostSlaveBase::toDebug(thread))
-                mostRecentOpen = thread;
-                mostRecentOpenTime = thread->getHostCreationTime();
-              } else {
-                ZS_LOG_TRACE(log("thread found is older than the most recent") + IConversationThreadHostSlaveBase::toDebug(thread))
-              }
+              ZS_LOG_TRACE(log("first thread found open (thus choosing)") + IConversationThreadHostSlaveBase::toDebug(thread))
+              goto use_loop_thread;
             }
+
+            if (hostServerName.hasData()) {
+              if (mostRecentServerName.hasData()) {
+                ZS_LOG_TRACE(log("found thread is a server and most recent open is a server (do confict resolution)") + IConversationThreadHostSlaveBase::toDebug(thread))
+
+                if (mostRecentServerName < hostServerName) {
+                  ZS_LOG_TRACE(log("found thread lost conflict resolution (thus NOT choosing)") + ZS_PARAM("most recent open server name is", mostRecentServerName) + IConversationThreadHostSlaveBase::toDebug(thread))
+                  continue;
+                }
+                ZS_LOG_TRACE(log("found thread is a server won conflict resolution (thus choosing)") + ZS_PARAM("most recent open server name was", mostRecentServerName) + IConversationThreadHostSlaveBase::toDebug(thread))
+                goto use_loop_thread;
+              }
+
+              ZS_LOG_TRACE(log("found thread is a server (thus choosing)") + IConversationThreadHostSlaveBase::toDebug(thread))
+              goto use_loop_thread;
+            }
+
+            if (mostRecentServerName.hasData()) {
+              ZS_LOG_TRACE(log("thread found does not have a server name but most recent open does (thus NOT choosing this thread)") + IConversationThreadHostSlaveBase::toDebug(thread))
+              continue;
+            }
+
+            Time created = thread->getHostCreationTime();
+            if (created > mostRecentOpenTime) {
+              ZS_LOG_TRACE(log("thread found is the most recent (thus choosing)") + ZS_PARAM("most recent time was", mostRecentOpenTime) + IConversationThreadHostSlaveBase::toDebug(thread))
+              goto use_loop_thread;
+            }
+
+            if (created < mostRecentOpenTime) {
+              ZS_LOG_TRACE(log("thread found is older than the most recent (this NOT choosing)") + ZS_PARAM("most recent time is", mostRecentOpenTime) + IConversationThreadHostSlaveBase::toDebug(thread))
+              continue;
+            }
+
+            ZS_LOG_TRACE(log("found thread is created at exactly the same time (use conflict resolution)") + IConversationThreadHostSlaveBase::toDebug(thread))
+            String checkingThreadID = thread->getThreadID();
+            String mostRecentOpenThreadID = thread->getThreadID();
+
+            if (checkingThreadID > mostRecentOpenThreadID) {
+              ZS_LOG_TRACE(log("conflict resolution says use found thread instead of last most recent open thread (thus choosing)") + ZS_PARAM("most recent open thread ID was", mostRecentOpenThreadID) + IConversationThreadHostSlaveBase::toDebug(thread))
+              goto use_loop_thread;
+            }
+
+            ZS_LOG_TRACE(log("conflict resolution says use most recent open instead of found thread (thus NOT choosing)") + ZS_PARAM("most recent open thread ID is", mostRecentOpenThreadID) + IConversationThreadHostSlaveBase::toDebug(thread))
+            continue;
+          }
+
+        use_loop_thread:
+          {
+            mostRecentOpen = thread;
+            mostRecentOpenTime = thread->getHostCreationTime();
+            mostRecentServerName = hostServerName;
           }
         }
 
@@ -1394,6 +1729,29 @@ namespace openpeer
           mLastOpenThread = mostRecentOpen;
         }
 
+        // attempt to obtain the self identity contacts based upon the last open thread if no identity contacts are set for self
+        if (mLastOpenThread) {
+          if (mSelfIdentityContacts.size() < 1) {
+            ThreadContactMap contacts;
+            mLastOpenThread->getContacts(contacts);
+
+            UseContactPtr selfContact = UseContact::getForSelf(Account::convert(account));
+
+            ThreadContactMap::iterator found = contacts.find(selfContact->getPeerURI());
+            if (found != contacts.end()) {
+              const ThreadContactPtr &threadContact = (*found).second;
+              mSelfIdentityContacts = threadContact->identityContacts();
+              if (mSelfIdentityContacts.size() > 0) {
+                ZS_LOG_DEBUG(log("found identities to use for self") + ZS_PARAM("totoal", mSelfIdentityContacts.size()))
+              } else {
+                ZS_LOG_WARNING(Debug, log("cannot get identity contacts as no identities were found found") + UseContact::toDebug(selfContact))
+              }
+            } else {
+              ZS_LOG_WARNING(Trace, log("cannot get identity contacts as self contact was not found") + UseContact::toDebug(selfContact))
+            }
+          }
+        }
+
         if (0 == totalOpen) {
           ZS_LOG_TRACE(log("no open conversation threads found"))
           mOpenThread.reset();
@@ -1415,7 +1773,7 @@ namespace openpeer
         if (mustHaveOpenThread) {
           if (!mOpenThread) {
             // create a host thread since there is no open thread...
-            mOpenThread = IConversationThreadHostForConversationThread::create(mThisWeak.lock());
+            mOpenThread = IConversationThreadHostForConversationThread::create(mThisWeak.lock(), mServerName);
             ZS_THROW_BAD_STATE_IF(!mOpenThread)
 
             ZS_LOG_DEBUG(log("no thread found to be open thus creating a new host") + IConversationThreadHostSlaveBase::toDebug(mOpenThread))
@@ -1435,6 +1793,21 @@ namespace openpeer
             }
 
             mLastOpenThread = mOpenThread;
+          }
+        } else {
+          // do not require an open thread but will keep it open if it's active
+          if (mOpenThread) {
+            if (mOpenThread->isHost()) {
+              UseConversationThreadHostPtr host = mOpenThread->toHost();
+
+              Time lastActivity = host->getLastActivity();
+              Time now = zsLib::now();
+              if (lastActivity + mOpenThreadInactivityTimeout < now) {
+                ZS_LOG_DEBUG(log("thread is inactive so closing open host thread now") + ZS_PARAM("last activity", lastActivity) + ZS_PARAM("now", now) + ZS_PARAM("inactivity timeout (s)", mOpenThreadInactivityTimeout))
+                host->close();
+                mOpenThread.reset();
+              }
+            }
           }
         }
 
@@ -1513,25 +1886,25 @@ namespace openpeer
         for (ThreadContactMap::const_iterator iter = contacts.begin(); iter != contacts.end(); ++iter) {
           const ThreadContactPtr &threadContact = (*iter).second;
           UseContactPtr contact = threadContact->contact();
-          ContactStates state = mLastOpenThread->getContactState(contact);
+          ContactConnectionStates state = mLastOpenThread->getContactConnectionState(contact);
 
           bool changed = false;
 
-          ContactStateMap::iterator found = mLastReportedContactStates.find(contact->getPeerURI());
-          if (found != mLastReportedContactStates.end()) {
-            ContactStatePair &statePair = (*found).second;
+          ContactConnectionStateMap::iterator found = mLastReportedContactConnectionStates.find(contact->getPeerURI());
+          if (found != mLastReportedContactConnectionStates.end()) {
+            ContactConnectionStatePair &statePair = (*found).second;
             if (statePair.second != state) {
               statePair.second = state;
               changed = true;
             }
           } else {
-            mLastReportedContactStates[contact->getPeerURI()] = ContactStatePair(contact, state);
+            mLastReportedContactConnectionStates[contact->getPeerURI()] = ContactConnectionStatePair(contact, state);
             changed = true;
           }
 
           try {
             ZS_LOG_DEBUG(log("notifying of contact state changed") + ZS_PARAM("state", IConversationThread::toString(state)) + UseContact::toDebug(contact))
-            mDelegate->onConversationThreadContactStateChanged(mThisWeak.lock(), Contact::convert(contact), state);
+            mDelegate->onConversationThreadContactConnectionStateChanged(mThisWeak.lock(), Contact::convert(contact), state);
           } catch (IConversationThreadDelegateProxy::Exceptions::DelegateGone &) {
             ZS_LOG_WARNING(Detail, log("conversation thread delegate gone"))
           }
@@ -1597,20 +1970,21 @@ namespace openpeer
     {
       switch (state) {
         case MessageDeliveryState_Discovering:      return "Discovering";
-        case MessageDeliveryState_Delivered:        return "Delivered";
         case MessageDeliveryState_UserNotAvailable: return "User not available";
+        case MessageDeliveryState_Delivered:        return "Delivered";
+        case MessageDeliveryState_Read:             return "Read";
       }
       return "UNDEFINED";
     }
 
     //-------------------------------------------------------------------------
-    const char *IConversationThread::toString(ContactStates state)
+    const char *IConversationThread::toString(ContactConnectionStates state)
     {
       switch (state) {
-        case ContactState_NotApplicable:  return "Not applicable";
-        case ContactState_Finding:        return "Finding";
-        case ContactState_Connected:      return "Connected";
-        case ContactState_Disconnected:   return "Disconnected";
+        case ContactConnectionState_NotApplicable:  return "Not applicable";
+        case ContactConnectionState_Finding:        return "Finding";
+        case ContactConnectionState_Connected:      return "Connected";
+        case ContactConnectionState_Disconnected:   return "Disconnected";
       }
 
       return "UNDEFINED";

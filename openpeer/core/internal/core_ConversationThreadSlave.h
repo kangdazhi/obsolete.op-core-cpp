@@ -74,7 +74,8 @@ namespace openpeer
                                                ConversationThreadPtr baseThread,
                                                ILocationPtr peerLocation,
                                                IPublicationMetaDataPtr metaData,
-                                               const SplitMap &split
+                                               const SplitMap &split,
+                                               const char *serverName
                                                );
       };
 
@@ -104,6 +105,8 @@ namespace openpeer
         ZS_DECLARE_TYPEDEF_PTR(ICallForConversationThread, UseCall)
         ZS_DECLARE_TYPEDEF_PTR(IContactForConversationThread, UseContact)
         ZS_DECLARE_TYPEDEF_PTR(IConversationThreadForSlave, UseConversationThread)
+
+        ZS_DECLARE_TYPEDEF_PTR(core::internal::thread::MessageReceiptMap, MessageReceiptMap)
 
         ZS_DECLARE_STRUCT_PTR(MessageDeliveryState)
 
@@ -136,7 +139,8 @@ namespace openpeer
                                 AccountPtr account,
                                 ILocationPtr peerLocation,
                                 ConversationThreadPtr baseThread,
-                                const char *threadID
+                                const char *threadID,
+                                const char *serverName
                                 );
         
         ConversationThreadSlave(Noop) :
@@ -191,6 +195,7 @@ namespace openpeer
         virtual bool sendMessages(const MessageList &messages);
 
         virtual Time getHostCreationTime() const;
+        virtual String getHostServerName() const;
 
         virtual bool safeToChangeContacts() const;
 
@@ -199,7 +204,7 @@ namespace openpeer
         virtual void addContacts(const ContactProfileInfoList &contacts);
         virtual void removeContacts(const ContactList &contacts);
 
-        virtual ContactStates getContactState(UseContactPtr contact) const;
+        virtual ContactConnectionStates getContactConnectionState(UseContactPtr contact) const;
 
         virtual bool placeCalls(const PendingCallMap &pendingCalls);
         virtual void notifyCallStateChanged(UseCallPtr call);
@@ -210,6 +215,14 @@ namespace openpeer
                                          LocationDialogMap &outDialogs
                                          ) const;
 
+        virtual void markAllMessagesRead();
+
+        virtual void setStatusInThread(
+                                       UseContactPtr selfContact,
+                                       const IdentityContactList &selfIdentityContacts,
+                                       const ContactStatusInfo &statusOfSelf
+                                       );
+
         //---------------------------------------------------------------------
         #pragma mark
         #pragma mark ConversationThreadSlave => IConversationThreadSlaveForConversationThread
@@ -219,7 +232,8 @@ namespace openpeer
                                                  ConversationThreadPtr baseThread,
                                                  ILocationPtr peerLocation,
                                                  IPublicationMetaDataPtr metaData,
-                                                 const SplitMap &split
+                                                 const SplitMap &split,
+                                                 const char *serverName
                                                  );
 
         //---------------------------------------------------------------------
@@ -314,11 +328,12 @@ namespace openpeer
         void setState(ConversationThreadSlaveStates state);
 
         UseContactPtr getHostContact() const;
-        void publish(
-                     bool publishSlavePublication,
-                     bool publishSlavePermissionPublication,
-                     bool publishContacts
-                     );
+        IPublicationRepositoryPtr getPublicationRepostiory();
+
+        void processReceiptsFromHostDocument(
+                                             MessageDeliveryStates applyDeliveryState,
+                                             const MessageReceiptMap &messagesChanged
+                                             );
 
       public:
         //---------------------------------------------------------------------
@@ -367,6 +382,7 @@ namespace openpeer
         UseAccountWeakPtr mAccount;
 
         String mThreadID;
+        String mServerName;
         ILocationPtr mPeerLocation;
 
         ConversationThreadSlaveStates mCurrentState;
@@ -407,7 +423,8 @@ namespace openpeer
                                                                          ConversationThreadPtr baseThread,
                                                                          ILocationPtr peerLocation,
                                                                          IPublicationMetaDataPtr metaData,
-                                                                         const SplitMap &split
+                                                                         const SplitMap &split,
+                                                                         const char *serverName
                                                                          );
       };
 

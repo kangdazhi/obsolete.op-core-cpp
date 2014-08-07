@@ -19,6 +19,7 @@
     IBOutlet UIButton* _btnTest6;
     IBOutlet UIImageView* _imgView1;
     IBOutlet UIImageView* _imgView2;
+    BOOL _surfacesSet;
   
     IBOutlet UITextField* receiverIPAddressTextField;
   

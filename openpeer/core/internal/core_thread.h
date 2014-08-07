@@ -37,8 +37,11 @@
 #include <openpeer/services/IICESocket.h>
 
 #include <zsLib/Exception.h>
+#include <zsLib/Timer.h>
 
 #define OPENPEER_CONVESATION_THREAD_BASE_THREAD_INDEX (3)
+
+#define OPENPEER_CORE_SETTING_THREAD_MOVE_MESSAGE_TO_CACHE_TIME_IN_SECONDS "openpeer/core/move-message-to-cache-time-in-seconds"
 
 namespace openpeer
 {
@@ -96,13 +99,26 @@ namespace openpeer
         #pragma mark Message
         #pragma mark
 
-        class Message
+        class Message : public SharedRecursiveLock,
+                        public ITimerDelegate
         {
-        public:
-          static ElementPtr toDebug(MessagePtr message);
+        private:
+          struct ManagedMessageData;
+          ZS_DECLARE_TYPEDEF_PTR(ManagedMessageData, MessageData)
 
+          enum Flags
+          {
+            Flag_Cached = 1,
+            Flag_Validated = 2,
+          };
+
+        protected:
+          Message();
+
+        public:
           static MessagePtr create(
                                    const char *messageID,
+                                   const char *replacesMessageID,
                                    const char *fromPeerURI,
                                    const char *mimeType,
                                    const char *body,
@@ -115,33 +131,75 @@ namespace openpeer
                                    ElementPtr messageBundleEl
                                    );
 
+          static ElementPtr toDebug(MessagePtr message);
+
           ElementPtr messageBundleElement() const;
 
-          const String &messageID() const         {return mMessageID;}
-          const String &fromPeerURI() const       {return mFromPeerURI;}
-          const String &mimeType() const          {return mMimeType;}
-          const String &body() const              {return mBody;}
-          const Time &sent() const                {return mSent;}
+          String messageID() const;
+          String replacesMessageID() const;
+          String fromPeerURI() const;
+          String mimeType() const;
+          String body() const;
+          Time sent() const;
+          bool validated() const;
 
           ElementPtr toDebug() const;
 
         protected:
+          //-------------------------------------------------------------------
+          #pragma mark
+          #pragma mark Message => ITimerDelegate
+          #pragma mark
+
+          void onTimer(TimerPtr timer);
+
+        private:
+          //-------------------------------------------------------------------
+          #pragma mark
+          #pragma mark Message => (internal)
+          #pragma mark
+
           Log::Params log(const char *message) const;
 
           ElementPtr constructBundleElement(IPeerFilesPtr signer) const;
 
-        protected:
-          MessageWeakPtr mThisWeak;
-          ElementPtr mBundleEl;
+          String getCookieName() const;
 
+          void moveToCache();
+          void restoreFromCache() const;
+          void scheduleCaching() const;
+
+          MessageDataPtr parseFromElement(
+                                          UseAccountPtr account,
+                                          ElementPtr messageBundleEl
+                                          ) const;
+
+        private:
           AutoPUID mID;
-          String mMessageID;
-          String mFromPeerURI;
-          String mMimeType;
-          String mBody;
-          Time mSent;
-        };
+          MessageWeakPtr mThisWeak;
+          int mFlags;
 
+          struct ManagedMessageData
+          {
+            ElementPtr mBundleEl;
+
+            String mMessageID;
+            String mReplacesMessageID;
+            String mFromPeerURI;
+            String mMimeType;
+            String mBody;
+            Time mSent;
+            bool mValidated;
+
+            TimerPtr mTimer;
+            Time mScheduledAt;
+
+            ManagedMessageData();
+          };
+
+          mutable MessageDataPtr mData;
+        };
+        
         //---------------------------------------------------------------------
         //---------------------------------------------------------------------
         //---------------------------------------------------------------------
@@ -155,17 +213,32 @@ namespace openpeer
         public:
           static ElementPtr toDebug(MessageReceiptsPtr receipts);
 
-          static MessageReceiptsPtr create(UINT version);
-          static MessageReceiptsPtr create(UINT version, const String &messageID);
-          static MessageReceiptsPtr create(UINT version, const MessageIDList &messageIDs);
-          static MessageReceiptsPtr create(UINT version, const MessageReceiptMap &messageReceipts);
+          static MessageReceiptsPtr create(
+                                           const char *receiptsElementName,
+                                           UINT version
+                                           );
+          static MessageReceiptsPtr create(
+                                           const char *receiptsElementName,
+                                           UINT version,
+                                           const String &messageID
+                                           );
+          static MessageReceiptsPtr create(
+                                           const char *receiptsElementName,
+                                           UINT version,
+                                           const MessageIDList &messageIDs
+                                           );
+          static MessageReceiptsPtr create(
+                                           const char *receiptsElementName,
+                                           UINT version,
+                                           const MessageReceiptMap &messageReceipts
+                                           );
 
           static MessageReceiptsPtr create(ElementPtr messageReceiptsEl);
 
           ElementPtr receiptsElement() const          {return constructReceiptsElement();}
 
           UINT version() const                        {return mVersion;}
-          const MessageReceiptMap &receipts() const  {return mReceipts;}
+          const MessageReceiptMap &receipts() const   {return mReceipts;}
 
           ElementPtr toDebug() const;
 
@@ -178,6 +251,8 @@ namespace openpeer
           MessageReceiptsWeakPtr mThisWeak;
 
           AutoPUID mID;
+
+          String mReceiptsElementName;
 
           UINT mVersion;
           MessageReceiptMap mReceipts;
@@ -197,8 +272,10 @@ namespace openpeer
           static ElementPtr toDebug(ThreadContactPtr contact);
 
           static ThreadContactPtr create(
+                                         UINT version,
                                          UseContactPtr contact,
-                                         const IdentityContactList &identityContacts
+                                         const IdentityContactList &identityContacts,
+                                         const ContactStatusInfo &status
                                          );
 
           static ThreadContactPtr create(
@@ -206,20 +283,32 @@ namespace openpeer
                                          ElementPtr contactEl
                                          );
 
+          static ThreadContactPtr prepareNewContact(
+                                                    ThreadContactPtr oldContact,
+                                                    ThreadContactPtr newContact
+                                                    );
+
+          UINT version() const                                {return mVersion;}
           UseContactPtr contact() const                       {return mContact;}
           const IdentityContactList &identityContacts() const {return mIdentityContacts;}
+          const ContactStatusInfo &status() const             {return mStatus;}
 
           ElementPtr contactElement() const                   {return constructContactElement();}
 
           ElementPtr toDebug() const;
 
         protected:
+          static Log::Params slog(const char *message);
+
           ElementPtr constructContactElement() const;
 
         protected:
           AutoPUID mID;
+          UINT mVersion;
           UseContactPtr mContact;
           IdentityContactList mIdentityContacts;
+
+          ContactStatusInfo mStatus;
         };
 
         //---------------------------------------------------------------------
@@ -233,6 +322,11 @@ namespace openpeer
         class ThreadContacts
         {
         public:
+          typedef String ContactID;
+          typedef ElementPtr ContactElement;
+          typedef std::map<ContactID, ContactElement> ContactElementMap;
+
+        public:
           static ElementPtr toDebug(ThreadContactsPtr threadContacts);
 
           static ThreadContactsPtr create(
@@ -242,12 +336,20 @@ namespace openpeer
                                           const ContactURIList &removeContacts
                                           );
 
+          static ThreadContactsPtr createUpdateAndMakeDiffs(
+                                                            const ThreadContactList &contacts,
+                                                            const ThreadContactList &addContacts,
+                                                            const ContactURIList &removeContacts,
+                                                            ThreadContactsPtr existingContacts,
+                                                            ElementPtr ioContactsEl,
+                                                            DocumentPtr &changesDoc
+                                                            );
+
           static ThreadContactsPtr create(
                                           UseAccountPtr account,
-                                          ElementPtr contactsEl
+                                          ElementPtr contactsEl,
+                                          ThreadContactsPtr existingContacts = ThreadContactsPtr()
                                           );
-
-          ElementPtr contactsElement() const            {return mContactsEl;}
 
           UINT version() const                          {return mVersion;}
           const ThreadContactMap &contacts() const      {return mContacts;}
@@ -259,9 +361,35 @@ namespace openpeer
         protected:
           Log::Params log(const char *message) const;
 
+          static ThreadContactPtr getExistingIfUnchanged(
+                                                         const String &id,
+                                                         const ThreadContactMap &contacts,
+                                                         ElementPtr contactEl
+                                                         );
+
+          static void parseAllContacts(
+                                       ElementPtr contactsEl,
+                                       ContactElementMap &outContactElements
+                                       );
+
+          static bool applyChangeAsNeeded(
+                                          ElementPtr ioContactsEl,
+                                          const ContactElementMap &inContactElements,
+                                          const String &updatedDisposition,
+                                          const String &contactID,
+                                          ThreadContactPtr updatedContact,
+                                          DocumentPtr &ioChangesDoc
+                                          );
+
+          static ElementPtr prepareThreadContactReplacement(
+                                                            ElementPtr contactEl,
+                                                            const String &updatedDisposition,
+                                                            const String &contactID,
+                                                            ThreadContactPtr updatedContact
+                                                            );
+
         protected:
           ThreadContactsWeakPtr mThisWeak;
-          ElementPtr mContactsEl;
 
           AutoPUID mID;
           UINT mVersion;
@@ -478,6 +606,7 @@ namespace openpeer
                                    const char *hostThreadID,
                                    const char *topic,
                                    const char *replaces,
+                                   const char *serverName,  // only set if local is a server otherwise pass in NULL
                                    ConversationThreadStates state
                                    );
 
@@ -491,6 +620,7 @@ namespace openpeer
           ConversationThreadStates state() const  {return mState;}
           const String &topic() const             {return mTopic;}
           Time created() const                    {return mCreated;}
+          const String &serverName() const        {return mServerName;}
 
           ElementPtr toDebug() const;
 
@@ -509,6 +639,7 @@ namespace openpeer
           ConversationThreadStates mState;
           String mTopic;
           Time mCreated;
+          String mServerName;
         };
 
         typedef Details::ConversationThreadStates ConversationThreadStates;
@@ -559,12 +690,13 @@ namespace openpeer
                                   const char *hostThreadID,
                                   const char *topic,
                                   const char *replaces,
+                                  const char *serverName,         // only set if local is a server
                                   ConversationThreadStates state,
                                   ILocationPtr peerHostLocation = ILocationPtr()
                                   );
 
           void updateBegin();
-          bool updateEnd();
+          bool updateEnd(IPublicationRepositoryPtr repository);
 
           void setState(Details::ConversationThreadStates state);
 
@@ -575,8 +707,11 @@ namespace openpeer
           void addMessage(MessagePtr message);
           void addMessages(const MessageList &messages);
 
-          void setReceived(MessagePtr message);
-          void setReceived(const MessageReceiptMap &messages);
+          void setDelivered(MessagePtr message);
+          void setDelivered(const MessageReceiptMap &messages);
+
+          void setRead(MessagePtr message);
+          void setRead(const MessageReceiptMap &messages);
 
           void addDialogs(const DialogList &dialogs);
           void updateDialogs(const DialogList &dialogs);
@@ -588,7 +723,8 @@ namespace openpeer
           ThreadContactsPtr contacts() const                        {return mContacts;}
           const MessageList &messages() const                       {return mMessageList;}
           const MessageMap &messagesAsMap() const                   {return mMessageMap;}
-          MessageReceiptsPtr messageReceipts() const                {return mMessageReceipts;}
+          MessageReceiptsPtr messagesDelivered() const              {return mMessagesDelivered;}
+          MessageReceiptsPtr messagesRead() const                   {return mMessagesRead;}
           const DialogMap &dialogs() const                          {return mDialogs;}
 
           // obtain a list of changes since the last updateFrom was called
@@ -601,13 +737,20 @@ namespace openpeer
           const ContactURIList &contactsToRemoveRemoved() const     {return mContactsToRemoveRemoved;}
           const MessageList &messagedChanged() const                {return mMessagesChanged;}
           Time messagedChangedTime() const                          {return mMessagesChangedTime;}
-          const MessageReceiptMap &messageReceiptsChanged() const   {return mMessageReceiptsChanged;}
+          const MessageReceiptMap &messagesDeliveredChanged() const {return mMessagesDeliveredChanged;}
+          const MessageReceiptMap &messagesReadChanged() const      {return mMessagesReadChanged;}
           const DialogMap &dialogsChanged() const                   {return mDialogsChanged;}
           const DialogIDList &dialogsRemoved() const                {return mDialogsRemoved;}
           const ChangedDescriptionMap &descriptionsChanged() const  {return mDescriptionsChanged;}
           const DescriptionIDList &descriptionsRemoved() const      {return mDescriptionsRemoved;}
 
-          void getContactPublicationsToPublish(ContactPublicationMap &outContactPublications);
+          const ContactPublicationMap &getContactPublicationsToPublish() {return mContactPublications;}
+
+          void publish(
+                       IPublicationRepositoryPtr repository,
+                       bool publication,
+                       bool permissions
+                       );
 
           String getContactDocumentName(UseContactPtr contact) const;
 
@@ -619,27 +762,54 @@ namespace openpeer
           void resetChanged();
           void publishContact(UseContactPtr contact);
 
+          static void mergedChanged(
+                                    MessageReceiptsPtr oldReceipts,
+                                    MessageReceiptsPtr newReceipts,
+                                    MessageReceiptMap &ioChanged
+                                    );
+
+          void createReceiptDiffs(
+                                  DocumentPtr &ioChangesDoc,
+                                  ElementPtr inReceiptsEl,
+                                  const char *inSubElementName,
+                                  const MessageReceiptMap &inChanged,
+                                  MessageReceiptsPtr &ioReceipts
+                                  );
+
+          void setReceipts(
+                           MessageReceiptsPtr receipts,
+                           MessagePtr message,
+                           MessageReceiptMap &ioChanged
+                           );
+          void setReceipts(
+                           MessageReceiptsPtr receipts,
+                           const MessageReceiptMap &messages,
+                           MessageReceiptMap &ioChanged
+                           );
+
         protected:
-          AutoPUID mID;
           ThreadWeakPtr mThisWeak;
+
+          AutoPUID mID;
           ThreadTypes mType;
           bool mCanModify;
           bool mModifying;
 
+          bool mMustPublish;
           IPublicationPtr mPublication;
           IPublicationPtr mPermissionPublication;
           ContactPublicationMap mContactPublications;
+          ContactPublicationMap mContactPublicationsCompleted;
 
           DetailsPtr mDetails;
           ThreadContactsPtr mContacts;
           UINT mMessagesVersion;
           MessageList mMessageList;
           MessageMap mMessageMap;
-          MessageReceiptsPtr mMessageReceipts;
+          MessageReceiptsPtr mMessagesDelivered;
+          MessageReceiptsPtr mMessagesRead;
           UINT mDialogsVersion;
           DialogMap mDialogs;
-
-          DocumentPtr mChangesDoc;
 
           bool mDetailsChanged;
           ThreadContactMap mContactsChanged;
@@ -650,7 +820,8 @@ namespace openpeer
           ContactURIList mContactsToRemoveRemoved;
           MessageList mMessagesChanged;
           Time mMessagesChangedTime;
-          MessageReceiptMap mMessageReceiptsChanged;
+          MessageReceiptMap mMessagesDeliveredChanged;
+          MessageReceiptMap mMessagesReadChanged;
           DialogMap mDialogsChanged;
           DialogIDList mDialogsRemoved;
           ChangedDescriptionMap mDescriptionsChanged;

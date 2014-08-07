@@ -99,6 +99,7 @@ namespace openpeer
       ZS_DECLARE_USING_PTR(stack, IPeerSubscriptionDelegate)
       ZS_DECLARE_USING_PTR(stack, ILocation)
       ZS_DECLARE_USING_PTR(stack, IPublication)
+      ZS_DECLARE_USING_PTR(stack, IPublicationLocker)
       ZS_DECLARE_USING_PTR(stack, IPublicationMetaData)
       ZS_DECLARE_USING_PTR(stack, IPublicationFetcher)
       ZS_DECLARE_USING_PTR(stack, IPublicationPublisher)
@@ -132,6 +133,24 @@ namespace openpeer
       ZS_DECLARE_USING_PROXY(services, IICESocketDelegate)
       ZS_DECLARE_USING_PROXY(services, IICESocketSessionDelegate)
       ZS_DECLARE_USING_PROXY(services, IWakeDelegate)
+
+      struct ContactStatusInfo
+      {
+        Time mCreated;
+        ElementPtr mStatusEl;
+        String mStatusHash;
+
+        ContactStatusInfo();
+        ContactStatusInfo(const ElementPtr &statusEl);
+        ContactStatusInfo(const ContactStatusInfo &rValue);
+
+        bool hasData() const;
+
+        ElementPtr toDebug() const;
+
+        bool operator==(const ContactStatusInfo &rValue) const;
+        bool operator!=(const ContactStatusInfo &rValue) const;
+      };
 
       ZS_DECLARE_INTERACTION_PTR(ICallTransport)
       ZS_DECLARE_INTERACTION_PTR(IConversationThreadHostSlaveBase)

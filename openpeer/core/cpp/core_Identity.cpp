@@ -59,7 +59,7 @@ namespace openpeer
 
       typedef IStackForInternal UseStack;
 
-      using services::IHelper;
+      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
 
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -214,7 +214,7 @@ namespace openpeer
         String identity(identityURI_or_identityBaseURI);
         String domain(identityProviderDomain);
 
-        ZS_THROW_INVALID_ARGUMENT_IF(!services::IHelper::isValidDomain(domain))
+        ZS_THROW_INVALID_ARGUMENT_IF(!UseServicesHelper::isValidDomain(domain))
 
         IServiceIdentityPtr provider;
         ZS_LOG_DEBUG(pThis->log("preparing bootstrapped network domain") + ZS_PARAM("identity", identity) + ZS_PARAM("domain", domain))
@@ -266,7 +266,7 @@ namespace openpeer
 
         String domain(identityProviderDomain);
 
-        ZS_THROW_INVALID_ARGUMENT_IF(!services::IHelper::isValidDomain(domain))
+        ZS_THROW_INVALID_ARGUMENT_IF(!UseServicesHelper::isValidDomain(domain))
 
         IServiceIdentityPtr provider;
         ZS_LOG_DEBUG(pThis->log("preparing bootstrapped network domain") + ZS_PARAM("identity", identity) + ZS_PARAM("domain", domain))
@@ -593,7 +593,7 @@ namespace openpeer
       Log::Params Identity::log(const char *message) const
       {
         ElementPtr objectEl = Element::create("core::Identity");
-        IHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
         return Log::Params(message, objectEl);
       }
 

@@ -283,14 +283,22 @@ namespace openpeer
         void operator()();
 
       protected:
+        
+        void *getCaptureRenderView() const;
+        void *getChannelRenderView() const;
+
         virtual void internalStartVoice();
         virtual void internalStopVoice();
         
         virtual int registerVoiceTransport();
         virtual int setVoiceTransportParameters();
 
+        virtual void internalStartCaptureRenderer();
+        virtual void internalStopCaptureRenderer();
         virtual void internalStartVideoCapture();
         virtual void internalStopVideoCapture();
+        virtual void internalStartChannelRenderer();
+        virtual void internalStopChannelRenderer();
         virtual void internalStartVideoChannel();
         virtual void internalStopVideoChannel();
         virtual void internalStartRecordVideoCapture(String videoRecordFile, bool saveVideoToLibrary);
@@ -427,6 +435,8 @@ namespace openpeer
         bool mLifetimeHasRecordVideoCapture;
 
         bool mLifetimeInProgress;
+        void *mLifetimeWantCaptureRenderView;
+        void *mLifetimeWantChannelRenderView;
         CameraTypes mLifetimeWantCameraType;
         bool mLifetimeContinuousVideoCapture;
         

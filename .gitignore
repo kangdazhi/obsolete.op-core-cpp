@@ -1,2 +1,6 @@
 xcuserdata
 xcshareddata
+**/obj
+**/*.a
+**/.project
+

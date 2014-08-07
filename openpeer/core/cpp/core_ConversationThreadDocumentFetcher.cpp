@@ -53,7 +53,7 @@ namespace openpeer
     {
       typedef IStackForInternal UseStack;
 
-      using services::IHelper;
+      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
 
       using stack::IPublicationFetcher;
 
@@ -357,7 +357,7 @@ namespace openpeer
       Log::Params ConversationThreadDocumentFetcher::log(const char *message) const
       {
         ElementPtr objectEl = Element::create("core::ConversationThreadDocumentFetcher");
-        IHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
         return Log::Params(message, objectEl);
       }
 
@@ -368,10 +368,10 @@ namespace openpeer
 
         ElementPtr resultEl = Element::create("core::ConversationThreadDocumentFetcher");
 
-        IHelper::debugAppend(resultEl, "id", mID);
-        IHelper::debugAppend(resultEl, ILocation::toDebug(mFetcherPeerLocation));
-        IHelper::debugAppend(resultEl, IPublicationFetcher::toDebug(mFetcher));
-        IHelper::debugAppend(resultEl, "pending publications", mPendingPublications.size());
+        UseServicesHelper::debugAppend(resultEl, "id", mID);
+        UseServicesHelper::debugAppend(resultEl, ILocation::toDebug(mFetcherPeerLocation));
+        UseServicesHelper::debugAppend(resultEl, IPublicationFetcher::toDebug(mFetcher));
+        UseServicesHelper::debugAppend(resultEl, "pending publications", mPendingPublications.size());
 
         return resultEl;
       }

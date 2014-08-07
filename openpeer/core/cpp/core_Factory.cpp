@@ -325,11 +325,12 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ConversationThreadHostPtr IConversationThreadHostFactory::createConversationThreadHost(
                                                                                              ConversationThreadPtr baseThread,
+                                                                                             const char *serverName,
                                                                                              thread::Details::ConversationThreadStates state
                                                                                              )
       {
         if (this) {}
-        return ConversationThreadHost::create(baseThread, state);
+        return ConversationThreadHost::create(baseThread, serverName, state);
       }
 
       //-----------------------------------------------------------------------
@@ -351,11 +352,12 @@ namespace openpeer
                                                                                                 ConversationThreadPtr baseThread,
                                                                                                 ILocationPtr peerLocation,
                                                                                                 IPublicationMetaDataPtr metaData,
-                                                                                                const SplitMap &split
+                                                                                                const SplitMap &split,
+                                                                                                const char *serverName
                                                                                                 )
       {
         if (this) {}
-        return ConversationThreadSlave::create(baseThread, peerLocation, metaData, split);
+        return ConversationThreadSlave::create(baseThread, peerLocation, metaData, split, serverName);
       }
 
       //-----------------------------------------------------------------------

@@ -34,6 +34,7 @@
 #include <openpeer/core/internal/core.h>
 
 #include <openpeer/services/IHelper.h>
+#include <openpeer/services/ISettings.h>
 
 #include <zsLib/XML.h>
 
@@ -43,9 +44,11 @@ namespace openpeer
 {
   namespace core
   {
+    ZS_DECLARE_TYPEDEF_PTR(services::ISettings, UseServicesSettings)
+
     namespace internal
     {
-      using services::IHelper;
+      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
 
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -61,6 +64,22 @@ namespace openpeer
         SettingsPtr singleton = Settings::singleton();
         if (!singleton) return;
         singleton->applyDefaultsIfNoDelegatePresent();
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark ISettingsForStack
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      Duration ISettingsForThread::getThreadMoveMessageToCacheTimeInSeconds()
+      {
+        SettingsPtr singleton = Settings::singleton();
+        if (!singleton) return Duration(Seconds(120));
+        return singleton->getThreadMoveMessageToCacheTimeInSeconds();
       }
 
       //-----------------------------------------------------------------------
@@ -140,6 +159,9 @@ namespace openpeer
 
         setUInt(OPENPEER_CORE_SETTINGS_CONVERSATION_THREAD_HOST_BACKGROUNDING_PHASE, 1);
         setUInt(OPENPEER_CORE_SETTING_ACCOUNT_BACKGROUNDING_PHASE, 1);
+        setUInt(OPENPEER_CORE_SETTING_THREAD_MOVE_MESSAGE_TO_CACHE_TIME_IN_SECONDS, 120);
+
+        setUInt(OPENPEER_CORE_SETTING_CONVERSATION_THREAD_HOST_INACTIVE_CLOSE_TIME_IN_SECONDS, 60);
 
         setString(OPENPEER_CORE_SETTING_STACK_CORE_THREAD_PRIORITY, "normal");
         setString(OPENPEER_CORE_SETTING_STACK_MEDIA_THREAD_PRIORITY, "real-time");
@@ -178,6 +200,32 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       #pragma mark
+      #pragma mark Settings => ISettingsForThread
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      Duration Settings::getThreadMoveMessageToCacheTimeInSeconds()
+      {
+        {
+          AutoRecursiveLock lock(mLock);
+          if (Duration() != mThreadMoveMessageToCacheTimeInSeconds) return mThreadMoveMessageToCacheTimeInSeconds;
+        }
+
+        Duration cacheDuration = Seconds(getUInt(OPENPEER_CORE_SETTING_THREAD_MOVE_MESSAGE_TO_CACHE_TIME_IN_SECONDS));
+
+        {
+          AutoRecursiveLock lock(mLock);
+          mThreadMoveMessageToCacheTimeInSeconds = cacheDuration;
+        }
+
+        return cacheDuration;
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
       #pragma mark Settings => ISettingsDelegate
       #pragma mark
 
@@ -188,9 +236,9 @@ namespace openpeer
         {
           AutoRecursiveLock lock(mLock);
           delegate = mDelegate;
-          if (!delegate) return String();
         }
 
+        if (!delegate) return UseServicesSettings::getString(key);
         return delegate->getString(key);
       }
 
@@ -201,9 +249,9 @@ namespace openpeer
         {
           AutoRecursiveLock lock(mLock);
           delegate = mDelegate;
-          if (!delegate) return 0;
         }
 
+        if (!delegate) return UseServicesSettings::getInt(key);
         return delegate->getInt(key);
       }
 
@@ -214,9 +262,9 @@ namespace openpeer
         {
           AutoRecursiveLock lock(mLock);
           delegate = mDelegate;
-          if (!delegate) return 0;
         }
 
+        if (!delegate) return UseServicesSettings::getUInt(key);
         return delegate->getUInt(key);
       }
 
@@ -227,9 +275,9 @@ namespace openpeer
         {
           AutoRecursiveLock lock(mLock);
           delegate = mDelegate;
-          if (!delegate) return 0;
         }
 
+        if (!delegate) return UseServicesSettings::getBool(key);
         return delegate->getBool(key);
       }
 
@@ -240,9 +288,9 @@ namespace openpeer
         {
           AutoRecursiveLock lock(mLock);
           delegate = mDelegate;
-          if (!delegate) return 0;
         }
 
+        if (!delegate) return UseServicesSettings::getFloat(key);
         return delegate->getFloat(key);
       }
 
@@ -253,9 +301,9 @@ namespace openpeer
         {
           AutoRecursiveLock lock(mLock);
           delegate = mDelegate;
-          if (!delegate) return 0;
         }
 
+        if (!delegate) return UseServicesSettings::getDouble(key);
         return delegate->getDouble(key);
       }
 
@@ -269,9 +317,12 @@ namespace openpeer
         {
           AutoRecursiveLock lock(mLock);
           delegate = mDelegate;
-          if (!delegate) return;
         }
 
+        if (!delegate) {
+          UseServicesSettings::setString(key, value);
+          return;
+        }
         delegate->setString(key, value);
       }
 
@@ -285,9 +336,12 @@ namespace openpeer
         {
           AutoRecursiveLock lock(mLock);
           delegate = mDelegate;
-          if (!delegate) return;
         }
 
+        if (!delegate) {
+          UseServicesSettings::setInt(key, value);
+          return;
+        }
         delegate->setInt(key, value);
       }
 
@@ -301,9 +355,12 @@ namespace openpeer
         {
           AutoRecursiveLock lock(mLock);
           delegate = mDelegate;
-          if (!delegate) return;
         }
 
+        if (!delegate) {
+          UseServicesSettings::setUInt(key, value);
+          return;
+        }
         delegate->setUInt(key, value);
       }
 
@@ -317,9 +374,12 @@ namespace openpeer
         {
           AutoRecursiveLock lock(mLock);
           delegate = mDelegate;
-          if (!delegate) return;
         }
 
+        if (!delegate) {
+          UseServicesSettings::setBool(key, value);
+          return;
+        }
         delegate->setBool(key, value);
       }
 
@@ -333,9 +393,12 @@ namespace openpeer
         {
           AutoRecursiveLock lock(mLock);
           delegate = mDelegate;
-          if (!delegate) return;
         }
 
+        if (!delegate) {
+          UseServicesSettings::setFloat(key, value);
+          return;
+        }
         delegate->setFloat(key, value);
       }
 
@@ -349,9 +412,12 @@ namespace openpeer
         {
           AutoRecursiveLock lock(mLock);
           delegate = mDelegate;
-          if (!delegate) return;
         }
 
+        if (!delegate) {
+          UseServicesSettings::setDouble(key, value);
+          return;
+        }
         delegate->setDouble(key, value);
       }
 
@@ -362,9 +428,12 @@ namespace openpeer
         {
           AutoRecursiveLock lock(mLock);
           delegate = mDelegate;
-          if (!delegate) return;
         }
 
+        if (!delegate) {
+          UseServicesSettings::clear(key);
+          return;
+        }
         delegate->clear(key);
       }
 
@@ -380,7 +449,7 @@ namespace openpeer
       Log::Params Settings::log(const char *message) const
       {
         ElementPtr objectEl = Element::create("core::Settings");
-        IHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
         return Log::Params(message, objectEl);
       }
 
@@ -414,7 +483,7 @@ namespace openpeer
                               const char *value
                               )
     {
-      return stack::ISettings::setString(key, value);
+      return UseServicesSettings::setString(key, value);
     }
 
     //-------------------------------------------------------------------------
@@ -423,7 +492,7 @@ namespace openpeer
                            LONG value
                            )
     {
-      return stack::ISettings::setInt(key, value);
+      return UseServicesSettings::setInt(key, value);
     }
 
     //-------------------------------------------------------------------------
@@ -432,7 +501,7 @@ namespace openpeer
                             ULONG value
                             )
     {
-      return stack::ISettings::setUInt(key, value);
+      return UseServicesSettings::setUInt(key, value);
     }
 
     //-------------------------------------------------------------------------
@@ -441,7 +510,7 @@ namespace openpeer
                             bool value
                             )
     {
-      return stack::ISettings::setBool(key, value);
+      return UseServicesSettings::setBool(key, value);
     }
 
     //-------------------------------------------------------------------------
@@ -450,7 +519,7 @@ namespace openpeer
                              float value
                              )
     {
-      return stack::ISettings::setFloat(key, value);
+      return UseServicesSettings::setFloat(key, value);
     }
 
     //-------------------------------------------------------------------------
@@ -459,19 +528,19 @@ namespace openpeer
                               double value
                               )
     {
-      return stack::ISettings::setDouble(key, value);
+      return UseServicesSettings::setDouble(key, value);
     }
 
     //-------------------------------------------------------------------------
     void ISettings::clear(const char *key)
     {
-      return stack::ISettings::clear(key);
+      return UseServicesSettings::clear(key);
     }
 
     //-------------------------------------------------------------------------
     bool ISettings::apply(const char *jsonSettings)
     {
-      return stack::ISettings::apply(jsonSettings);
+      return UseServicesSettings::apply(jsonSettings);
     }
 
     //-------------------------------------------------------------------------
