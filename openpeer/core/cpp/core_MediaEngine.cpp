@@ -58,6 +58,7 @@
 
 #define OPENPEER_MEDIA_ENGINE_VOICE_CODEC_ISAC
 //#define OPENPEER_MEDIA_ENGINE_VOICE_CODEC_OPUS
+#define OPENPEER_MEDIA_ENGINE_INVALID_CAPTURE (-1)
 #define OPENPEER_MEDIA_ENGINE_INVALID_CHANNEL (-1)
 #define OPENPEER_MEDIA_ENGINE_MTU (576)
 
@@ -133,7 +134,7 @@ namespace openpeer
         mVoiceTransport(&mRedirectVoiceTransport),
         mVideoChannel(OPENPEER_MEDIA_ENGINE_INVALID_CHANNEL),
         mVideoTransport(&mRedirectVideoTransport),
-        mCaptureId(0),
+        mCaptureId(OPENPEER_MEDIA_ENGINE_INVALID_CAPTURE),
         mCameraType(CameraType_Front),
         mVoiceEngine(NULL),
         mVoiceBase(NULL),
@@ -168,6 +169,8 @@ namespace openpeer
         mLifetimeHasVideoChannel(false),
         mLifetimeHasRecordVideoCapture(false),
         mLifetimeInProgress(false),
+        mLifetimeWantCaptureRenderView(NULL),
+        mLifetimeWantChannelRenderView(NULL),
         mLifetimeWantCameraType(CameraType_Front),
         mLifetimeContinuousVideoCapture(false),
         mLifetimeVideoRecordFile(""),
@@ -200,7 +203,7 @@ namespace openpeer
         mVoiceTransport(NULL),
         mVideoChannel(OPENPEER_MEDIA_ENGINE_INVALID_CHANNEL),
         mVideoTransport(NULL),
-        mCaptureId(0),
+        mCaptureId(OPENPEER_MEDIA_ENGINE_INVALID_CAPTURE),
         mCameraType(CameraType_Front),
         mVoiceEngine(NULL),
         mVoiceBase(NULL),
@@ -235,6 +238,8 @@ namespace openpeer
         mLifetimeHasVideoChannel(false),
         mLifetimeHasRecordVideoCapture(false),
         mLifetimeInProgress(false),
+        mLifetimeWantCaptureRenderView(NULL),
+        mLifetimeWantChannelRenderView(NULL),
         mLifetimeWantCameraType(CameraType_Front),
         mLifetimeContinuousVideoCapture(false),
         mLifetimeVideoRecordFile(""),
@@ -665,25 +670,41 @@ namespace openpeer
           mError = setVideoCodecParameters();
         }
       }
+      
+      //-----------------------------------------------------------------------
+      void *MediaEngine::getCaptureRenderView() const
+      {
+        AutoRecursiveLock lock(mLifetimeLock);  // WARNING: THIS IS THE LIFETIME LOCK AND NOT THE MAIN OBJECT LOCK
+        return mLifetimeWantCaptureRenderView;
+      }
 
       //-----------------------------------------------------------------------
       void MediaEngine::setCaptureRenderView(void *renderView)
       {
-        AutoRecursiveLock lock(mLock);
-
-        ZS_LOG_DEBUG(log("set capture render view"))
-
-        mCaptureRenderView = renderView;
+        {
+          AutoRecursiveLock lock(mLifetimeLock);
+          mLifetimeWantCaptureRenderView = renderView;
+        }
+        
+        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+      }
+      
+      //-----------------------------------------------------------------------
+      void *MediaEngine::getChannelRenderView() const
+      {
+        AutoRecursiveLock lock(mLifetimeLock);  // WARNING: THIS IS THE LIFETIME LOCK AND NOT THE MAIN OBJECT LOCK
+        return mLifetimeWantChannelRenderView;
       }
 
       //-----------------------------------------------------------------------
       void MediaEngine::setChannelRenderView(void *renderView)
       {
-        AutoRecursiveLock lock(mLock);
-
-        ZS_LOG_DEBUG(log("set channel render view"))
-
-        mChannelRenderView = renderView;
+        {
+          AutoRecursiveLock lock(mLifetimeLock);
+          mLifetimeWantChannelRenderView = renderView;
+        }
+        
+        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
       }
 
       //-----------------------------------------------------------------------
@@ -1026,14 +1047,7 @@ namespace openpeer
 
         return 0;
       }
-
-        void MediaEngine::pauseVoice(bool pause)
-        {
-            if (pause)
-                this->internalStopVoice();
-            else
-                this->internalStartVoice();
-        }
+      
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -1075,6 +1089,20 @@ namespace openpeer
           mLifetimeWantAudio = false;
         }
 
+        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+      }
+      
+      //-----------------------------------------------------------------------
+      void MediaEngine::pauseVoice(bool pause)
+      {
+        {
+          AutoRecursiveLock lock(mLifetimeLock);
+          if (pause)
+            mLifetimeWantAudio = false;
+          else
+            mLifetimeWantAudio = true;
+        }
+        
         ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
       }
 
@@ -1440,6 +1468,8 @@ namespace openpeer
         bool hasVideoChannel = false;
         bool hasRecordVideoCapture = false;
         CameraTypes wantCameraType = IMediaEngine::CameraType_None;
+        void *wantCaptureRenderView = NULL;
+        void *wantChannelRenderView = NULL;
         String videoRecordFile;
         bool saveVideoToLibrary;
 
@@ -1474,6 +1504,8 @@ namespace openpeer
           hasVideoChannel = mLifetimeHasVideoChannel;
           hasRecordVideoCapture = mLifetimeHasRecordVideoCapture;
           wantCameraType = mLifetimeWantCameraType;
+          wantCaptureRenderView = mLifetimeWantCaptureRenderView;
+          wantChannelRenderView = mLifetimeWantChannelRenderView;
           videoRecordFile = mLifetimeVideoRecordFile;
           saveVideoToLibrary = mLifetimeSaveVideoToLibrary;
           break;
@@ -1494,6 +1526,22 @@ namespace openpeer
                   ZS_LOG_DEBUG(log("video channel must be stopped first before camera type can be swapped (will try again)"))
                   wantVideoChannel = false;  // pretend that we don't want video so it will be stopped
                 }
+              }
+            }
+          }
+          
+          if (wantVideoCapture) {
+            if (wantCaptureRenderView != mCaptureRenderView) {
+              if (hasVideoCapture) {
+                if (wantCaptureRenderView == NULL || mCaptureRenderView != NULL) {
+                  internalStopCaptureRenderer();
+                }
+                mCaptureRenderView = wantCaptureRenderView;
+                if (wantCaptureRenderView != NULL) {
+                  internalStartCaptureRenderer();
+                }
+              } else {
+                mCaptureRenderView = wantCaptureRenderView;
               }
             }
           }
@@ -1524,6 +1572,22 @@ namespace openpeer
             }
           }
           
+          if (wantVideoChannel) {
+            if (wantChannelRenderView != mChannelRenderView) {
+              if (hasVideoChannel) {
+                if (wantChannelRenderView == NULL || mChannelRenderView != NULL) {
+                  internalStopChannelRenderer();
+                }
+                mChannelRenderView = wantChannelRenderView;
+                if (wantChannelRenderView != NULL) {
+                  internalStartChannelRenderer();
+                }
+              } else {
+                mChannelRenderView = wantChannelRenderView;
+              }
+            }
+          }
+
           if (wantVideoChannel) {
             if (!hasVideoChannel) {
               internalStartVideoChannel();
@@ -1790,6 +1854,59 @@ namespace openpeer
       }
       
       //-----------------------------------------------------------------------
+      void MediaEngine::internalStartCaptureRenderer()
+      {
+        {
+          AutoRecursiveLock lock(mLock);
+          
+          ZS_LOG_DEBUG(log("start capture renderer"))
+          
+#if !defined(__QNX__) && !defined(_ANDROID)
+          if (mCaptureRenderView == NULL) {
+            ZS_LOG_WARNING(Detail, log("capture view is not set"))
+            return;
+          }
+
+          mError = mVideoRender->AddRenderer(mCaptureId, mCaptureRenderView, 0, 0.0F, 0.0F, 1.0F,
+                                             1.0F);
+          if (0 != mError) {
+            ZS_LOG_ERROR(Detail, log("failed to add renderer for video capture") + ZS_PARAM("error", mVideoBase->LastError()))
+            return;
+          }
+          
+          mError = mVideoRender->StartRender(mCaptureId);
+          if (mError != 0) {
+            ZS_LOG_ERROR(Detail, log("failed to start rendering video capture") + ZS_PARAM("error", mVideoBase->LastError()))
+            return;
+          }
+#endif
+        }
+      }
+      
+      //-----------------------------------------------------------------------
+      void MediaEngine::internalStopCaptureRenderer()
+      {
+        {
+          AutoRecursiveLock lock(mLock);
+        
+          ZS_LOG_DEBUG(log("stop capture renderer"))
+          
+#if !defined(__QNX__) && !defined(_ANDROID)
+          mError = mVideoRender->StopRender(mCaptureId);
+          if (mError != 0) {
+            ZS_LOG_ERROR(Detail, log("failed to stop rendering video capture") + ZS_PARAM("error", mVideoBase->LastError()))
+            return;
+          }
+          mError = mVideoRender->RemoveRenderer(mCaptureId);
+          if (mError != 0) {
+            ZS_LOG_ERROR(Detail, log("failed to remove renderer for video capture") + ZS_PARAM("error", mVideoBase->LastError()))
+            return;
+          }
+#endif
+        }
+      }
+     
+      //-----------------------------------------------------------------------
       void MediaEngine::internalStartVideoCapture()
       {
         {
@@ -1804,18 +1921,6 @@ namespace openpeer
           char uniqueId[KMaxUniqueIdLength];
           memset(uniqueId, 0, KMaxUniqueIdLength);
           uint32_t captureIdx;
-          
-#if defined(TARGET_OS_IPHONE) || defined(__QNX__)
-          void *captureView = mCaptureRenderView;
-#else
-          void *captureView = NULL;
-#endif
-#if !defined(__QNX__) && !defined(_ANDROID)
-          if (captureView == NULL) {
-            ZS_LOG_ERROR(Detail, log("capture view is not set"))
-            return;
-          }
-#endif
           
           webrtc::VideoCaptureModule::DeviceInfo *devInfo = webrtc::VideoCaptureFactory::CreateDeviceInfo(0);
           if (devInfo == NULL) {
@@ -1941,44 +2046,47 @@ namespace openpeer
 #if defined(_ANDROID)
           setVideoCaptureRotation();
 #endif
-
-#if !defined(__QNX__) && !defined(_ANDROID)
-          mError = mVideoRender->AddRenderer(mCaptureId, captureView, 0, 0.0F, 0.0F, 1.0F,
-                                             1.0F);
-          if (0 != mError) {
-            ZS_LOG_ERROR(Detail, log("failed to add renderer for video capture") + ZS_PARAM("error", mVideoBase->LastError()))
-            return;
-          }
+        }
+        
+        void *captureView;
+        {
+          AutoRecursiveLock lock(mLock);
           
-          mError = mVideoRender->StartRender(mCaptureId);
-          if (mError != 0) {
-            ZS_LOG_ERROR(Detail, log("failed to start rendering video capture") + ZS_PARAM("error", mVideoBase->LastError()))
-            return;
-          }
+#if defined(TARGET_OS_IPHONE) || defined(__QNX__)
+          captureView = mCaptureRenderView;
+#else
+          captureView = NULL;
 #endif
+        }
+        
+        if (captureView != NULL) {
+          internalStartCaptureRenderer();
         }
       }
       
       //-----------------------------------------------------------------------
       void MediaEngine::internalStopVideoCapture()
       {
+        void *captureView;
+        {
+          AutoRecursiveLock lock(mLock);
+          
+#if defined(TARGET_OS_IPHONE) || defined(__QNX__)
+          captureView = mCaptureRenderView;
+#else
+          captureView = NULL;
+#endif
+        }
+        
+        if (captureView != NULL) {
+          internalStopCaptureRenderer();
+        }
+        
         {
           AutoRecursiveLock lock(mLock);
           
           ZS_LOG_DEBUG(log("stop video capture"))
 
-#if !defined(__QNX__) && !defined(_ANDROID)
-          mError = mVideoRender->StopRender(mCaptureId);
-          if (mError != 0) {
-            ZS_LOG_ERROR(Detail, log("failed to stop rendering video capture") + ZS_PARAM("error", mVideoBase->LastError()))
-            return;
-          }
-          mError = mVideoRender->RemoveRenderer(mCaptureId);
-          if (mError != 0) {
-            ZS_LOG_ERROR(Detail, log("failed to remove renderer for video capture") + ZS_PARAM("error", mVideoBase->LastError()))
-            return;
-          }
-#endif
           mError = mVideoCapture->StopCapture(mCaptureId);
           if (mError != 0) {
             ZS_LOG_ERROR(Detail, log("failed to stop video capturing") + ZS_PARAM("error", mVideoBase->LastError()))
@@ -2001,6 +2109,57 @@ namespace openpeer
             mVcpm->Release();
           
           mVcpm = NULL;
+          mCaptureId = OPENPEER_MEDIA_ENGINE_INVALID_CAPTURE;
+        }
+      }
+      
+      //-----------------------------------------------------------------------
+      void MediaEngine::internalStartChannelRenderer()
+      {
+        {
+          AutoRecursiveLock lock(mLock);
+          
+          ZS_LOG_DEBUG(log("start channel renderer"))
+          
+          if (mChannelRenderView == NULL) {
+            ZS_LOG_WARNING(Detail, log("channel view is not set"))
+            return;
+          }
+          
+          mError = mVideoRender->AddRenderer(mVideoChannel, mChannelRenderView, 0, 0.0F, 0.0F, 1.0F,
+                                             1.0F);
+          if (0 != mError) {
+            ZS_LOG_ERROR(Detail, log("failed to add renderer for video channel") + ZS_PARAM("error", mVideoBase->LastError()))
+            return;
+          }
+          
+          mError = mVideoRender->StartRender(mVideoChannel);
+          if (mError != 0) {
+            ZS_LOG_ERROR(Detail, log("failed to start rendering video channel") + ZS_PARAM("error", mVideoBase->LastError()))
+            return;
+          }
+        }
+      }
+      
+      //-----------------------------------------------------------------------
+      void MediaEngine::internalStopChannelRenderer()
+      {
+        {
+          AutoRecursiveLock lock(mLock);
+          
+          ZS_LOG_DEBUG(log("stop channel renderer"))
+          
+          mError = mVideoRender->StopRender(mVideoChannel);
+          if (mError != 0) {
+            ZS_LOG_ERROR(Detail, log("failed to stop rendering video channel") + ZS_PARAM("error", mVideoBase->LastError()))
+            return;
+          }
+          
+          mError = mVideoRender->RemoveRenderer(mVideoChannel);
+          if (mError != 0) {
+            ZS_LOG_ERROR(Detail, log("failed to remove renderer for video channel") + ZS_PARAM("error", mVideoBase->LastError()))
+            return;
+          }
         }
       }
 
@@ -2011,16 +2170,6 @@ namespace openpeer
           AutoRecursiveLock lock(mLock);
           
           ZS_LOG_DEBUG(log("start video channel"))
-
-#if defined(TARGET_OS_IPHONE) || defined(__QNX__) || defined(_ANDROID)
-          void *channelView = mChannelRenderView;
-#else
-          void *channelView = NULL;
-#endif
-          if (channelView == NULL) {
-            ZS_LOG_ERROR(Detail, log("channel view is not set"))
-            return;
-          }
 
           mError = mVideoBase->CreateChannel(mVideoChannel);
           if (mError != 0) {
@@ -2080,13 +2229,6 @@ namespace openpeer
           }
 #endif
 
-          mError = mVideoRender->AddRenderer(mVideoChannel, channelView, 0, 0.0F, 0.0F, 1.0F,
-                                             1.0F);
-          if (0 != mError) {
-            ZS_LOG_ERROR(Detail, log("failed to add renderer for video channel") + ZS_PARAM("error", mVideoBase->LastError()))
-            return;
-          }
-
           webrtc::VideoCodec videoCodec;
           memset(&videoCodec, 0, sizeof(VideoCodec));
           for (int idx = 0; idx < mVideoCodec->NumberOfCodecs(); idx++) {
@@ -2125,11 +2267,21 @@ namespace openpeer
             ZS_LOG_ERROR(Detail, log("failed to start receiving video") + ZS_PARAM("error", mVideoBase->LastError()))
             return;
           }
-          mError = mVideoRender->StartRender(mVideoChannel);
-          if (mError != 0) {
-            ZS_LOG_ERROR(Detail, log("failed to start rendering video channel") + ZS_PARAM("error", mVideoBase->LastError()))
-            return;
-          }
+        }
+        
+        void *channelView;
+        {
+          AutoRecursiveLock lock(mLock);
+          
+#if defined(TARGET_OS_IPHONE) || defined(__QNX__) || defined(_ANDROID)
+          channelView = mChannelRenderView;
+#else
+          channelView = NULL;
+#endif
+        }
+        
+        if (channelView != NULL) {
+          internalStartChannelRenderer();
         }
         
         {
@@ -2145,22 +2297,27 @@ namespace openpeer
           AutoRecursiveLock lock(mMediaEngineReadyLock);
           mVideoEngineReady = false;
         }
-
+        
+        void *channelView;
+        {
+          AutoRecursiveLock lock(mLock);
+          
+#if defined(TARGET_OS_IPHONE) || defined(__QNX__) || defined(_ANDROID)
+          channelView = mChannelRenderView;
+#else
+          channelView = NULL;
+#endif
+        }
+        
+        if (channelView != NULL) {
+          internalStopChannelRenderer();
+        }
+        
         {
           AutoRecursiveLock lock(mLock);
 
           ZS_LOG_DEBUG(log("stop video channel"))
 
-          mError = mVideoRender->StopRender(mVideoChannel);
-          if (mError != 0) {
-            ZS_LOG_ERROR(Detail, log("failed to stop rendering video channel") + ZS_PARAM("error", mVideoBase->LastError()))
-            return;
-          }
-          mError = mVideoRender->RemoveRenderer(mVideoChannel);
-          if (mError != 0) {
-            ZS_LOG_ERROR(Detail, log("failed to remove renderer for video channel") + ZS_PARAM("error", mVideoBase->LastError()))
-            return;
-          }
           mError = mVideoBase->StopSend(mVideoChannel);
           if (mError != 0) {
             ZS_LOG_ERROR(Detail, log("failed to stop sending video") + ZS_PARAM("error", mVideoBase->LastError()))
