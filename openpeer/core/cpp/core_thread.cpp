@@ -921,7 +921,7 @@ namespace openpeer
               while (identityEl) {
 
                 IdentityContact identityContact;
-                IdentityInfo identityInfo = IMessageHelper::createIdentity(identityEl);
+                IdentityInfo identityInfo = IdentityInfo::create(identityEl);
 
                 Helper::convert(identityInfo, identityContact);
                 if (identityContact.hasData()) {
