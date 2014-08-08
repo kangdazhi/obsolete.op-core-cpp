@@ -210,6 +210,13 @@ namespace openpeer
       static NameValueMapPtr getValues(const PushInfo &pushInfo);
 
       //-----------------------------------------------------------------------
+      // PURPOSE: create a JSON blob compatible with the PushInfo.mValues
+      //          based on a collection of name / value pairs.
+      // RETURNS: a pointer to the values blob or null ElementPtr() if no
+      //          values were found.
+      static ElementPtr createValues(const NameValueMap &values);
+
+      //-----------------------------------------------------------------------
       // PURPOSE: mark an individual message as having been read
       virtual void markPushMessageRead(const char *messageID) = 0;
 

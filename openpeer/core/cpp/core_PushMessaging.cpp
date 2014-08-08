@@ -370,8 +370,30 @@ namespace openpeer
           }
         }
 
-        ZS_LOG_DEBUG(slog("get values") + ZS_PARAM("values", (bool)pushInfo.mValues) + ZS_PARAM("total found", result->size()))
+        ZS_LOG_TRACE(slog("get values") + ZS_PARAM("values", (bool)pushInfo.mValues) + ZS_PARAM("total found", result->size()))
         return result;
+      }
+
+      //-----------------------------------------------------------------------
+      ElementPtr PushMessaging::createValues(const NameValueMap &values)
+      {
+        if (values.size() < 1) return ElementPtr();
+
+        ElementPtr valuesEl = Element::create("values");
+        for (NameValueMap::const_iterator iter = values.begin(); iter != values.end(); ++iter) {
+          const ValueName &valueName = (*iter).first;
+          const Value &value = (*iter).second;
+
+          if (valueName.hasData()) {
+            ElementPtr valueEl = IMessageHelper::createElementWithTextAndJSONEncode(valueName, value);
+            valuesEl->adoptAsLastChild(valueEl);
+          }
+        }
+
+        ZS_LOG_TRACE(slog("create values") + ZS_PARAM("has values", valuesEl->hasChildren()) + ZS_PARAM("total", values.size()))
+
+        if (!valuesEl->hasChildren()) return ElementPtr();
+        return valuesEl;
       }
 
       //-----------------------------------------------------------------------
@@ -1082,6 +1104,12 @@ namespace openpeer
     IPushMessaging::NameValueMapPtr IPushMessaging::getValues(const PushInfo &pushInfo)
     {
       return internal::PushMessaging::getValues(pushInfo);
+    }
+
+    //-------------------------------------------------------------------------
+    ElementPtr IPushMessaging::createValues(const NameValueMap &values)
+    {
+      return internal::PushMessaging::createValues(values);
     }
 
     //-------------------------------------------------------------------------

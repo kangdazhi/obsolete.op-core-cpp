@@ -161,6 +161,7 @@ namespace openpeer
                                         );
 
         static NameValueMapPtr getValues(const PushInfo &pushInfo);
+        static ElementPtr createValues(const NameValueMap &values);
 
         virtual void markPushMessageRead(const char *messageID);
         virtual void deletePushMessage(const char *messageID);
