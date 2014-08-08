@@ -44,5 +44,6 @@
 #include <openpeer/core/ILogger.h>
 #include <openpeer/core/IMediaEngine.h>
 #include <openpeer/core/IPushMessaging.h>
+#include <openpeer/core/IPushPresence.h>
 #include <openpeer/core/ISettings.h>
 #include <openpeer/core/IStack.h>

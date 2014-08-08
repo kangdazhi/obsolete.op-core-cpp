@@ -197,6 +197,8 @@ namespace openpeer
     ZS_DECLARE_INTERACTION_PTR(IPushMessaging)
     ZS_DECLARE_INTERACTION_PTR(IPushMessagingQuery)
     ZS_DECLARE_INTERACTION_PTR(IPushMessagingRegisterQuery)
+    ZS_DECLARE_INTERACTION_PTR(IPushPresence)
+    ZS_DECLARE_INTERACTION_PTR(IPushPresenceRegisterQuery)
     ZS_DECLARE_INTERACTION_PTR(ISettings)
     ZS_DECLARE_INTERACTION_PTR(ISettingsDelegate)
     ZS_DECLARE_INTERACTION_PTR(IStack)
@@ -216,9 +218,12 @@ namespace openpeer
     ZS_DECLARE_INTERACTION_PROXY(IPushMessagingDelegate)
     ZS_DECLARE_INTERACTION_PROXY(IPushMessagingQueryDelegate)
     ZS_DECLARE_INTERACTION_PROXY(IPushMessagingRegisterQueryDelegate)
+    ZS_DECLARE_INTERACTION_PROXY(IPushPresenceDelegate)
+    ZS_DECLARE_INTERACTION_PROXY(IPushPresenceRegisterQueryDelegate)
     ZS_DECLARE_INTERACTION_PROXY(IStackDelegate)
 
     ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxDatabaseAbstractionDelegate, IPushMessagingDatabaseAbstractionDelegate)
+    ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxDatabaseAbstractionDelegate, IPushPresenceDatabaseAbstractionDelegate)
 
     ZS_DECLARE_TYPEDEF_PTR(std::list<IContactPtr>, ContactList)
     ZS_DECLARE_TYPEDEF_PTR(std::list<ContactProfileInfo>, ContactProfileInfoList)

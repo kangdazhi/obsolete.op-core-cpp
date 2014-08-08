@@ -224,8 +224,8 @@ namespace openpeer
         #pragma mark PushMessaging => (internal)
         #pragma mark
 
-        bool isShutdown() const {return PushMessagingStates_Shutdown == mCurrentState;}
-        bool isShuttingDown() const {return PushMessagingStates_ShuttingDown == mCurrentState;}
+        bool isShutdown() const {return PushMessagingState_Shutdown == mCurrentState;}
+        bool isShuttingDown() const {return PushMessagingState_ShuttingDown == mCurrentState;}
 
         static Log::Params slog(const char *message);
         Log::Params log(const char *message) const;

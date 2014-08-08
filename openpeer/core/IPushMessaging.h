@@ -49,10 +49,10 @@ namespace openpeer
     {
       enum PushMessagingStates
       {
-        PushMessagingStates_Pending,
-        PushMessagingStates_Ready,
-        PushMessagingStates_ShuttingDown,
-        PushMessagingStates_Shutdown,
+        PushMessagingState_Pending,
+        PushMessagingState_Ready,
+        PushMessagingState_ShuttingDown,
+        PushMessagingState_Shutdown,
       };
       static const char *toString(PushMessagingStates state);
 

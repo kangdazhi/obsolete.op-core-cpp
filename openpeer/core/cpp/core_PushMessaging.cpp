@@ -138,7 +138,7 @@ namespace openpeer
         mDelegate(IPushMessagingDelegateProxy::createWeak(UseStack::queueApplication(), delegate)),
         mDatabase(databaseDelegate),
         mAccount(account),
-        mCurrentState(PushMessagingStates_Pending)
+        mCurrentState(PushMessagingState_Pending)
       {
         ZS_LOG_BASIC(log("created"))
       }
@@ -564,7 +564,7 @@ namespace openpeer
       {
         ZS_LOG_DEBUG(log("cancel called"))
 
-        setCurrentState(PushMessagingStates_ShuttingDown);
+        setCurrentState(PushMessagingState_ShuttingDown);
 
         if (mMailbox) {
           mMailbox->shutdown();
@@ -580,7 +580,7 @@ namespace openpeer
           }
         }
 
-        setCurrentState(PushMessagingStates_Shutdown);
+        setCurrentState(PushMessagingState_Shutdown);
 
         for (RegisterQueryList::iterator iter = mPendingAttachmentRegisterQueries.begin(); iter != mPendingAttachmentRegisterQueries.end(); ++iter)
         {
@@ -613,7 +613,7 @@ namespace openpeer
       void PushMessaging::setCurrentState(PushMessagingStates state)
       {
         if (state == mCurrentState) return;
-        if (PushMessagingStates_Shutdown == mCurrentState) return;
+        if (PushMessagingState_Shutdown == mCurrentState) return;
 
         ZS_LOG_DEBUG(log("state changed") + ZS_PARAM("old state", toString(mCurrentState)) + ZS_PARAM("new state", toString(state)))
 
@@ -664,7 +664,7 @@ namespace openpeer
         if (!stepAttach()) goto post_step;
         if (!stepMarkReadAndDelete()) goto post_step;
 
-        setCurrentState(PushMessagingStates_Ready);
+        setCurrentState(PushMessagingState_Ready);
 
       post_step:
         {
@@ -1034,10 +1034,10 @@ namespace openpeer
     const char *IPushMessaging::toString(PushMessagingStates state)
     {
       switch (state) {
-        case PushMessagingStates_Pending:       return "Pending";
-        case PushMessagingStates_Ready:         return "Ready";
-        case PushMessagingStates_ShuttingDown:  return "Shutting down";
-        case PushMessagingStates_Shutdown:      return "Shutdown";
+        case PushMessagingState_Pending:       return "Pending";
+        case PushMessagingState_Ready:         return "Ready";
+        case PushMessagingState_ShuttingDown:  return "Shutting down";
+        case PushMessagingState_Shutdown:      return "Shutdown";
       }
       return "UNDEFINED";
     }
