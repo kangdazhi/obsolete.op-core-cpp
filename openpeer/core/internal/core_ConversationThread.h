@@ -465,6 +465,8 @@ namespace openpeer
         virtual IdentityContactListPtr getIdentityContactList(IContactPtr contact) const;
         virtual ContactConnectionStates getContactConnectionState(IContactPtr contact) const;
 
+        static ElementPtr createEmptyStatus();
+
         virtual ElementPtr getContactStatus(IContactPtr contact) const;
 
         virtual void setStatusInThread(ElementPtr contactStatusInThreadOfSelf);

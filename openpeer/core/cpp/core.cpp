@@ -33,7 +33,7 @@
 #include <openpeer/core/internal/core.h>
 #include <openpeer/core/internal/core_Helper.h>
 
-#include <openpeer/core/IConversationThreadComposingStatus.h>
+#include <openpeer/core/ComposingStatus.h>
 
 #include <openpeer/services/IHelper.h>
 
@@ -101,14 +101,10 @@ namespace openpeer
       {
         ElementPtr resultEl = Element::create("core::ContactStatusInfo");
 
-        IConversationThreadComposingStatus::ComposingStates status = IConversationThreadComposingStatus::getComposingStatus(mStatusEl);
-
-        if (IConversationThreadComposingStatus::ComposingState_None != status) {
-          UseServicesHelper::debugAppend(resultEl, "composing status", IConversationThreadComposingStatus::toString(status));
-        }
-
         UseServicesHelper::debugAppend(resultEl, "created", mCreated);
         UseServicesHelper::debugAppend(resultEl, "status", (bool)mStatusEl);
+        ComposingStatusPtr status = ComposingStatus::extract(mStatusEl);
+        UseServicesHelper::debugAppend(resultEl, "composing", status ? status->toDebug() : ElementPtr());
         UseServicesHelper::debugAppend(resultEl, "status hash", mStatusHash);
 
         return resultEl;

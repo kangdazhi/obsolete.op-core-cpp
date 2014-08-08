@@ -31,19 +31,12 @@
 
 #include <openpeer/core/internal/types.h>
 
-//#include <openpeer/core/IConversationThread.h>
-#include <openpeer/core/IConversationThreadComposingStatus.h>
-//#include <openpeer/core/IHelper.h>
-//
-//#include <openpeer/core/internal/core_Account.h>
-//#include <openpeer/core/internal/core_Contact.h>
-//
+#include <openpeer/core/ComposingStatus.h>
+
 #include <openpeer/stack/message/IMessageHelper.h>
-//
-//#include <openpeer/services/IHelper.h>
-//
-//#include <zsLib/Numeric.h>
-//#include <zsLib/Stringize.h>
+
+#include <openpeer/services/IHelper.h>
+
 #include <zsLib/XML.h>
 
 namespace openpeer { namespace core { ZS_DECLARE_SUBSYSTEM(openpeer_core) } }
@@ -54,16 +47,15 @@ namespace openpeer
 {
   namespace core
   {
-//    using zsLib::Numeric;
-//
-    ZS_DECLARE_USING_PTR(openpeer::stack::message, IMessageHelper)
-//    ZS_DECLARE_TYPEDEF_PTR(internal::IContactForConversationThread, UseContact)
+    ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
+
+    ZS_DECLARE_TYPEDEF_PTR(openpeer::stack::message::IMessageHelper, UseMessageHelper)
 
     namespace internal
     {
       static Log::Params slog(const char *message)
       {
-        return Log::Params(message, "core::IConversationThreadComposingStatus");
+        return Log::Params(message, "core::ComposingStatus");
       }
 
     }
@@ -73,11 +65,11 @@ namespace openpeer
     //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------
     #pragma mark
-    #pragma mark IConversationThread
+    #pragma mark ComposingStatus
     #pragma mark
 
     //-------------------------------------------------------------------------
-    const char *IConversationThreadComposingStatus::toString(ComposingStates state)
+    const char *ComposingStatus::toString(ComposingStates state)
     {
       switch (state) {
         case ComposingState_None:             return "none";
@@ -92,7 +84,7 @@ namespace openpeer
     }
 
     //-------------------------------------------------------------------------
-    IConversationThreadComposingStatus::ComposingStates IConversationThreadComposingStatus::toComposingState(const char *inState)
+    ComposingStatus::ComposingStates ComposingStatus::toComposingState(const char *inState)
     {
       static ComposingStates states[] =
       {
@@ -117,41 +109,68 @@ namespace openpeer
     }
 
     //-------------------------------------------------------------------------
-    void IConversationThreadComposingStatus::updateComposingStatus(
-                                                                   ElementPtr &ioContactStatusInThreadEl,
-                                                                   ComposingStates composing
-                                                                   )
+    ComposingStatus::ComposingStatus() :
+      mComposingStatus(ComposingState_None)
     {
-      if (!ioContactStatusInThreadEl) {
-        if ((ComposingState_None == composing) ||
-            (ComposingState_Inactive == composing)) {
-          ZS_LOG_TRACE(internal::slog("default state applies and empty status JSON object thus return nothing"))
-          return;
-        }
+    }
 
-        ioContactStatusInThreadEl = Element::create("status");
-      }
+    //-------------------------------------------------------------------------
+    ComposingStatus::ComposingStatus(ComposingStates state) :
+      mComposingStatus(state)
+    {
+    }
 
-      ElementPtr newComposingEl = IMessageHelper::createElementWithText("composing", toString(composing));
+    //-------------------------------------------------------------------------
+    ComposingStatus::ComposingStatus(const ComposingStatus &rValue) :
+      mComposingStatus(rValue.mComposingStatus)
+    {
+    }
 
-      ElementPtr oldComposingEl = ioContactStatusInThreadEl->findFirstChildElement("composing");
-      if (oldComposingEl) {
-        if (newComposingEl)
-          oldComposingEl->adoptAsPreviousSibling(newComposingEl);
-        oldComposingEl->orphan();
+    //-------------------------------------------------------------------------
+    ComposingStatusPtr ComposingStatus::extract(ElementPtr dataEl)
+    {
+      if (!dataEl) return ComposingStatusPtr();
+
+      String composingStr = UseMessageHelper::getElementText(dataEl->findFirstChildElement("composing"));
+
+      ComposingStates state = toComposingState(composingStr);
+      if (ComposingState_None == state) return ComposingStatusPtr();
+
+      return ComposingStatusPtr(new ComposingStatus(state));
+    }
+
+    //-------------------------------------------------------------------------
+    void ComposingStatus::insert(ElementPtr dataEl)
+    {
+      ZS_THROW_INVALID_ARGUMENT_IF(!dataEl)
+
+      if (ComposingState_None == mComposingStatus) return;
+
+      ElementPtr existingComposingEl = dataEl->findFirstChildElement("composing");
+
+      ElementPtr composingEl = UseMessageHelper::createElementWithText("composing", toString(mComposingStatus));
+
+      if (existingComposingEl) {
+        existingComposingEl->adoptAsNextSibling(composingEl);
+        existingComposingEl->orphan();
       } else {
-        ioContactStatusInThreadEl->adoptAsLastChild(newComposingEl);
+        dataEl->adoptAsLastChild(composingEl);
       }
     }
 
     //-------------------------------------------------------------------------
-    IConversationThreadComposingStatus::ComposingStates IConversationThreadComposingStatus::getComposingStatus(ElementPtr contactStatusInThreadEl)
+    bool ComposingStatus::hasData() const
     {
-      if (!contactStatusInThreadEl) return ComposingState_None;
-      String composingStr = IMessageHelper::getElementText(contactStatusInThreadEl->findFirstChildElement("composing"));
-      return toComposingState(composingStr);
+      return (ComposingState_None != mComposingStatus);
     }
 
+    //-------------------------------------------------------------------------
+    ElementPtr ComposingStatus::toDebug() const
+    {
+      ElementPtr resultEl = Element::create("core::ComposingStatus");
+      UseServicesHelper::debugAppend(resultEl, "composing state", toString(mComposingStatus));
+      return resultEl;
+    }
 
   }
 }

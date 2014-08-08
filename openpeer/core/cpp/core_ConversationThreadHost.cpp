@@ -38,7 +38,7 @@
 #include <openpeer/core/internal/core_Helper.h>
 #include <openpeer/core/internal/core_Stack.h>
 
-#include <openpeer/core/IConversationThreadComposingStatus.h>
+#include <openpeer/core/ComposingStatus.h>
 
 #include <openpeer/stack/IPublication.h>
 #include <openpeer/stack/IHelper.h>
@@ -458,8 +458,11 @@ namespace openpeer
               PeerContactPtr peerContact = PeerContact::create(getAssociatedMessageQueue(), mThisWeak.lock(), contact, info.mIdentityContacts);
               if (peerContact) {
                 if (!status.hasData()) {
-                  ElementPtr statusEl;
-                  IConversationThreadComposingStatus::updateComposingStatus(statusEl, IConversationThreadComposingStatus::ComposingState_Gone);
+                  ElementPtr statusEl = IConversationThread::createEmptyStatus();
+                  ComposingStatus statusGone(ComposingStatus::ComposingState_Gone);
+
+                  statusGone.insert(statusEl);
+
                   status = ContactStatusInfo(statusEl);
 
                   // force the base thread to accept this contact status (if this is the open thread)

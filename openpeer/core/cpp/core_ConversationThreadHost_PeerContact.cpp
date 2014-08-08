@@ -36,7 +36,7 @@
 #include <openpeer/core/internal/core_Contact.h>
 #include <openpeer/core/internal/core_Helper.h>
 
-#include <openpeer/core/IConversationThreadComposingStatus.h>
+#include <openpeer/core/ComposingStatus.h>
 
 #include <openpeer/services/IHelper.h>
 #include <openpeer/services/ISettings.h>
@@ -922,8 +922,11 @@ namespace openpeer
         ContactStatusInfo status;
 
         if (reportGone) {
-          ElementPtr statusEl;
-          IConversationThreadComposingStatus::updateComposingStatus(statusEl, IConversationThreadComposingStatus::ComposingState_Gone);
+          ElementPtr statusEl = IConversationThread::createEmptyStatus();
+          ComposingStatus statusGone(ComposingStatus::ComposingState_Gone);
+
+          statusGone.insert(statusEl);
+
           status = ContactStatusInfo(statusEl);
         }
 

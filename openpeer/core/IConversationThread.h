@@ -149,14 +149,24 @@ namespace openpeer
 
 
       //-----------------------------------------------------------------------
+      // PURPOSE: Create an empty JSON status blob ready to fill with
+      //          additional structure data
+      // NOTES:   Use "ComposingStatus" to insert composing status information
+      //          into this JSON blob.
+      static ElementPtr createEmptyStatus();
+
+
+      //-----------------------------------------------------------------------
       // PURPOSE: Get the status of a contact in the conversation thread.
+      // NOTES:   Use "ComposingStatus" structure to extract information out
+      //          of the composing structure.
       virtual ElementPtr getContactStatus(IContactPtr contact) const = 0;
 
 
       //-----------------------------------------------------------------------
       // PURPOSE: Set the status of yourself in the conversation thread
-      // NOTES:   Can use "IConversationThreadComposingStatus" to create
-      //          composing related contact statuses.
+      // NOTES:   Use "createEmptyStatus" to construct an empty status
+      //          and use "ComposingStatus" structure to fill with information.
       virtual void setStatusInThread(ElementPtr contactStatusInThreadOfSelf) = 0;
 
 

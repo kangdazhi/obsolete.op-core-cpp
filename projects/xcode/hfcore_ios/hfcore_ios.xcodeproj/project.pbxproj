@@ -35,8 +35,8 @@
 		00D223A11936863A0053AF47 /* core_PushMessaging.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00D223A01936863A0053AF47 /* core_PushMessaging.cpp */; };
 		00D31A1618DBCA0700957088 /* core_Account_DelegateFilter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00D31A1518DBCA0700957088 /* core_Account_DelegateFilter.cpp */; };
 		00F11C38189B4BDC00EB33BB /* core_Settings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00F11C37189B4BDC00EB33BB /* core_Settings.cpp */; };
-		00F8074019895D8400E14A52 /* core_ConversationThreadSystemMessage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00F8073F19895D8400E14A52 /* core_ConversationThreadSystemMessage.cpp */; };
-		00F80744198978B800E14A52 /* core_ConversationThreadComposingStatus.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00F80743198978B800E14A52 /* core_ConversationThreadComposingStatus.cpp */; };
+		00F8074019895D8400E14A52 /* core_ISystemMessage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00F8073F19895D8400E14A52 /* core_ISystemMessage.cpp */; };
+		00F80744198978B800E14A52 /* core_ComposingStatus.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00F80743198978B800E14A52 /* core_ComposingStatus.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -126,11 +126,11 @@
 		00F11C36189B4BAB00EB33BB /* ISettings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ISettings.h; sourceTree = "<group>"; };
 		00F11C37189B4BDC00EB33BB /* core_Settings.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Settings.cpp; sourceTree = "<group>"; };
 		00F11C39189B4BEC00EB33BB /* core_Settings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_Settings.h; sourceTree = "<group>"; };
-		00F8073F19895D8400E14A52 /* core_ConversationThreadSystemMessage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_ConversationThreadSystemMessage.cpp; sourceTree = "<group>"; };
-		00F8074119895DB800E14A52 /* IConversationThreadSystemMessage.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IConversationThreadSystemMessage.h; sourceTree = "<group>"; };
-		00F8074219895E2400E14A52 /* IConversationThreadComposingStatus.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IConversationThreadComposingStatus.h; sourceTree = "<group>"; };
-		00F80743198978B800E14A52 /* core_ConversationThreadComposingStatus.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_ConversationThreadComposingStatus.cpp; sourceTree = "<group>"; };
 		00FD0F37199529AC00F08FFA /* IPushPresence.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IPushPresence.h; sourceTree = "<group>"; };
+		00F8073F19895D8400E14A52 /* core_ISystemMessage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_ISystemMessage.cpp; sourceTree = "<group>"; };
+		00F8074119895DB800E14A52 /* ISystemMessage.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ISystemMessage.h; sourceTree = "<group>"; };
+		00F8074219895E2400E14A52 /* ComposingStatus.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ComposingStatus.h; sourceTree = "<group>"; };
+		00F80743198978B800E14A52 /* core_ComposingStatus.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_ComposingStatus.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -180,10 +180,9 @@
 				0063BF6916CA9B6900E6DB4D /* IAccount.h */,
 				005F60B41756B7C500BC3DD6 /* ICache.h */,
 				0063BF6A16CA9B6900E6DB4D /* ICall.h */,
+				00F8074219895E2400E14A52 /* ComposingStatus.h */,
 				0063BF6B16CA9B6900E6DB4D /* IContact.h */,
 				0063BF6D16CA9B6900E6DB4D /* IConversationThread.h */,
-				00F8074219895E2400E14A52 /* IConversationThreadComposingStatus.h */,
-				00F8074119895DB800E14A52 /* IConversationThreadSystemMessage.h */,
 				0063BF6E16CA9B6900E6DB4D /* IHelper.h */,
 				0063BF6F16CA9B6900E6DB4D /* IIdentity.h */,
 				0063BF7016CA9B6900E6DB4D /* IIdentityLookup.h */,
@@ -193,6 +192,7 @@
 				00FD0F37199529AC00F08FFA /* IPushPresence.h */,
 				00F11C36189B4BAB00EB33BB /* ISettings.h */,
 				0063BF8716CA9B6900E6DB4D /* IStack.h */,
+				00F8074119895DB800E14A52 /* ISystemMessage.h */,
 			);
 			path = core;
 			sourceTree = "<group>";
@@ -210,9 +210,8 @@
 				0063BF5916CA9B6900E6DB4D /* core_Call.cpp */,
 				0063BF5A16CA9B6900E6DB4D /* core_CallTransport.cpp */,
 				0063BF5B16CA9B6900E6DB4D /* core_Contact.cpp */,
+				00F80743198978B800E14A52 /* core_ComposingStatus.cpp */,
 				0063BF5D16CA9B6900E6DB4D /* core_ConversationThread.cpp */,
-				00F80743198978B800E14A52 /* core_ConversationThreadComposingStatus.cpp */,
-				00F8073F19895D8400E14A52 /* core_ConversationThreadSystemMessage.cpp */,
 				0063BF5E16CA9B6900E6DB4D /* core_ConversationThreadDocumentFetcher.cpp */,
 				0063BF5F16CA9B6900E6DB4D /* core_ConversationThreadHost.cpp */,
 				007B84EC1862AA8100BB1284 /* core_ConversationThreadHost_PeerContact.cpp */,
@@ -229,6 +228,7 @@
 				0088E8F91982CD6D00A7C6B7 /* core_PushMessaging_RegisterQuery.cpp */,
 				00F11C37189B4BDC00EB33BB /* core_Settings.cpp */,
 				0063BF6816CA9B6900E6DB4D /* core_Stack.cpp */,
+				00F8073F19895D8400E14A52 /* core_ISystemMessage.cpp */,
 				0041DAB1185E6472004D4219 /* core_thread.cpp */,
 			);
 			path = cpp;
@@ -327,7 +327,7 @@
 				00F11C38189B4BDC00EB33BB /* core_Settings.cpp in Sources */,
 				0063C11716CA9B6A00E6DB4D /* core_Call.cpp in Sources */,
 				0063C11816CA9B6A00E6DB4D /* core_CallTransport.cpp in Sources */,
-				00F80744198978B800E14A52 /* core_ConversationThreadComposingStatus.cpp in Sources */,
+				00F80744198978B800E14A52 /* core_ComposingStatus.cpp in Sources */,
 				00AE218F18D3ECA100F8CDB9 /* core_Account_ContactSubscription.cpp in Sources */,
 				0028818C18BF9257005C78F9 /* core_Backgrounding.cpp in Sources */,
 				0063C11916CA9B6A00E6DB4D /* core_Contact.cpp in Sources */,
@@ -345,7 +345,7 @@
 				0063C12216CA9B6A00E6DB4D /* core_Identity.cpp in Sources */,
 				00D223A11936863A0053AF47 /* core_PushMessaging.cpp in Sources */,
 				0063C12316CA9B6A00E6DB4D /* core_IdentityLookup.cpp in Sources */,
-				00F8074019895D8400E14A52 /* core_ConversationThreadSystemMessage.cpp in Sources */,
+				00F8074019895D8400E14A52 /* core_ISystemMessage.cpp in Sources */,
 				007B84ED1862AA8100BB1284 /* core_ConversationThreadHost_PeerContact.cpp in Sources */,
 				0063C12416CA9B6A00E6DB4D /* core_Logger.cpp in Sources */,
 				0063C12516CA9B6A00E6DB4D /* core_MediaEngine.cpp in Sources */,

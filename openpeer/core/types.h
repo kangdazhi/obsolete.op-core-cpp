@@ -77,6 +77,12 @@ namespace openpeer
 
     ZS_DECLARE_INTERACTION_PTR(IContact)
 
+    struct CallSystemMessage;
+    ZS_DECLARE_PTR(CallSystemMessage)
+
+    struct ComposingStatus;
+    ZS_DECLARE_PTR(ComposingStatus)
+
     //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------
@@ -201,6 +207,7 @@ namespace openpeer
     ZS_DECLARE_INTERACTION_PTR(IPushPresenceRegisterQuery)
     ZS_DECLARE_INTERACTION_PTR(ISettings)
     ZS_DECLARE_INTERACTION_PTR(ISettingsDelegate)
+    ZS_DECLARE_INTERACTION_PTR(ISystemMessage)
     ZS_DECLARE_INTERACTION_PTR(IStack)
     ZS_DECLARE_INTERACTION_PTR(IStackAutoCleanup)
     ZS_DECLARE_INTERACTION_PTR(IStackMessageQueue)
