@@ -42,10 +42,10 @@ namespace openpeer
     //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------
     #pragma mark
-    #pragma mark IConversationThreadComposingStatus
+    #pragma mark struct ComposingStatus
     #pragma mark
 
-    interaction IConversationThreadComposingStatus
+    struct ComposingStatus
     {
       enum ComposingStates
       {
@@ -61,29 +61,17 @@ namespace openpeer
       static const char *toString(ComposingStates state);
       static ComposingStates toComposingState(const char *state);
 
-      //-----------------------------------------------------------------------
-      // PURPOSE: Creates or updates a "contactStatus" in conversation thread
-      //          JSON information blob.
-      // RETURNS: ioContactStatusInThreadEl- the existing contact status JSON
-      //                                     blob is edited in place and/or a
-      //                                     new JSON blob is created
-      // NOTES:   If ioContactStatusInThreadEl is empty and the state passed
-      //          in is "ComposingState_None" or "ComposingState_Inactive" the
-      //          ioContactStatusInThreadEl will continue to be set to
-      //          ElementPtr() without a new JSON blob being constructed.
-      static void updateComposingStatus(
-                                        ElementPtr &ioContactStatusInThreadEl, // value can start as ElementPtr() and will be automatically filled in
-                                        ComposingStates composing              // the new composing state
-                                        );
+      ComposingStates mComposingStatus;
 
-      //-----------------------------------------------------------------------
-      // PURPOSE: Given a "contactStatus" in conversation thread JSON
-      //          information blob, extract out the composing state (if any)
-      // RETURNS: "ComposingState_None" when there is no composing state or the
-      //          current composing state.
-      static ComposingStates getComposingStatus(ElementPtr contactStatusInThreadEl);
+      ComposingStatus();
+      ComposingStatus(ComposingStates state);
+      ComposingStatus(const ComposingStatus &rValue);
 
-      virtual ~IConversationThreadComposingStatus() {}  // make polymophic
+      static ComposingStatusPtr extract(ElementPtr dataEl);
+      void insert(ElementPtr dataEl);
+
+      bool hasData() const;
+      ElementPtr toDebug() const;
     };
 
   }

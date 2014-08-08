@@ -36,6 +36,7 @@
 #include <openpeer/core/IBackgrounding.h>
 #include <openpeer/core/ICache.h>
 #include <openpeer/core/ICall.h>
+#include <openpeer/core/ComposingStatus.h>
 #include <openpeer/core/IConversationThread.h>
 #include <openpeer/core/IContact.h>
 #include <openpeer/core/IHelper.h>
@@ -45,3 +46,4 @@
 #include <openpeer/core/IMediaEngine.h>
 #include <openpeer/core/ISettings.h>
 #include <openpeer/core/IStack.h>
+#include <openpeer/core/ISystemMessage.h>

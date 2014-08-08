@@ -39,7 +39,7 @@
 #include <openpeer/core/internal/core_Helper.h>
 #include <openpeer/core/internal/core_Stack.h>
 
-#include <openpeer/core/IConversationThreadComposingStatus.h>
+#include <openpeer/core/ComposingStatus.h>
 
 #include <openpeer/stack/IHelper.h>
 
@@ -549,6 +549,12 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      ElementPtr ConversationThread::createEmptyStatus()
+      {
+        return Element::create("status");
+      }
+
+      //-----------------------------------------------------------------------
       ElementPtr ConversationThread::getContactStatus(IContactPtr contact) const
       {
         ZS_THROW_INVALID_ARGUMENT_IF(!contact)
@@ -917,8 +923,15 @@ namespace openpeer
           return true;
         }
 
-        if (IConversationThreadComposingStatus::ComposingState_Gone == IConversationThreadComposingStatus::getComposingStatus(existingStatus.mStatusEl)) {
-          if (IConversationThreadComposingStatus::ComposingState_Gone != IConversationThreadComposingStatus::getComposingStatus(newStatus.mStatusEl)) {
+        ComposingStatusPtr existingComposingStatus = ComposingStatus::extract(existingStatus.mStatusEl);
+        ComposingStatusPtr newComposingStatus = ComposingStatus::extract(existingStatus.mStatusEl);
+
+
+        ComposingStatus::ComposingStates existingState = (existingComposingStatus ? existingComposingStatus->mComposingStatus : ComposingStatus::ComposingState_None);
+        ComposingStatus::ComposingStates newState = (newComposingStatus ? newComposingStatus->mComposingStatus : ComposingStatus::ComposingState_None);
+
+        if (ComposingStatus::ComposingState_Gone == existingState) {
+          if (ComposingStatus::ComposingState_Gone != newState) {
             ZS_LOG_TRACE(slog("should update contact status as old status was gone but new status is not gone") + ZS_PARAM("new status", newStatus.toDebug()) + ZS_PARAM("existing status", newStatus.toDebug()))
             return true;
           }
@@ -941,8 +954,8 @@ namespace openpeer
           return false;
         }
 
-        if (IConversationThreadComposingStatus::ComposingState_None == IConversationThreadComposingStatus::getComposingStatus(existingStatus.mStatusEl)) {
-          if (IConversationThreadComposingStatus::ComposingState_None != IConversationThreadComposingStatus::getComposingStatus(newStatus.mStatusEl)) {
+        if (ComposingStatus::ComposingState_None == existingState) {
+          if (ComposingStatus::ComposingState_None != newState) {
             ZS_LOG_TRACE(slog("should update contact status as new status has status (but old did not)") + ZS_PARAM("new status", newStatus.toDebug()) + ZS_PARAM("existing status", newStatus.toDebug()))
             return true;
           }
@@ -2018,6 +2031,12 @@ namespace openpeer
                                                                           )
     {
       return internal::ConversationThread::getConversationThreadByID(account, threadID);
+    }
+
+    //-----------------------------------------------------------------------
+    ElementPtr IConversationThread::createEmptyStatus()
+    {
+      return internal::ConversationThread::createEmptyStatus();
     }
   }
 }
