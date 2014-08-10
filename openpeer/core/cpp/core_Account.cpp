@@ -1780,6 +1780,49 @@ namespace openpeer
         mLastErrorReason = reason;
         ZS_LOG_ERROR(Detail, debug("account error"))
       }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark IAccountFactory
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      IAccountFactory &IAccountFactory::singleton()
+      {
+        return AccountFactory::singleton();
+      }
+
+      //-----------------------------------------------------------------------
+      AccountPtr IAccountFactory::login(
+                                        IAccountDelegatePtr delegate,
+                                        IConversationThreadDelegatePtr conversationThreadDelegate,
+                                        ICallDelegatePtr callDelegate,
+                                        const char *namespaceGrantOuterFrameURLUponReload,
+                                        const char *grantID,
+                                        const char *lockboxServiceDomain,
+                                        bool forceCreateNewLockboxAccount
+                                        )
+      {
+        if (this) {}
+        return Account::login(delegate, conversationThreadDelegate, callDelegate, namespaceGrantOuterFrameURLUponReload, grantID, lockboxServiceDomain, forceCreateNewLockboxAccount);
+      }
+
+      //-----------------------------------------------------------------------
+      AccountPtr IAccountFactory::relogin(
+                                          IAccountDelegatePtr delegate,
+                                          IConversationThreadDelegatePtr conversationThreadDelegate,
+                                          ICallDelegatePtr callDelegate,
+                                          const char *namespaceGrantOuterFrameURLUponReload,
+                                          ElementPtr reloginInformation
+                                          )
+      {
+        if (this) {}
+        return Account::relogin(delegate, conversationThreadDelegate, callDelegate, namespaceGrantOuterFrameURLUponReload, reloginInformation);
+      }
+
     }
 
     //-------------------------------------------------------------------------

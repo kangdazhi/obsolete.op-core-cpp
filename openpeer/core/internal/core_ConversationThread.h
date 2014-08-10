@@ -32,8 +32,9 @@
 #pragma once
 
 #include <openpeer/core/internal/types.h>
-#include <openpeer/core/IConversationThread.h>
 #include <openpeer/core/internal/core_thread.h>
+
+#include <openpeer/core/IConversationThread.h>
 
 #include <openpeer/services/IHelper.h>
 #include <openpeer/services/IWakeDelegate.h>
@@ -732,6 +733,8 @@ namespace openpeer
                                                                const SplitMap &split
                                                                );
       };
+
+      class ConversationThreadFactory : public IFactory<IConversationThreadFactory> {};
     }
   }
 }

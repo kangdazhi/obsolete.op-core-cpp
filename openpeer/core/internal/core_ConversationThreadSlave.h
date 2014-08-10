@@ -428,6 +428,7 @@ namespace openpeer
                                                                          );
       };
 
+      class ConversationThreadSlaveFactory : public IFactory<IConversationThreadSlaveFactory> {};
     }
   }
 }

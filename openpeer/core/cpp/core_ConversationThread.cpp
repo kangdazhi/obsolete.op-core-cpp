@@ -1968,6 +1968,43 @@ namespace openpeer
           ZS_LOG_WARNING(Detail, log("conversation thread delegate gone"))
         }
       }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark IConversationThreadFactory
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      IConversationThreadFactory &IConversationThreadFactory::singleton()
+      {
+        return ConversationThreadFactory::singleton();
+      }
+
+      //-----------------------------------------------------------------------
+      ConversationThreadPtr IConversationThreadFactory::createConversationThread(
+                                                                                 AccountPtr account,
+                                                                                 const IdentityContactList &identityContacts
+                                                                                 )
+      {
+        if (this) {}
+        return ConversationThread::create(account, identityContacts);
+      }
+
+      //-----------------------------------------------------------------------
+      ConversationThreadPtr IConversationThreadFactory::createConversationThread(
+                                                                                 AccountPtr account,
+                                                                                 ILocationPtr peerLocation,
+                                                                                 IPublicationMetaDataPtr metaData,
+                                                                                 const SplitMap &split
+                                                                                 )
+      {
+        if (this) {}
+        return ConversationThread::create(account, peerLocation, metaData, split);
+      }
+
     }
 
     //-------------------------------------------------------------------------

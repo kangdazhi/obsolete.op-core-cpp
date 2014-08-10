@@ -32,6 +32,7 @@
 #pragma once
 
 #include <openpeer/core/internal/types.h>
+
 #include <openpeer/core/IMediaEngine.h>
 
 #include <zsLib/MessageQueueAssociator.h>
@@ -460,6 +461,8 @@ namespace openpeer
 
         virtual MediaEnginePtr createMediaEngine(IMediaEngineDelegatePtr delegate);
       };
+
+      class MediaEngineFactory : public IFactory<IMediaEngineFactory> {};
     }
   }
 }

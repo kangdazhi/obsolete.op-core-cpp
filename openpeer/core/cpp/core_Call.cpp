@@ -2761,6 +2761,44 @@ namespace openpeer
         if (outIsRTP) *outIsRTP = false;
         return bogus;
       }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark ICallFactory
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      ICallFactory &ICallFactory::singleton()
+      {
+        return CallFactory::singleton();
+      }
+
+      //-----------------------------------------------------------------------
+      CallPtr ICallFactory::placeCall(
+                                      ConversationThreadPtr conversationThread,
+                                      IContactPtr toContact,
+                                      bool includeAudio,
+                                      bool includeVideo
+                                      )
+      {
+        if (this) {}
+        return Call::placeCall(conversationThread, toContact, includeAudio, includeVideo);
+      }
+
+      //-----------------------------------------------------------------------
+      CallPtr ICallFactory::createForIncomingCall(
+                                                  ConversationThreadPtr inConversationThread,
+                                                  ContactPtr callerContact,
+                                                  const DialogPtr &remoteDialog
+                                                  )
+      {
+        if (this) {}
+        return Call::createForIncomingCall(inConversationThread, callerContact, remoteDialog);
+      }
+
     }
 
     //-------------------------------------------------------------------------

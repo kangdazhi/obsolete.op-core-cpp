@@ -32,6 +32,8 @@
 #pragma once
 
 #include <openpeer/core/internal/types.h>
+
+#include <openpeer/core/IAccount.h>
 #include <openpeer/core/IPushMessaging.h>
 
 #include <openpeer/core/internal/core_Account.h>
@@ -315,6 +317,7 @@ namespace openpeer
                                         );
       };
 
+      class PushMessagingFactory : public IFactory<IPushMessagingFactory> {};
     }
   }
 }

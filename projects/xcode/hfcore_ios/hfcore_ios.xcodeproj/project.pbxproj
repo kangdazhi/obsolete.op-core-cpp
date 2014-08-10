@@ -19,7 +19,6 @@
 		0063C11C16CA9B6A00E6DB4D /* core_ConversationThreadDocumentFetcher.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BF5E16CA9B6900E6DB4D /* core_ConversationThreadDocumentFetcher.cpp */; };
 		0063C11D16CA9B6A00E6DB4D /* core_ConversationThreadHost.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BF5F16CA9B6900E6DB4D /* core_ConversationThreadHost.cpp */; };
 		0063C11E16CA9B6A00E6DB4D /* core_ConversationThreadSlave.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BF6016CA9B6900E6DB4D /* core_ConversationThreadSlave.cpp */; };
-		0063C11F16CA9B6A00E6DB4D /* core_Factory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BF6116CA9B6900E6DB4D /* core_Factory.cpp */; };
 		0063C12016CA9B6A00E6DB4D /* core_Helper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BF6216CA9B6900E6DB4D /* core_Helper.cpp */; };
 		0063C12216CA9B6A00E6DB4D /* core_Identity.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BF6416CA9B6900E6DB4D /* core_Identity.cpp */; };
 		0063C12316CA9B6A00E6DB4D /* core_IdentityLookup.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063BF6516CA9B6900E6DB4D /* core_IdentityLookup.cpp */; };
@@ -34,6 +33,8 @@
 		00AE219018D3ECA100F8CDB9 /* core_Account_LocationSubscription.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00AE218E18D3ECA100F8CDB9 /* core_Account_LocationSubscription.cpp */; };
 		00D223A11936863A0053AF47 /* core_PushMessaging.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00D223A01936863A0053AF47 /* core_PushMessaging.cpp */; };
 		00D31A1618DBCA0700957088 /* core_Account_DelegateFilter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00D31A1518DBCA0700957088 /* core_Account_DelegateFilter.cpp */; };
+		00E493C41997A75100335BB5 /* core_Encryptor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00E493C31997A75100335BB5 /* core_Encryptor.cpp */; };
+		00E493C71997E4B100335BB5 /* core_Decryptor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00E493C61997E4B100335BB5 /* core_Decryptor.cpp */; };
 		00F11C38189B4BDC00EB33BB /* core_Settings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00F11C37189B4BDC00EB33BB /* core_Settings.cpp */; };
 		00F8074019895D8400E14A52 /* core_ISystemMessage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00F8073F19895D8400E14A52 /* core_ISystemMessage.cpp */; };
 		00F80744198978B800E14A52 /* core_ComposingStatus.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00F80743198978B800E14A52 /* core_ComposingStatus.cpp */; };
@@ -74,7 +75,6 @@
 		0063BF5E16CA9B6900E6DB4D /* core_ConversationThreadDocumentFetcher.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_ConversationThreadDocumentFetcher.cpp; sourceTree = "<group>"; };
 		0063BF5F16CA9B6900E6DB4D /* core_ConversationThreadHost.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = core_ConversationThreadHost.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		0063BF6016CA9B6900E6DB4D /* core_ConversationThreadSlave.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = core_ConversationThreadSlave.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
-		0063BF6116CA9B6900E6DB4D /* core_Factory.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Factory.cpp; sourceTree = "<group>"; };
 		0063BF6216CA9B6900E6DB4D /* core_Helper.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Helper.cpp; sourceTree = "<group>"; };
 		0063BF6416CA9B6900E6DB4D /* core_Identity.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Identity.cpp; sourceTree = "<group>"; };
 		0063BF6516CA9B6900E6DB4D /* core_IdentityLookup.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_IdentityLookup.cpp; sourceTree = "<group>"; };
@@ -99,7 +99,6 @@
 		0063BF7B16CA9B6900E6DB4D /* core_ConversationThreadDocumentFetcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = core_ConversationThreadDocumentFetcher.h; sourceTree = "<group>"; };
 		0063BF7C16CA9B6900E6DB4D /* core_ConversationThreadHost.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = core_ConversationThreadHost.h; sourceTree = "<group>"; };
 		0063BF7D16CA9B6900E6DB4D /* core_ConversationThreadSlave.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = core_ConversationThreadSlave.h; sourceTree = "<group>"; };
-		0063BF7E16CA9B6900E6DB4D /* core_Factory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = core_Factory.h; sourceTree = "<group>"; };
 		0063BF7F16CA9B6900E6DB4D /* core_Helper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = core_Helper.h; sourceTree = "<group>"; };
 		0063BF8116CA9B6900E6DB4D /* core_Identity.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = core_Identity.h; sourceTree = "<group>"; };
 		0063BF8216CA9B6900E6DB4D /* core_IdentityLookup.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = core_IdentityLookup.h; sourceTree = "<group>"; };
@@ -123,14 +122,20 @@
 		00D223A2193686540053AF47 /* core_PushMessaging.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_PushMessaging.h; sourceTree = "<group>"; };
 		00D31A1518DBCA0700957088 /* core_Account_DelegateFilter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Account_DelegateFilter.cpp; sourceTree = "<group>"; };
 		00D31A1718DBCA1800957088 /* core_Account_DelegateFilter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_Account_DelegateFilter.h; sourceTree = "<group>"; };
+		00E493A819968C2700335BB5 /* IDecryptor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IDecryptor.h; sourceTree = "<group>"; };
+		00E493A919968C2700335BB5 /* IEncryptor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IEncryptor.h; sourceTree = "<group>"; };
+		00E493C31997A75100335BB5 /* core_Encryptor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Encryptor.cpp; sourceTree = "<group>"; };
+		00E493C51997A75D00335BB5 /* core_Encryptor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_Encryptor.h; sourceTree = "<group>"; };
+		00E493C61997E4B100335BB5 /* core_Decryptor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Decryptor.cpp; sourceTree = "<group>"; };
+		00E493C81997E4BD00335BB5 /* core_Decryptor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_Decryptor.h; sourceTree = "<group>"; };
 		00F11C36189B4BAB00EB33BB /* ISettings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ISettings.h; sourceTree = "<group>"; };
 		00F11C37189B4BDC00EB33BB /* core_Settings.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Settings.cpp; sourceTree = "<group>"; };
 		00F11C39189B4BEC00EB33BB /* core_Settings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_Settings.h; sourceTree = "<group>"; };
-		00FD0F37199529AC00F08FFA /* IPushPresence.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IPushPresence.h; sourceTree = "<group>"; };
 		00F8073F19895D8400E14A52 /* core_ISystemMessage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_ISystemMessage.cpp; sourceTree = "<group>"; };
 		00F8074119895DB800E14A52 /* ISystemMessage.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ISystemMessage.h; sourceTree = "<group>"; };
 		00F8074219895E2400E14A52 /* ComposingStatus.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ComposingStatus.h; sourceTree = "<group>"; };
 		00F80743198978B800E14A52 /* core_ComposingStatus.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_ComposingStatus.cpp; sourceTree = "<group>"; };
+		00FD0F37199529AC00F08FFA /* IPushPresence.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IPushPresence.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -183,6 +188,8 @@
 				00F8074219895E2400E14A52 /* ComposingStatus.h */,
 				0063BF6B16CA9B6900E6DB4D /* IContact.h */,
 				0063BF6D16CA9B6900E6DB4D /* IConversationThread.h */,
+				00E493A819968C2700335BB5 /* IDecryptor.h */,
+				00E493A919968C2700335BB5 /* IEncryptor.h */,
 				0063BF6E16CA9B6900E6DB4D /* IHelper.h */,
 				0063BF6F16CA9B6900E6DB4D /* IIdentity.h */,
 				0063BF7016CA9B6900E6DB4D /* IIdentityLookup.h */,
@@ -217,7 +224,8 @@
 				007B84EC1862AA8100BB1284 /* core_ConversationThreadHost_PeerContact.cpp */,
 				007B84EF1862AE1300BB1284 /* core_ConversationThreadHost_PeerLocation.cpp */,
 				0063BF6016CA9B6900E6DB4D /* core_ConversationThreadSlave.cpp */,
-				0063BF6116CA9B6900E6DB4D /* core_Factory.cpp */,
+				00E493C61997E4B100335BB5 /* core_Decryptor.cpp */,
+				00E493C31997A75100335BB5 /* core_Encryptor.cpp */,
 				0063BF6216CA9B6900E6DB4D /* core_Helper.cpp */,
 				0063BF6416CA9B6900E6DB4D /* core_Identity.cpp */,
 				0063BF6516CA9B6900E6DB4D /* core_IdentityLookup.cpp */,
@@ -254,7 +262,8 @@
 				007B84EE1862AA9300BB1284 /* core_ConversationThreadHost_PeerContact.h */,
 				007B84F11862AE2600BB1284 /* core_ConversationThreadHost_PeerLocation.h */,
 				0063BF7D16CA9B6900E6DB4D /* core_ConversationThreadSlave.h */,
-				0063BF7E16CA9B6900E6DB4D /* core_Factory.h */,
+				00E493C81997E4BD00335BB5 /* core_Decryptor.h */,
+				00E493C51997A75D00335BB5 /* core_Encryptor.h */,
 				0063BF7F16CA9B6900E6DB4D /* core_Helper.h */,
 				0063BF8116CA9B6900E6DB4D /* core_Identity.h */,
 				0063BF8216CA9B6900E6DB4D /* core_IdentityLookup.h */,
@@ -328,9 +337,11 @@
 				0063C11716CA9B6A00E6DB4D /* core_Call.cpp in Sources */,
 				0063C11816CA9B6A00E6DB4D /* core_CallTransport.cpp in Sources */,
 				00F80744198978B800E14A52 /* core_ComposingStatus.cpp in Sources */,
+				00E493C71997E4B100335BB5 /* core_Decryptor.cpp in Sources */,
 				00AE218F18D3ECA100F8CDB9 /* core_Account_ContactSubscription.cpp in Sources */,
 				0028818C18BF9257005C78F9 /* core_Backgrounding.cpp in Sources */,
 				0063C11916CA9B6A00E6DB4D /* core_Contact.cpp in Sources */,
+				00E493C41997A75100335BB5 /* core_Encryptor.cpp in Sources */,
 				0063C11B16CA9B6A00E6DB4D /* core_ConversationThread.cpp in Sources */,
 				0088E8F81982956A00A7C6B7 /* core_PushMessaging_PushQuery.cpp in Sources */,
 				007B84F01862AE1300BB1284 /* core_ConversationThreadHost_PeerLocation.cpp in Sources */,
@@ -338,7 +349,6 @@
 				0063C11C16CA9B6A00E6DB4D /* core_ConversationThreadDocumentFetcher.cpp in Sources */,
 				0063C11D16CA9B6A00E6DB4D /* core_ConversationThreadHost.cpp in Sources */,
 				0063C11E16CA9B6A00E6DB4D /* core_ConversationThreadSlave.cpp in Sources */,
-				0063C11F16CA9B6A00E6DB4D /* core_Factory.cpp in Sources */,
 				0088E8FA1982CD6D00A7C6B7 /* core_PushMessaging_RegisterQuery.cpp in Sources */,
 				0063C12016CA9B6A00E6DB4D /* core_Helper.cpp in Sources */,
 				00AE219018D3ECA100F8CDB9 /* core_Account_LocationSubscription.cpp in Sources */,

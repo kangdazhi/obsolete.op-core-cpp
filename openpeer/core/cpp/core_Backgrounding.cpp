@@ -402,6 +402,27 @@ namespace openpeer
         return Log::Params(message, objectEl);
       }
 
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark IBackgroundingFactory
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      IBackgroundingFactory &IBackgroundingFactory::singleton()
+      {
+        return BackgroundingFactory::singleton();
+      }
+
+      //-----------------------------------------------------------------------
+      BackgroundingPtr IBackgroundingFactory::createForBackgrounding()
+      {
+        if (this) {}
+        return Backgrounding::create();
+      }
+
     }
 
     //-------------------------------------------------------------------------

@@ -36,6 +36,7 @@
 #include <openpeer/stack/types.h>
 #include <openpeer/stack/message/types.h>
 #include <openpeer/services/types.h>
+#include <openpeer/services/IFactory.h>
 
 namespace openpeer
 {
@@ -120,6 +121,8 @@ namespace openpeer
 
       ZS_DECLARE_USING_PTR(stack::message, IdentityInfo)
 
+      using services::IFactory;
+
       ZS_DECLARE_USING_PTR(services, IBackgrounding)
       ZS_DECLARE_USING_PTR(services, IBackgroundingSubscription)
       ZS_DECLARE_USING_PTR(services, IBackgroundingNotifier)
@@ -174,7 +177,8 @@ namespace openpeer
       ZS_DECLARE_CLASS_PTR(ConversationThreadHost)
       ZS_DECLARE_CLASS_PTR(ConversationThreadSlave)
       ZS_DECLARE_CLASS_PTR(ConversationThreadDocumentFetcher)
-      ZS_DECLARE_CLASS_PTR(Factory)
+      ZS_DECLARE_CLASS_PTR(Encryptor)
+      ZS_DECLARE_CLASS_PTR(Decryptor)
       ZS_DECLARE_CLASS_PTR(Identity)
       ZS_DECLARE_CLASS_PTR(IdentityLookup)
       ZS_DECLARE_CLASS_PTR(MediaEngine)

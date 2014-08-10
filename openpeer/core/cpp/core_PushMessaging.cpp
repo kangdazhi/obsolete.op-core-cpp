@@ -1014,6 +1014,31 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark IPushMessagingFactory
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      IPushMessagingFactory &IPushMessagingFactory::singleton()
+      {
+        return PushMessagingFactory::singleton();
+      }
+
+      //-----------------------------------------------------------------------
+      PushMessagingPtr IPushMessagingFactory::create(
+                                                     IPushMessagingDelegatePtr delegate,
+                                                     IPushMessagingDatabaseAbstractionDelegatePtr databaseDelegate,
+                                                     IAccountPtr account
+                                                     )
+      {
+        if (this) {}
+        return PushMessaging::create(delegate, databaseDelegate, account);
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
     }
 
     //-------------------------------------------------------------------------

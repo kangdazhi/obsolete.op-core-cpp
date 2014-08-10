@@ -381,6 +381,8 @@ namespace openpeer
                                                                        thread::Details::ConversationThreadStates state = thread::Details::ConversationThreadState_Open
                                                                        );
       };
+
+      class ConversationThreadHostFactory : public IFactory<IConversationThreadHostFactory> {};
     }
   }
 }

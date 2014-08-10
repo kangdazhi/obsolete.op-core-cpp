@@ -956,6 +956,32 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark IIdentityLookupFactory
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      IIdentityLookupFactory &IIdentityLookupFactory::singleton()
+      {
+        return IdentityLookupFactory::singleton();
+      }
+
+      //-----------------------------------------------------------------------
+      IdentityLookupPtr IIdentityLookupFactory::create(
+                                                       IAccountPtr account,
+                                                       IIdentityLookupDelegatePtr delegate,
+                                                       const IdentityLookupInfoList &identityLookupInfos,
+                                                       const char *identityServiceDomain
+                                                       )
+      {
+        if (this) {}
+        return IdentityLookup::create(account, delegate, identityLookupInfos, identityServiceDomain);
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
     }
 
     //-------------------------------------------------------------------------

@@ -2923,6 +2923,28 @@ namespace openpeer
         UseServicesHelper::debugAppend(objectEl, "type", mTransportType);
         return Log::Params(message, objectEl);
       }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark IMediaEngineFactory
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      IMediaEngineFactory &IMediaEngineFactory::singleton()
+      {
+        return MediaEngineFactory::singleton();
+      }
+
+      //-----------------------------------------------------------------------
+      MediaEnginePtr IMediaEngineFactory::createMediaEngine(IMediaEngineDelegatePtr delegate)
+      {
+        if (this) {}
+        return MediaEngine::create(delegate);
+      }
+
     }
 
     //-------------------------------------------------------------------------

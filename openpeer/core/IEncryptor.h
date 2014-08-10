@@ -32,22 +32,41 @@
 #pragma once
 
 #include <openpeer/core/types.h>
-#include <openpeer/core/IAccount.h>
-#include <openpeer/core/IBackgrounding.h>
-#include <openpeer/core/ICache.h>
-#include <openpeer/core/ICall.h>
-#include <openpeer/core/ComposingStatus.h>
-#include <openpeer/core/IConversationThread.h>
-#include <openpeer/core/IContact.h>
-#include <openpeer/core/IDecryptor.h>
-#include <openpeer/core/IEncryptor.h>
-#include <openpeer/core/IHelper.h>
-#include <openpeer/core/IIdentity.h>
-#include <openpeer/core/IIdentityLookup.h>
-#include <openpeer/core/ILogger.h>
-#include <openpeer/core/IMediaEngine.h>
-#include <openpeer/core/IPushMessaging.h>
-#include <openpeer/core/IPushPresence.h>
-#include <openpeer/core/ISettings.h>
-#include <openpeer/core/IStack.h>
-#include <openpeer/core/ISystemMessage.h>
+
+namespace openpeer
+{
+  namespace core
+  {
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    #pragma mark
+    #pragma mark IEncryptor
+    #pragma mark
+
+    interaction IEncryptor
+    {
+      //-----------------------------------------------------------------------
+      // PURPOSE: create an encryptor that will encrypt a given file
+      // RETURNS: null IEncryptorPtr() if file cannot be open otherwise
+      //          valid encryptor
+      static IEncryptorPtr create(
+                                  const char *inSourceFileName,
+                                  const char *inEncodingServiceName = "key"
+                                  );
+
+      //-----------------------------------------------------------------------
+      // PURPOSE: encrypt the next block of data and return result data
+      // RETURN:  next block of encrypted data or null SecureByteBlockPtr()
+      //          when no more data is available (or error occured).
+      virtual SecureByteBlockPtr encrypt() = 0;
+
+      //-----------------------------------------------------------------------
+      // PURPOSE: finalize and return the encoding string
+      // RETURN:  the encoding string otherwise String() when the encryption
+      //          failed
+      virtual String finalize() = 0;
+    };
+  }
+}

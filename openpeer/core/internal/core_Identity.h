@@ -32,6 +32,7 @@
 #pragma once
 
 #include <openpeer/core/internal/types.h>
+
 #include <openpeer/core/IIdentity.h>
 
 #include <openpeer/stack/IServiceIdentity.h>
@@ -254,6 +255,7 @@ namespace openpeer
         virtual IdentityPtr createFromExistingSession(IServiceIdentitySessionPtr session);
       };
 
+      class IdentityFactory : public IFactory<IIdentityFactory> {};
     }
   }
 }

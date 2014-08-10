@@ -83,6 +83,18 @@ namespace openpeer
     struct ComposingStatus;
     ZS_DECLARE_PTR(ComposingStatus)
 
+    struct PresenceStatus;
+    struct PresenceTimeZoneLocation;
+    struct PresenceGeographicLocation;
+    struct PresenceStreetLocation;
+    struct PresenceResources;
+
+    ZS_DECLARE_PTR(PresenceStatus)
+    ZS_DECLARE_PTR(PresenceTimeZoneLocation)
+    ZS_DECLARE_PTR(PresenceGeographicLocation)
+    ZS_DECLARE_PTR(PresenceStreetLocation)
+    ZS_DECLARE_PTR(PresenceResources)
+
     //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------
@@ -196,6 +208,9 @@ namespace openpeer
     ZS_DECLARE_INTERACTION_PTR(IConversationThreadComposingStatus)
     ZS_DECLARE_INTERACTION_PTR(IConversationThreadSystemMessage)
     ZS_DECLARE_INTERACTION_PTR(IContactPeerFilePublicLookup)
+    ZS_DECLARE_INTERACTION_PTR(IDecryptor)
+    ZS_DECLARE_INTERACTION_PTR(IEncryptor)
+    ZS_DECLARE_INTERACTION_PTR(IHelper)
     ZS_DECLARE_INTERACTION_PTR(IIdentity)
     ZS_DECLARE_INTERACTION_PTR(IIdentityLookup)
     ZS_DECLARE_INTERACTION_PTR(ILoggerDelegate)

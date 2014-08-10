@@ -70,5 +70,6 @@ namespace openpeer
                                    size_t &outBufferSizeInBytes
                                    );
     };
+
   }
 }

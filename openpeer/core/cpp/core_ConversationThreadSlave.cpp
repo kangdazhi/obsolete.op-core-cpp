@@ -1735,6 +1735,32 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark IConversationThreadSlaveFactory
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      IConversationThreadSlaveFactory &IConversationThreadSlaveFactory::singleton()
+      {
+        return ConversationThreadSlaveFactory::singleton();
+      }
+
+      //-----------------------------------------------------------------------
+      ConversationThreadSlavePtr IConversationThreadSlaveFactory::createConversationThreadSlave(
+                                                                                                ConversationThreadPtr baseThread,
+                                                                                                ILocationPtr peerLocation,
+                                                                                                IPublicationMetaDataPtr metaData,
+                                                                                                const SplitMap &split,
+                                                                                                const char *serverName
+                                                                                                )
+      {
+        if (this) {}
+        return ConversationThreadSlave::create(baseThread, peerLocation, metaData, split, serverName);
+      }
+
     }
   }
 }

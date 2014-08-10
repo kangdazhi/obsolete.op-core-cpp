@@ -1304,6 +1304,31 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark IConversationThreadHostFactory
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      IConversationThreadHostFactory &IConversationThreadHostFactory::singleton()
+      {
+        return ConversationThreadHostFactory::singleton();
+      }
+
+      //-----------------------------------------------------------------------
+      ConversationThreadHostPtr IConversationThreadHostFactory::createConversationThreadHost(
+                                                                                             ConversationThreadPtr baseThread,
+                                                                                             const char *serverName,
+                                                                                             thread::Details::ConversationThreadStates state
+                                                                                             )
+      {
+        if (this) {}
+        return ConversationThreadHost::create(baseThread, serverName, state);
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
     }
   }
 }

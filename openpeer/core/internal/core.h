@@ -43,6 +43,8 @@
 #include <openpeer/core/internal/core_ConversationThreadHost_PeerLocation.h>
 #include <openpeer/core/internal/core_ConversationThreadSlave.h>
 #include <openpeer/core/internal/core_ConversationThreadDocumentFetcher.h>
+//#include <openpeer/core/internal/stack_Decryptor.h>
+#include <openpeer/core/internal/core_Encryptor.h>
 #include <openpeer/core/internal/core_Helper.h>
 #include <openpeer/core/internal/core_Identity.h>
 #include <openpeer/core/internal/core_IdentityLookup.h>

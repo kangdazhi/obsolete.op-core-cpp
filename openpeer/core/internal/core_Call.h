@@ -731,6 +731,7 @@ namespace openpeer
                                               );
       };
 
+      class CallFactory : public IFactory<ICallFactory> {};
     }
   }
 }

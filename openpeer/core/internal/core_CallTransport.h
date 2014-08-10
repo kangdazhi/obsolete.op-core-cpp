@@ -456,6 +456,7 @@ namespace openpeer
                                         );
       };
       
+      class CallTransportFactory : public IFactory<ICallTransportFactory> {};
     }
   }
 }

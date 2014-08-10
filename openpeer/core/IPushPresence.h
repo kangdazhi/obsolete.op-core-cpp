@@ -56,54 +56,22 @@ namespace openpeer
       };
       static const char *toString(PushPresenceStates state);
 
-      enum PresenceStatuses
-      {
-        PresenceStatus_None,
-
-        PresenceStatus_Busy,        // user is busy and wishes not to be contacted at this time
-        PresenceStatus_Away,        // user is not available
-        PresenceStatus_Idle,        // user is around but not active
-        PresenceStatus_Available,   // user is available
-      };
-
       ZS_DECLARE_TYPEDEF_PTR(std::list<IContactPtr>, ContactList)
 
       struct Status
       {
-        String mStatusID;                   // system will fill in this value
+        String mStatusID;                       // system will fill in this value
 
-        PresenceStatuses mStatusType;       // basic status type
-        String mStatusTypeExtended;         // extended information about status
+        ElementPtr mStatusEl;
 
-        String mStatusMessage;              // user defined status message
+        Time mSent;                             // when was the status was sent, system will assign a value if not specified
+        Time mExpires;                          // optional, system will assign a long life time if not specified
 
-        ElementPtr mLocation;
+        IContactPtr mFrom;                      // what peer sent the status (system will fill in if sending a status out)
 
-        Time mSent;                         // when was the status was sent, system will assign a value if not specified
-        Time mExpires;                      // optional, system will assign a long life time if not specified
-
-        IContactPtr mFrom;                  // what peer sent the status (system will fill in if sending a status out)
+        static ElementPtr createEmptyStatus();  // create an emty status JSON object ready to be filled with presence data
       };
-
-      struct Location
-      {
-        String mLocationName;               // friendly name representing location, e.g. "Nat's Pup"
-        String mAddress;                    // street address of where to find
-        String mCity;                       // town or city
-        String mTerritory;                  // state or province
-        String mCountry;                    // location country
-
-        double mLatitude;                   // degrees from equator; positive is north and negative is south
-        double mLongitude;                  // degrees from zero meridian
-
-        double mAltitude;                   // height above sea level as measured in meters
-
-        double mDirection;                  // the direction being headed in degrees on a circle (0 = north, 90 = east, 180 = south, 270 = west)
-        double mSpeed;                      // speed moving in direction (meters / second)
-      };
-
       ZS_DECLARE_PTR(Status)
-      ZS_DECLARE_PTR(Location)
 
       typedef String ValueName;
       typedef std::list<ValueName> ValueNameList;
@@ -158,19 +126,6 @@ namespace openpeer
       //-----------------------------------------------------------------------
       // PURPOSE: cause a check to refresh data contained within the server
       virtual void recheckNow() = 0;
-
-      //-----------------------------------------------------------------------
-      // PURPOSE: extract a list of name / value pairs contained within
-      //          a push info structure
-      // RETURNS: a pointer to the name value map
-      static LocationPtr getLocation(const Status &status);
-
-      //-----------------------------------------------------------------------
-      // PURPOSE: create a JSON blob compatible with the PushInfo.mValues
-      //          based on a collection of name / value pairs.
-      // RETURNS: a pointer to the values blob or null ElementPtr() if no
-      //          values were found.
-      static ElementPtr createLocation(const Location &location);
     };
 
     //-------------------------------------------------------------------------
@@ -226,6 +181,188 @@ namespace openpeer
     interaction IPushPresenceRegisterQueryDelegate
     {
       virtual void onPushPresenceRegisterQueryCompleted(IPushPresenceRegisterQueryPtr query) = 0;
+    };
+
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    #pragma mark
+    #pragma mark struct PresenceStatus
+    #pragma mark
+
+    struct PresenceStatus
+    {
+      enum PresenceStatuses
+      {
+        PresenceStatus_None,
+
+        PresenceStatus_Busy,        // user is busy and wishes not to be contacted at this time
+        PresenceStatus_Away,        // user is not available
+        PresenceStatus_Idle,        // user is around but not active
+        PresenceStatus_Available,   // user is available
+      };
+
+      static const char *toString(PresenceStatuses state);
+      static PresenceStatuses toPresenceStatus(const char *state);
+
+      PresenceStatuses mStatus;           // basic status
+      String mExtendedStatus;             // extended status property related to status
+
+      String mStatusMessage;              // human readable message to display about status
+
+      int mPriority;                      // relative priority of this status; higher value is a greater priority;
+
+      PresenceStatus();
+      PresenceStatus(const PresenceStatus &rValue);
+
+      static PresenceStatusPtr extract(ElementPtr dataEl);
+      void insert(ElementPtr dataEl);
+
+      bool hasData() const;
+      ElementPtr toDebug() const;
+    };
+
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    #pragma mark
+    #pragma mark struct PresenceTimeZoneLocation
+    #pragma mark
+
+    struct PresenceTimeZoneLocation
+    {
+      Duration mOffset;           // +/- offset from GMT / UTC to calculate local time from UTC time
+      String mAbbreviation;       // time zone abbreviation for active time zone
+      String mName;               // current time zone full name for active time zone
+
+      String mCity;               // basing time zone off this city's location
+      String mCountry;            // basing time zone within this country
+
+      PresenceTimeZoneLocation();
+      PresenceTimeZoneLocation(const PresenceTimeZoneLocation &rValue);
+
+      static PresenceTimeZoneLocationPtr extract(ElementPtr dataEl);
+      void insert(ElementPtr dataEl);
+
+      bool hasData() const;
+      ElementPtr toDebug() const;
+    };
+
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    #pragma mark
+    #pragma mark struct PresenceGeographicLocation
+    #pragma mark
+
+    struct PresenceGeographicLocation
+    {
+      double mLatitude;                   // degrees from equator; positive is north and negative is south
+      double mLongitude;                  // degrees from zero meridian
+      double mGeographicAccuracyRadius;   // radious of accuracy for the latitude/longitude as expressed in meters; anegative value indicates an invalid geographic coordinate
+
+      double mAltitude;                   // height above sea level as measured in meters
+      double mAltitudeAccuracy;           // the absolute value of the + or - altitude accuracy in meters; a negative value indicates an invalid altitude
+
+      double mDirection;                  // the direction being headed in degrees on a circle (0 = north, 90 = east, 180 = south, 270 = west)
+      double mSpeed;                      // speed moving in direction (meters / second); a negative value indicates the speed/direction are invalid
+
+      PresenceGeographicLocation();
+      PresenceGeographicLocation(const PresenceGeographicLocation &rValue);
+
+      static PresenceGeographicLocationPtr extract(ElementPtr dataEl);
+      void insert(ElementPtr dataEl);
+
+      bool hasData() const;
+      ElementPtr toDebug() const;
+    };
+
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    #pragma mark
+    #pragma mark struct PresenceStreetLocation
+    #pragma mark
+
+    struct PresenceStreetLocation
+    {
+      String mFriendlyName;               // friendly name representing residence/business, e.g. "Nat's Pup"
+
+      String mSuiteNumber;                // a suite number within a building
+      String mBuildingFloor;              // the current floor of a building
+      String mBuilding;                   // a building name/number when at an address with multiple buildings
+
+      String mStreetNumber;               // the designated street number
+      String mStreetNumberSuffix;         // the street number suffix
+
+      String mStreetDirectionPrefix;      // N S E W NE NW SE SW if applicable
+      String mStreetName;                 // name of the street
+      String mStreetSuffix;               // E.g. "Ave" or "Dr"
+      String mStreetDirectionSuffix;      // N S E W NE NW SE SW if applicable
+
+      String mPostalCommunity;            // residence community, town, or city   (e.g. "Nepean")
+      String mServiceCommunity;           // serviced by (typically greater) community, town, or city (e.g. "Ottawa")
+
+      String mProvince;                   // state, province, or territory, (e.g. "Ontario")
+      String mCountry;                    // e.g. "Canada"
+
+      PresenceStreetLocation();
+      PresenceStreetLocation(const PresenceStreetLocation &rValue);
+
+      static PresenceStreetLocationPtr extract(ElementPtr dataEl);
+      void insert(ElementPtr dataEl);
+
+      bool hasData() const;
+      ElementPtr toDebug() const;
+    };
+
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    #pragma mark
+    #pragma mark struct PresenceResources
+    #pragma mark
+
+    struct PresenceResources
+    {
+      struct Resource
+      {
+        String mID;                       // resources with same ID are alternative formats/dimensions of the same information
+        String mRelatedID;                // alternative resources related to an existing ID
+        String mType;                     // purpose of resource so remote party can know what to do with resource
+
+        String mFriendlyName;             // human readable friendly name
+
+        String mResourceURL;              // where to download resource
+        String mMimeType;                 // mime type of resource
+        size_t mSize;                     // size in bytes of resource; 0 = unkonwn;
+
+        int mWidth;                       // width in pixels if known; negative means unknown
+        int mHeight;                      // height in pixels if known; negative means unknown
+        Duration mLength;                 // how long is audio/video
+
+        String mExternalLinkURL;          // external link to resource
+
+        String mEncoding;                 // if set, resource is encoded/encrypted using this algorithm/secret (use IEncryptor/IDecryptor)
+      };
+
+      ZS_DECLARE_TYPEDEF_PTR(std::list<Resource>, ResourceList)
+
+      ResourceList mResources;
+
+      PresenceResources();
+      PresenceResources(const PresenceResources &rValue);
+
+      static PresenceResourcesPtr extract(ElementPtr dataEl);
+      void insert(ElementPtr dataEl);
+
+      bool hasData() const;
+      ElementPtr toDebug() const;
     };
   }
 }

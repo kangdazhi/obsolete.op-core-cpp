@@ -1094,6 +1094,32 @@ namespace openpeer
 
         return resultEl;
       }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark ICallTransportFactory
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      ICallTransportFactory &ICallTransportFactory::singleton()
+      {
+        return CallTransportFactory::singleton();
+      }
+
+      //-----------------------------------------------------------------------
+      CallTransportPtr ICallTransportFactory::create(
+                                                     ICallTransportDelegatePtr delegate,
+                                                     const IICESocket::TURNServerInfoList &turnServers,
+                                                     const IICESocket::STUNServerInfoList &stunServers
+                                                     )
+      {
+        if (this) {}
+        return CallTransport::create(delegate, turnServers, stunServers);
+      }
+
     }
   }
 }

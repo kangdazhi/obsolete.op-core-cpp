@@ -170,6 +170,8 @@ namespace openpeer
         setString(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MESSAGE_TYPE, "push");
         setUInt(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_EXPIRES_IN_SECONDS, 60*60*24*(356/2));
 
+        setUInt(OPENPEER_CORE_SETTING_ENCRYPT_BLOCK_SIZE, (10*1024));
+
         stack::ISettings::applyDefaults();
       }
 

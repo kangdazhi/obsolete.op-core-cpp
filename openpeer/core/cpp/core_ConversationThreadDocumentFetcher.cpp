@@ -444,6 +444,30 @@ namespace openpeer
           notifyPublicationGone(peerLocation, metaData);
         }
       }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark IConversationThreadDocumentFetcherFactory
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      IConversationThreadDocumentFetcherFactory &IConversationThreadDocumentFetcherFactory::singleton()
+      {
+        return ConversationThreadDocumentFetcherFactory::singleton();
+      }
+
+      ConversationThreadDocumentFetcherPtr IConversationThreadDocumentFetcherFactory::create(
+                                                                                             IConversationThreadDocumentFetcherDelegatePtr delegate,
+                                                                                             IPublicationRepositoryPtr repository
+                                                                                             )
+      {
+        if (this) {}
+        return ConversationThreadDocumentFetcher::create(delegate, repository);
+      }
+
     }
   }
 }

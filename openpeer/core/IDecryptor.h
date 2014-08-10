@@ -31,50 +31,40 @@
 
 #pragma once
 
-#include <openpeer/core/internal/types.h>
-#include <openpeer/core/internal/core.h>
+#include <openpeer/core/types.h>
 
 namespace openpeer
 {
   namespace core
   {
-    namespace internal
+
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    #pragma mark
+    #pragma mark IDecryptor
+    #pragma mark
+
+    interaction IDecryptor
     {
       //-----------------------------------------------------------------------
+      // PURPOSE: create an decryptor that will decrypt a given file
+      static IDecryptorPtr create(
+                                  const char *inSourceFileName,
+                                  const char *inEncoding
+                                  );
+
       //-----------------------------------------------------------------------
+      // PURPOSE: decrypt the next block of data and return result data
+      // RETURN:  next block of decrypted data or null SecureByteBlockPtr()
+      //          when no more data is available (or error occured).
+      virtual SecureByteBlockPtr decrypt();
+
       //-----------------------------------------------------------------------
-      //-----------------------------------------------------------------------
-      #pragma mark
-      #pragma mark Factory
-      #pragma mark
-
-      class Factory : public IAccountFactory,
-                      public IBackgroundingFactory,
-                      public ICallFactory,
-                      public ICallTransportFactory,
-                      public IContactFactory,
-                      public IConversationThreadFactory,
-                      public IConversationThreadDocumentFetcherFactory,
-                      public IConversationThreadHostFactory,
-                      public IConversationThreadSlaveFactory,
-                      public IIdentityFactory,
-                      public IIdentityLookupFactory,
-                      public IMediaEngineFactory,
-                      public IPushMessagingFactory
-      {
-      public:
-        static void override(FactoryPtr override);
-
-        static Factory &singleton();
-
-      protected:
-        //---------------------------------------------------------------------
-        #pragma mark
-        #pragma mark Factory => (data)
-        #pragma mark
-
-        FactoryPtr mOverride;
-      };
-    }
+      // PURPOSE: finalize and return success/fail status
+      // RETURN:  true if successful otherwise false
+      virtual bool finalize() = 0;
+    };
   }
 }

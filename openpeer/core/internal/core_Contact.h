@@ -323,6 +323,7 @@ namespace openpeer
         virtual ContactPtr getForSelf(IAccountPtr account);
       };
 
+      class ContactFactory : public IFactory<IContactFactory> {};
     }
   }
 }

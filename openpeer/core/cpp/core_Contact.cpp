@@ -461,6 +461,53 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark IContactFactory
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      IContactFactory &IContactFactory::singleton()
+      {
+        return ContactFactory::singleton();
+      }
+
+      //-----------------------------------------------------------------------
+      ContactPtr IContactFactory::createFromPeer(
+                                                 AccountPtr account,
+                                                 IPeerPtr peer
+                                                 )
+      {
+        if (this) {}
+        return Contact::createFromPeer(account, peer);
+      }
+
+      //-----------------------------------------------------------------------
+      ContactPtr IContactFactory::createFromPeerURI(
+                                                    AccountPtr account,
+                                                    const char *peerURI
+                                                    )
+      {
+        if (this) {}
+        return Contact::createFromPeerURI(account, peerURI);
+      }
+
+      //-----------------------------------------------------------------------
+      ContactPtr IContactFactory::createFromPeerFilePublic(
+                                                           AccountPtr account,
+                                                           IPeerFilePublicPtr peerFilePublic
+                                                           )
+      {
+        if (this) {}
+        return Contact::createFromPeerFilePublic(account, peerFilePublic);
+      }
+
+      //-----------------------------------------------------------------------
+      ContactPtr IContactFactory::getForSelf(IAccountPtr account)
+      {
+        if (this) {}
+        return Contact::getForSelf(account);
+      }
+
     }
 
     //-------------------------------------------------------------------------

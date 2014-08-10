@@ -607,6 +607,55 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark IIdentityFactory
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      IIdentityFactory &IIdentityFactory::singleton()
+      {
+        return IdentityFactory::singleton();
+      }
+
+      //-----------------------------------------------------------------------
+      IdentityPtr IIdentityFactory::login(
+                                          IAccountPtr account,
+                                          IIdentityDelegatePtr delegate,
+                                          const char *identityProviderDomain,
+                                          const char *identityURI_or_identityBaseURI,
+                                          const char *outerFrameURLUponReload
+                                          )
+      {
+        if (this) {}
+        return Identity::login(account, delegate, identityProviderDomain, identityURI_or_identityBaseURI, outerFrameURLUponReload);
+      }
+
+      //-----------------------------------------------------------------------
+      IdentityPtr IIdentityFactory::loginWithIdentityPreauthorized(
+                                                                   IAccountPtr account,
+                                                                   IIdentityDelegatePtr delegate,
+                                                                   const char *identityProviderDomain,
+                                                                   const char *identityURI,
+                                                                   const char *identityAccessToken,
+                                                                   const char *identityAccessSecret,
+                                                                   Time identityAccessSecretExpires
+                                                                   )
+      {
+        if (this) {}
+        return Identity::loginWithIdentityPreauthorized(account, delegate, identityProviderDomain, identityURI, identityAccessToken, identityAccessSecret, identityAccessSecretExpires);
+      }
+
+      //-----------------------------------------------------------------------
+      IdentityPtr IIdentityFactory::createFromExistingSession(IServiceIdentitySessionPtr session)
+      {
+        if (this) {}
+        return Identity::createFromExistingSession(session);
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
     }
 
     //-------------------------------------------------------------------------

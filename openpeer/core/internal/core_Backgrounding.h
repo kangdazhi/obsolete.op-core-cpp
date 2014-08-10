@@ -307,6 +307,7 @@ namespace openpeer
         virtual BackgroundingPtr createForBackgrounding();
       };
 
+      class BackgroundingFactory : public IFactory<IBackgroundingFactory> {};
     }
   }
 }

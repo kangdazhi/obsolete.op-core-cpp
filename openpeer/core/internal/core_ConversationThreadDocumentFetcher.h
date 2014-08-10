@@ -225,6 +225,7 @@ namespace openpeer
                                                             );
       };
 
+      class ConversationThreadDocumentFetcherFactory : public IFactory<IConversationThreadDocumentFetcherFactory> {};
     }
   }
 }

@@ -32,6 +32,7 @@
 #pragma once
 
 #include <openpeer/core/internal/types.h>
+
 #include <openpeer/core/IIdentityLookup.h>
 
 #include <openpeer/stack/IBootstrappedNetwork.h>
@@ -281,6 +282,8 @@ namespace openpeer
                                          const char *identityServiceDomain
                                          );
       };
+
+      class IdentityLookupFactory : public IFactory<IIdentityLookupFactory> {};
     }
   }
 }
