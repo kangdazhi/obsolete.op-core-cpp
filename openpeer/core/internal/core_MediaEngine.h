@@ -206,8 +206,8 @@ namespace openpeer
         virtual void setFaceDetection(bool faceDetection);
         virtual bool getFaceDetection();
 
-        virtual CameraTypes getCameraType() const;
         virtual void setCameraType(CameraTypes type);
+        virtual CameraTypes getCameraType() const;
         
         virtual void startVideoCapture();
         virtual void stopVideoCapture();
@@ -293,6 +293,17 @@ namespace openpeer
         virtual int registerVoiceTransport();
         virtual int setVoiceTransportParameters();
 
+        virtual void internalSetVideoOrientation();
+        virtual void internalSetEcEnabled(bool enabled);
+        virtual void internalSetAgcEnabled(bool enabled);
+        virtual void internalSetNsEnabled(bool enabled);
+        virtual void internalSetMuteEnabled(bool enabled);
+        virtual bool internalGetMuteEnabled();
+        virtual void internalSetLoudspeakerEnabled(bool enabled);
+        virtual bool internalGetLoudspeakerEnabled();
+        virtual OutputAudioRoutes internalGetOutputAudioRoute();
+        virtual int internalGetVideoTransportStatistics(RtpRtcpStatistics &stat);
+        virtual int internalGetVoiceTransportStatistics(RtpRtcpStatistics &stat);
         virtual void internalStartCaptureRenderer();
         virtual void internalStopCaptureRenderer();
         virtual void internalStartVideoCapture();
@@ -384,11 +395,19 @@ namespace openpeer
         bool mAgcEnabled;
         bool mNsEnabled;
         String mVoiceRecordFile;
+        bool mMuteEnabled;
+        bool mLoudspeakerEnabled;
         VideoOrientations mDefaultVideoOrientation;
         VideoOrientations mRecordVideoOrientation;
+        bool mFaceDetection;
+        CameraTypes mCameraType;
+        void *mCaptureRenderView;
+        void *mChannelRenderView;
+        bool mContinuousVideoCapture;
 
         int mVoiceChannel;
         Transport *mVoiceTransport;
+        Transport *mVoiceExternalTransport;
         VoiceEngine *mVoiceEngine;
         VoiceBase *mVoiceBase;
         VoiceCodec *mVoiceCodec;
@@ -399,13 +418,12 @@ namespace openpeer
         VoiceHardware *mVoiceHardware;
         VoiceFile *mVoiceFile;
         bool mVoiceEngineReady;
-        bool mFaceDetection;
 
         int mVideoChannel;
         Transport *mVideoTransport;
+        Transport *mVideoExternalTransport;
         int mCaptureId;
         char mDeviceUniqueId[512];
-        CameraTypes mCameraType;
         VideoCaptureModule *mVcpm;
         VideoEngine *mVideoEngine;
         VideoBase *mVideoBase;
@@ -414,8 +432,6 @@ namespace openpeer
         VideoCapture *mVideoCapture;
         VideoRtpRtcp *mVideoRtpRtcp;
         VideoCodec *mVideoCodec;
-        void *mCaptureRenderView;
-        void *mChannelRenderView;
         bool mVideoEngineReady;
 
         RedirectTransport mRedirectVoiceTransport;
@@ -435,13 +451,28 @@ namespace openpeer
         bool mLifetimeHasRecordVideoCapture;
 
         bool mLifetimeInProgress;
+        
+        bool mLifetimeWantEcEnabled;
+        bool mLifetimeWantAgcEnabled;
+        bool mLifetimeWantNsEnabled;
+        String mLifetimeWantVoiceRecordFile;
+        bool mLifetimeWantMuteEnabled;
+        bool mLifetimeWantLoudspeakerEnabled;
+        OutputAudioRoutes mLifetimeOutputAudioRoute;
+        VideoOrientations mLifetimeWantDefaultVideoOrientation;
+        VideoOrientations mLifetimeWantRecordVideoOrientation;
+        bool mLifetimeWantSetVideoOrientation;
+        bool mLifetimeWantFaceDetection;
+        CameraTypes mLifetimeWantCameraType;
         void *mLifetimeWantCaptureRenderView;
         void *mLifetimeWantChannelRenderView;
-        CameraTypes mLifetimeWantCameraType;
-        bool mLifetimeContinuousVideoCapture;
-        
-        String mLifetimeVideoRecordFile;
-        bool mLifetimeSaveVideoToLibrary;
+        bool mLifetimeWantContinuousVideoCapture;
+        String mLifetimeWantVideoRecordFile;
+        bool mLifetimeWantSaveVideoToLibrary;
+        RtpRtcpStatistics mLifetimeVideoTransportStatistics;
+        RtpRtcpStatistics mLifetimeVoiceTransportStatistics;
+        Transport *mLifetimeWantVoiceExternalTransport;
+        Transport *mLifetimeWantVideoExternalTransport;
 
         mutable RecursiveLock mMediaEngineReadyLock;
       };
