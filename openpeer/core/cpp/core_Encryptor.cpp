@@ -65,7 +65,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       struct EncryptorData
       {
-        SHA1 hasher;
+        SHA1 mHasher;
       };
 
       //-----------------------------------------------------------------------
@@ -145,7 +145,7 @@ namespace openpeer
         size_t read = fread(*mBuffer, sizeof(BYTE), mBlockSize, mFile);
 
         if (0 != read) {
-          mData->hasher.Update(*mBuffer, read);
+          mData->mHasher.Update(*mBuffer, read);
           appendBuffer(mEncryptor->encrypt(*mBuffer, read));
         }
 
@@ -171,8 +171,8 @@ namespace openpeer
       {
         if (!mKeyID.hasData()) return String();
 
-        SecureByteBlock originalDataHash(mData->hasher.DigestSize());
-        mData->hasher.Final(originalDataHash);
+        SecureByteBlock originalDataHash(mData->mHasher.DigestSize());
+        mData->mHasher.Final(originalDataHash);
 
         String hexHash = UseServicesHelper::convertToHex(originalDataHash);
 

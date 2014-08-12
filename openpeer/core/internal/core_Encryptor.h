@@ -38,7 +38,7 @@
 
 #include <stdio.h>
 
-#define OPENPEER_CORE_SETTING_ENCRYPT_BLOCK_SIZE "openpeer-core-encrypt-block-size"
+#define OPENPEER_CORE_SETTING_ENCRYPT_BLOCK_SIZE "openpeer/core/encrypt-block-size"
 #define OPENPEER_CORE_KEYING_ENCODING_TYPE "https://meta.openpeer.org/2014/06/17/key-with-passphrase#aes-cfb-32-16-16-sha1-md5"
 
 namespace openpeer
