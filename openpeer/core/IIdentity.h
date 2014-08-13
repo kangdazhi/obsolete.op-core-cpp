@@ -47,6 +47,8 @@ namespace openpeer
 
     interaction IIdentity
     {
+      typedef stack::Token Token;
+
       enum IdentityStates
       {
         IdentityState_Pending,
@@ -77,9 +79,7 @@ namespace openpeer
                                                          IIdentityDelegatePtr delegate,
                                                          const char *identityProviderDomain,          // used when identity URI is of legacy or oauth-type
                                                          const char *identityURI,
-                                                         const char *identityAccessToken,
-                                                         const char *identityAccessSecret,
-                                                         Time identityAccessSecretExpires
+                                                         const Token &identityToken
                                                          );
 
       virtual IdentityStates getState(
@@ -97,9 +97,7 @@ namespace openpeer
 
       virtual void attachDelegateAndPreauthorizedLogin(
                                                        IIdentityDelegatePtr delegate,
-                                                       const char *identityAccessToken,
-                                                       const char *identityAccessSecret,
-                                                       Time identityAccessSecretExpires
+                                                       const Token &identityToken
                                                        ) = 0;
 
       virtual String getIdentityURI() const = 0;

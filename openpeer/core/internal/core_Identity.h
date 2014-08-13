@@ -123,9 +123,7 @@ namespace openpeer
                                                           IIdentityDelegatePtr delegate,
                                                           const char *identityProviderDomain,
                                                           const char *identityURI,
-                                                          const char *identityAccessToken,
-                                                          const char *identityAccessSecret,
-                                                          Time identityAccessSecretExpires
+                                                          const Token &identityToken
                                                           );
 
         virtual IdentityStates getState(
@@ -142,9 +140,7 @@ namespace openpeer
                                     );
         virtual void attachDelegateAndPreauthorizedLogin(
                                                          IIdentityDelegatePtr delegate,
-                                                         const char *identityAccessToken,
-                                                         const char *identityAccessSecret,
-                                                         Time identityAccessSecretExpires
+                                                         const Token &identityToken
                                                          );
 
         virtual String getIdentityURI() const;
@@ -232,6 +228,8 @@ namespace openpeer
 
       interaction IIdentityFactory
       {
+        typedef stack::Token Token;
+
         static IIdentityFactory &singleton();
 
         virtual IdentityPtr login(
@@ -247,9 +245,7 @@ namespace openpeer
                                                            IIdentityDelegatePtr delegate,
                                                            const char *identityProviderDomain,
                                                            const char *identityURI,
-                                                           const char *identityAccessToken,
-                                                           const char *identityAccessSecret,
-                                                           Time identityAccessSecretExpires
+                                                           const Token &identityToken
                                                            );
 
         virtual IdentityPtr createFromExistingSession(IServiceIdentitySessionPtr session);

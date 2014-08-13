@@ -245,16 +245,13 @@ namespace openpeer
                                                            IIdentityDelegatePtr delegate,
                                                            const char *identityProviderDomain,
                                                            const char *identityURI,
-                                                           const char *identityAccessToken,
-                                                           const char *identityAccessSecret,
-                                                           Time identityAccessSecretExpires
+                                                           const Token &identityToken
                                                            )
       {
         ZS_THROW_INVALID_ARGUMENT_IF(!inAccount)
         ZS_THROW_INVALID_ARGUMENT_IF(!delegate)
         ZS_THROW_INVALID_ARGUMENT_IF(!identityURI)
-        ZS_THROW_INVALID_ARGUMENT_IF(!identityAccessToken)
-        ZS_THROW_INVALID_ARGUMENT_IF(!identityAccessSecret)
+        ZS_THROW_INVALID_ARGUMENT_IF(!identityToken.hasData())
 
         UseAccountPtr account = Account::convert(inAccount);
 
@@ -283,7 +280,7 @@ namespace openpeer
         IServiceNamespaceGrantSessionPtr grantSession = account->getNamespaceGrantSession();
         IServiceLockboxSessionPtr lockboxSession = account->getLockboxSession();
 
-        pThis->mSession = IServiceIdentitySession::loginWithIdentityPreauthorized(pThis, provider, grantSession, lockboxSession, identityURI, identityAccessToken, identityAccessSecret, identityAccessSecretExpires);
+        pThis->mSession = IServiceIdentitySession::loginWithIdentityPreauthorized(pThis, provider, grantSession, lockboxSession, identityURI, identityToken);
         if (!pThis->mSession) return IdentityPtr();
         pThis->init();
         account->associateIdentity(pThis);
@@ -328,14 +325,11 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void Identity::attachDelegateAndPreauthorizedLogin(
                                                          IIdentityDelegatePtr delegate,
-                                                         const char *identityAccessToken,
-                                                         const char *identityAccessSecret,
-                                                         Time identityAccessSecretExpires
+                                                         const Token &identityToken
                                                          )
       {
         ZS_THROW_INVALID_ARGUMENT_IF(!delegate)
-        ZS_THROW_INVALID_ARGUMENT_IF(!identityAccessToken)
-        ZS_THROW_INVALID_ARGUMENT_IF(!identityAccessSecret)
+        ZS_THROW_INVALID_ARGUMENT_IF(!identityToken.hasData())
 
         ZS_LOG_DEBUG(log("delegate attach and preauthorize login called"))
 
@@ -344,7 +338,7 @@ namespace openpeer
           AutoRecursiveLock lock(mLock);
           mDelegate = IIdentityDelegateProxy::createWeak(UseStack::queueApplication(), delegate);
         }
-        mSession->attachDelegateAndPreauthorizeLogin(mThisWeak.lock(), identityAccessToken, identityAccessSecret, identityAccessSecretExpires);
+        mSession->attachDelegateAndPreauthorizeLogin(mThisWeak.lock(), identityToken);
       }
 
       //-----------------------------------------------------------------------
@@ -636,13 +630,11 @@ namespace openpeer
                                                                    IIdentityDelegatePtr delegate,
                                                                    const char *identityProviderDomain,
                                                                    const char *identityURI,
-                                                                   const char *identityAccessToken,
-                                                                   const char *identityAccessSecret,
-                                                                   Time identityAccessSecretExpires
+                                                                   const Token &identityToken
                                                                    )
       {
         if (this) {}
-        return Identity::loginWithIdentityPreauthorized(account, delegate, identityProviderDomain, identityURI, identityAccessToken, identityAccessSecret, identityAccessSecretExpires);
+        return Identity::loginWithIdentityPreauthorized(account, delegate, identityProviderDomain, identityURI, identityToken);
       }
 
       //-----------------------------------------------------------------------
@@ -696,12 +688,10 @@ namespace openpeer
                                                            IIdentityDelegatePtr delegate,
                                                            const char *identityProviderDomain,
                                                            const char *identityURI,
-                                                           const char *identityAccessToken,
-                                                           const char *identityAccessSecret,
-                                                           Time identityAccessSecretExpires
+                                                           const Token &identityToken
                                                            )
     {
-      return internal::IIdentityFactory::singleton().loginWithIdentityPreauthorized(account, delegate, identityProviderDomain, identityURI, identityAccessToken, identityAccessSecret, identityAccessSecretExpires);
+      return internal::IIdentityFactory::singleton().loginWithIdentityPreauthorized(account, delegate, identityProviderDomain, identityURI, identityToken);
     }
 
     //-------------------------------------------------------------------------
