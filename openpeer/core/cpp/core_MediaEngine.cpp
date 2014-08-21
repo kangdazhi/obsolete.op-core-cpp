@@ -2244,7 +2244,7 @@ namespace openpeer
       {
         ZS_LOG_DEBUG(log("start capture renderer"))
         
-#if !defined(__QNX__) && !defined(_ANDROID)
+#if !defined(__QNX__)
         if (mCaptureRenderView == NULL) {
           ZS_LOG_WARNING(Detail, log("capture view is not set"))
           return;
@@ -2269,7 +2269,7 @@ namespace openpeer
       {
         ZS_LOG_DEBUG(log("stop capture renderer"))
         
-#if !defined(__QNX__) && !defined(_ANDROID)
+#if !defined(__QNX__)
         mError = mVideoRender->StopRender(mCaptureId);
         if (mError != 0) {
           ZS_LOG_ERROR(Detail, log("failed to stop rendering video capture") + ZS_PARAM("error", mVideoBase->LastError()))
