@@ -758,6 +758,70 @@ namespace openpeer
         
         return mLifetimeWantChannelRenderView;
       }
+      
+      //-----------------------------------------------------------------------
+      void MediaEngine::setCaptureCapability(CaptureCapability capability, CameraTypes cameraType)
+      {
+        {
+          AutoRecursiveLock lock(mLifetimeLock);
+          if (cameraType == CameraType_Front)
+            mLifetimeWantFrontCameraCaptureCapability = capability;
+          else if (cameraType == CameraType_Back)
+            mLifetimeWantFrontCameraCaptureCapability = capability;
+        }
+        
+        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+
+      }
+      
+      //-----------------------------------------------------------------------
+      MediaEngine::CaptureCapabilityList MediaEngine::getCaptureCapabilities(CameraTypes cameraType)
+      {
+        {
+          AutoRecursiveLock lock(mLifetimeLock);
+          
+          if (!mLifetimeInProgress) {
+            mLifetimeInProgress = true;
+          } else {
+            ZS_LOG_WARNING(Debug, log("get capture capabilities - cached value returned"))
+            if (cameraType == CameraType_Front)
+              return mLifetimeFrontCameraCaptureCapabilityList;
+            else if (cameraType == CameraType_Back)
+              return mLifetimeBackCameraCaptureCapabilityList;
+          }
+        }
+        
+        bool lockAcquired = mLock.try_lock();
+        
+        if (!lockAcquired) {
+          AutoRecursiveLock lock(mLifetimeLock);
+          mLifetimeInProgress = false;
+          ZS_LOG_WARNING(Debug, log("get capture capabilities - cached value returned"))
+          if (cameraType == CameraType_Front)
+            return mLifetimeFrontCameraCaptureCapabilityList;
+          else if (cameraType == CameraType_Back)
+            return mLifetimeBackCameraCaptureCapabilityList;
+        }
+        
+        CaptureCapabilityList capabilityList = internalGetCaptureCapabilities(cameraType);
+        
+        mLock.unlock();
+        
+        {
+          AutoRecursiveLock lock(mLifetimeLock);
+          if (cameraType == CameraType_Front) {
+            mLifetimeBackCameraCaptureCapabilityList = capabilityList;
+            mLifetimeInProgress = false;
+            return mLifetimeFrontCameraCaptureCapabilityList;
+          } else if (cameraType == CameraType_Back) {
+            mLifetimeBackCameraCaptureCapabilityList = capabilityList;
+            mLifetimeInProgress = false;
+            return mLifetimeBackCameraCaptureCapabilityList;
+          } else {
+            return CaptureCapabilityList();
+          }
+        }
+      }
 
       //-----------------------------------------------------------------------
       void MediaEngine::setEcEnabled(bool enabled)
@@ -1545,6 +1609,10 @@ namespace openpeer
         CameraTypes wantCameraType = IMediaEngine::CameraType_None;
         void *wantCaptureRenderView = NULL;
         void *wantChannelRenderView = NULL;
+        CaptureCapability wantFrontCameraCaptureCapability;
+        CaptureCapability wantBackCameraCaptureCapability;
+        CaptureCapabilityList frontCameraCaptureCapabilityList;
+        CaptureCapabilityList backCameraCaptureCapabilityList;
         bool wantContinuousVideoCapture = false;
         String wantVideoRecordFile;
         bool wantSaveVideoToLibrary = false;
@@ -1598,6 +1666,8 @@ namespace openpeer
           wantCameraType = mLifetimeWantCameraType;
           wantCaptureRenderView = mLifetimeWantCaptureRenderView;
           wantChannelRenderView = mLifetimeWantChannelRenderView;
+          wantFrontCameraCaptureCapability = mLifetimeWantFrontCameraCaptureCapability;
+          wantBackCameraCaptureCapability = mLifetimeWantBackCameraCaptureCapability;
           wantContinuousVideoCapture = mLifetimeWantContinuousVideoCapture;
           wantVideoRecordFile = mLifetimeWantVideoRecordFile;
           wantSaveVideoToLibrary = mLifetimeWantSaveVideoToLibrary;
@@ -1608,6 +1678,18 @@ namespace openpeer
 
         {
           AutoRecursiveLock lock(mLock);
+          
+          if (wantFrontCameraCaptureCapability.width != mFrontCameraCaptureCapability.width ||
+              wantFrontCameraCaptureCapability.height != mFrontCameraCaptureCapability.height ||
+              wantFrontCameraCaptureCapability.maxFPS != mFrontCameraCaptureCapability.maxFPS) {
+            mFrontCameraCaptureCapability = wantFrontCameraCaptureCapability;
+          }
+          
+          if (wantBackCameraCaptureCapability.width != mBackCameraCaptureCapability.width ||
+              wantBackCameraCaptureCapability.height != mBackCameraCaptureCapability.height ||
+              wantBackCameraCaptureCapability.maxFPS != mBackCameraCaptureCapability.maxFPS) {
+            mBackCameraCaptureCapability = wantBackCameraCaptureCapability;
+          }
           
           if (wantEcEnabled != mEcEnabled) {
             mEcEnabled = wantEcEnabled;
@@ -1773,6 +1855,8 @@ namespace openpeer
           }
           
           if (refreshStatus) {
+            frontCameraCaptureCapabilityList = internalGetCaptureCapabilities(CameraType_Front);
+            backCameraCaptureCapabilityList = internalGetCaptureCapabilities(CameraType_Back);
             wantMuteEnabled = internalGetMuteEnabled();
             wantLoudspeakerEnabled = internalGetLoudspeakerEnabled();
             outputAudioRoute = internalGetOutputAudioRoute();
@@ -1791,6 +1875,8 @@ namespace openpeer
           
           if (refreshStatus) {
             // refresh lifetime status after execution of long running procedures
+            mLifetimeFrontCameraCaptureCapabilityList = frontCameraCaptureCapabilityList;
+            mLifetimeBackCameraCaptureCapabilityList = backCameraCaptureCapabilityList;
             mLifetimeWantMuteEnabled = wantMuteEnabled;
             mLifetimeWantLoudspeakerEnabled = wantLoudspeakerEnabled;
             mLifetimeOutputAudioRoute = outputAudioRoute;
@@ -1808,6 +1894,86 @@ namespace openpeer
         }
 
         ZS_LOG_DEBUG(log("media engine lifetime thread completed"))
+      }
+      
+      //-----------------------------------------------------------------------
+      MediaEngine::CaptureCapabilityList MediaEngine::internalGetCaptureCapabilities(CameraTypes cameraType)
+      {
+        ZS_LOG_DEBUG(log("get capture capabilities") + ZS_PARAM("camera type", IMediaEngine::toString(cameraType)))
+        
+        const unsigned int KMaxDeviceNameLength = 128;
+        const unsigned int KMaxUniqueIdLength = 256;
+        char deviceName[KMaxDeviceNameLength];
+        memset(deviceName, 0, KMaxDeviceNameLength);
+        char uniqueId[KMaxUniqueIdLength];
+        memset(uniqueId, 0, KMaxUniqueIdLength);
+        uint32_t captureIdx;
+        
+        webrtc::VideoCaptureModule::DeviceInfo *devInfo = webrtc::VideoCaptureFactory::CreateDeviceInfo(0);
+        if (devInfo == NULL) {
+          ZS_LOG_ERROR(Detail, log("failed to create video capture device info"))
+          return CaptureCapabilityList();
+        }
+        
+        uint32_t numberOfDevices = devInfo->NumberOfDevices();
+        
+        if (cameraType == CameraType_Back)
+        {
+          if (numberOfDevices >= 2)
+          {
+            captureIdx = 0;
+          }
+          else
+          {
+            ZS_LOG_ERROR(Detail, log("back camera is not supported on single camera devices"))
+            return CaptureCapabilityList();
+          }
+        }
+        else if (cameraType == CameraType_Front)
+        {
+          if (numberOfDevices >= 2)
+          {
+            captureIdx = 1;
+          }
+          else
+          {
+            captureIdx = 0;
+          }
+        }
+        else
+        {
+          ZS_LOG_ERROR(Detail, log("camera type is not set"))
+          return CaptureCapabilityList();
+        }
+        
+        mError = devInfo->GetDeviceName(captureIdx, deviceName,
+                                        KMaxDeviceNameLength, uniqueId,
+                                        KMaxUniqueIdLength);
+        if (mError != 0) {
+          ZS_LOG_ERROR(Detail, log("failed to get video device name"))
+          return CaptureCapabilityList();
+        }
+        
+        CaptureCapabilityList capabilityList;
+        int capabilitiesNumber = mVideoCapture->NumberOfCapabilities(uniqueId, KMaxUniqueIdLength);
+        
+        for (int i = 0; i < capabilitiesNumber; i++) {
+          webrtc::CaptureCapability engineCapability;
+          CaptureCapability capability;
+          
+          mError = mVideoCapture->GetCaptureCapability(uniqueId, KMaxUniqueIdLength, i, engineCapability);
+          if (mError != 0) {
+            ZS_LOG_ERROR(Detail, log("failed to get capture capability"))
+            return CaptureCapabilityList();
+          }
+          
+          capability.width = engineCapability.width;
+          capability.height = engineCapability.height;
+          capability.maxFPS = engineCapability.maxFPS;
+          capabilityList.push_back(capability);
+        }
+        
+        return capabilityList;
       }
       
       //-----------------------------------------------------------------------
@@ -3019,10 +3185,42 @@ namespace openpeer
           return -1;
         }
 #else
-        width = 480;
-        height = 640;
-        maxFramerate = 15;
-        maxBitrate = 400;
+        if (mCameraType == CameraType_Back) {
+          if (mBackCameraCaptureCapability.width != 0 && mBackCameraCaptureCapability.height != 0) {
+            width = mBackCameraCaptureCapability.width;
+            height = mBackCameraCaptureCapability.height;
+            if (mBackCameraCaptureCapability.maxFPS != 0) {
+              maxFramerate = mBackCameraCaptureCapability.maxFPS;
+            } else {
+              maxFramerate = 15;
+            }
+            maxBitrate = 400;
+          } else {
+            width = 612;
+            height = 816;
+            maxFramerate = 15;
+            maxBitrate = 400;
+          }
+        } else if (mCameraType == CameraType_Front) {
+          if (mFrontCameraCaptureCapability.width != 0 && mFrontCameraCaptureCapability.height != 0) {
+            width = mFrontCameraCaptureCapability.width;
+            height = mFrontCameraCaptureCapability.height;
+            if (mFrontCameraCaptureCapability.maxFPS != 0) {
+              maxFramerate = mFrontCameraCaptureCapability.maxFPS;
+            } else {
+              maxFramerate = 15;
+            }
+            maxBitrate = 400;
+          } else {
+            width = 360;
+            height = 640;
+            maxFramerate = 15;
+            maxBitrate = 400;
+          }
+        } else {
+          ZS_LOG_ERROR(Detail, log("camera type is not set"))
+          return -1;
+        }
 #endif
         return 0;
       }

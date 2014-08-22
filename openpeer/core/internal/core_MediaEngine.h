@@ -186,7 +186,12 @@ namespace openpeer
         virtual void setVideoOrientation();
 
         virtual void setCaptureRenderView(void *renderView);
+        virtual void *getCaptureRenderView() const;
         virtual void setChannelRenderView(void *renderView);
+        virtual void *getChannelRenderView() const;
+        
+        virtual void setCaptureCapability(CaptureCapability capability, CameraTypes cameraType);
+        virtual CaptureCapabilityList getCaptureCapabilities(CameraTypes cameraType);
 
         virtual void setEcEnabled(bool enabled);
         virtual void setAgcEnabled(bool enabled);
@@ -284,15 +289,13 @@ namespace openpeer
 
       protected:
         
-        void *getCaptureRenderView() const;
-        void *getChannelRenderView() const;
-
         virtual void internalStartVoice();
         virtual void internalStopVoice();
         
         virtual int registerVoiceTransport();
         virtual int setVoiceTransportParameters();
 
+        virtual CaptureCapabilityList internalGetCaptureCapabilities(CameraTypes cameraType);
         virtual void internalSetVideoOrientation();
         virtual void internalSetEcEnabled(bool enabled);
         virtual void internalSetAgcEnabled(bool enabled);
@@ -403,6 +406,8 @@ namespace openpeer
         CameraTypes mCameraType;
         void *mCaptureRenderView;
         void *mChannelRenderView;
+        CaptureCapability mFrontCameraCaptureCapability;
+        CaptureCapability mBackCameraCaptureCapability;
         bool mContinuousVideoCapture;
 
         int mVoiceChannel;
@@ -466,6 +471,10 @@ namespace openpeer
         CameraTypes mLifetimeWantCameraType;
         void *mLifetimeWantCaptureRenderView;
         void *mLifetimeWantChannelRenderView;
+        CaptureCapability mLifetimeWantFrontCameraCaptureCapability;
+        CaptureCapability mLifetimeWantBackCameraCaptureCapability;
+        CaptureCapabilityList mLifetimeFrontCameraCaptureCapabilityList;
+        CaptureCapabilityList mLifetimeBackCameraCaptureCapabilityList;
         bool mLifetimeWantContinuousVideoCapture;
         String mLifetimeWantVideoRecordFile;
         bool mLifetimeWantSaveVideoToLibrary;
