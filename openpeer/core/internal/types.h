@@ -44,8 +44,6 @@ namespace openpeer
   {
     namespace internal
     {
-      using boost::dynamic_pointer_cast;
-
       using zsLib::string;
       using zsLib::Noop;
       using zsLib::BYTE;
@@ -54,9 +52,6 @@ namespace openpeer
       using zsLib::UINT;
       using zsLib::DWORD;
       using zsLib::AutoPUID;
-      using zsLib::AutoBool;
-      using zsLib::AutoULONG;
-      using zsLib::AutoWORD;
       using zsLib::AutoLock;
       using zsLib::Lock;
       using zsLib::Log;

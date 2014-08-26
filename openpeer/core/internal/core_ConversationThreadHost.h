@@ -351,13 +351,13 @@ namespace openpeer
         Time mLastActivity;
         IBackgroundingSubscriptionPtr mBackgroundingSubscription;
         IBackgroundingNotifierPtr mBackgroundingNotifier;
-        AutoBool mBackgroundingNow;
+        bool mBackgroundingNow {};
 
         ConversationThreadHostStates mCurrentState;
 
         MessageDeliveryStatesMap mMessageDeliveryStates;
 
-        AutoBool mMarkAllRead;
+        bool mMarkAllRead {};
         PeerContactMap mPeerContacts;
 
         ThreadPtr mHostThread;

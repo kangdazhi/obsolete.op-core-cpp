@@ -604,7 +604,7 @@ namespace openpeer
           //-------------------------------------------------------------------
           // variables protected with object lock
           DialogPtr mRemoteDialog;
-          AutoBool mChangedRemoteDialog;
+          bool mChangedRemoteDialog {};
 
           //-------------------------------------------------------------------
           // variables protected with independent locks

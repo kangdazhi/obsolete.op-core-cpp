@@ -70,7 +70,7 @@ namespace openpeer
           struct FilteredEvents
           {
             IConversationThreadPtr mConversationThread;
-            AutoBool mFiredContactsChanged;
+            bool mFiredContactsChanged {};
             ContactConnectionStateChangedList mFiredContactConnectionStateChanges;
             ContactStatusChangedList mFiredContactStatusChanged;
           };

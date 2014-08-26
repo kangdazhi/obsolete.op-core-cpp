@@ -669,7 +669,7 @@ namespace openpeer
 
         DelegateFilterPtr mDelegateFilter;
 
-        AutoBool mAssociatedIdentitiesChanged;
+        bool mAssociatedIdentitiesChanged {};
         ULONG mTotalPendingMessages;
       };
 

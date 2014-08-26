@@ -187,19 +187,19 @@ namespace openpeer
       //-----------------------------------------------------------------------
       CallTransportPtr CallTransport::convert(ICallTransportPtr transport)
       {
-        return dynamic_pointer_cast<CallTransport>(transport);
+        return ZS_DYNAMIC_PTR_CAST(CallTransport, transport);
       }
 
       //-----------------------------------------------------------------------
       CallTransportPtr CallTransport::convert(ForAccountPtr transport)
       {
-        return dynamic_pointer_cast<CallTransport>(transport);
+        return ZS_DYNAMIC_PTR_CAST(CallTransport, transport);
       }
 
       //-----------------------------------------------------------------------
       CallTransportPtr CallTransport::convert(ForCallPtr transport)
       {
-        return dynamic_pointer_cast<CallTransport>(transport);
+        return ZS_DYNAMIC_PTR_CAST(CallTransport, transport);
       }
 
       //-----------------------------------------------------------------------

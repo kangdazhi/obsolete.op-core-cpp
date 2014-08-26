@@ -196,31 +196,31 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ContactPtr Contact::convert(IContactPtr contact)
       {
-        return dynamic_pointer_cast<Contact>(contact);
+        return ZS_DYNAMIC_PTR_CAST(Contact, contact);
       }
 
       //-----------------------------------------------------------------------
       ContactPtr Contact::convert(ForAccountPtr contact)
       {
-        return dynamic_pointer_cast<Contact>(contact);
+        return ZS_DYNAMIC_PTR_CAST(Contact, contact);
       }
 
       //-----------------------------------------------------------------------
       ContactPtr Contact::convert(ForConversationThreadPtr contact)
       {
-        return dynamic_pointer_cast<Contact>(contact);
+        return ZS_DYNAMIC_PTR_CAST(Contact, contact);
       }
 
       //-----------------------------------------------------------------------
       ContactPtr Contact::convert(ForCallPtr contact)
       {
-        return dynamic_pointer_cast<Contact>(contact);
+        return ZS_DYNAMIC_PTR_CAST(Contact, contact);
       }
 
       //-----------------------------------------------------------------------
       ContactPtr Contact::convert(ForPushMessagingPtr contact)
       {
-        return dynamic_pointer_cast<Contact>(contact);
+        return ZS_DYNAMIC_PTR_CAST(Contact, contact);
       }
 
       //-----------------------------------------------------------------------

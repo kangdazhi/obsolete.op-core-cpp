@@ -409,7 +409,7 @@ namespace openpeer
         AutoRecursiveLock lock(*this);
 
         mBackgroundingNotifier = notifier;
-        get(mBackgroundingNow) = false;
+        mBackgroundingNow = false;
         step();
       }
 
@@ -420,7 +420,7 @@ namespace openpeer
 
         AutoRecursiveLock lock(*this);
 
-        get(mBackgroundingNow) = true;
+        mBackgroundingNow = true;
         step();
 
         mBackgroundingNotifier.reset();
@@ -435,7 +435,7 @@ namespace openpeer
 
         mBackgroundingNotifier.reset();
 
-        get(mBackgroundingNow) = false;
+        mBackgroundingNow = false;
         step();
       }
 

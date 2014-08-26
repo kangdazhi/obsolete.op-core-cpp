@@ -161,7 +161,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ConversationThreadSlavePtr ConversationThreadSlave::convert(ForConversationThreadPtr object)
       {
-        return dynamic_pointer_cast<ConversationThreadSlave>(object);
+        return ZS_DYNAMIC_PTR_CAST(ConversationThreadSlave, object);
       }
 
       //-----------------------------------------------------------------------
@@ -1048,7 +1048,7 @@ namespace openpeer
         AutoRecursiveLock lock(*this);
 
         mBackgroundingNotifier = notifier;
-        get(mBackgroundingNow) = false;
+        mBackgroundingNow = false;
         step();
       }
 
@@ -1059,7 +1059,7 @@ namespace openpeer
 
         AutoRecursiveLock lock(*this);
 
-        get(mBackgroundingNow) = true;
+        mBackgroundingNow = true;
         step();
 
         mBackgroundingNotifier.reset();
@@ -1074,7 +1074,7 @@ namespace openpeer
 
         mBackgroundingNotifier.reset();
 
-        get(mBackgroundingNow) = false;
+        mBackgroundingNow = false;
         step();
       }
 

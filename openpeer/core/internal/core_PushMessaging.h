@@ -283,10 +283,10 @@ namespace openpeer
 
         UseAccountPtr mAccount;
         IAccountSubscriptionPtr mAccountSubscription;
-        AutoBool mPreviouslyReady;
+        bool mPreviouslyReady {};
 
         PushMessagingStates mCurrentState;
-        AutoWORD mLastError;
+        WORD mLastError {};
         String mLastErrorReason;
 
         PushQueryList mPendingAttachmentPushQueries;

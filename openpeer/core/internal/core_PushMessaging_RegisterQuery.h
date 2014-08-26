@@ -142,7 +142,7 @@ namespace openpeer
 
           IPushMessagingRegisterQueryDelegatePtr mDelegate;
 
-          AutoBool mHadQuery;
+          bool mHadQuery {};
           IServicePushMailboxRegisterQueryPtr mQuery;
 
           String mDeviceToken;

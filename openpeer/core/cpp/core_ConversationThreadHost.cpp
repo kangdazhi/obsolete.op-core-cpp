@@ -198,7 +198,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ConversationThreadHostPtr ConversationThreadHost::convert(ForConversationThreadPtr object)
       {
-        return dynamic_pointer_cast<ConversationThreadHost>(object);
+        return ZS_DYNAMIC_PTR_CAST(ConversationThreadHost, object);
       }
 
       //-----------------------------------------------------------------------
@@ -690,7 +690,7 @@ namespace openpeer
 
         mLastActivity = zsLib::now();
 
-        get(mMarkAllRead) = true;
+        mMarkAllRead = true;
         IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
       }
 
@@ -800,7 +800,7 @@ namespace openpeer
         AutoRecursiveLock lock(*this);
 
         // mBackgroundingNotifier = notifier;
-        get(mBackgroundingNow) = false;
+        mBackgroundingNow = false;
         step();
       }
 
@@ -811,7 +811,7 @@ namespace openpeer
 
         AutoRecursiveLock lock(*this);
 
-        get(mBackgroundingNow) = true;
+        mBackgroundingNow = true;
         step();
 
         mBackgroundingNotifier.reset();
@@ -828,7 +828,7 @@ namespace openpeer
 
         mLastActivity = zsLib::now();
 
-        get(mBackgroundingNow) = false;
+        mBackgroundingNow = false;
         step();
       }
 
@@ -1180,7 +1180,7 @@ namespace openpeer
           mHostThread->setRead(delivered);
 
           // do not mark messages again as read until signalled to do so again
-          get(mMarkAllRead) = false;
+          mMarkAllRead = false;
         }
         mHostThread->updateEnd(getPublicationRepostiory());
 

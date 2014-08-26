@@ -373,7 +373,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       StackPtr Stack::convert(IStackPtr stack)
       {
-        return dynamic_pointer_cast<Stack>(stack);
+        return ZS_DYNAMIC_PTR_CAST(Stack, stack);
       }
 
       //-----------------------------------------------------------------------
@@ -587,7 +587,7 @@ namespace openpeer
         InterceptApplicationThreadPtr thread;
         {
           AutoRecursiveLock lock(mLock);
-          thread = dynamic_pointer_cast<InterceptApplicationThread>(mApplicationQueue);
+          thread = ZS_DYNAMIC_PTR_CAST(InterceptApplicationThread, mApplicationQueue);
           ZS_THROW_INVALID_USAGE_IF(!thread)  // you can only call this method if you specified a delegate upon setup and have not already finalized the shutdown
         }
 

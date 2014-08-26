@@ -135,7 +135,7 @@ namespace openpeer
 
           IServicePushMailboxSendQueryPtr mQuery;
 
-          mutable AutoBool mReportedUploaded;
+          mutable bool mReportedUploaded {};
         };
 
 #if 0

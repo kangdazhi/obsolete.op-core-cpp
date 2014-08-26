@@ -106,7 +106,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       SettingsPtr Settings::convert(ISettingsPtr settings)
       {
-        return dynamic_pointer_cast<Settings>(settings);
+        return ZS_DYNAMIC_PTR_CAST(Settings, settings);
       }
 
       //-----------------------------------------------------------------------
@@ -154,7 +154,7 @@ namespace openpeer
       {
         {
           AutoRecursiveLock lock(mLock);
-          get(mAppliedDefaults) = true;
+          mAppliedDefaults = true;
         }
 
         setUInt(OPENPEER_CORE_SETTING_CONVERSATION_THREAD_HOST_BACKGROUNDING_PHASE, 1);

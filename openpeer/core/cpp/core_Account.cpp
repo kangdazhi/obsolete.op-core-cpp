@@ -145,43 +145,43 @@ namespace openpeer
       //-----------------------------------------------------------------------
       AccountPtr Account::convert(IAccountPtr account)
       {
-        return dynamic_pointer_cast<Account>(account);
+        return ZS_DYNAMIC_PTR_CAST(Account, account);
       }
 
       //-----------------------------------------------------------------------
       AccountPtr Account::convert(ForCallPtr account)
       {
-        return dynamic_pointer_cast<Account>(account);
+        return ZS_DYNAMIC_PTR_CAST(Account, account);
       }
 
       //-----------------------------------------------------------------------
       AccountPtr Account::convert(ForContactPtr account)
       {
-        return dynamic_pointer_cast<Account>(account);
+        return ZS_DYNAMIC_PTR_CAST(Account, account);
       }
 
       //-----------------------------------------------------------------------
       AccountPtr Account::convert(ForConversationThreadPtr account)
       {
-        return dynamic_pointer_cast<Account>(account);
+        return ZS_DYNAMIC_PTR_CAST(Account, account);
       }
 
       //-----------------------------------------------------------------------
       AccountPtr Account::convert(ForIdentityPtr account)
       {
-        return dynamic_pointer_cast<Account>(account);
+        return ZS_DYNAMIC_PTR_CAST(Account, account);
       }
 
       //-----------------------------------------------------------------------
       AccountPtr Account::convert(ForIdentityLookupPtr account)
       {
-        return dynamic_pointer_cast<Account>(account);
+        return ZS_DYNAMIC_PTR_CAST(Account, account);
       }
 
       //-----------------------------------------------------------------------
       AccountPtr Account::convert(ForPushMessagingPtr account)
       {
-        return dynamic_pointer_cast<Account>(account);
+        return ZS_DYNAMIC_PTR_CAST(Account, account);
       }
 
       //-----------------------------------------------------------------------
@@ -1071,7 +1071,7 @@ namespace openpeer
           return;
         }
 
-        get(mAssociatedIdentitiesChanged) = true;
+        mAssociatedIdentitiesChanged = true;
 
         mSubscriptions.delegate()->onAccountAssociatedIdentitiesChanged(mThisWeak.lock());
 

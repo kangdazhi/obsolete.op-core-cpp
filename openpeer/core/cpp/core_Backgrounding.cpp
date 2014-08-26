@@ -79,7 +79,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       BackgroundingPtr Backgrounding::convert(IBackgroundingPtr backgrounding)
       {
-        return dynamic_pointer_cast<Backgrounding>(backgrounding);
+        return ZS_DYNAMIC_PTR_CAST(Backgrounding, backgrounding);
       }
 
       //-----------------------------------------------------------------------

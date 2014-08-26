@@ -299,7 +299,7 @@ namespace openpeer
 
           IBackgroundingSubscriptionPtr mBackgroundingSubscription;
           IBackgroundingNotifierPtr mBackgroundingNotifier;
-          AutoBool mBackgroundingNow;
+          bool mBackgroundingNow {};
 
           IPeerSubscriptionPtr mSlaveSubscription;
 

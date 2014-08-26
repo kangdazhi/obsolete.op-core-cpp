@@ -165,7 +165,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       PushMessagingPtr PushMessaging::convert(IPushMessagingPtr messaging)
       {
-        return dynamic_pointer_cast<PushMessaging>(messaging);
+        return ZS_DYNAMIC_PTR_CAST(PushMessaging, messaging);
       }
 
       //-----------------------------------------------------------------------
@@ -643,7 +643,7 @@ namespace openpeer
           return;
         }
 
-        get(mLastError) = errorCode;
+        mLastError = errorCode;
         mLastErrorReason = reason;
 
         ZS_LOG_WARNING(Detail, log("error set") + ZS_PARAM("code", mLastError) + ZS_PARAM("reason", mLastErrorReason))
@@ -696,7 +696,7 @@ namespace openpeer
           case IAccount::AccountState_Ready:
           {
             ZS_LOG_TRACE(log("step account - ready"))
-            get(mPreviouslyReady) = true;
+            mPreviouslyReady = true;
             break;
           }
           case IAccount::AccountState_ShuttingDown:

@@ -172,7 +172,7 @@ namespace openpeer
 
         if (!mQuery) return false;
 
-        get(mReportedUploaded) = mQuery->isUploaded();
+        mReportedUploaded = mQuery->isUploaded();
         return mReportedUploaded;
       }
 
@@ -221,7 +221,7 @@ namespace openpeer
         ZS_LOG_DEBUG(log("notified message uploaded"))
         AutoRecursiveLock lock(*this);
 
-        get(mReportedUploaded) = true;
+        mReportedUploaded = true;
 
         if (!mDelegate) {
           ZS_LOG_WARNING(Detail, log("delegate gone"))

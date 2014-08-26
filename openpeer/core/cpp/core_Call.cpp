@@ -283,19 +283,19 @@ namespace openpeer
       //-----------------------------------------------------------------------
       CallPtr Call::convert(ICallPtr call)
       {
-        return dynamic_pointer_cast<Call>(call);
+        return ZS_DYNAMIC_PTR_CAST(Call, call);
       }
 
       //-----------------------------------------------------------------------
       CallPtr Call::convert(ForConversationThreadPtr call)
       {
-        return dynamic_pointer_cast<Call>(call);
+        return ZS_DYNAMIC_PTR_CAST(Call, call);
       }
 
       //-----------------------------------------------------------------------
       CallPtr Call::convert(ForCallTransportPtr call)
       {
-        return dynamic_pointer_cast<Call>(call);
+        return ZS_DYNAMIC_PTR_CAST(Call, call);
       }
 
       //-----------------------------------------------------------------------
@@ -2362,7 +2362,7 @@ namespace openpeer
         AutoRecursiveLock lock(mLock);
         if (remoteDialog != mRemoteDialog) {
           ZS_LOG_DEBUG(log("remote dialog changed"))
-          get(mChangedRemoteDialog) = true;
+          mChangedRemoteDialog = true;
         }
         mRemoteDialog = remoteDialog;
 
@@ -2594,7 +2594,7 @@ namespace openpeer
           }
 
           changed = mChangedRemoteDialog;
-          get(mChangedRemoteDialog) = false;
+          mChangedRemoteDialog = false;
 
           if (changed) {
             DescriptionList descriptions = mRemoteDialog->descriptions();

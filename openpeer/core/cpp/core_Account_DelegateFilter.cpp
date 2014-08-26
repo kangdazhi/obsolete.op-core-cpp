@@ -142,7 +142,7 @@ namespace openpeer
         if (event) {
           ZS_LOG_DEBUG(log("delaying conversation contacts changed event") + ZS_PARAM("thread", conversationThread->getID()))
 
-          get(event->mFiredContactsChanged) = true;
+          event->mFiredContactsChanged = true;
           return;
         }
 

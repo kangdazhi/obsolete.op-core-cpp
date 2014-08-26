@@ -163,13 +163,13 @@ namespace openpeer
       //-----------------------------------------------------------------------
       IdentityPtr Identity::convert(IIdentityPtr contact)
       {
-        return dynamic_pointer_cast<Identity>(contact);
+        return ZS_DYNAMIC_PTR_CAST(Identity, contact);
       }
 
       //-----------------------------------------------------------------------
       IdentityPtr Identity::convert(ForAccountPtr contact)
       {
-        return dynamic_pointer_cast<Identity>(contact);
+        return ZS_DYNAMIC_PTR_CAST(Identity, contact);
       }
 
       //-----------------------------------------------------------------------
