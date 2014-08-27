@@ -147,6 +147,32 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       #pragma mark
+      #pragma mark IContactForPushPresence
+      #pragma mark
+
+      interaction IContactForPushPresence
+      {
+        ZS_DECLARE_TYPEDEF_PTR(IContactForPushPresence, ForPushPresence)
+
+        static ForPushPresencePtr createFromPeer(
+                                                 AccountPtr account,
+                                                 IPeerPtr peer
+                                                 );
+
+        static ForPushPresencePtr createFromPeerURI(
+                                                    AccountPtr account,
+                                                    const char *peerURI
+                                                    );
+
+
+        virtual IPeerPtr getPeer() const = 0;
+      };
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
       #pragma mark Contact
       #pragma mark
 
@@ -155,7 +181,8 @@ namespace openpeer
                       public IContactForAccount,
                       public IContactForConversationThread,
                       public IContactForCall,
-                      public IContactForPushMessaging
+                      public IContactForPushMessaging,
+                      public IContactForPushPresence
       {
       public:
         friend interaction IContactFactory;
@@ -164,6 +191,7 @@ namespace openpeer
         friend interaction IContactForConversationThread;
         friend interaction IContactForCall;
         friend interaction IContactForPushMessaging;
+        friend interaction IContactForPushPresence;
 
         ZS_DECLARE_TYPEDEF_PTR(IAccountForContact, UseAccount)
 
@@ -182,6 +210,7 @@ namespace openpeer
         static ContactPtr convert(ForConversationThreadPtr contact);
         static ContactPtr convert(ForCallPtr contact);
         static ContactPtr convert(ForPushMessagingPtr contact);
+        static ContactPtr convert(ForPushPresencePtr contact);
 
       protected:
         //---------------------------------------------------------------------
@@ -254,6 +283,23 @@ namespace openpeer
         //---------------------------------------------------------------------
         #pragma mark
         #pragma mark IContactForPushMessaging
+        #pragma mark
+
+        // (duplicate) static ContactPtr createFromPeer(
+        //                                              AccountPtr account,
+        //                                              IPeerPtr peer
+        //                                              );
+
+        // (duplicate) static ContactPtr createFromPeerURI(
+        //                                                 AccountPtr account,
+        //                                                 const char *peerURI
+        //                                                 );
+
+        // (duplicate) virtual String getPeerURI() const;
+
+        //---------------------------------------------------------------------
+        #pragma mark
+        #pragma mark IContactForPushPresence
         #pragma mark
 
         // (duplicate) static ContactPtr createFromPeer(

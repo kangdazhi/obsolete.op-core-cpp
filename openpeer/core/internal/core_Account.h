@@ -217,6 +217,34 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       #pragma mark
+      #pragma mark IAccountForPushPresence
+      #pragma mark
+
+      interaction IAccountForPushPresence
+      {
+        ZS_DECLARE_TYPEDEF_PTR(IAccountForPushPresence, ForPushPresence)
+
+        virtual PUID getID() const = 0;
+
+        virtual IAccountSubscriptionPtr subscribe(IAccountDelegatePtr delegate) = 0;
+
+        virtual IAccount::AccountStates getState(
+                                                 WORD *outErrorCode = NULL,
+                                                 String *outErrorReason = NULL
+                                                 ) const = 0;
+
+        virtual stack::IBootstrappedNetworkPtr getLockboxBootstrapper() const = 0;
+
+        virtual stack::IAccountPtr getStackAccount() const = 0;
+        virtual stack::IServiceNamespaceGrantSessionPtr getNamespaceGrantSession() const = 0;
+        virtual stack::IServiceLockboxSessionPtr getLockboxSession() const = 0;
+      };
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
       #pragma mark Account
       #pragma mark
 
@@ -230,6 +258,7 @@ namespace openpeer
                       public IAccountForIdentity,
                       public IAccountForIdentityLookup,
                       public IAccountForPushMessaging,
+                      public IAccountForPushPresence,
                       public ICallTransportDelegate,
                       public stack::IAccountDelegate,
                       public IPeerSubscriptionDelegate,
@@ -296,6 +325,7 @@ namespace openpeer
         static AccountPtr convert(ForIdentityPtr account);
         static AccountPtr convert(ForIdentityLookupPtr account);
         static AccountPtr convert(ForPushMessagingPtr account);
+        static AccountPtr convert(ForPushPresencePtr account);
 
       protected:
         //---------------------------------------------------------------------
@@ -438,6 +468,20 @@ namespace openpeer
         //---------------------------------------------------------------------
         #pragma mark
         #pragma mark Account => IAccountForPushMessaging
+        #pragma mark
+
+        // (duplicate) virtual PUID getID() const = 0;
+
+        // (duplicate) virtual IAccountSubscriptionPtr subscribe(IAccountDelegatePtr delegate);
+
+        // (duplicate) virtual AccountStates getState(
+        //                                            WORD *outErrorCode = NULL,
+        //                                            String *outErrorReason = NULL
+        //                                            ) const;
+
+        //---------------------------------------------------------------------
+        #pragma mark
+        #pragma mark Account => IAccountForPushPresence
         #pragma mark
 
         // (duplicate) virtual PUID getID() const = 0;

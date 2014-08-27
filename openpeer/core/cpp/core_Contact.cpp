@@ -169,6 +169,32 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       #pragma mark
+      #pragma mark IContactForPushPresence
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      IContactForPushPresence::ForPushPresencePtr IContactForPushPresence::createFromPeer(
+                                                                                          AccountPtr account,
+                                                                                          IPeerPtr peer
+                                                                                          )
+      {
+        return IContactFactory::singleton().createFromPeer(account, peer);
+      }
+
+      //-----------------------------------------------------------------------
+      IContactForPushPresence::ForPushPresencePtr IContactForPushPresence::createFromPeerURI(
+                                                                                             AccountPtr account,
+                                                                                             const char *peerURI
+                                                                                             )
+      {
+        return IContactFactory::singleton().createFromPeerURI(account, peerURI);
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
       #pragma mark Contact
       #pragma mark
 
@@ -219,6 +245,12 @@ namespace openpeer
 
       //-----------------------------------------------------------------------
       ContactPtr Contact::convert(ForPushMessagingPtr contact)
+      {
+        return ZS_DYNAMIC_PTR_CAST(Contact, contact);
+      }
+
+      //-----------------------------------------------------------------------
+      ContactPtr Contact::convert(ForPushPresencePtr contact)
       {
         return ZS_DYNAMIC_PTR_CAST(Contact, contact);
       }
