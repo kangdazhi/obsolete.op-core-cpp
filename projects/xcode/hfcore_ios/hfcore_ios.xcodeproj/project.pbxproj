@@ -38,6 +38,7 @@
 		00E493C41997A75100335BB5 /* core_Encryptor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00E493C31997A75100335BB5 /* core_Encryptor.cpp */; };
 		00E493C71997E4B100335BB5 /* core_Decryptor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00E493C61997E4B100335BB5 /* core_Decryptor.cpp */; };
 		00F11C38189B4BDC00EB33BB /* core_Settings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00F11C37189B4BDC00EB33BB /* core_Settings.cpp */; };
+		00F2B5AA19AE1990001391CE /* core_PushPresence_Status.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00F2B5A919AE1990001391CE /* core_PushPresence_Status.cpp */; };
 		00F8074019895D8400E14A52 /* core_ISystemMessage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00F8073F19895D8400E14A52 /* core_ISystemMessage.cpp */; };
 		00F80744198978B800E14A52 /* core_ComposingStatus.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00F80743198978B800E14A52 /* core_ComposingStatus.cpp */; };
 /* End PBXBuildFile section */
@@ -137,6 +138,8 @@
 		00F11C36189B4BAB00EB33BB /* ISettings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ISettings.h; sourceTree = "<group>"; };
 		00F11C37189B4BDC00EB33BB /* core_Settings.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Settings.cpp; sourceTree = "<group>"; };
 		00F11C39189B4BEC00EB33BB /* core_Settings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_Settings.h; sourceTree = "<group>"; };
+		00F2B5A919AE1990001391CE /* core_PushPresence_Status.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_PushPresence_Status.cpp; sourceTree = "<group>"; };
+		00F2B5AB19AE19A9001391CE /* core_PushPresence_Status.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_PushPresence_Status.h; sourceTree = "<group>"; };
 		00F8073F19895D8400E14A52 /* core_ISystemMessage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_ISystemMessage.cpp; sourceTree = "<group>"; };
 		00F8074119895DB800E14A52 /* ISystemMessage.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ISystemMessage.h; sourceTree = "<group>"; };
 		00F8074219895E2400E14A52 /* ComposingStatus.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ComposingStatus.h; sourceTree = "<group>"; };
@@ -241,6 +244,7 @@
 				0088E8F71982956A00A7C6B7 /* core_PushMessaging_PushQuery.cpp */,
 				0088E8F91982CD6D00A7C6B7 /* core_PushMessaging_RegisterQuery.cpp */,
 				000DA77D19ACE1AB00DAFCA9 /* core_PushPresence.cpp */,
+				00F2B5A919AE1990001391CE /* core_PushPresence_Status.cpp */,
 				000DA78019ACEA5400DAFCA9 /* core_PushPresence_RegisterQuery.cpp */,
 				00F11C37189B4BDC00EB33BB /* core_Settings.cpp */,
 				0063BF6816CA9B6900E6DB4D /* core_Stack.cpp */,
@@ -281,6 +285,7 @@
 				0026040C1981DB480004F594 /* core_PushMessaging_PushQuery.h */,
 				0026040D1981DDB80004F594 /* core_PushMessaging_RegisterQuery.h */,
 				000DA77F19ACE1BD00DAFCA9 /* core_PushPresence.h */,
+				00F2B5AB19AE19A9001391CE /* core_PushPresence_Status.h */,
 				000DA78219ACEA6500DAFCA9 /* core_PushPresence_RegisterQuery.h */,
 				0063BF8516CA9B6900E6DB4D /* core_Stack.h */,
 				00F11C39189B4BEC00EB33BB /* core_Settings.h */,
@@ -347,6 +352,7 @@
 				000DA77E19ACE1AB00DAFCA9 /* core_PushPresence.cpp in Sources */,
 				00F11C38189B4BDC00EB33BB /* core_Settings.cpp in Sources */,
 				0063C11716CA9B6A00E6DB4D /* core_Call.cpp in Sources */,
+				00F2B5AA19AE1990001391CE /* core_PushPresence_Status.cpp in Sources */,
 				0063C11816CA9B6A00E6DB4D /* core_CallTransport.cpp in Sources */,
 				00F80744198978B800E14A52 /* core_ComposingStatus.cpp in Sources */,
 				00E493C71997E4B100335BB5 /* core_Decryptor.cpp in Sources */,

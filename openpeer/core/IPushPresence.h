@@ -60,16 +60,18 @@ namespace openpeer
 
       struct Status
       {
-        String mStatusID;                       // system will fill in this value
+        String mStatusID;                         // system will fill in this value
 
-        ElementPtr mStatusEl;
+        ElementPtr mPresenceEl;
 
-        Time mSent;                             // when was the status was sent, system will assign a value if not specified
-        Time mExpires;                          // optional, system will assign a long life time if not specified
+        Time mSent;                               // when was the status was sent, system will assign a value if not specified
+        Time mExpires;                            // optional, system will assign a long life time if not specified
 
-        IContactPtr mFrom;                      // what peer sent the status (system will fill in if sending a status out)
+        IContactPtr mFrom;                        // what peer sent the status (system will fill in if sending a status out)
 
-        static ElementPtr createEmptyStatus();  // create an emty status JSON object ready to be filled with presence data
+        static ElementPtr createEmptyPresence();  // create an emty status JSON object ready to be filled with presence data
+
+        bool hasData() const;
       };
       ZS_DECLARE_PTR(Status)
 
@@ -206,18 +208,18 @@ namespace openpeer
       static const char *toString(PresenceStatuses state);
       static PresenceStatuses toPresenceStatus(const char *state);
 
-      PresenceStatuses mStatus;           // basic status
-      String mExtendedStatus;             // extended status property related to status
+      PresenceStatuses mStatus {PresenceStatus_None};   // basic status
+      String mExtendedStatus;                           // extended status property related to status
 
-      String mStatusMessage;              // human readable message to display about status
+      String mStatusMessage;                            // human readable message to display about status
 
-      int mPriority;                      // relative priority of this status; higher value is a greater priority;
+      int mPriority {};                                 // relative priority of this status; higher value is a greater priority;
 
       PresenceStatus();
       PresenceStatus(const PresenceStatus &rValue);
 
       static PresenceStatusPtr extract(ElementPtr dataEl);
-      void insert(ElementPtr dataEl);
+      void insert(ElementPtr dataEl) const;
 
       bool hasData() const;
       ElementPtr toDebug() const;
@@ -244,7 +246,7 @@ namespace openpeer
       PresenceTimeZoneLocation(const PresenceTimeZoneLocation &rValue);
 
       static PresenceTimeZoneLocationPtr extract(ElementPtr dataEl);
-      void insert(ElementPtr dataEl);
+      void insert(ElementPtr dataEl) const;
 
       bool hasData() const;
       ElementPtr toDebug() const;
@@ -260,21 +262,21 @@ namespace openpeer
 
     struct PresenceGeographicLocation
     {
-      double mLatitude;                   // degrees from equator; positive is north and negative is south
-      double mLongitude;                  // degrees from zero meridian
-      double mGeographicAccuracyRadius;   // radious of accuracy for the latitude/longitude as expressed in meters; anegative value indicates an invalid geographic coordinate
+      double mLatitude {};                  // degrees from equator; positive is north and negative is south
+      double mLongitude {};                 // degrees from zero meridian
+      double mGeographicAccuracyRadius {};  // radious of accuracy for the latitude/longitude as expressed in meters; anegative value indicates an invalid geographic coordinate
 
-      double mAltitude;                   // height above sea level as measured in meters
-      double mAltitudeAccuracy;           // the absolute value of the + or - altitude accuracy in meters; a negative value indicates an invalid altitude
+      double mAltitude {};                  // height above sea level as measured in meters
+      double mAltitudeAccuracy {};          // the absolute value of the + or - altitude accuracy in meters; a negative value indicates an invalid altitude
 
-      double mDirection;                  // the direction being headed in degrees on a circle (0 = north, 90 = east, 180 = south, 270 = west)
-      double mSpeed;                      // speed moving in direction (meters / second); a negative value indicates the speed/direction are invalid
+      double mDirection {};                 // the direction being headed in degrees on a circle (0 = north, 90 = east, 180 = south, 270 = west)
+      double mSpeed {};                     // speed moving in direction (meters / second); a negative value indicates the speed/direction are invalid
 
       PresenceGeographicLocation();
       PresenceGeographicLocation(const PresenceGeographicLocation &rValue);
 
       static PresenceGeographicLocationPtr extract(ElementPtr dataEl);
-      void insert(ElementPtr dataEl);
+      void insert(ElementPtr dataEl) const;
 
       bool hasData() const;
       ElementPtr toDebug() const;
@@ -314,7 +316,7 @@ namespace openpeer
       PresenceStreetLocation(const PresenceStreetLocation &rValue);
 
       static PresenceStreetLocationPtr extract(ElementPtr dataEl);
-      void insert(ElementPtr dataEl);
+      void insert(ElementPtr dataEl) const;
 
       bool hasData() const;
       ElementPtr toDebug() const;
@@ -340,15 +342,17 @@ namespace openpeer
 
         String mResourceURL;              // where to download resource
         String mMimeType;                 // mime type of resource
-        size_t mSize;                     // size in bytes of resource; 0 = unkonwn;
+        size_t mSize {};                  // size in bytes of resource; 0 = unkonwn;
 
-        int mWidth;                       // width in pixels if known; negative means unknown
-        int mHeight;                      // height in pixels if known; negative means unknown
+        int mWidth {};                    // width in pixels if known; negative means unknown
+        int mHeight {};                   // height in pixels if known; negative means unknown
         Duration mLength;                 // how long is audio/video
 
         String mExternalLinkURL;          // external link to resource
 
         String mEncoding;                 // if set, resource is encoded/encrypted using this algorithm/secret (use IEncryptor/IDecryptor)
+
+        bool hasData() const;
       };
 
       ZS_DECLARE_TYPEDEF_PTR(std::list<Resource>, ResourceList)
@@ -359,7 +363,7 @@ namespace openpeer
       PresenceResources(const PresenceResources &rValue);
 
       static PresenceResourcesPtr extract(ElementPtr dataEl);
-      void insert(ElementPtr dataEl);
+      void insert(ElementPtr dataEl) const;
 
       bool hasData() const;
       ElementPtr toDebug() const;
