@@ -29,7 +29,7 @@
 
  */
 
-#include <openpeer/core/internal/core_PushPresence_Status.h>
+#include <openpeer/core/internal/core_PushPresence_Presence.h>
 #include <openpeer/stack/message/IMessageHelper.h>
 
 #include <openpeer/services/IHelper.h>
@@ -153,14 +153,14 @@ namespace openpeer
     }
 
     //-------------------------------------------------------------------------
-    PresenceStatus::PresenceStatus(const PresenceStatus &rValue)
+    PresenceStatus::PresenceStatus(const PresenceStatus &rValue) :
+      mStatus(rValue.mStatus),
+      mExtendedStatus(rValue.mExtendedStatus),
+
+      mStatusMessage(rValue.mStatusMessage),
+
+      mPriority(rValue.mPriority)
     {
-      mStatus = rValue.mStatus;
-      mExtendedStatus = rValue.mExtendedStatus;
-
-      mStatusMessage = rValue.mStatusMessage;
-
-      mPriority = rValue.mPriority;
     }
 
     //-------------------------------------------------------------------------
@@ -259,14 +259,14 @@ namespace openpeer
     }
 
     //-------------------------------------------------------------------------
-    PresenceTimeZoneLocation::PresenceTimeZoneLocation(const PresenceTimeZoneLocation &rValue)
-    {
-      mOffset = rValue.mOffset;
-      mAbbreviation = rValue.mAbbreviation;
-      mName = rValue.mName;
+    PresenceTimeZoneLocation::PresenceTimeZoneLocation(const PresenceTimeZoneLocation &rValue) :
+      mOffset(rValue.mOffset),
+      mAbbreviation(rValue.mAbbreviation),
+      mName(rValue.mName),
 
-      mCity = rValue.mCity;
-      mCountry = rValue.mCountry;
+      mCity(rValue.mCity),
+      mCountry(rValue.mCountry)
+    {
     }
 
     //-------------------------------------------------------------------------
@@ -375,17 +375,17 @@ namespace openpeer
     }
 
     //-------------------------------------------------------------------------
-    PresenceGeographicLocation::PresenceGeographicLocation(const PresenceGeographicLocation &rValue)
+    PresenceGeographicLocation::PresenceGeographicLocation(const PresenceGeographicLocation &rValue) :
+      mLatitude(rValue.mLatitude),
+      mLongitude(rValue.mLongitude),
+      mGeographicAccuracyRadius(rValue.mGeographicAccuracyRadius),
+
+      mAltitude(rValue.mAltitude),
+      mAltitudeAccuracy(rValue.mAltitudeAccuracy),
+
+      mDirection(rValue.mDirection),
+      mSpeed(rValue.mSpeed)
     {
-      mLatitude = rValue.mLatitude;
-      mLongitude = rValue.mLongitude;
-      mGeographicAccuracyRadius = rValue.mGeographicAccuracyRadius;
-
-      mAltitude = rValue.mAltitude;
-      mAltitudeAccuracy = rValue.mAltitudeAccuracy;
-
-      mDirection = rValue.mDirection;
-      mSpeed = rValue.mSpeed;
     }
 
     //-------------------------------------------------------------------------
@@ -498,27 +498,27 @@ namespace openpeer
     }
 
     //-------------------------------------------------------------------------
-    PresenceStreetLocation::PresenceStreetLocation(const PresenceStreetLocation &rValue)
+    PresenceStreetLocation::PresenceStreetLocation(const PresenceStreetLocation &rValue) :
+      mFriendlyName(rValue.mFriendlyName),
+
+      mSuiteNumber(rValue.mSuiteNumber),
+      mBuildingFloor(rValue.mBuildingFloor),
+      mBuilding(rValue.mBuilding),
+
+      mStreetNumber(rValue.mStreetNumber),
+      mStreetNumberSuffix(rValue.mStreetNumberSuffix),
+
+      mStreetDirectionPrefix(rValue.mStreetDirectionPrefix),
+      mStreetName(rValue.mStreetName),
+      mStreetSuffix(rValue.mStreetSuffix),
+      mStreetDirectionSuffix(rValue.mStreetDirectionSuffix),
+
+      mPostalCommunity(rValue.mPostalCommunity),
+      mServiceCommunity(rValue.mServiceCommunity),
+
+      mProvince(rValue.mProvince),
+      mCountry(rValue.mCountry)
     {
-      mFriendlyName = rValue.mFriendlyName;
-
-      mSuiteNumber = rValue.mSuiteNumber;
-      mBuildingFloor = rValue.mBuildingFloor;
-      mBuilding = rValue.mBuilding;
-
-      mStreetNumber = rValue.mStreetNumber;
-      mStreetNumberSuffix = rValue.mStreetNumberSuffix;
-
-      mStreetDirectionPrefix = rValue.mStreetDirectionPrefix;
-      mStreetName = rValue.mStreetName;
-      mStreetSuffix = rValue.mStreetSuffix;
-      mStreetDirectionSuffix = rValue.mStreetDirectionSuffix;
-
-      mPostalCommunity = rValue.mPostalCommunity;
-      mServiceCommunity = rValue.mServiceCommunity;
-
-      mProvince = rValue.mProvince;
-      mCountry = rValue. mCountry;
     }
 
     //-------------------------------------------------------------------------
@@ -686,9 +686,9 @@ namespace openpeer
     }
 
     //-------------------------------------------------------------------------
-    PresenceResources::PresenceResources(const PresenceResources &rValue)
+    PresenceResources::PresenceResources(const PresenceResources &rValue) :
+      mResources(rValue.mResources)
     {
-      mResources = rValue.mResources;
     }
 
     //-------------------------------------------------------------------------
