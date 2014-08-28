@@ -2201,11 +2201,9 @@ namespace openpeer
           }
           mVoiceRecordFile.erase();
         }
-        mError = mVoiceNetwork->DeRegisterExternalTransport(mVoiceChannel);
-        if (mError != 0) {
-          ZS_LOG_ERROR(Detail, log("failed to deregister voice external transport") + ZS_PARAM("error", mVoiceBase->LastError()))
+        mError = deregisterVoiceTransport();
+        if (0 != mError)
           return;
-        }
         mError = mVoiceBase->DeleteChannel(mVoiceChannel);
         if (mError != 0) {
           ZS_LOG_ERROR(Detail, log("failed to delete voice channel") + ZS_PARAM("error", mVoiceBase->LastError()))
@@ -2232,6 +2230,18 @@ namespace openpeer
         return 0;
       }
       
+      //-----------------------------------------------------------------------
+      int MediaEngine::deregisterVoiceTransport()
+      {
+        mError = mVoiceNetwork->DeRegisterExternalTransport(mVoiceChannel);
+        if (mError != 0) {
+          ZS_LOG_ERROR(Detail, log("failed to deregister voice external transport") + ZS_PARAM("error", mVoiceBase->LastError()))
+          return mError;
+        }
+
+        return 0;
+      }
+
       //-----------------------------------------------------------------------
       int MediaEngine::setVoiceTransportParameters()
       {

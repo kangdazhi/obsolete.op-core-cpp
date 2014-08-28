@@ -291,6 +291,7 @@ namespace openpeer
         virtual void internalStopVoice();
         
         virtual int registerVoiceTransport();
+        virtual int deregisterVoiceTransport();
         virtual int setVoiceTransportParameters();
 
         virtual void internalSetVideoOrientation();
