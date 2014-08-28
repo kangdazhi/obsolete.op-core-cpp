@@ -2367,11 +2367,9 @@ namespace openpeer
           }
           mVoiceRecordFile.erase();
         }
-        mError = mVoiceNetwork->DeRegisterExternalTransport(mVoiceChannel);
-        if (mError != 0) {
-          ZS_LOG_ERROR(Detail, log("failed to deregister voice external transport") + ZS_PARAM("error", mVoiceBase->LastError()))
+        mError = deregisterVoiceTransport();
+        if (0 != mError)
           return;
-        }
         mError = mVoiceBase->DeleteChannel(mVoiceChannel);
         if (mError != 0) {
           ZS_LOG_ERROR(Detail, log("failed to delete voice channel") + ZS_PARAM("error", mVoiceBase->LastError()))
@@ -2399,6 +2397,18 @@ namespace openpeer
       }
       
       //-----------------------------------------------------------------------
+      int MediaEngine::deregisterVoiceTransport()
+      {
+        mError = mVoiceNetwork->DeRegisterExternalTransport(mVoiceChannel);
+        if (mError != 0) {
+          ZS_LOG_ERROR(Detail, log("failed to deregister voice external transport") + ZS_PARAM("error", mVoiceBase->LastError()))
+          return mError;
+        }
+
+        return 0;
+      }
+
+      //-----------------------------------------------------------------------
       int MediaEngine::setVoiceTransportParameters()
       {
         // No transport parameters for external transport.
@@ -2410,7 +2420,7 @@ namespace openpeer
       {
         ZS_LOG_DEBUG(log("start capture renderer"))
         
-#if !defined(__QNX__) && !defined(_ANDROID)
+#if !defined(__QNX__)
         if (mCaptureRenderView == NULL) {
           ZS_LOG_WARNING(Detail, log("capture view is not set"))
           return;
@@ -2435,7 +2445,7 @@ namespace openpeer
       {
         ZS_LOG_DEBUG(log("stop capture renderer"))
         
-#if !defined(__QNX__) && !defined(_ANDROID)
+#if !defined(__QNX__)
         mError = mVideoRender->StopRender(mCaptureId);
         if (mError != 0) {
           ZS_LOG_ERROR(Detail, log("failed to stop rendering video capture") + ZS_PARAM("error", mVideoBase->LastError()))

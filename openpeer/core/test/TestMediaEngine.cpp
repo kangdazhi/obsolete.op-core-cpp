@@ -280,11 +280,18 @@ namespace openpeer
       int TestMediaEngine::registerVoiceTransport()
       {
 #if !defined(TARGET_OS_MAC) || defined(TARGET_OS_IPHONE) && (TARGET_OS_IPHONE)
-        voice_channel_transports_[mVoiceChannel].reset( new VoiceChannelTransport(mVoiceNetwork, mVoiceChannel));
+        voice_channel_transports_[mVoiceChannel].reset(new VoiceChannelTransport(mVoiceNetwork, mVoiceChannel));
 #endif
         return 0;
       }
       
+      //-----------------------------------------------------------------------
+      int TestMediaEngine::deregisterVoiceTransport()
+      {
+        voice_channel_transports_[mVoiceChannel].reset(NULL);
+        return 0;
+      }
+
       //-----------------------------------------------------------------------
       int TestMediaEngine::setVoiceTransportParameters()
       {
@@ -323,7 +330,7 @@ namespace openpeer
       int TestMediaEngine::registerVideoTransport()
       {
 #if !defined(TARGET_OS_MAC) || defined(TARGET_OS_IPHONE) && (TARGET_OS_IPHONE)
-        video_channel_transports_[mVideoChannel].reset( new VideoChannelTransport(mVideoNetwork, mVideoChannel));
+        video_channel_transports_[mVideoChannel].reset(new VideoChannelTransport(mVideoNetwork, mVideoChannel));
 #endif
         return 0;
       }
@@ -331,7 +338,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       int TestMediaEngine::deregisterVideoTransport()
       {
-          video_channel_transports_[mVideoChannel].reset( NULL );
+        video_channel_transports_[mVideoChannel].reset(NULL);
         return 0;
       }
       
