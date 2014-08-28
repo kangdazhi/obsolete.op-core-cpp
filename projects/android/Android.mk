@@ -49,6 +49,7 @@ LOCAL_SRC_FILES := $(SOURCE_PATH)/core_Account_ContactSubscription.cpp \
 		   $(SOURCE_PATH)/core_CallTransport.cpp \
 		   $(SOURCE_PATH)/core_ComposingStatus.cpp \
 		   $(SOURCE_PATH)/core_Contact.cpp \
+		   $(SOURCE_PATH)/core_ComposingStatus.cpp \
 		   $(SOURCE_PATH)/core_ConversationThread.cpp \
 		   $(SOURCE_PATH)/core_ConversationThreadDocumentFetcher.cpp \
 		   $(SOURCE_PATH)/core_ConversationThreadHost.cpp \
@@ -58,6 +59,7 @@ LOCAL_SRC_FILES := $(SOURCE_PATH)/core_Account_ContactSubscription.cpp \
 		   $(SOURCE_PATH)/core_Decryptor.cpp \
 		   $(SOURCE_PATH)/core_Encryptor.cpp \
 		   $(SOURCE_PATH)/core_Helper.cpp \
+		   $(SOURCE_PATH)/core_ISystemMessage.cpp \
 		   $(SOURCE_PATH)/core_Identity.cpp \
 		   $(SOURCE_PATH)/core_ISystemMessage.cpp \
 		   $(SOURCE_PATH)/core_IdentityLookup.cpp \

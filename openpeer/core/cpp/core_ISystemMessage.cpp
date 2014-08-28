@@ -151,6 +151,7 @@ namespace openpeer
                                          WORD errorCode
                                          ) :
       mType(type),
+      mCallee(callee),
       mErrorCode(errorCode)
     {
     }
