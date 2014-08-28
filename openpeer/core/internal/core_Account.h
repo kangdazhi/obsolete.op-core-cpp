@@ -189,6 +189,27 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       #pragma mark
+      #pragma mark IAccountForPushMailboxManager
+      #pragma mark
+
+      interaction IAccountForPushMailboxManager
+      {
+        ZS_DECLARE_TYPEDEF_PTR(IAccountForPushMailboxManager, ForPushMailboxManager)
+
+        virtual PUID getID() const = 0;
+
+        virtual stack::IBootstrappedNetworkPtr getLockboxBootstrapper() const = 0;
+
+        virtual stack::IAccountPtr getStackAccount() const = 0;
+        virtual stack::IServiceNamespaceGrantSessionPtr getNamespaceGrantSession() const = 0;
+        virtual stack::IServiceLockboxSessionPtr getLockboxSession() const = 0;
+      };
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
       #pragma mark IAccountForPushMessaging
       #pragma mark
 
@@ -204,12 +225,6 @@ namespace openpeer
                                                  WORD *outErrorCode = NULL,
                                                  String *outErrorReason = NULL
                                                  ) const = 0;
-
-        virtual stack::IBootstrappedNetworkPtr getLockboxBootstrapper() const = 0;
-
-        virtual stack::IAccountPtr getStackAccount() const = 0;
-        virtual stack::IServiceNamespaceGrantSessionPtr getNamespaceGrantSession() const = 0;
-        virtual stack::IServiceLockboxSessionPtr getLockboxSession() const = 0;
       };
 
       //-----------------------------------------------------------------------
@@ -232,12 +247,6 @@ namespace openpeer
                                                  WORD *outErrorCode = NULL,
                                                  String *outErrorReason = NULL
                                                  ) const = 0;
-
-        virtual stack::IBootstrappedNetworkPtr getLockboxBootstrapper() const = 0;
-
-        virtual stack::IAccountPtr getStackAccount() const = 0;
-        virtual stack::IServiceNamespaceGrantSessionPtr getNamespaceGrantSession() const = 0;
-        virtual stack::IServiceLockboxSessionPtr getLockboxSession() const = 0;
       };
 
       //-----------------------------------------------------------------------
@@ -257,6 +266,7 @@ namespace openpeer
                       public IAccountForConversationThread,
                       public IAccountForIdentity,
                       public IAccountForIdentityLookup,
+                      public IAccountForPushMailboxManager,
                       public IAccountForPushMessaging,
                       public IAccountForPushPresence,
                       public ICallTransportDelegate,
@@ -324,6 +334,7 @@ namespace openpeer
         static AccountPtr convert(ForConversationThreadPtr account);
         static AccountPtr convert(ForIdentityPtr account);
         static AccountPtr convert(ForIdentityLookupPtr account);
+        static AccountPtr convert(ForPushMailboxManagerPtr account);
         static AccountPtr convert(ForPushMessagingPtr account);
         static AccountPtr convert(ForPushPresencePtr account);
 
@@ -467,6 +478,19 @@ namespace openpeer
 
         //---------------------------------------------------------------------
         #pragma mark
+        #pragma mark Account => IAccountForPushMailboxManager
+        #pragma mark
+
+        // (duplicate) virtual PUID getID() const = 0;
+
+        virtual stack::IBootstrappedNetworkPtr getLockboxBootstrapper() const;
+
+        // (duplicate) virtual stack::IAccountPtr getStackAccount() const;
+        // (duplicate) virtual stack::IServiceNamespaceGrantSessionPtr getNamespaceGrantSession() const;
+        // (duplicate) virtual stack::IServiceLockboxSessionPtr getLockboxSession() const;
+
+        //---------------------------------------------------------------------
+        #pragma mark
         #pragma mark Account => IAccountForPushMessaging
         #pragma mark
 
@@ -492,12 +516,6 @@ namespace openpeer
         //                                            WORD *outErrorCode = NULL,
         //                                            String *outErrorReason = NULL
         //                                            ) const;
-
-        virtual stack::IBootstrappedNetworkPtr getLockboxBootstrapper() const;
-
-        // (duplicate) virtual stack::IAccountPtr getStackAccount() const;
-        // (duplicate) virtual stack::IServiceNamespaceGrantSessionPtr getNamespaceGrantSession() const;
-        // (duplicate) virtual stack::IServiceLockboxSessionPtr getLockboxSession() const;
 
         //---------------------------------------------------------------------
         #pragma mark

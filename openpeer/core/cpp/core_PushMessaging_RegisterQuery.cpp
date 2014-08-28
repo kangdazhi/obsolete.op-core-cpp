@@ -48,7 +48,8 @@ namespace openpeer
     {
       ZS_DECLARE_TYPEDEF_PTR(IStackForInternal, UseStack)
 
-      using services::IHelper;
+      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
+      ZS_DECLARE_TYPEDEF_PTR(services::ISettings, UseSettings)
 
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -152,7 +153,7 @@ namespace openpeer
 
         AutoRecursiveLock lock(*this);
 
-        mQuery = mailbox->registerDevice(mThisWeak.lock(), mDeviceToken, services::ISettings::getString(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MAILBOX_FOLDER), mExpires, mMappedType, mUnreadBadge, mSound, mAction, mLaunchImage, mPriority, mValueNames);
+        mQuery = mailbox->registerDevice(mThisWeak.lock(), mDeviceToken, UseSettings::getString(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MAILBOX_FOLDER), mExpires, mMappedType, mUnreadBadge, mSound, mAction, mLaunchImage, mPriority, mValueNames);
 
         mHadQuery = true;
       }
@@ -238,7 +239,7 @@ namespace openpeer
       Log::Params PushMessaging::RegisterQuery::log(const char *message) const
       {
         ElementPtr objectEl = Element::create("core::PushMessaging::RegisterQuery");
-        IHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
         return Log::Params(message, objectEl);
       }
 

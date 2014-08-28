@@ -58,6 +58,20 @@ namespace openpeer
 
       ZS_DECLARE_TYPEDEF_PTR(std::list<IContactPtr>, ContactList)
 
+      typedef String Name;
+      typedef String Value;
+      typedef std::map<Name, Value> NameValueMap;
+      ZS_DECLARE_PTR(NameValueMap)
+
+      struct PushInfo
+      {
+        String mServiceType;  // e.g. "apns", "gcm", or all
+        ElementPtr mValues;   // "values" data associateed with push messages (use "getValues(...)" to extract data
+        ElementPtr mCustom;   // extended push related custom push data
+      };
+
+      typedef std::list<PushInfo> PushInfoList;
+
       struct Status
       {
         String mStatusID;                         // system will fill in this value
@@ -69,9 +83,12 @@ namespace openpeer
 
         IContactPtr mFrom;                        // what peer sent the status (system will fill in if sending a status out)
 
+        PushInfoList mPushInfos;                  // each service has its own push information
+
         static ElementPtr createEmptyPresence();  // create an emty status JSON object ready to be filled with presence data
 
         bool hasData() const;
+        ElementPtr toDebug() const;
       };
       ZS_DECLARE_PTR(Status)
 
@@ -128,6 +145,20 @@ namespace openpeer
       //-----------------------------------------------------------------------
       // PURPOSE: cause a check to refresh data contained within the server
       virtual void recheckNow() = 0;
+
+      //-----------------------------------------------------------------------
+      // PURPOSE: extract a list of name / value pairs contained within
+      //          a push info structure
+      // RETURNS: a pointer to the name value map
+      static NameValueMapPtr getValues(const PushInfo &pushInfo);
+
+      //-----------------------------------------------------------------------
+      // PURPOSE: create a JSON blob compatible with the PushInfo.mValues
+      //          based on a collection of name / value pairs.
+      // RETURNS: a pointer to the values blob or null ElementPtr() if no
+      //          values were found.
+      static ElementPtr createValues(const NameValueMap &values);
+      
     };
 
     //-------------------------------------------------------------------------

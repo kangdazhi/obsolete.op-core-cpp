@@ -179,6 +179,12 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      AccountPtr Account::convert(ForPushMailboxManagerPtr account)
+      {
+        return ZS_DYNAMIC_PTR_CAST(Account, account);
+      }
+
+      //-----------------------------------------------------------------------
       AccountPtr Account::convert(ForPushMessagingPtr account)
       {
         return ZS_DYNAMIC_PTR_CAST(Account, account);

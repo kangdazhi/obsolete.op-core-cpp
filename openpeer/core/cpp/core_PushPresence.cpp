@@ -35,10 +35,11 @@
 #include <openpeer/core/internal/core_Helper.h>
 
 #include <openpeer/core/IContact.h>
+#include <openpeer/core/IHelper.h>
+#include <openpeer/core/IPushMessaging.h>
 
 #include <openpeer/stack/IBootstrappedNetwork.h>
 #include <openpeer/stack/IServicePushMailbox.h>
-#include <openpeer/stack/IHelper.h>
 #include <openpeer/stack/message/IMessageHelper.h>
 
 #include <openpeer/services/IHelper.h>
@@ -55,6 +56,8 @@ namespace openpeer
 {
   namespace core
   {
+    ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
+
     using stack::IServicePushMailboxSession;
 
     namespace internal
@@ -63,7 +66,8 @@ namespace openpeer
 
       ZS_DECLARE_TYPEDEF_PTR(IStackForInternal, UseStack)
 
-      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
+      ZS_DECLARE_TYPEDEF_PTR(services::ISettings, UseSettings)
+
       ZS_DECLARE_TYPEDEF_PTR(stack::message::IMessageHelper, UseMessageHelper)
 
       //-----------------------------------------------------------------------
@@ -84,11 +88,11 @@ namespace openpeer
 
       //-----------------------------------------------------------------------
       PushPresence::PushPresence(
-                                   IMessageQueuePtr queue,
-                                   IPushPresenceDelegatePtr delegate,
-                                   IPushPresenceDatabaseAbstractionDelegatePtr databaseDelegate,
-                                   UseAccountPtr account
-                                   ) :
+                                 IMessageQueuePtr queue,
+                                 IPushPresenceDelegatePtr delegate,
+                                 IPushPresenceDatabaseAbstractionDelegatePtr databaseDelegate,
+                                 UseAccountPtr account
+                                 ) :
         MessageQueueAssociator(queue),
         SharedRecursiveLock(SharedRecursiveLock::create()),
         mDelegate(IPushPresenceDelegateProxy::createWeak(UseStack::queueApplication(), delegate)),
@@ -104,6 +108,8 @@ namespace openpeer
       {
         AutoRecursiveLock lock(*this);
         ZS_LOG_DEBUG(log("init called"))
+
+        mLastVersionDownloaded = UseSettings::getString(OPENPEER_CORE_SETTING_PUSH_PRESENCE_LAST_DOWNLOADED_MESSAGE);
 
         mAccountSubscription = mAccount->subscribe(mThisWeak.lock());
       }
@@ -141,10 +147,10 @@ namespace openpeer
 
       //-----------------------------------------------------------------------
       PushPresencePtr PushPresence::create(
-                                             IPushPresenceDelegatePtr delegate,
-                                             IPushPresenceDatabaseAbstractionDelegatePtr databaseDelegate,
-                                             IAccountPtr inAccount
-                                             )
+                                           IPushPresenceDelegatePtr delegate,
+                                           IPushPresenceDatabaseAbstractionDelegatePtr databaseDelegate,
+                                           IAccountPtr inAccount
+                                           )
       {
         PushPresencePtr pThis(new PushPresence(UseStack::queueCore(), delegate, databaseDelegate, Account::convert(inAccount)));
         pThis->init();
@@ -153,9 +159,9 @@ namespace openpeer
 
       //-----------------------------------------------------------------------
       IPushPresence::PushPresenceStates PushPresence::getState(
-                                                                  WORD *outErrorCode,
-                                                                  String *outErrorReason
-                                                                  ) const
+                                                               WORD *outErrorCode,
+                                                               String *outErrorReason
+                                                               ) const
       {
         AutoRecursiveLock lock(*this);
         if (outErrorCode)
@@ -175,17 +181,17 @@ namespace openpeer
 
       //-----------------------------------------------------------------------
       IPushPresenceRegisterQueryPtr PushPresence::registerDevice(
-                                                                   IPushPresenceRegisterQueryDelegatePtr inDelegate,
-                                                                   const char *inDeviceToken,
-                                                                   Time inExpires,
-                                                                   const char *inMappedType,
-                                                                   bool inUnreadBadge,
-                                                                   const char *inSound,
-                                                                   const char *inAction,
-                                                                   const char *inLaunchImage,
-                                                                   unsigned int inPriority,
-                                                                   const ValueNameList &inValueNames
-                                                                   )
+                                                                 IPushPresenceRegisterQueryDelegatePtr inDelegate,
+                                                                 const char *inDeviceToken,
+                                                                 Time inExpires,
+                                                                 const char *inMappedType,
+                                                                 bool inUnreadBadge,
+                                                                 const char *inSound,
+                                                                 const char *inAction,
+                                                                 const char *inLaunchImage,
+                                                                 unsigned int inPriority,
+                                                                 const ValueNameList &inValueNames
+                                                                 )
       {
         ZS_LOG_DEBUG(log("register called") + ZS_PARAM("delegate", (bool)inDelegate) + ZS_PARAM("device token", inDeviceToken) + ZS_PARAM("expires", inExpires) + ZS_PARAM("mapped type", inMappedType) + ZS_PARAM("unread badge", inUnreadBadge) + ZS_PARAM("sound", inSound) + ZS_PARAM("action", inAction) + ZS_PARAM("launch image", inLaunchImage) + ZS_PARAM("priority", inPriority) + ZS_PARAM("value names", inValueNames.size()))
 
@@ -204,12 +210,71 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void PushPresence::send(
                               const ContactList &toContactList,
-                              const Status &status
+                              const Status &inStatus
                               )
       {
-        ZS_LOG_DEBUG(log("send called") + ZS_PARAM("contacts", toContactList.size()))
+        ZS_LOG_DEBUG(log("send called") + ZS_PARAM("contacts", toContactList.size()) + inStatus.toDebug())
 
         AutoRecursiveLock lock(*this);
+
+        if ((isShutdown()) ||
+            (isShuttingDown())) {
+          ZS_LOG_WARNING(Detail, log("cannot send presence while shutting down/shutdown") + inStatus.toDebug())
+          return;
+        }
+
+        PeerOrIdentityListPtr to(new PeerOrIdentityList);
+
+        for (ContactList::const_iterator iter = toContactList.begin(); iter != toContactList.end(); ++iter) {
+          IContactPtr contact = (*iter);
+          ZS_THROW_INVALID_ARGUMENT_IF(!contact)
+
+          String uri = contact->getPeerURI();
+          ZS_THROW_INVALID_ASSUMPTION_IF(! uri.hasData())
+
+          to->push_back(uri);
+        }
+
+        if (to->size() < 1) {
+          ZS_LOG_WARNING(Detail, log("not deliverying to any remote contacts"))
+          return;
+        }
+
+        StatusPtr status(new Status);
+
+        status->mStatusID = inStatus.mStatusID;
+        status->mSent = inStatus.mSent;
+        status->mExpires = inStatus.mExpires;
+        status->mPresenceEl = inStatus.mPresenceEl ? inStatus.mPresenceEl->clone()->toElement() : ElementPtr();
+        status->mFrom = inStatus.mFrom;
+
+        if (Time() == status->mSent) {
+          status->mSent = zsLib::now();
+        }
+
+        if (Time() == status->mExpires) {
+          status->mExpires = zsLib::now() + Seconds(UseSettings::getUInt(OPENPEER_CORE_SETTING_PUSH_PRESENCE_DEFAULT_PUSH_EXPIRES_IN_SECONDS));
+        }
+
+        if (mAccount) {
+          status->mFrom = IContact::getForSelf(Account::convert(mAccount));
+        }
+
+        for (PushInfoList::const_iterator iter = status->mPushInfos.begin(); iter != status->mPushInfos.end(); ++iter) {
+          const PushInfo &sourcePushInfo = (*iter);
+
+          PushInfo pushInfo;
+
+          pushInfo.mServiceType = sourcePushInfo.mServiceType;
+          pushInfo.mValues = sourcePushInfo.mValues ? sourcePushInfo.mValues->clone()->toElement() : ElementPtr();
+          pushInfo.mCustom = sourcePushInfo.mValues ? sourcePushInfo.mCustom->clone()->toElement() : ElementPtr();
+
+          status->mPushInfos.push_back(pushInfo);
+        }
+
+        mPendingDelivery.push_back(ToAndStatusPair(to, status));
+
+        IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
       }
       
       //-----------------------------------------------------------------------
@@ -281,9 +346,9 @@ namespace openpeer
 
       //-----------------------------------------------------------------------
       void PushPresence::onServicePushMailboxSessionStateChanged(
-                                                                  IServicePushMailboxSessionPtr session,
-                                                                  SessionStates state
-                                                                  )
+                                                                 IServicePushMailboxSessionPtr session,
+                                                                 SessionStates state
+                                                                 )
       {
         AutoRecursiveLock lock(*this);
         ZS_LOG_DEBUG(log("push mailbox state changed"))
@@ -292,26 +357,18 @@ namespace openpeer
 
       //-----------------------------------------------------------------------
       void PushPresence::onServicePushMailboxSessionFolderChanged(
-                                                                   IServicePushMailboxSessionPtr session,
-                                                                   const char *folder
-                                                                   )
+                                                                  IServicePushMailboxSessionPtr session,
+                                                                  const char *folder
+                                                                  )
       {
         AutoRecursiveLock lock(*this);
-        if (folder != services::ISettings::getString(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MAILBOX_FOLDER)) {
+        if (folder != UseSettings::getString(OPENPEER_CORE_SETTING_PUSH_PRESENCE_DEFAULT_PUSH_MAILBOX_FOLDER)) {
           ZS_LOG_TRACE(log("not interested in this folder update") + ZS_PARAM("folder", folder))
           return;
         }
 
-        if (!mDelegate) {
-          ZS_LOG_WARNING(Detail, log("delegate gone"))
-          return;
-        }
-
-//        try {
-//          mDelegate->onPushPresenceNewMessages(mThisWeak.lock());
-//        } catch(IPushPresenceDelegateProxy::Exceptions::DelegateGone &) {
-//          ZS_LOG_WARNING(Detail, log("delegate gone"))
-//        }
+        ZS_LOG_DEBUG(log("push mailbox folder changed"))
+        step();
       }
 
       //-----------------------------------------------------------------------
@@ -354,6 +411,10 @@ namespace openpeer
         UseServicesHelper::debugAppend(resultEl, "graceful shutdown reference", (bool)mGracefulShutdownReference);
 
         UseServicesHelper::debugAppend(resultEl, "delegate", (bool)mDelegate);
+        UseServicesHelper::debugAppend(resultEl, "database delegate", (bool)mDatabase);
+
+        UseServicesHelper::debugAppend(resultEl, IServicePushMailboxSession::toDebug(mMailbox));
+        UseServicesHelper::debugAppend(resultEl, "mailbox subscription", mMailboxSubscription ? mMailboxSubscription->getID() : 0);
 
         UseServicesHelper::debugAppend(resultEl, "account", mAccount ? mAccount->getID() : 0);
         UseServicesHelper::debugAppend(resultEl, "account subscription", mAccountSubscription ? mAccountSubscription->getID() : 0);
@@ -364,6 +425,10 @@ namespace openpeer
         UseServicesHelper::debugAppend(resultEl, "last error reason", mLastErrorReason);
 
         UseServicesHelper::debugAppend(resultEl, "pending attachment register queries", mPendingAttachmentRegisterQueries.size());
+
+        UseServicesHelper::debugAppend(resultEl, "last version downloaded", mLastVersionDownloaded);
+
+        UseServicesHelper::debugAppend(resultEl, "pending delivery", mPendingDelivery.size());
 
         return resultEl;
       }
@@ -397,6 +462,10 @@ namespace openpeer
         mPendingAttachmentRegisterQueries.clear();
 
         mMailbox.reset();
+        if (mMailboxSubscription) {
+          mMailboxSubscription->cancel();
+          mMailboxSubscription.reset();
+        }
 
         mDelegate.reset();
 
@@ -405,6 +474,8 @@ namespace openpeer
           mAccountSubscription->cancel();
           mAccountSubscription.reset();
         }
+
+        mPendingDelivery.clear();
       }
 
       //-----------------------------------------------------------------------
@@ -460,6 +531,8 @@ namespace openpeer
         if (!stepAccount()) goto post_step;
         if (!stepMailbox()) goto post_step;
         if (!stepAttach()) goto post_step;
+        if (!stepGetMessages()) goto post_step;
+        if (!stepDeliverMessages()) goto post_step;
 
         setCurrentState(PushPresenceState_Ready);
 
@@ -543,32 +616,11 @@ namespace openpeer
 
         ZS_LOG_DEBUG(log("step mailbox - setting up mailbox"))
 
-        IBootstrappedNetworkPtr network = mAccount->getLockboxBootstrapper();
+        mMailbox = UsePushMailboxManager::create(mThisWeak.lock(), mDatabase, UseStack::queueApplication(), Account::convert(mAccount), mMailboxSubscription);
 
-        IServicePushMailboxPtr servicePushmailbox = IServicePushMailbox::createServicePushMailboxFrom(network);
-
-        mMailbox = IServicePushMailboxSession::create(mThisWeak.lock(), mDatabase, UseStack::queueApplication(), servicePushmailbox, mAccount->getStackAccount(), mAccount->getNamespaceGrantSession(), mAccount->getLockboxSession());
-
-        String monitorFolder = services::ISettings::getString(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MAILBOX_FOLDER);
+        String monitorFolder = UseSettings::getString(OPENPEER_CORE_SETTING_PUSH_PRESENCE_DEFAULT_PUSH_MAILBOX_FOLDER);
 
         mMailbox->monitorFolder(monitorFolder);
-
-        if (mLastVersionDownloaded.hasData()) {
-          ZS_LOG_DEBUG(log("checking if there are new downloads available at this time"))
-          String latestAvailableVersion = mMailbox->getLatestDownloadVersionAvailableForFolder(monitorFolder);
-
-          if (latestAvailableVersion != mLastVersionDownloaded) {
-            if (mDelegate) {
-//              try {
-//                mDelegate->onPushPresenceNewMessages(mThisWeak.lock());
-//              } catch(IPushPresenceDelegateProxy::Exceptions::DelegateGone &) {
-//                ZS_LOG_WARNING(Detail, log("delegate gone"))
-//              }
-            }
-          }
-
-          mLastVersionDownloaded.clear();
-        }
 
         return true;
       }
@@ -589,6 +641,127 @@ namespace openpeer
         return true;
       }
 
+      //-----------------------------------------------------------------------
+      bool PushPresence::stepGetMessages()
+      {
+        ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSession::PushMessage, PushMessage)
+        ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSession::PushMessageList, PushMessageList)
+        ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSession::MessageIDList, MessageIDList)
+
+        ZS_LOG_TRACE(log("step get messages"))
+
+        String monitorFolder = UseSettings::getString(OPENPEER_CORE_SETTING_PUSH_PRESENCE_DEFAULT_PUSH_MAILBOX_FOLDER);
+        String latestAvailableVersion = mMailbox->getLatestDownloadVersionAvailableForFolder(monitorFolder);
+
+        if (latestAvailableVersion != mLastVersionDownloaded) {
+
+          PushMessageListPtr added;
+          MessageIDListPtr removed;
+
+          bool result = mMailbox->getFolderMessageUpdates(monitorFolder, mLastVersionDownloaded, mLastVersionDownloaded, added, removed);
+
+          if (!result) {
+            mLastVersionDownloaded = String();
+            mMailbox->getFolderMessageUpdates(monitorFolder, mLastVersionDownloaded, mLastVersionDownloaded, added, removed);
+          }
+
+          if (removed) {
+            // not needed
+          }
+
+          if (added) {
+            for (PushMessageList::iterator iter = added->begin(); iter != added->end(); ++iter) {
+              const PushMessagePtr &message = (*iter);
+
+              if (OPENPEER_CORE_PUSH_PRESENCE_JSON_MIME_TYPE != message->mMimeType) {
+                ZS_LOG_WARNING(Detail, log("presence mime type was not understood") + ZS_PARAM("mime type", message->mMimeType) + ZS_PARAM("expecting", OPENPEER_CORE_PUSH_PRESENCE_JSON_MIME_TYPE))
+                continue;
+              }
+
+              if (!message->mFullMessage) {
+                ZS_LOG_WARNING(Detail, log("will not download messages that are too big to fit into memory") + ZS_PARAM("filename", message->mFullMessageFileName))
+                continue;
+              }
+
+              ElementPtr presenceEl = IHelper::createElement(UseServicesHelper::convertToString(*message->mFullMessage));
+
+              StatusPtr status(new Status);
+              status->mStatusID = message->mMessageID;
+
+              status->mPresenceEl = presenceEl;
+
+              status->mSent = message->mSent;
+              status->mExpires = message->mExpires;
+
+              if (message->mFrom) {
+                status->mFrom = Contact::convert(UseContact::createFromPeer(Account::convert(mAccount), message->mFrom));
+              }
+
+              if (status->hasData()) {
+                try {
+                  ZS_LOG_DEBUG(log("notifying about new status") + status->toDebug())
+                  mDelegate->onPushPresenceNewStatus(mThisWeak.lock(), status);
+                } catch(IPushPresenceDelegateProxy::Exceptions::DelegateGone &) {
+                  ZS_LOG_WARNING(Detail, log("delegate gone"))
+                }
+              }
+
+            }
+          }
+
+          UseSettings::setString(OPENPEER_CORE_SETTING_PUSH_PRESENCE_DEFAULT_PUSH_MAILBOX_FOLDER, mLastVersionDownloaded);
+        }
+
+        return true;
+      }
+
+      //-----------------------------------------------------------------------
+      bool PushPresence::stepDeliverMessages()
+      {
+        ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSession::PushMessage, PushMessage)
+        ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSession::PushInfo, MailboxPushInfo)
+        ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSendQueryDelegateProxy, IServicePushMailboxSendQueryDelegateProxy)
+
+        ZS_LOG_TRACE(log("step deliver message"))
+        if (mPendingDelivery.size() < 1) {
+          ZS_LOG_TRACE(log("step deliver message - nothing to deliver"))
+          return true;
+        }
+
+        for (StatusList::iterator iter = mPendingDelivery.begin(); iter != mPendingDelivery.end(); ++iter) {
+          ToListPtr to = (*iter).first;
+          StatusPtr status = (*iter).second;
+
+          PushMessage message;
+
+          message.mMessageID = status->mStatusID;
+          message.mTo = to;
+          message.mSent = status->mSent;
+          message.mExpires = status->mExpires;
+          message.mFullMessage = status->mPresenceEl ? UseServicesHelper::convertToBuffer(IHelper::convertToString(status->mPresenceEl)) : SecureByteBlockPtr();
+          message.mFrom = status->mFrom ? UseContactPtr(Contact::convert(status->mFrom))->getPeer() : IPeerPtr();
+          message.mMimeType = OPENPEER_CORE_PUSH_PRESENCE_JSON_MIME_TYPE;
+
+          message.mPushType = UseSettings::getString(OPENPEER_CORE_SETTING_PUSH_PRESENCE_DEFAULT_PUSH_MESSAGE_TYPE);
+
+          for (PushInfoList::iterator pushIter = status->mPushInfos.begin(); pushIter != status->mPushInfos.end(); ++pushIter) {
+            const PushInfo &sourcePushInfo = (*pushIter);
+
+            MailboxPushInfo pushInfo;
+            pushInfo.mServiceType = sourcePushInfo.mServiceType;
+            pushInfo.mValues = sourcePushInfo.mValues ? sourcePushInfo.mValues->clone()->toElement() : ElementPtr();
+            pushInfo.mCustom = sourcePushInfo.mValues ? sourcePushInfo.mCustom->clone()->toElement() : ElementPtr();
+
+            message.mPushInfos.push_back(pushInfo);
+          }
+
+          mMailbox->sendMessage(IServicePushMailboxSendQueryDelegateProxy::createNoop(getAssociatedMessageQueue()), message, UseSettings::getString(OPENPEER_CORE_SETTING_PUSH_PRESENCE_DEFAULT_PUSH_MAILBOX_FOLDER), false);
+        }
+
+        mPendingDelivery.clear();
+
+        return true;
+      }
 
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -649,12 +822,31 @@ namespace openpeer
 
     //-------------------------------------------------------------------------
     IPushPresencePtr IPushPresence::create(
-                                             IPushPresenceDelegatePtr delegate,
-                                             IPushPresenceDatabaseAbstractionDelegatePtr databaseDelegate,
-                                             IAccountPtr account
-                                             )
+                                           IPushPresenceDelegatePtr delegate,
+                                           IPushPresenceDatabaseAbstractionDelegatePtr databaseDelegate,
+                                           IAccountPtr account
+                                           )
     {
       return internal::IPushPresenceFactory::singleton().create(delegate, databaseDelegate, account);
+    }
+
+    //-------------------------------------------------------------------------
+    IPushPresence::NameValueMapPtr IPushPresence::getValues(const PushInfo &inPushInfo)
+    {
+      ZS_DECLARE_TYPEDEF_PTR(IPushMessaging::PushInfo, MessagingPushInfo)
+
+      MessagingPushInfo pushInfo;
+      pushInfo.mServiceType = inPushInfo.mServiceType;
+      pushInfo.mValues = inPushInfo.mValues;
+      pushInfo.mCustom = inPushInfo.mCustom;
+
+      return IPushMessaging::getValues(pushInfo);
+    }
+
+    //-------------------------------------------------------------------------
+    ElementPtr IPushPresence::createValues(const NameValueMap &values)
+    {
+      return IPushMessaging::createValues(values);
     }
 
     //-------------------------------------------------------------------------
@@ -682,6 +874,23 @@ namespace openpeer
               (Time() != mExpires) ||
 
               ((bool)mFrom));
+    }
+
+    //-------------------------------------------------------------------------
+    ElementPtr IPushPresence::Status::toDebug() const
+    {
+      ElementPtr resultEl = Element::create("core::IPushPresence::Status");
+
+      UseServicesHelper::debugAppend(resultEl, "id", mStatusID);
+
+      UseServicesHelper::debugAppend(resultEl, "presence", (bool)mPresenceEl);
+
+      UseServicesHelper::debugAppend(resultEl, "sent", mSent);
+      UseServicesHelper::debugAppend(resultEl, "expires", mExpires);
+
+      UseServicesHelper::debugAppend(resultEl, IContact::toDebug(mFrom));
+
+      return resultEl;
     }
 
     //-------------------------------------------------------------------------

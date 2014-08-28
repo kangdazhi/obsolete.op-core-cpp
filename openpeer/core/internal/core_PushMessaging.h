@@ -38,6 +38,7 @@
 
 #include <openpeer/core/internal/core_Account.h>
 #include <openpeer/core/internal/core_Contact.h>
+#include <openpeer/core/internal/core_PushMailboxManager.h>
 
 #include <openpeer/stack/IServicePushMailbox.h>
 
@@ -81,7 +82,10 @@ namespace openpeer
         ZS_DECLARE_CLASS_PTR(RegisterQuery)
         ZS_DECLARE_CLASS_PTR(PushQuery)
 
+        ZS_DECLARE_TYPEDEF_PTR(IPushMailboxManagerForPushMessaging, UsePushMailboxManager)
+
         ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSession, IServicePushMailboxSession)
+        ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSessionSubscription, IServicePushMailboxSessionSubscription)
         ZS_DECLARE_TYPEDEF_PTR(IAccountForPushMessaging, UseAccount)
         ZS_DECLARE_TYPEDEF_PTR(IContactForPushMessaging, UseContact)
 
@@ -280,6 +284,7 @@ namespace openpeer
         IPushMessagingDatabaseAbstractionDelegatePtr mDatabase;
 
         IServicePushMailboxSessionPtr mMailbox;
+        IServicePushMailboxSessionSubscriptionPtr mMailboxSubscription;
 
         UseAccountPtr mAccount;
         IAccountSubscriptionPtr mAccountSubscription;

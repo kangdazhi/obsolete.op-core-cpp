@@ -66,6 +66,8 @@ namespace openpeer
       ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
       ZS_DECLARE_TYPEDEF_PTR(stack::message::IMessageHelper, UseMessageHelper)
 
+      ZS_DECLARE_TYPEDEF_PTR(services::ISettings, UseSettings)
+
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -263,7 +265,7 @@ namespace openpeer
           pushMessage->mSent = zsLib::now();
         }
         if (Time() == pushMessage->mExpires) {
-          pushMessage->mSent = zsLib::now() + Seconds(services::ISettings::getUInt(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_EXPIRES_IN_SECONDS));
+          pushMessage->mSent = zsLib::now() + Seconds(UseSettings::getUInt(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_EXPIRES_IN_SECONDS));
         }
 
         if (mAccount) {
@@ -318,14 +320,14 @@ namespace openpeer
         IServicePushMailboxSession::PushMessageListPtr added;
         IServicePushMailboxSession::MessageIDListPtr removed;
 
-        bool result = mMailbox->getFolderMessageUpdates(services::ISettings::getString(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MAILBOX_FOLDER), lastVersionDownloaded, outUpdatedToVersion, added, removed);
+        bool result = mMailbox->getFolderMessageUpdates(UseSettings::getString(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MAILBOX_FOLDER), lastVersionDownloaded, outUpdatedToVersion, added, removed);
 
         if (!result) {
           outUpdatedToVersion = String();
           return false;
         }
 
-        String pushType = services::ISettings::getString(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MESSAGE_TYPE);
+        String pushType = UseSettings::getString(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MESSAGE_TYPE);
 
         if (added) {
           for (MailboxPushMessageList::const_iterator iter = added->begin(); iter != added->end(); ++iter) {
@@ -487,7 +489,7 @@ namespace openpeer
                                                                    )
       {
         AutoRecursiveLock lock(*this);
-        if (folder != services::ISettings::getString(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MAILBOX_FOLDER)) {
+        if (folder != UseSettings::getString(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MAILBOX_FOLDER)) {
           ZS_LOG_TRACE(log("not interested in this folder update") + ZS_PARAM("folder", folder))
           return;
         }
@@ -544,6 +546,10 @@ namespace openpeer
         UseServicesHelper::debugAppend(resultEl, "graceful shutdown reference", (bool)mGracefulShutdownReference);
 
         UseServicesHelper::debugAppend(resultEl, "delegate", (bool)mDelegate);
+        UseServicesHelper::debugAppend(resultEl, "database delegate", (bool)mDatabase);
+
+        UseServicesHelper::debugAppend(resultEl, IServicePushMailboxSession::toDebug(mMailbox));
+        UseServicesHelper::debugAppend(resultEl, "mailbox subscription", mMailboxSubscription ? mMailboxSubscription->getID() : 0);
 
         UseServicesHelper::debugAppend(resultEl, "account", mAccount ? mAccount->getID() : 0);
         UseServicesHelper::debugAppend(resultEl, "account subscription", mAccountSubscription ? mAccountSubscription->getID() : 0);
@@ -599,6 +605,10 @@ namespace openpeer
         mPendingAttachmentPushQueries.clear();
         
         mMailbox.reset();
+        if (mMailboxSubscription) {
+          mMailboxSubscription->cancel();
+          mMailboxSubscription.reset();
+        }
 
         mDelegate.reset();
 
@@ -746,13 +756,9 @@ namespace openpeer
 
         ZS_LOG_DEBUG(log("step mailbox - setting up mailbox"))
 
-        IBootstrappedNetworkPtr network = mAccount->getLockboxBootstrapper();
+        mMailbox = UsePushMailboxManager::create(mThisWeak.lock(), mDatabase, UseStack::queueApplication(), Account::convert(mAccount), mMailboxSubscription);
 
-        IServicePushMailboxPtr servicePushmailbox = IServicePushMailbox::createServicePushMailboxFrom(network);
-
-        mMailbox = IServicePushMailboxSession::create(mThisWeak.lock(), mDatabase, UseStack::queueApplication(), servicePushmailbox, mAccount->getStackAccount(), mAccount->getNamespaceGrantSession(), mAccount->getLockboxSession());
-
-        String monitorFolder = services::ISettings::getString(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MAILBOX_FOLDER);
+        String monitorFolder = UseSettings::getString(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MAILBOX_FOLDER);
 
         mMailbox->monitorFolder(monitorFolder);
 
@@ -936,7 +942,7 @@ namespace openpeer
         }
 
         if (dest.mMessageType.isEmpty()) {
-          dest.mMessageType = services::ISettings::getString(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MESSAGE_TYPE);
+          dest.mMessageType = UseSettings::getString(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MESSAGE_TYPE);
         }
 
         if (dest.mMimeType.isEmpty()) {

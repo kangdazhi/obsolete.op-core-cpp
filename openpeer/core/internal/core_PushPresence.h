@@ -38,17 +38,22 @@
 
 #include <openpeer/core/internal/core_Account.h>
 #include <openpeer/core/internal/core_Contact.h>
+#include <openpeer/core/internal/core_PushMailboxManager.h>
 
 #include <openpeer/stack/IServicePushMailbox.h>
 
 #include <zsLib/MessageQueueAssociator.h>
 
-#define OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MAILBOX_FOLDER "openpeer/core/push-messaging-default-push-mailbox-folder"
-#define OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MESSAGE_TYPE "openpeer/core/push-messaging-default-push-message-type"
+#define OPENPEER_CORE_SETTING_PUSH_PRESENCE_DEFAULT_PUSH_MAILBOX_FOLDER "openpeer/core/push-presence-default-push-mailbox-folder"
+#define OPENPEER_CORE_SETTING_PUSH_PRESENCE_DEFAULT_PUSH_MESSAGE_TYPE "openpeer/core/push-presence-default-push-message-type"
 
-#define OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_EXPIRES_IN_SECONDS "openpeer/core/push-messaging-default-push-expires-in-seconds"
+#define OPENPEER_CORE_SETTING_PUSH_PRESENCE_DEFAULT_PUSH_EXPIRES_IN_SECONDS "openpeer/core/push-presence-default-push-expires-in-seconds"
 
-#define OPENPEER_CORE_PUSH_MESSAGING_MIMETYPE_FILTER_PREFIX "text/"
+#define OPENPEER_CORE_SETTING_PUSH_PRESENCE_LAST_DOWNLOADED_MESSAGE "openpeer/core/push-presence-last-downloaded-message"
+
+#define OPENPEER_CORE_PUSH_PRESENCE_JSON_MIME_TYPE "text/json"
+
+#define OPENPEER_CORE_PUSH_PRESENCE_PUSH_SERVICE_TYPE "all"
 
 namespace openpeer
 {
@@ -79,14 +84,22 @@ namespace openpeer
 
         ZS_DECLARE_CLASS_PTR(RegisterQuery)
 
+        ZS_DECLARE_TYPEDEF_PTR(IPushMailboxManagerForPushPresence, UsePushMailboxManager)
+
         ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSession, IServicePushMailboxSession)
+        ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSessionSubscription, IServicePushMailboxSessionSubscription)
         ZS_DECLARE_TYPEDEF_PTR(IAccountForPushPresence, UseAccount)
         ZS_DECLARE_TYPEDEF_PTR(IContactForPushPresence, UseContact)
 
         typedef std::list<RegisterQueryPtr> RegisterQueryList;
 
+        typedef String PeerOrIdentityURI;
+        ZS_DECLARE_TYPEDEF_PTR(std::list<PeerOrIdentityURI>, PeerOrIdentityList)
+
         typedef String MessageID;
-        typedef std::list<MessageID> MessageIDList;
+        typedef PeerOrIdentityListPtr ToListPtr;
+        typedef std::pair<ToListPtr, StatusPtr> ToAndStatusPair;
+        typedef std::list<ToAndStatusPair> StatusList;
 
       protected:
         PushPresence(
@@ -216,6 +229,8 @@ namespace openpeer
         bool stepAccount();
         bool stepMailbox();
         bool stepAttach();
+        bool stepGetMessages();
+        bool stepDeliverMessages();
 
       public:
 
@@ -237,6 +252,7 @@ namespace openpeer
         IPushPresenceDatabaseAbstractionDelegatePtr mDatabase;
 
         IServicePushMailboxSessionPtr mMailbox;
+        IServicePushMailboxSessionSubscriptionPtr mMailboxSubscription;
 
         UseAccountPtr mAccount;
         IAccountSubscriptionPtr mAccountSubscription;
@@ -249,6 +265,8 @@ namespace openpeer
         RegisterQueryList mPendingAttachmentRegisterQueries;
 
         String mLastVersionDownloaded;
+
+        StatusList mPendingDelivery;
       };
 
       //-----------------------------------------------------------------------
@@ -264,10 +282,10 @@ namespace openpeer
         static IPushPresenceFactory &singleton();
 
         virtual PushPresencePtr create(
-                                        IPushPresenceDelegatePtr delegate,
-                                        IPushPresenceDatabaseAbstractionDelegatePtr databaseDelegate,
-                                        IAccountPtr account
-                                        );
+                                       IPushPresenceDelegatePtr delegate,
+                                       IPushPresenceDatabaseAbstractionDelegatePtr databaseDelegate,
+                                       IAccountPtr account
+                                       );
       };
 
       class PushPresenceFactory : public IFactory<IPushPresenceFactory> {};
