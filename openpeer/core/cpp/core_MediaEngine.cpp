@@ -767,7 +767,7 @@ namespace openpeer
           if (cameraType == CameraType_Front)
             mLifetimeWantFrontCameraCaptureCapability = capability;
           else if (cameraType == CameraType_Back)
-            mLifetimeWantFrontCameraCaptureCapability = capability;
+            mLifetimeWantBackCameraCaptureCapability = capability;
         }
         
         ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
@@ -3206,8 +3206,8 @@ namespace openpeer
             }
             maxBitrate = 400;
           } else {
-            width = 612;
-            height = 816;
+            width = 720;
+            height = 480;
             maxFramerate = 15;
             maxBitrate = 400;
           }
@@ -3222,8 +3222,8 @@ namespace openpeer
             }
             maxBitrate = 400;
           } else {
-            width = 360;
-            height = 640;
+            width = 720;
+            height = 480;
             maxFramerate = 15;
             maxBitrate = 400;
           }
