@@ -303,8 +303,8 @@ namespace openpeer
             pThis->mData->mBundleEl = pThis->constructBundleElement(signer);
           }
 
+          AutoRecursiveLock lock(*pThis);
           pThis->scheduleCaching();
-
           return pThis;
         }
 
@@ -327,6 +327,7 @@ namespace openpeer
           if (pThis->mData->mValidated)
             pThis->mFlags = Flag_Validated;
 
+          AutoRecursiveLock lock(*pThis);
           pThis->scheduleCaching();
           return pThis;
         }
@@ -567,7 +568,12 @@ namespace openpeer
           DocumentPtr doc = Document::createFromParsedJSON(output);
           ZS_THROW_INVALID_ASSUMPTION_IF(!doc)
 
-          mData = parseFromElement(UseAccountPtr(), doc->getFirstChildElement());
+          ElementPtr child = doc->getFirstChildElement();
+          if (child) {
+            child->orphan();
+          }
+
+          mData = parseFromElement(UseAccountPtr(), child);
           ZS_THROW_INVALID_ASSUMPTION_IF(!mData)
 
           scheduleCaching();
@@ -754,10 +760,14 @@ namespace openpeer
           pThis->mThisWeak = pThis;
           pThis->mReceiptsElementName = messageReceiptsEl->getValue();
 
-          try {
-            pThis->mVersion = Numeric<UINT>(messageReceiptsEl->getAttributeValue("version"));
-            ElementPtr messagesEl = messageReceiptsEl->findFirstChildElementChecked("messages");
+          pThis->mVersion = Numeric<UINT>(messageReceiptsEl->getAttributeValue("version"));
+          ElementPtr messagesEl = messageReceiptsEl->findFirstChildElement("messages");
+          if (!messagesEl) {
+            ZS_LOG_TRACE(pThis->log("no messages contained within message receipts"))
+            return pThis;
+          }
 
+          try {
             ElementPtr messageEl = messagesEl->findFirstChildElement("message");
             while (messageEl)
             {
@@ -776,8 +786,6 @@ namespace openpeer
 
               messageEl = messageEl->findNextSiblingElement("message");
             }
-          } catch(CheckFailed &) {
-            return MessageReceiptsPtr();
           } catch (Numeric<UINT>::ValueOutOfRange &) {
             ZS_LOG_ERROR(Detail, pThis->log("message receipt parse value out of range"))
             return MessageReceiptsPtr();

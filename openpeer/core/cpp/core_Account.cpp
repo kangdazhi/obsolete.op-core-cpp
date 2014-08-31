@@ -258,6 +258,7 @@ namespace openpeer
           grantID = reloginInformation->findFirstChildElementChecked("grantID")->getTextDecoded();
           lockboxKey = UseServicesHelper::convertFromBase64(reloginInformation->findFirstChildElementChecked("lockboxKey")->getTextDecoded());
         } catch (CheckFailed &) {
+          ZS_LOG_ERROR(Detail, pThis->log("expected element was missing"))
           return AccountPtr();
         }
 
