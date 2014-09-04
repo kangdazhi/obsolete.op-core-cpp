@@ -896,7 +896,7 @@ namespace openpeer
         }
 
         if (!changed) {
-          ZS_LOG_TRACE(log("contact connection state did not change") +  + ZS_PARAM("new state", IConversationThread::toString(state)) + UseContact::toDebug(contact))
+          ZS_LOG_TRACE(log("contact connection state did not change") + ZS_PARAM("new state", IConversationThread::toString(state)) + UseContact::toDebug(contact))
           return;
         }
 
@@ -1907,7 +1907,7 @@ namespace openpeer
           bool changed = false;
 
           if (IConversationThread::ContactConnectionState_NotApplicable == state) {
-            ZS_LOG_TRACE(log("contact connection state is not known yet") + UseContact::toDebug(contact)))
+            ZS_LOG_TRACE(log("contact connection state is not known yet") + UseContact::toDebug(contact))
             continue;
           }
 
