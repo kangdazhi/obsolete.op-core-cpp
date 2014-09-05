@@ -927,7 +927,7 @@ namespace openpeer
         }
 
         ComposingStatusPtr existingComposingStatus = ComposingStatus::extract(existingStatus.mStatusEl);
-        ComposingStatusPtr newComposingStatus = ComposingStatus::extract(existingStatus.mStatusEl);
+        ComposingStatusPtr newComposingStatus = ComposingStatus::extract(newStatus.mStatusEl);
 
 
         ComposingStatus::ComposingStates existingState = (existingComposingStatus ? existingComposingStatus->mComposingStatus : ComposingStatus::ComposingState_None);
