@@ -319,7 +319,7 @@ namespace openpeer
           MessagePtr pThis = MessagePtr(new Message);
           pThis->mThisWeak = pThis;
 
-          pThis->mData = pThis->parseFromElement(account, messageBundleEl);
+          pThis->mData = pThis->parseFromElement(account, messageBundleEl, false);
 
           if (!pThis->mData)
             return MessagePtr();
@@ -573,7 +573,7 @@ namespace openpeer
             child->orphan();
           }
 
-          mData = parseFromElement(UseAccountPtr(), child);
+          mData = parseFromElement(UseAccountPtr(), child, true);
           ZS_THROW_INVALID_ASSUMPTION_IF(!mData)
 
           scheduleCaching();
@@ -596,7 +596,8 @@ namespace openpeer
         //---------------------------------------------------------------------
         Message::MessageDataPtr Message::parseFromElement(
                                                           UseAccountPtr account,
-                                                          ElementPtr messageBundleEl
+                                                          ElementPtr messageBundleEl,
+                                                          bool okayToAdoptBundleEl
                                                           ) const
         {
           MessageDataPtr data(new ManagedMessageData);
@@ -636,7 +637,11 @@ namespace openpeer
                 data->mValidated = true;
               }
 
-              data->mBundleEl = messageBundleEl;
+              if (okayToAdoptBundleEl) {
+                data->mBundleEl = messageBundleEl;
+              } else {
+                data->mBundleEl = messageBundleEl->clone()->toElement();
+              }
             }
           } catch (CheckFailed &) {
             ZS_LOG_ERROR(Detail, log("message bundle parse element check failure"))
