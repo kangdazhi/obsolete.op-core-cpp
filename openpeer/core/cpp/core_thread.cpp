@@ -35,6 +35,10 @@
 #include <openpeer/core/internal/core_Contact.h>
 #include <openpeer/core/internal/core_Account.h>
 #include <openpeer/core/internal/core_Helper.h>
+#include <openpeer/core/internal/core_Stack.h>
+#include <openpeer/core/internal/core_Settings.h>
+
+#include <openpeer/core/ICache.h>
 
 #include <openpeer/stack/message/IMessageHelper.h>
 #include <openpeer/stack/IPublication.h>
@@ -64,7 +68,7 @@ namespace openpeer
     {
       namespace thread
       {
-        using services::IHelper;
+        using zsLib::ITimerDelegateProxy;
 
         using zsLib::Numeric;
         using zsLib::IPAddress;
@@ -76,6 +80,11 @@ namespace openpeer
 
         typedef IPublication::PublishToRelationshipsMap PublishToRelationshipsMap;
         typedef IPublication::RelationshipList RelationshipList;
+
+        ZS_DECLARE_TYPEDEF_PTR(IStackForInternal, UseStack)
+        ZS_DECLARE_TYPEDEF_PTR(ISettingsForThread, UseSettings)
+        ZS_DECLARE_TYPEDEF_PTR(IHelperForInternal, UseHelper)
+        ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
 
         //---------------------------------------------------------------------
         //---------------------------------------------------------------------
@@ -237,7 +246,7 @@ namespace openpeer
         //  <messages>
         //   ...
         //   <messageBundle xmlns="http://www.openpeer.org/openpeer/1.0/message">
-        //    <message id=”e041038922edbc0638cebbded884896” />
+        //    <message id=”e041038922edbc0638cebbded884896” replaces="cfdc7852457086040262d764c60bdf3e79c24438" />
         //     <from id=”920bd1d88e4cc3ba0f95e24ea9168e272ff03b3b” />
         //     <sent>2002-Jan-01 10:00:01.123456789</sent>
         //     <mimeType>text/plain</mimeType>
@@ -260,15 +269,16 @@ namespace openpeer
         // </thread>
 
         //---------------------------------------------------------------------
-        ElementPtr Message::toDebug(MessagePtr message)
+        Message::Message() :
+          SharedRecursiveLock(SharedRecursiveLock::create()),
+          mFlags(0)
         {
-          if (!message) return ElementPtr();
-          return message->toDebug();
         }
 
         //---------------------------------------------------------------------
         MessagePtr Message::create(
                                    const char *messageID,
+                                   const char *replacesMessageID,
                                    const char *fromPeerURI,
                                    const char *mimeType,
                                    const char *body,
@@ -278,16 +288,23 @@ namespace openpeer
         {
           MessagePtr pThis = MessagePtr(new Message);
           pThis->mThisWeak = pThis;
-          pThis->mMessageID = string(messageID);
-          pThis->mFromPeerURI = string(fromPeerURI);
-          pThis->mMimeType = string(mimeType);
-          pThis->mBody = string(body);
-          pThis->mSent = sent;
+          pThis->mData = MessageDataPtr(new MessageData);
+
+          pThis->mData->mMessageID = String(messageID);
+          pThis->mData->mReplacesMessageID = String(replacesMessageID);
+          pThis->mData->mFromPeerURI = String(fromPeerURI);
+          pThis->mData->mMimeType = string(mimeType);
+          pThis->mData->mBody = String(body);
+          pThis->mData->mSent = sent;
 
           if (signer) {
-            pThis->mBundleEl = pThis->constructBundleElement(signer);
+            pThis->mFlags = Flag_Validated;
+            pThis->mData->mValidated = true;
+            pThis->mData->mBundleEl = pThis->constructBundleElement(signer);
           }
 
+          AutoRecursiveLock lock(*pThis);
+          pThis->scheduleCaching();
           return pThis;
         }
 
@@ -302,47 +319,90 @@ namespace openpeer
           MessagePtr pThis = MessagePtr(new Message);
           pThis->mThisWeak = pThis;
 
-          try {
-            ElementPtr messageEl = ("message" == messageBundleEl->getValue() ? messageBundleEl : messageBundleEl->findFirstChildElementChecked("message"));
-            ElementPtr fromEl = messageEl->findFirstChildElementChecked("from");
-            ElementPtr sentEl = messageEl->findFirstChildElementChecked("sent");
-            ElementPtr mimeTypeEl = messageEl->findFirstChildElementChecked("mimeType");
-            ElementPtr bodyEl = messageEl->findFirstChildElementChecked("body");
+          pThis->mData = pThis->parseFromElement(account, messageBundleEl, false);
 
-            pThis->mMessageID = messageEl->getAttributeValue("id");
-            pThis->mFromPeerURI = fromEl->getAttributeValue("id");
-            pThis->mMimeType = mimeTypeEl->getText();
-            pThis->mBody = bodyEl->getTextDecoded();
-            pThis->mSent = services::IHelper::stringToTime(sentEl->getText());
-            if ("message" != messageBundleEl->getValue()) {
-              pThis->mBundleEl = messageBundleEl;
-            }
-          } catch (CheckFailed &) {
-            ZS_LOG_ERROR(Detail, pThis->log("message bundle parse element check failure"))
+          if (!pThis->mData)
             return MessagePtr();
-          }
 
-          if (Time() == pThis->mSent) {
-            ZS_LOG_ERROR(Detail, pThis->log("message bundle value out of range parse error"))
-            return MessagePtr();
-          }
-          if (pThis->mMessageID.size() < 1) {
-            ZS_LOG_ERROR(Detail, pThis->log("message id missing"))
-            return MessagePtr();
-          }
-          if (pThis->mFromPeerURI.size() < 1) {
-            ZS_LOG_ERROR(Detail, pThis->log("missing peer URI"))
-            return MessagePtr();
-          }
+          if (pThis->mData->mValidated)
+            pThis->mFlags = Flag_Validated;
 
+          AutoRecursiveLock lock(*pThis);
+          pThis->scheduleCaching();
           return pThis;
+        }
+
+        //---------------------------------------------------------------------
+        ElementPtr Message::toDebug(MessagePtr message)
+        {
+          if (!message) return ElementPtr();
+          return message->toDebug();
         }
 
         //---------------------------------------------------------------------
         ElementPtr Message::messageBundleElement() const
         {
-          if (mBundleEl) return mBundleEl->clone()->toElement();
+          AutoRecursiveLock lock(*this);
+          restoreFromCache();
+
+          if (mData->mBundleEl) return mData->mBundleEl->clone()->toElement();
           return constructBundleElement(IPeerFilesPtr());
+        }
+
+        //---------------------------------------------------------------------
+        String Message::messageID() const
+        {
+          AutoRecursiveLock lock(*this);
+          restoreFromCache();
+          return mData->mMessageID;
+        }
+
+        //---------------------------------------------------------------------
+        String Message::replacesMessageID() const
+        {
+          AutoRecursiveLock lock(*this);
+          restoreFromCache();
+          return mData->mReplacesMessageID;
+        }
+
+        //---------------------------------------------------------------------
+        String Message::fromPeerURI() const
+        {
+          AutoRecursiveLock lock(*this);
+          restoreFromCache();
+          return mData->mFromPeerURI;
+        }
+
+        //---------------------------------------------------------------------
+        String Message::mimeType() const
+        {
+          AutoRecursiveLock lock(*this);
+          restoreFromCache();
+          return mData->mMimeType;
+        }
+
+        //---------------------------------------------------------------------
+        String Message::body() const
+        {
+          AutoRecursiveLock lock(*this);
+          restoreFromCache();
+          return mData->mBody;
+        }
+
+        //---------------------------------------------------------------------
+        Time Message::sent() const
+        {
+          AutoRecursiveLock lock(*this);
+          restoreFromCache();
+          return mData->mSent;
+        }
+
+        //---------------------------------------------------------------------
+        bool Message::validated() const
+        {
+          AutoRecursiveLock lock(*this);
+          restoreFromCache();
+          return mData->mValidated;
         }
 
         //---------------------------------------------------------------------
@@ -350,14 +410,62 @@ namespace openpeer
         {
           ElementPtr resultEl = Element::create("thread::Message");
 
-          IHelper::debugAppend(resultEl, "id", mID);
-          IHelper::debugAppend(resultEl, "message id (s)", mMessageID);
-          IHelper::debugAppend(resultEl, "from peer URI", mFromPeerURI);
-          IHelper::debugAppend(resultEl, "mime type", mMimeType);
-          IHelper::debugAppend(resultEl, "body", mBody);
-          IHelper::debugAppend(resultEl, "sent", mSent);
+          UseServicesHelper::debugAppend(resultEl, "id", mID);
+
+          MessageDataPtr data;
+
+          {
+            AutoRecursiveLock lock(*this);
+            restoreFromCache();
+            data = mData;
+          }
+
+          UseServicesHelper::debugAppend(resultEl, "message id", data->mMessageID);
+          UseServicesHelper::debugAppend(resultEl, "replaces message id", data->mReplacesMessageID);
+          UseServicesHelper::debugAppend(resultEl, "from peer URI", data->mFromPeerURI);
+          UseServicesHelper::debugAppend(resultEl, "mime type", data->mMimeType);
+          UseServicesHelper::debugAppend(resultEl, "body", data->mBody);
+          UseServicesHelper::debugAppend(resultEl, "sent", data->mSent);
 
           return resultEl;
+        }
+
+        //---------------------------------------------------------------------
+        //---------------------------------------------------------------------
+        //---------------------------------------------------------------------
+        //---------------------------------------------------------------------
+        #pragma mark
+        #pragma mark Message => ITimerDelegate
+        #pragma mark
+
+        //---------------------------------------------------------------------
+        void Message::onTimer(TimerPtr timer)
+        {
+          AutoRecursiveLock lock(*this);
+          if (!mData) return; // nothing to do
+
+          if (timer != mData->mTimer) return; // not the correct timeout
+
+          mData->mTimer->cancel();
+          mData->mTimer.reset();
+
+          moveToCache();
+        }
+
+        //---------------------------------------------------------------------
+        //---------------------------------------------------------------------
+        //---------------------------------------------------------------------
+        //---------------------------------------------------------------------
+        #pragma mark
+        #pragma mark Message => (internal)
+        #pragma mark
+
+        //---------------------------------------------------------------------
+        Log::Params Message::log(const char *message) const
+        {
+          ElementPtr objectEl = Element::create("core::thread::Message");
+          UseServicesHelper::debugAppend(objectEl, "id", mID);
+          return Log::Params(message, objectEl);
         }
 
         //---------------------------------------------------------------------
@@ -365,11 +473,14 @@ namespace openpeer
         {
           // now its time to generate the XML
           ElementPtr messageBundleEl = Element::create("messageBundle");
-          ElementPtr messageEl = createElement("message", mMessageID);
-          ElementPtr fromEl = createElement("from", mFromPeerURI);
-          ElementPtr sentEl = createElementWithNumber("sent", services::IHelper::timeToString(mSent));
-          ElementPtr mimeTypeEl = createElementWithText("mimeType", mMimeType);
-          ElementPtr bodyEl = createElementWithTextAndJSONEncode("body", mBody);
+          ElementPtr messageEl = createElement("message", mData->mMessageID);
+          if (mData->mReplacesMessageID.hasData()) {
+            messageEl->setAttribute("replaces", mData->mReplacesMessageID);
+          }
+          ElementPtr fromEl = createElement("from", mData->mFromPeerURI);
+          ElementPtr sentEl = createElementWithNumber("sent", UseServicesHelper::timeToString(mData->mSent));
+          ElementPtr mimeTypeEl = createElementWithText("mimeType", mData->mMimeType);
+          ElementPtr bodyEl = createElementWithTextAndJSONEncode("body", mData->mBody);
 
           if (signer) {
             messageBundleEl->adoptAsLastChild(messageEl);
@@ -388,16 +499,183 @@ namespace openpeer
 
             return messageBundleEl;
           }
-
+          
           return messageEl;
         }
 
-        //---------------------------------------------------------------------
-        Log::Params Message::log(const char *message) const
+        //-----------------------------------------------------------------------
+        String Message::getCookieName() const
         {
-          ElementPtr objectEl = Element::create("core::thread::Message");
-          IHelper::debugAppend(objectEl, "id", mID);
-          return Log::Params(message, objectEl);
+          return String("/thread/message/cached-") + string(mID);
+        }
+
+        //---------------------------------------------------------------------
+        void Message::moveToCache()
+        {
+          if (!mData) return; // nothing to do
+
+          if ((mFlags & Flag_Cached) != 0) {
+            ZS_LOG_TRACE(log("already cached"))
+            mData.reset();
+            return;
+          }
+
+          DocumentPtr doc = Document::create();
+
+          if (mData->mBundleEl)
+            doc->adoptAsLastChild(mData->mBundleEl);
+          else
+            doc->adoptAsLastChild(constructBundleElement(IPeerFilesPtr()));
+
+          GeneratorPtr generator = Generator::createJSONGenerator();
+
+          boost::shared_array<char> output;
+          size_t length = 0;
+          output = generator->write(doc, &length);
+
+          if (mData->mBundleEl)
+            mData->mBundleEl->orphan();
+
+          ZS_LOG_DEBUG(log("moving document to cache"))
+          ICache::store(getCookieName(), Time(), output.get());
+
+          mFlags = mFlags | Flag_Cached;
+          mData.reset();
+        }
+
+        //---------------------------------------------------------------------
+        void Message::restoreFromCache() const
+        {
+          if (mData) {
+            if (Time() == mData->mScheduledAt) {
+              scheduleCaching();
+              return;
+            }
+
+            Duration diff = zsLib::now() - mData->mScheduledAt;
+            if (diff < (UseSettings::getThreadMoveMessageToCacheTimeInSeconds()/2)) return; // plenty of time left on the timer thus do nothing
+
+            scheduleCaching();
+            return;
+          }
+
+          ZS_LOG_DEBUG(log("restoring from cache"))
+
+          ZS_THROW_BAD_STATE_IF(0 == (mFlags & Flag_Cached))  // must be cached otherwise it's an error
+
+          String output = ICache::fetch(getCookieName());
+
+          DocumentPtr doc = Document::createFromParsedJSON(output);
+          ZS_THROW_INVALID_ASSUMPTION_IF(!doc)
+
+          ElementPtr child = doc->getFirstChildElement();
+          if (child) {
+            child->orphan();
+          }
+
+          mData = parseFromElement(UseAccountPtr(), child, true);
+          ZS_THROW_INVALID_ASSUMPTION_IF(!mData)
+
+          scheduleCaching();
+        }
+
+        //---------------------------------------------------------------------
+        void Message::scheduleCaching() const
+        {
+          if (!mData) return; // nothing to do
+
+          if (mData->mTimer) {
+            mData->mTimer->cancel();
+            mData->mTimer.reset();
+          }
+
+          mData->mScheduledAt = zsLib::now();
+          mData->mTimer = Timer::create(ITimerDelegateProxy::create(UseStack::queueCore(), mThisWeak.lock()), UseSettings::getThreadMoveMessageToCacheTimeInSeconds(), false);
+        }
+
+        //---------------------------------------------------------------------
+        Message::MessageDataPtr Message::parseFromElement(
+                                                          UseAccountPtr account,
+                                                          ElementPtr messageBundleEl,
+                                                          bool okayToAdoptBundleEl
+                                                          ) const
+        {
+          MessageDataPtr data(new ManagedMessageData);
+
+          try {
+            ElementPtr messageEl = ("message" == messageBundleEl->getValue() ? messageBundleEl : messageBundleEl->findFirstChildElementChecked("message"));
+            ElementPtr fromEl = messageEl->findFirstChildElementChecked("from");
+            ElementPtr sentEl = messageEl->findFirstChildElementChecked("sent");
+            ElementPtr mimeTypeEl = messageEl->findFirstChildElementChecked("mimeType");
+            ElementPtr bodyEl = messageEl->findFirstChildElementChecked("body");
+
+            data->mMessageID = messageEl->getAttributeValue("id");
+            data->mReplacesMessageID = messageEl->getAttributeValue("replaces");
+            data->mFromPeerURI = fromEl->getAttributeValue("id");
+            data->mMimeType = mimeTypeEl->getText();
+            data->mBody = bodyEl->getTextDecoded();
+            data->mSent = UseServicesHelper::stringToTime(sentEl->getText());
+
+            if ("message" != messageBundleEl->getValue()) {
+
+              if (account) {
+                UseContactPtr contact = UseContact::createFromPeerURI(Account::convert(account), data->mFromPeerURI);
+                if (contact) {
+                  IPeerFilePublicPtr peerFilePublic = contact->getPeerFilePublic();
+                  if (peerFilePublic) {
+                    data->mValidated = peerFilePublic->verifySignature(messageEl);
+                  }
+                }
+                if (data->mValidated) {
+                  ZS_LOG_TRACE(log("message received validated") + ZS_PARAM("message ID", data->mMessageID))
+                } else {
+                  ZS_LOG_WARNING(Debug, log("message received did not validate validated") + ZS_PARAM("message ID", data->mMessageID))
+                }
+              }
+
+              if ((mFlags & Flag_Validated) != 0) {
+                data->mValidated = true;
+              }
+
+              if (okayToAdoptBundleEl) {
+                data->mBundleEl = messageBundleEl;
+              } else {
+                data->mBundleEl = messageBundleEl->clone()->toElement();
+              }
+            }
+          } catch (CheckFailed &) {
+            ZS_LOG_ERROR(Detail, log("message bundle parse element check failure"))
+            return MessageDataPtr();
+          }
+
+          if (Time() == data->mSent) {
+            ZS_LOG_ERROR(Detail, log("message bundle value out of range parse error"))
+            return MessageDataPtr();
+          }
+          if (data->mMessageID.size() < 1) {
+            ZS_LOG_ERROR(Detail, log("message id missing"))
+            return MessageDataPtr();
+          }
+          if (data->mFromPeerURI.size() < 1) {
+            ZS_LOG_ERROR(Detail, log("missing peer URI"))
+            return MessageDataPtr();
+          }
+          
+          return data;
+        }
+        
+        //---------------------------------------------------------------------
+        //---------------------------------------------------------------------
+        //---------------------------------------------------------------------
+        //---------------------------------------------------------------------
+        #pragma mark
+        #pragma mark Message::ManagedMessageData
+        #pragma mark
+
+        //---------------------------------------------------------------------
+        Message::ManagedMessageData::ManagedMessageData() :
+          mValidated(false)
+        {
         }
 
         //---------------------------------------------------------------------
@@ -425,22 +703,33 @@ namespace openpeer
         }
 
         //---------------------------------------------------------------------
-        MessageReceiptsPtr MessageReceipts::create(UINT version)
+        MessageReceiptsPtr MessageReceipts::create(
+                                                   const char *receiptsElementName,
+                                                   UINT version
+                                                   )
         {
           MessageReceiptMap receipts;
-          return create(version, receipts);
+          return create(receiptsElementName, version, receipts);
         }
 
         //---------------------------------------------------------------------
-        MessageReceiptsPtr MessageReceipts::create(UINT version, const String &messageID)
+        MessageReceiptsPtr MessageReceipts::create(
+                                                   const char *receiptsElementName,
+                                                   UINT version,
+                                                   const String &messageID
+                                                   )
         {
           MessageReceiptMap receipts;
           receipts[messageID] = zsLib::now();
-          return create(version, receipts);
+          return create(receiptsElementName, version, receipts);
         }
 
         //---------------------------------------------------------------------
-        MessageReceiptsPtr MessageReceipts::create(UINT version, const MessageIDList &messageIDs)
+        MessageReceiptsPtr MessageReceipts::create(
+                                                   const char *receiptsElementName,
+                                                   UINT version,
+                                                   const MessageIDList &messageIDs
+                                                   )
         {
           MessageReceiptMap receipts;
           for (MessageIDList::const_iterator iter = messageIDs.begin(); iter != messageIDs.end(); ++iter)
@@ -448,14 +737,19 @@ namespace openpeer
             const String &messageID = (*iter);
             receipts[messageID] = zsLib::now();
           }
-          return create(version, receipts);
+          return create(receiptsElementName, version, receipts);
         }
 
         //---------------------------------------------------------------------
-        MessageReceiptsPtr MessageReceipts::create(UINT version, const MessageReceiptMap &messageReceipts)
+        MessageReceiptsPtr MessageReceipts::create(
+                                                   const char *receiptsElementName,
+                                                   UINT version,
+                                                   const MessageReceiptMap &messageReceipts
+                                                   )
         {
           MessageReceiptsPtr pThis(new MessageReceipts);
           pThis->mThisWeak = pThis;
+          pThis->mReceiptsElementName = String(receiptsElementName);
           pThis->mVersion = version;
           pThis->mReceipts = messageReceipts;
 
@@ -469,16 +763,23 @@ namespace openpeer
 
           MessageReceiptsPtr pThis(new MessageReceipts);
           pThis->mThisWeak = pThis;
+          pThis->mReceiptsElementName = messageReceiptsEl->getValue();
+
+          pThis->mVersion = Numeric<UINT>(messageReceiptsEl->getAttributeValue("version"));
+          ElementPtr messagesEl = messageReceiptsEl->findFirstChildElement("messages");
+          if (!messagesEl) {
+            ZS_LOG_TRACE(pThis->log("no messages contained within message receipts"))
+            return pThis;
+          }
 
           try {
-            pThis->mVersion = Numeric<UINT>(messageReceiptsEl->getAttributeValue("version"));
-            ElementPtr receiptEl = messageReceiptsEl->findFirstChildElement("receipt");
-            while (receiptEl)
+            ElementPtr messageEl = messagesEl->findFirstChildElement("message");
+            while (messageEl)
             {
-              String id = receiptEl->getAttributeValue("id");
-              String timeStr = receiptEl->getText();
+              String id = messageEl->getAttributeValue("id");
+              String timeStr = messageEl->getText();
               ZS_LOG_TRACE(pThis->log("Parsing receipt") + ZS_PARAM("receipt ID", id) + ZS_PARAM("acknowledged at", timeStr))
-              Time time = services::IHelper::stringToTime(timeStr);
+              Time time = UseServicesHelper::stringToTime(timeStr);
 
               if (Time() == time) {
                 ZS_LOG_ERROR(Detail, pThis->log("message receipt parse time invalid"))
@@ -488,10 +789,8 @@ namespace openpeer
               pThis->mReceipts[id] = time;
               ZS_LOG_TRACE(pThis->log("Found receipt") + ZS_PARAM("receipt ID", id) + ZS_PARAM("acknowledged at", time))
 
-              receiptEl = receiptEl->findNextSiblingElement("receipt");
+              messageEl = messageEl->findNextSiblingElement("message");
             }
-          } catch(CheckFailed &) {
-            return MessageReceiptsPtr();
           } catch (Numeric<UINT>::ValueOutOfRange &) {
             ZS_LOG_ERROR(Detail, pThis->log("message receipt parse value out of range"))
             return MessageReceiptsPtr();
@@ -504,9 +803,10 @@ namespace openpeer
         {
           ElementPtr resultEl = Element::create("thread::MessageReceipts");
 
-          IHelper::debugAppend(resultEl, "id", mID);
-          IHelper::debugAppend(resultEl, "version", mVersion);
-          IHelper::debugAppend(resultEl, "receipts", mReceipts.size());
+          UseServicesHelper::debugAppend(resultEl, "id", mID);
+          UseServicesHelper::debugAppend(resultEl, "receipts element name", mReceiptsElementName);
+          UseServicesHelper::debugAppend(resultEl, "version", mVersion);
+          UseServicesHelper::debugAppend(resultEl, "receipts", mReceipts.size());
 
           return resultEl;
         }
@@ -515,22 +815,25 @@ namespace openpeer
         Log::Params MessageReceipts::log(const char *message) const
         {
           ElementPtr objectEl = Element::create("core::thread::MessageReceipts");
-          IHelper::debugAppend(objectEl, "id", mID);
+          UseServicesHelper::debugAppend(objectEl, "id", mID);
           return Log::Params(message, objectEl);
         }
 
         //---------------------------------------------------------------------
         ElementPtr MessageReceipts::constructReceiptsElement() const
         {
-          ElementPtr receiptsEl = Element::create("receipts");
+          ElementPtr receiptsEl = Element::create(mReceiptsElementName);
           receiptsEl->setAttribute("version", string(mVersion));
+
+          ElementPtr messagesEl = Element::create("messages");
+          receiptsEl->adoptAsLastChild(messagesEl);
 
           for (MessageReceiptMap::const_iterator iter = mReceipts.begin(); iter != mReceipts.end(); ++iter)
           {
             const String &messageID = (*iter).first;
             const Time &time = (*iter).second;
-            ElementPtr receiptEl = createElementWithNumber("receipt", messageID, services::IHelper::timeToString(time));
-            receiptsEl->adoptAsLastChild(receiptEl);
+            ElementPtr messageEl = createElementWithNumber("message", messageID, UseServicesHelper::timeToString(time));
+            messagesEl->adoptAsLastChild(messageEl);
           }
 
           return receiptsEl;
@@ -553,14 +856,18 @@ namespace openpeer
 
         //---------------------------------------------------------------------
         ThreadContactPtr ThreadContact::create(
+                                               UINT version,
                                                UseContactPtr contact,
-                                               const IdentityContactList &identityContacts
+                                               const IdentityContactList &identityContacts,
+                                               const ContactStatusInfo &status
                                                )
         {
           ZS_THROW_INVALID_ARGUMENT_IF(!contact)
 
           ThreadContactPtr pThis(new ThreadContact);
           pThis->mContact = contact;
+          pThis->mVersion = version;
+          pThis->mStatus = status;
 
           IdentityContactList filtered;
 
@@ -600,34 +907,94 @@ namespace openpeer
                                                ElementPtr contactEl
                                                )
         {
-          String id = contactEl->getAttributeValue("id");
 
-          UseContactPtr contact = account->findContact(id);
-          if (!contact) {
-            contact = IContactForConversationThread::createFromPeerURI(Account::convert(account), id);
-            if (!contact) return ThreadContactPtr();
-          }
+          try {
+            String id = contactEl->getAttributeValue("id");
 
-          IdentityContactList identityContacts;
-
-          ElementPtr identitiesEl = contactEl->findFirstChildElement("identities");
-          if (identitiesEl) {
-            ElementPtr identityEl = identitiesEl->findFirstChildElement("identity");
-            while (identityEl) {
-
-              IdentityContact identityContact;
-              IdentityInfo identityInfo = IMessageHelper::createIdentity(identityEl);
-
-              Helper::convert(identityInfo, identityContact);
-              if (identityContact.hasData()) {
-                identityContacts.push_back(identityContact);
-              }
-
-              identityEl = identityEl->findNextSiblingElement("identity");
+            UINT version = 0;
+            String versionStr = contactEl->getAttributeValue("version");
+            if (versionStr) {
+              version = Numeric<UINT>(contactEl->getAttributeValue("version"));
             }
+
+            UseContactPtr contact = account->findContact(id);
+            if (!contact) {
+              contact = IContactForConversationThread::createFromPeerURI(Account::convert(account), id);
+              if (!contact) {
+                ZS_LOG_WARNING(Detail, slog("unable to find or create contact with account"))
+                return ThreadContactPtr();
+              }
+            }
+
+            IdentityContactList identityContacts;
+
+            ElementPtr identitiesEl = contactEl->findFirstChildElement("identities");
+            if (identitiesEl) {
+              ElementPtr identityEl = identitiesEl->findFirstChildElement("identity");
+              while (identityEl) {
+
+                IdentityContact identityContact;
+                IdentityInfo identityInfo = IMessageHelper::createIdentity(identityEl);
+
+                Helper::convert(identityInfo, identityContact);
+                if (identityContact.hasData()) {
+                  identityContacts.push_back(identityContact);
+                }
+
+                identityEl = identityEl->findNextSiblingElement("identity");
+              }
+            }
+
+            ElementPtr statusEl = contactEl->findFirstChildElement("status");
+
+            return ThreadContact::create(version, contact, identityContacts, ContactStatusInfo(statusEl));
+
+          } catch(Numeric<UINT>::ValueOutOfRange &) {
+            ZS_LOG_WARNING(Detail, slog("unable to create thtead contact"))
           }
 
-          return ThreadContact::create(contact, identityContacts);
+          return ThreadContactPtr();
+        }
+
+        //---------------------------------------------------------------------
+        ThreadContactPtr ThreadContact::prepareNewContact(
+                                                          ThreadContactPtr oldContact,
+                                                          ThreadContactPtr newContact
+                                                          )
+        {
+          {
+            if (!oldContact) return newContact;
+            if (!newContact) return oldContact;
+            if (oldContact == newContact) return newContact;
+
+            if (newContact->mStatus != oldContact->mStatus) goto new_contact_changed;
+            if (newContact->mIdentityContacts.size() != oldContact->identityContacts().size()) goto new_contact_changed;
+
+            const IdentityContactList &newList = newContact->identityContacts();
+            const IdentityContactList &oldList = newContact->identityContacts();
+
+            for (IdentityContactList::const_iterator iterNew = newList.begin(), iterOld = oldList.begin(); iterNew != newList.end() && iterOld != oldList.end(); ++iterNew, ++iterOld)
+            {
+              const IdentityContact &oldIdentity = (*iterOld);
+              const IdentityContact &newIdentity = (*iterNew);
+
+              if (oldIdentity != newIdentity) goto new_contact_changed;
+            }
+
+            goto new_contact_same;
+          }
+
+        new_contact_changed:
+          {
+            newContact->mVersion = oldContact->version() + 1;
+            return newContact;
+          }
+
+        new_contact_same:
+          {
+            newContact->mVersion = oldContact->version();
+          }
+          return oldContact;
         }
 
         //---------------------------------------------------------------------
@@ -635,17 +1002,30 @@ namespace openpeer
         {
           ElementPtr resultEl = Element::create("core::thread::ThreadContact");
 
-          IHelper::debugAppend(resultEl, "id", mID);
-          IHelper::debugAppend(resultEl, UseContact::toDebug(mContact));
-          IHelper::debugAppend(resultEl, "identity contacts", mIdentityContacts.size());
+          UseServicesHelper::debugAppend(resultEl, "id", mID);
+          UseServicesHelper::debugAppend(resultEl, "version", mVersion);
+          UseServicesHelper::debugAppend(resultEl, UseContact::toDebug(mContact));
+          UseServicesHelper::debugAppend(resultEl, "identity contacts", mIdentityContacts.size());
+          UseServicesHelper::debugAppend(resultEl, "status", mStatus.toDebug());
 
           return resultEl;
+        }
+
+        //---------------------------------------------------------------------
+        Log::Params ThreadContact::slog(const char *message)
+        {
+          ElementPtr objectEl = Element::create("core::thread::ThreadContact");
+          return Log::Params(message, objectEl);
         }
 
         //---------------------------------------------------------------------
         ElementPtr ThreadContact::constructContactElement() const
         {
           ElementPtr contactEl = createElement("contact", mContact->getPeerURI());
+
+          if (0 != mVersion) {
+            contactEl->setAttribute("version", string(mVersion));
+          }
 
           if (mIdentityContacts.size() > 0) {
             ElementPtr identitiesEl = Element::create("identities");
@@ -669,6 +1049,11 @@ namespace openpeer
             }
           }
 
+          if (mStatus.mStatusEl) {
+            ElementPtr statusEl = mStatus.mStatusEl->clone()->toElement();
+            contactEl->adoptAsLastChild(statusEl);
+          }
+
           return contactEl;
         }
 
@@ -683,8 +1068,8 @@ namespace openpeer
         // <thread>
         //  ...
         //  <contacts version="1">
-        //   <contact ID="peer://domain.com/920bd1d88e4cc3ba0f95e24ea9168e272ff03b3b" disposition="add"><peer version=”1”><sectionBundle xmlns="http://www.openpeer.org/openpeer/1.0/message"><section id=”A”> ... contents ...</section> ... </sectionBundle></peer></contact>
-        //   <contact ID="peer://domain.com/f95e24ea9168e242ff03b3920bd1d88a4cc3ba04" disposition="add"><profileBundle><profile></profile></profileBundle><peer version=”1”><sectionBundle xmlns="http://www.openpeer.org/openpeer/1.0/message"><section id=”A”> ... contents ...</section> ... </sectionBundle></peer></contact>
+        //   <contact ID="peer://domain.com/920bd1d88e4cc3ba0f95e24ea9168e272ff03b3b"><peer version=”1”><sectionBundle xmlns="http://www.openpeer.org/openpeer/1.0/message"><section id=”A”> ... contents ...</section> ... </sectionBundle></peer></contact>
+        //   <contact ID="peer://domain.com/f95e24ea9168e242ff03b3920bd1d88a4cc3ba04"><profileBundle><profile></profile></profileBundle><peer version=”1”><sectionBundle xmlns="http://www.openpeer.org/openpeer/1.0/message"><section id=”A”> ... contents ...</section> ... </sectionBundle></peer></contact>
         //   <contact ID="...">...</contact>
         //   <contact ID="..." disposition="remove"></contact>
         //  <contacts>
@@ -723,45 +1108,215 @@ namespace openpeer
           }
 
           pThis->mRemoveContacts = removeContacts;
+          return pThis;
+        }
 
-          ElementPtr contactsEl = Element::create("contacts");
-          if (0 != version) {
-            contactsEl->setAttribute("version", string(version));
+        //---------------------------------------------------------------------
+        void ThreadContacts::parseAllContacts(
+                                              ElementPtr contactsEl,
+                                              ContactElementMap &outContactElements
+                                              )
+        {
+          if (!contactsEl) return;
+
+          ElementPtr contactEl = contactsEl->findFirstChildElement("contact");
+
+          while (contactEl) {
+            String foundContactID = contactEl->getAttributeValue("id");
+
+            outContactElements[foundContactID] = contactEl;
+            contactEl = contactEl->getNextSiblingElement();
           }
+        }
+
+        //---------------------------------------------------------------------
+        ElementPtr ThreadContacts::prepareThreadContactReplacement(
+                                                                   ElementPtr contactEl,
+                                                                   const String &updatedDisposition,
+                                                                   const String &contactID,
+                                                                   ThreadContactPtr updatedContact
+                                                                   )
+        {
+          ElementPtr threadContactReplacementEl = contactEl ? contactEl : Element::create("contact");
+          if (contactID.hasData()) {
+            threadContactReplacementEl->setAttribute("id", contactID);
+          }
+          if (updatedContact) {
+            if (0 != updatedContact->version()) {
+              threadContactReplacementEl->setAttribute("version", string(updatedContact->version()));
+            }
+          }
+          if (updatedDisposition.hasData()) {
+            threadContactReplacementEl->setAttribute("disposition", updatedDisposition);
+          }
+
+          return threadContactReplacementEl;
+        }
+
+        //---------------------------------------------------------------------
+        bool ThreadContacts::applyChangeAsNeeded(
+                                                 ElementPtr ioContactsEl,
+                                                 const ContactElementMap &inContactElements,
+                                                 const String &updatedDisposition,
+                                                 const String &contactID,
+                                                 ThreadContactPtr updatedContact,
+                                                 DocumentPtr &ioChangesDoc
+                                                 )
+        {
+          ElementPtr contactEl;
+
+          // scope: check contacts
+          {
+            ContactElementMap::const_iterator found = inContactElements.find(contactID);
+            if (found == inContactElements.end()) goto apply_append_change;
+
+            // existing element found
+            contactEl = (*found).second;
+
+            if (contactEl->getAttributeValue("disposition") != updatedDisposition) goto apply_replace_change;
+
+            String existingVersionStr = contactEl->getAttributeValue("version");
+            if (existingVersionStr.hasData()) {
+              if (!updatedContact) goto apply_replace_change;
+
+              try {
+                UINT existingVersion = Numeric<UINT>(existingVersionStr);
+                if (existingVersion != updatedContact->version()) goto apply_replace_change;
+              } catch(Numeric<UINT>::ValueOutOfRange &) {
+                goto apply_replace_change;
+              }
+
+              // no change applied as nothing has changed
+              return false;
+            }
+
+            if (updatedContact) goto apply_replace_change;  // didn't have a version but now it does have a version
+
+            // no change needs to be applied
+            return false;
+          }
+
+        apply_append_change:
+          {
+            ElementPtr diffAppendEl = prepareThreadContactReplacement(updatedContact ? updatedContact->contactElement() : ElementPtr(), updatedDisposition, contactID, updatedContact);
+            IDiff::createDiffs(IDiff::DiffAction_AdoptAsLastChild, ioChangesDoc, ioContactsEl, false, diffAppendEl);
+            return true;
+          }
+
+        apply_replace_change:
+          {
+            ElementPtr diffReplacementEl = prepareThreadContactReplacement(updatedContact ? updatedContact->contactElement() : ElementPtr(), updatedDisposition, contactID, updatedContact);
+            IDiff::createDiffs(IDiff::DiffAction_Replace, ioChangesDoc, contactEl, false, diffReplacementEl);
+          }
+
+          return true;
+        }
+
+        //---------------------------------------------------------------------
+        ThreadContactsPtr ThreadContacts::createUpdateAndMakeDiffs(
+                                                                   const ThreadContactList &contacts,
+                                                                   const ThreadContactList &addContacts,
+                                                                   const ContactURIList &removeContacts,
+                                                                   ThreadContactsPtr existingContacts,
+                                                                   ElementPtr ioContactsEl,
+                                                                   DocumentPtr &ioChangesDoc
+                                                                   )
+        {
+          ZS_THROW_INVALID_ARGUMENT_IF(!existingContacts)
+          ZS_THROW_INVALID_ARGUMENT_IF(!ioContactsEl)
+
+          ThreadContactsPtr pThis(new ThreadContacts());
+          pThis->mThisWeak = pThis;
+          pThis->mVersion = existingContacts->version();
+
+          for (ThreadContactList::const_iterator iter = contacts.begin(); iter != contacts.end(); ++iter)
+          {
+            const ThreadContactPtr &contact = (*iter);
+            pThis->mContacts[contact->contact()->getPeerURI()] = contact;
+          }
+
+          for (ThreadContactList::const_iterator iter = addContacts.begin(); iter != addContacts.end(); ++iter)
+          {
+            const ThreadContactPtr &contact = (*iter);
+            pThis->mAddContacts[contact->contact()->getPeerURI()] = contact;
+          }
+
+          pThis->mRemoveContacts = removeContacts;
+
+          ContactElementMap contactElements;
+          parseAllContacts(ioContactsEl, contactElements);
+
+          ContactElementMap processedContacts;
+
+          bool changed = false;
 
           for (ThreadContactMap::const_iterator iter = pThis->mContacts.begin(); iter != pThis->mContacts.end(); ++iter)
           {
+            const String &contactID = (*iter).first;
             const ThreadContactPtr &contact = (*iter).second;
 
-            ElementPtr contactEl = contact->contactElement();
-            contactsEl->adoptAsLastChild(contactEl);
+            processedContacts[contactID] = ElementPtr();
+
+            if (applyChangeAsNeeded(ioContactsEl, contactElements, String(), contactID, contact, ioChangesDoc))
+              changed = true;
           }
 
           for (ThreadContactMap::const_iterator iter = pThis->mAddContacts.begin(); iter != pThis->mAddContacts.end(); ++iter)
           {
+            const String &contactID = (*iter).first;
             const ThreadContactPtr &contact = (*iter).second;
 
-            ElementPtr contactEl = contact->contactElement();
-            contactsEl->adoptAsLastChild(contactEl);
+            processedContacts[contactID] = ElementPtr();
+
+            if (applyChangeAsNeeded(ioContactsEl, contactElements, String("add"), contactID, contact, ioChangesDoc))
+              changed = true;
           }
 
           for (ContactURIList::const_iterator iter = pThis->mRemoveContacts.begin(); iter != pThis->mRemoveContacts.end(); ++iter)
           {
-            const String &contactURI = (*iter);
+            const String &contactID = (*iter);
 
-            ElementPtr contactEl = createElement("contact", contactURI);
-            contactEl->setAttribute("disposition", "remove");
-            contactsEl->adoptAsLastChild(contactEl);
+            processedContacts[contactID] = ElementPtr();
+
+            if (applyChangeAsNeeded(ioContactsEl, contactElements, String("remove"), contactID, ThreadContactPtr(), ioChangesDoc))
+              changed = true;
           }
 
-          pThis->mContactsEl = contactsEl;
+          for (ContactElementMap::iterator iter = contactElements.begin(); iter != contactElements.end(); ++iter)
+          {
+            const String &contactID = (*iter).first;
+
+            if (processedContacts.end() != processedContacts.find(contactID)) continue;
+
+            ElementPtr contactEl = (*iter).second;
+
+            // this contact no longer exists thus need to strip it out completely (and apply change to thread document immediately)
+            IDiff::createDiffs(IDiff::DiffAction_Remove, ioChangesDoc, contactEl, false);
+
+            // removal was handled, do not remove again...
+            processedContacts[contactID] = ElementPtr();
+
+            changed = true;
+          }
+
+          if (!changed) return pThis;
+
+          pThis->mVersion = existingContacts->version() + 1;
+
+          ElementPtr setEl = Element::create();
+          setEl->setAttribute("version", string(pThis->mVersion));
+
+          // put the corrected version on the contacts element
+          IDiff::createDiffsForAttributes(ioChangesDoc, ioContactsEl, false, setEl);
+          
           return pThis;
         }
 
         //---------------------------------------------------------------------
         ThreadContactsPtr ThreadContacts::create(
                                                  UseAccountPtr account,
-                                                 ElementPtr contactsEl
+                                                 ElementPtr contactsEl,
+                                                 ThreadContactsPtr existingContacts
                                                  )
         {
           ZS_THROW_INVALID_ARGUMENT_IF(!account)
@@ -793,7 +1348,17 @@ namespace openpeer
                   goto next;
                 }
 
-                ThreadContactPtr threadContact = ThreadContact::create(account, contactEl);
+                ThreadContactPtr threadContact;
+
+                if (existingContacts) {
+                  threadContact = getExistingIfUnchanged(id, existingContacts->contacts(), contactEl);
+                  if (!threadContact) threadContact = getExistingIfUnchanged(id, existingContacts->addContacts(), contactEl);
+                }
+
+                if (!threadContact) {
+                  threadContact = ThreadContact::create(account, contactEl);
+                }
+
                 if (!threadContact) {
                   ZS_LOG_WARNING(Detail, pThis->log("thread contact was not legal"))
                   goto next;
@@ -826,11 +1391,11 @@ namespace openpeer
         {
           ElementPtr resultEl = Element::create("core::thread::ThreadContacts");
 
-          IHelper::debugAppend(resultEl, "id", mID);
-          IHelper::debugAppend(resultEl, "version", mVersion);
-          IHelper::debugAppend(resultEl, "contacts", mContacts.size());
-          IHelper::debugAppend(resultEl, "add contacts", mAddContacts.size());
-          IHelper::debugAppend(resultEl, "remove contacts", mRemoveContacts.size());
+          UseServicesHelper::debugAppend(resultEl, "id", mID);
+          UseServicesHelper::debugAppend(resultEl, "version", mVersion);
+          UseServicesHelper::debugAppend(resultEl, "contacts", mContacts.size());
+          UseServicesHelper::debugAppend(resultEl, "add contacts", mAddContacts.size());
+          UseServicesHelper::debugAppend(resultEl, "remove contacts", mRemoveContacts.size());
 
           return resultEl;
         }
@@ -839,10 +1404,30 @@ namespace openpeer
         Log::Params ThreadContacts::log(const char *message) const
         {
           ElementPtr objectEl = Element::create("core::thread::ThreadContacts");
-          IHelper::debugAppend(objectEl, "id", mID);
+          UseServicesHelper::debugAppend(objectEl, "id", mID);
           return Log::Params(message, objectEl);
         }
 
+        //---------------------------------------------------------------------
+        ThreadContactPtr ThreadContacts::getExistingIfUnchanged(
+                                                                const String &id,
+                                                                const ThreadContactMap &contacts,
+                                                                ElementPtr contactEl
+                                                                )
+        {
+          ThreadContactMap::const_iterator found = contacts.find(id);
+          if (found == contacts.end()) return ThreadContactPtr();
+
+          ThreadContactPtr contact = (*found).second;
+
+          try {
+            UINT version = Numeric<UINT>(contactEl->getAttributeValue("version"));
+            if (version == contact->version()) return contact;
+          } catch(Numeric<UINT>::ValueOutOfRange &) {
+          }
+          return ThreadContactPtr();
+        }
+        
         //---------------------------------------------------------------------
         //---------------------------------------------------------------------
         //---------------------------------------------------------------------
@@ -1298,15 +1883,15 @@ namespace openpeer
         {
           ElementPtr resultEl = Element::create("core::thread::Dialog");
 
-          IHelper::debugAppend(resultEl, "id", mID);
-          IHelper::debugAppend(resultEl, "version", mVersion);
-          IHelper::debugAppend(resultEl, "dialog ID", mDialogID);
-          IHelper::debugAppend(resultEl, "state", toString(mState));
-          IHelper::debugAppend(resultEl, "closed reason", toString(mClosedReason));
-          IHelper::debugAppend(resultEl, "closed reason message", mClosedReasonMessage);
-          IHelper::debugAppend(resultEl, "caller contact URI", mCallerContactURI);
-          IHelper::debugAppend(resultEl, "callee contact URI", mCalleeContactURI);
-          IHelper::debugAppend(resultEl, "replaces", mReplacesDialogID);
+          UseServicesHelper::debugAppend(resultEl, "id", mID);
+          UseServicesHelper::debugAppend(resultEl, "version", mVersion);
+          UseServicesHelper::debugAppend(resultEl, "dialog ID", mDialogID);
+          UseServicesHelper::debugAppend(resultEl, "state", toString(mState));
+          UseServicesHelper::debugAppend(resultEl, "closed reason", toString(mClosedReason));
+          UseServicesHelper::debugAppend(resultEl, "closed reason message", mClosedReasonMessage);
+          UseServicesHelper::debugAppend(resultEl, "caller contact URI", mCallerContactURI);
+          UseServicesHelper::debugAppend(resultEl, "callee contact URI", mCalleeContactURI);
+          UseServicesHelper::debugAppend(resultEl, "replaces", mReplacesDialogID);
 
           return resultEl;
         }
@@ -1315,7 +1900,7 @@ namespace openpeer
         Log::Params Dialog::log(const char *message) const
         {
           ElementPtr objectEl = Element::create("core::thread::Dialog");
-          IHelper::debugAppend(objectEl, "id", mID);
+          UseServicesHelper::debugAppend(objectEl, "id", mID);
           return Log::Params(message, objectEl);
         }
 
@@ -1332,11 +1917,11 @@ namespace openpeer
         {
           ElementPtr resultEl = Element::create("core::thread::Dialog::Codec");
 
-          IHelper::debugAppend(resultEl, "id", string(mCodecID));
-          IHelper::debugAppend(resultEl, "name", mName);
-          IHelper::debugAppend(resultEl, "ptime", mPTime);
-          IHelper::debugAppend(resultEl, "rate", mRate);
-          IHelper::debugAppend(resultEl, "channels", mChannels);
+          UseServicesHelper::debugAppend(resultEl, "id", string(mCodecID));
+          UseServicesHelper::debugAppend(resultEl, "name", mName);
+          UseServicesHelper::debugAppend(resultEl, "ptime", mPTime);
+          UseServicesHelper::debugAppend(resultEl, "rate", mRate);
+          UseServicesHelper::debugAppend(resultEl, "channels", mChannels);
 
           return resultEl;
         }
@@ -1354,16 +1939,16 @@ namespace openpeer
         {
           ElementPtr resultEl = Element::create("core::thread::Dialog::Description");
 
-          IHelper::debugAppend(resultEl, "id", mDescriptionID);
-          IHelper::debugAppend(resultEl, "version", mVersion);
-          IHelper::debugAppend(resultEl, "type", mType);
-          IHelper::debugAppend(resultEl, "ssrc", mSSRC);
-          IHelper::debugAppend(resultEl, "cipher", mSecurityCipher);
-          IHelper::debugAppend(resultEl, "secret", mSecuritySecret);
-          IHelper::debugAppend(resultEl, "salt", mSecuritySalt);
-          IHelper::debugAppend(resultEl, "codecs", mCodecs.size());
-          IHelper::debugAppend(resultEl, "candidates", mCandidates.size());
-          IHelper::debugAppend(resultEl, "final", mFinal);
+          UseServicesHelper::debugAppend(resultEl, "id", mDescriptionID);
+          UseServicesHelper::debugAppend(resultEl, "version", mVersion);
+          UseServicesHelper::debugAppend(resultEl, "type", mType);
+          UseServicesHelper::debugAppend(resultEl, "ssrc", mSSRC);
+          UseServicesHelper::debugAppend(resultEl, "cipher", mSecurityCipher);
+          UseServicesHelper::debugAppend(resultEl, "secret", mSecuritySecret);
+          UseServicesHelper::debugAppend(resultEl, "salt", mSecuritySalt);
+          UseServicesHelper::debugAppend(resultEl, "codecs", mCodecs.size());
+          UseServicesHelper::debugAppend(resultEl, "candidates", mCandidates.size());
+          UseServicesHelper::debugAppend(resultEl, "final", mFinal);
 
           return resultEl;
         }
@@ -1425,9 +2010,12 @@ namespace openpeer
                                    const char *hostThreadID,
                                    const char *topic,
                                    const char *replaces,
+                                   const char *inServerName,
                                    ConversationThreadStates state
                                    )
         {
+          String serverName(inServerName);
+
           DetailsPtr pThis(new Details());
           pThis->mThisWeak = pThis;
           pThis->mVersion = version;
@@ -1437,6 +2025,7 @@ namespace openpeer
           pThis->mState = state;
           pThis->mTopic = string(topic);
           pThis->mCreated = zsLib::now();
+          pThis->mServerName = serverName;
 
           ElementPtr detailsEl = Element::create("details");
           if (0 != version) {
@@ -1448,7 +2037,8 @@ namespace openpeer
           ElementPtr replacesEl = createElement("replaces", replaces);
           ElementPtr stateEl = createElementWithText("state", toString(state));
           ElementPtr topicEl = createElementWithTextAndJSONEncode("topic", pThis->mTopic);
-          ElementPtr createdEl = createElementWithNumber("created", services::IHelper::timeToString(pThis->mCreated));
+          ElementPtr createdEl = createElementWithNumber("created", UseServicesHelper::timeToString(pThis->mCreated));
+          ElementPtr serverNameEl = createElementWithTextAndJSONEncode("server", pThis->mServerName);
 
           detailsEl->adoptAsLastChild(threadBaseEl);
           detailsEl->adoptAsLastChild(threadHostEl);
@@ -1456,7 +2046,9 @@ namespace openpeer
           detailsEl->adoptAsLastChild(stateEl);
           detailsEl->adoptAsLastChild(topicEl);
           detailsEl->adoptAsLastChild(createdEl);
-
+          if (pThis->mServerName.hasData()) {
+            detailsEl->adoptAsLastChild(serverNameEl);
+          }
           pThis->mDetailsEl = detailsEl;
           return pThis;
         }
@@ -1482,12 +2074,18 @@ namespace openpeer
             String state = detailsEl->findFirstChildElementChecked("state")->getText();
             state.trim();
             pThis->mState = toConversationThreadState(state);
-            pThis->mTopic = detailsEl->findFirstChildElementChecked("topic")->getTextDecoded();
-            pThis->mCreated = services::IHelper::stringToTime(detailsEl->findFirstChildElementChecked("created")->getText());
+            pThis->mTopic = IMessageHelper::getElementTextAndDecode(detailsEl->findFirstChildElementChecked("topic"));
+            pThis->mCreated = UseServicesHelper::stringToTime(detailsEl->findFirstChildElementChecked("created")->getText());
             if (Time() == pThis->mCreated) {
               ZS_LOG_ERROR(Detail, pThis->log("details parse time value not valid"))
               return DetailsPtr();
             }
+
+            ElementPtr serverEl = detailsEl->findFirstChildElement("server");
+            if (serverEl) {
+              pThis->mServerName = IMessageHelper::getElementTextAndDecode(serverEl);
+            }
+
           } catch(CheckFailed &) {
             ZS_LOG_ERROR(Detail, pThis->log("details element parse check failed"))
             return DetailsPtr();
@@ -1503,14 +2101,14 @@ namespace openpeer
         {
           ElementPtr resultEl = Element::create("core::thread::Details");
 
-          IHelper::debugAppend(resultEl, "id", mID);
-          IHelper::debugAppend(resultEl, "version", mVersion);
-          IHelper::debugAppend(resultEl, "base thread id", mBaseThreadID);
-          IHelper::debugAppend(resultEl, "host thread id", mHostThreadID);
-          IHelper::debugAppend(resultEl, "replaces thread id", mReplacesThreadID);
-          IHelper::debugAppend(resultEl, "state", toString(mState));
-          IHelper::debugAppend(resultEl, "topic", mTopic);
-          IHelper::debugAppend(resultEl, "created", mCreated);
+          UseServicesHelper::debugAppend(resultEl, "id", mID);
+          UseServicesHelper::debugAppend(resultEl, "version", mVersion);
+          UseServicesHelper::debugAppend(resultEl, "base thread id", mBaseThreadID);
+          UseServicesHelper::debugAppend(resultEl, "host thread id", mHostThreadID);
+          UseServicesHelper::debugAppend(resultEl, "replaces thread id", mReplacesThreadID);
+          UseServicesHelper::debugAppend(resultEl, "state", toString(mState));
+          UseServicesHelper::debugAppend(resultEl, "topic", mTopic);
+          UseServicesHelper::debugAppend(resultEl, "created", mCreated);
 
           return resultEl;
         }
@@ -1519,7 +2117,7 @@ namespace openpeer
         Log::Params Details::log(const char *message) const
         {
           ElementPtr objectEl = Element::create("core::thread::Details");
-          IHelper::debugAppend(objectEl, "id", mID);
+          UseServicesHelper::debugAppend(objectEl, "id", mID);
           return Log::Params(message, objectEl);
         }
 
@@ -1541,8 +2139,13 @@ namespace openpeer
         //  <messages version="1">
         //   ...
         //  </messages>
-        //  <receipts version="1">
-        //   ...
+        //  <receipts>
+        //    <delivered>
+        //      ...
+        //    </delivered>
+        //    <read>
+        //      ...
+        //    </read>
         //  </receipts>
         //  <dialogs version="1">
         //   ...
@@ -1580,6 +2183,7 @@ namespace openpeer
           mType(ThreadType_Host),
           mCanModify(false),
           mModifying(false),
+          mMustPublish(true),
           mMessagesVersion(0),
           mDialogsVersion(0),
           mDetailsChanged(false)
@@ -1607,8 +2211,8 @@ namespace openpeer
           pThis->mPublication = publication;
 
           SplitMap result;
-          services::IHelper::split(publication->getName(), result, '/');
-          String type = services::IHelper::get(result, OPENPEER_CONVERSATION_THREAD_TYPE_INDEX);
+          UseServicesHelper::split(publication->getName(), result, '/');
+          String type = UseServicesHelper::get(result, OPENPEER_CONVERSATION_THREAD_TYPE_INDEX);
 
           try {
             pThis->mType = toThreadTypes(type);
@@ -1635,7 +2239,7 @@ namespace openpeer
             }
             pThis->mDetailsChanged = true;
 
-            pThis->mContacts = ThreadContacts::create(account, threadEl->findFirstChildElementChecked("contacts"));
+            pThis->mContacts = ThreadContacts::create(account, threadEl->findFirstChildElementChecked("contacts"), ThreadContactsPtr());
             if (!pThis->mContacts) {
               ZS_LOG_ERROR(Detail, pThis->log("unable to load thread contacts from publication"))
               return ThreadPtr();
@@ -1671,13 +2275,23 @@ namespace openpeer
             // every message found is a changed message...
             pThis->mMessagesChanged = pThis->mMessageList;
 
-            pThis->mMessageReceipts = MessageReceipts::create(threadEl->findFirstChildElementChecked("receipts"));
-            if (!pThis->mMessageReceipts) {
-              ZS_LOG_ERROR(Detail, pThis->log("unable to load receipts in this publication"))
-              return ThreadPtr();
-            }
+            ElementPtr receiptsEl = threadEl->findFirstChildElementChecked("receipts");
+
+            pThis->mMessagesDelivered = MessageReceipts::create(receiptsEl->findFirstChildElement("delivered"));
             // every message receipt is a changed message receipt
-            pThis->mMessageReceiptsChanged = pThis->mMessageReceipts->receipts();
+            if (pThis->mMessagesDelivered) {
+              pThis->mMessagesDeliveredChanged = pThis->mMessagesDelivered->receipts();
+            } else {
+              pThis->mMessagesDeliveredChanged = MessageReceiptMap();
+            }
+
+            pThis->mMessagesRead = MessageReceipts::create(receiptsEl->findFirstChildElement("read"));
+            // every message receipt is a changed message receipt
+            if (pThis->mMessagesRead) {
+              pThis->mMessagesReadChanged = pThis->mMessagesRead->receipts();
+            } else {
+              pThis->mMessagesReadChanged = MessageReceiptMap();
+            }
 
             ElementPtr dialogsEl = threadEl->findFirstChildElementChecked("dialogs");
             pThis->mDialogsVersion = getVersion(dialogsEl);
@@ -1740,7 +2354,8 @@ namespace openpeer
           ThreadContactsPtr contacts;
           UINT messagesVersion = 0;
           MessageList messages;
-          MessageReceiptsPtr receipts;
+          MessageReceiptsPtr delivered;
+          MessageReceiptsPtr read;
           UINT dialogsVersion = 0;
           DialogMap dialogs;
           DialogMap dialogsChanged;
@@ -1761,7 +2376,7 @@ namespace openpeer
             ElementPtr contactsEl = threadEl->findFirstChildElementChecked("contacts");
             version = getVersion(contactsEl);
             if (version > mContacts->version()) {
-              contacts = ThreadContacts::create(account, contactsEl);
+              contacts = ThreadContacts::create(account, contactsEl, mContacts);
               if (!contacts) return false;
             }
 
@@ -1816,9 +2431,25 @@ namespace openpeer
             }
 
             ElementPtr receiptsEl = threadEl->findFirstChildElementChecked("receipts");
-            version = getVersion(receiptsEl);
-            if (version > mMessageReceipts->version()) {
-              receipts = MessageReceipts::create(receiptsEl);
+
+            ElementPtr deliveredEl = receiptsEl->findFirstChildElement("delivered");
+            version = getVersion(deliveredEl);
+            if (mMessagesDelivered) {
+              if (version > mMessagesDelivered->version()) {
+                delivered = MessageReceipts::create(deliveredEl);
+              }
+            } else {
+              delivered = MessageReceipts::create(deliveredEl);
+            }
+
+            ElementPtr readEl = receiptsEl->findFirstChildElement("read");
+            version = getVersion(readEl);
+            if (mMessagesRead) {
+              if (version > mMessagesRead->version()) {
+                read = MessageReceipts::create(readEl);
+              }
+            } else {
+              read = MessageReceipts::create(readEl);
             }
 
             ElementPtr dialogsEl = threadEl->findFirstChildElementChecked("dialogs");
@@ -1973,21 +2604,13 @@ namespace openpeer
             }
           }
 
-          if (receipts) {
+          if (delivered) {
             // figure out which message receipts have changed
-            const MessageReceiptMap &oldReceipts = mMessageReceipts->receipts();
-            const MessageReceiptMap &newReceipts = receipts->receipts();
-
-            for (MessageReceiptMap::const_iterator iter = newReceipts.begin(); iter != newReceipts.end(); ++iter)
-            {
-              const MessageID &id = (*iter).first;
-              const Time &time = (*iter).second;
-              MessageReceiptMap::const_iterator found = oldReceipts.find(id);
-              if (found == oldReceipts.end()) {
-                // did not have this receipt last time so it's new...
-                mMessageReceiptsChanged[id] = time;
-              }
-            }
+            mergedChanged(mMessagesDelivered, delivered, mMessagesDeliveredChanged);
+          }
+          if (read) {
+            // figure out which message receipts have changed
+            mergedChanged(mMessagesRead, read, mMessagesReadChanged);
           }
 
           if (dialogsVersion > mDialogsVersion) {
@@ -2094,6 +2717,7 @@ namespace openpeer
                                  const char *hostThreadID,
                                  const char *topic,
                                  const char *replaces,
+                                 const char *serverName,
                                  ConversationThreadStates state,
                                  ILocationPtr peerHostLocation
                                  )
@@ -2114,7 +2738,7 @@ namespace openpeer
             return ThreadPtr();
           }
 
-          pThis->mDetails = Details::create(1, baseThreadID, hostThreadID, topic, replaces, state);
+          pThis->mDetails = Details::create(1, baseThreadID, hostThreadID, topic, replaces, serverName, state);
           if (!pThis->mDetails) return ThreadPtr();
 
           ThreadContactList empty;
@@ -2122,7 +2746,6 @@ namespace openpeer
           pThis->mContacts = ThreadContacts::create(1, empty, empty, emptyIDs);
 
           pThis->mMessagesVersion = 1;
-          pThis->mMessageReceipts = MessageReceipts::create(1);
           pThis->mDialogsVersion = 1;
 
           DocumentPtr doc = Document::create();
@@ -2139,9 +2762,14 @@ namespace openpeer
 
           doc->adoptAsLastChild(threadEl);
           threadEl->adoptAsLastChild(pThis->mDetails->detailsElement()->clone());
-          threadEl->adoptAsLastChild(pThis->mContacts->contactsElement()->clone());
+          threadEl->adoptAsLastChild(Element::create("contacts"));
           threadEl->adoptAsLastChild(messagesEl);
-          threadEl->adoptAsLastChild(pThis->mMessageReceipts->receiptsElement());
+
+          ElementPtr receiptsEl = Element::create("receipts");
+          receiptsEl->adoptAsLastChild(Element::create("delivered"));
+          receiptsEl->adoptAsLastChild(Element::create("read"));
+
+          threadEl->adoptAsLastChild(receiptsEl);
           threadEl->adoptAsLastChild(dialogsEl);
 
           String baseName = String("/threads/1.0/") + toString(threadType) + "/" + baseThreadID + "/" + hostThreadID + "/";
@@ -2185,21 +2813,22 @@ namespace openpeer
         {
           ZS_THROW_INVALID_USAGE_IF(!mCanModify)
           ZS_THROW_INVALID_USAGE_IF(mModifying)
-          ZS_THROW_BAD_STATE_IF(mChangesDoc)
 
           mModifying = true;
 
           resetChanged();
-          mChangesDoc.reset();
         }
 
         //---------------------------------------------------------------------
-        bool Thread::updateEnd()
+        bool Thread::updateEnd(IPublicationRepositoryPtr repository)
         {
           ZS_THROW_INVALID_USAGE_IF(!mCanModify)
           ZS_THROW_INVALID_USAGE_IF(!mModifying)
 
           mModifying = false;
+          bool contactsAddedOrRemoved = false;
+
+          DocumentPtr changesDoc;
 
           // scope: figure out difference document (needs to be scoped because
           //        of publication lock returned from getXML(...) could cause
@@ -2212,7 +2841,7 @@ namespace openpeer
             // have the details changed since last time?
             if (mDetailsChanged) {
               ElementPtr detailsEl = threadEl->findFirstChildElementChecked("details");
-              IDiff::createDiffs(IDiff::DiffAction_Replace, mChangesDoc, detailsEl, false, mDetails->detailsElement()->clone());
+              IDiff::createDiffs(IDiff::DiffAction_Replace, changesDoc, detailsEl, false, mDetails->detailsElement()->clone());
             }
 
             // have any contacts changed...
@@ -2241,6 +2870,8 @@ namespace openpeer
                 const ContactURI &id = (*iter).first;
                 ThreadContactPtr &contact = (*iter).second;
 
+                if (contacts.end() == contacts.find(id)) contactsAddedOrRemoved = true;
+
                 // apply the change now...
                 contacts[id] = contact;
               }
@@ -2251,6 +2882,8 @@ namespace openpeer
                 const ContactURI &id = (*iter);
                 ThreadContactMap::iterator found = contacts.find(id);
                 if (found == contacts.end()) continue;
+
+                contactsAddedOrRemoved = true;
                 contacts.erase(found);
               }
 
@@ -2259,6 +2892,8 @@ namespace openpeer
               {
                 const ContactURI &id = (*iter).first;
                 ThreadContactPtr &contact = (*iter).second;
+
+                if (addContacts.end() == addContacts.find(id)) contactsAddedOrRemoved = true;
 
                 // apply the change now...
                 addContacts[id] = contact;
@@ -2269,7 +2904,10 @@ namespace openpeer
               {
                 const ContactURI &id = (*iter);
                 ThreadContactMap::iterator found = addContacts.find(id);
+
                 if (found == addContacts.end()) continue;
+
+                contactsAddedOrRemoved = true;
                 addContacts.erase(found);
               }
 
@@ -2282,6 +2920,8 @@ namespace openpeer
                 const ContactURI &id = (*iter);
                 ThreadContactMap::iterator found = removeContactsMap.find(id);
                 if (found == removeContactsMap.end()) continue;
+
+                contactsAddedOrRemoved = true;
                 removeContactsMap.erase(found);
               }
 
@@ -2295,13 +2935,8 @@ namespace openpeer
               convert(addContacts, addContactsAsList);
 
               // this is the replacement "contacts" object
-              mContacts = ThreadContacts::create(mContacts->version() + 1, contactsAsList, addContactsAsList, removeContacts);
+              mContacts = ThreadContacts::createUpdateAndMakeDiffs(contactsAsList, addContactsAsList, removeContacts, mContacts, threadEl->findFirstChildElementChecked("contacts"), changesDoc);
               ZS_THROW_BAD_STATE_IF(!mContacts)
-
-              ElementPtr contactsEl = threadEl->findFirstChildElementChecked("contacts");
-
-              // this is the replacement for the contacts...
-              IDiff::createDiffs(IDiff::DiffAction_Replace, mChangesDoc, contactsEl, false, mContacts->contactsElement()->clone());
             }
 
             if (mMessagesChanged.size() > 0) {
@@ -2313,13 +2948,13 @@ namespace openpeer
               setEl->setAttribute("version", string(mMessagesVersion));
 
               // put the corrected version on the messages element...
-              IDiff::createDiffsForAttributes(mChangesDoc, messagesEl, false, setEl);
+              IDiff::createDiffsForAttributes(changesDoc, messagesEl, false, setEl);
 
               // add the messages to the messages element
               for (MessageList::iterator iter = mMessagesChanged.begin(); iter != mMessagesChanged.end(); ++iter)
               {
                 MessagePtr &message = (*iter);
-                IDiff::createDiffs(IDiff::DiffAction_AdoptAsLastChild, mChangesDoc, messagesEl, false, message->messageBundleElement());
+                IDiff::createDiffs(IDiff::DiffAction_AdoptAsLastChild, changesDoc, messagesEl, false, message->messageBundleElement());
 
                 // remember these messages in the thread document...
                 mMessageList.push_back(message);
@@ -2327,13 +2962,10 @@ namespace openpeer
               }
             }
 
-            if (mMessageReceiptsChanged.size() > 0) {
-              ElementPtr receiptsEl = threadEl->findFirstChildElementChecked("receipts");
+            ElementPtr receiptsEl = threadEl->findFirstChildElementChecked("receipts");
 
-              mMessageReceipts = MessageReceipts::create(mMessageReceipts->version()+1, mMessageReceiptsChanged);
-
-              IDiff::createDiffs(IDiff::DiffAction_Replace, mChangesDoc, receiptsEl, false, mMessageReceipts->receiptsElement());
-            }
+            createReceiptDiffs(changesDoc, receiptsEl, "delivered", mMessagesDeliveredChanged, mMessagesDelivered);
+            createReceiptDiffs(changesDoc, receiptsEl, "read", mMessagesReadChanged, mMessagesRead);
 
             if ((mDialogsChanged.size() > 0) ||
                 (mDialogsRemoved.size() > 0)) {
@@ -2345,7 +2977,7 @@ namespace openpeer
               ElementPtr setEl = Element::create();
               setEl->setAttribute("version", string(mDialogsVersion));
 
-              IDiff::createDiffsForAttributes(mChangesDoc, dialogsEl, false, setEl);
+              IDiff::createDiffsForAttributes(changesDoc, dialogsEl, false, setEl);
 
               for (DialogMap::iterator iter = mDialogsChanged.begin(); iter != mDialogsChanged.end(); ++iter)
               {
@@ -2364,7 +2996,7 @@ namespace openpeer
                   ElementPtr signatureEl = dialogBundleEl->findFirstChildElement("Signature");
                   if (dialogEl->getAttributeValue("id") == id) {
                     // found the element to "replace"... so create a diff...
-                    IDiff::createDiffs(IDiff::DiffAction_Replace, mChangesDoc, dialogBundleEl, false, dialog->dialogBundleElement()->clone());
+                    IDiff::createDiffs(IDiff::DiffAction_Replace, changesDoc, dialogBundleEl, false, dialog->dialogBundleElement()->clone());
                     found = true;
                     break;
                   }
@@ -2373,7 +3005,7 @@ namespace openpeer
 
                 if (!found) {
                   // this dialog needs to be added isntead
-                  IDiff::createDiffs(IDiff::DiffAction_AdoptAsLastChild, mChangesDoc, dialogsEl, false, dialog->dialogBundleElement()->clone());
+                  IDiff::createDiffs(IDiff::DiffAction_AdoptAsLastChild, changesDoc, dialogsEl, false, dialog->dialogBundleElement()->clone());
                 }
               }
 
@@ -2393,7 +3025,7 @@ namespace openpeer
                   ElementPtr dialogEl = dialogBundleEl->findFirstChildElement("dialog");
                   if (dialogEl->getAttributeValue("id") == id) {
                     // found the element to "replace"... so create a diff...
-                    IDiff::createDiffs(IDiff::DiffAction_Remove, mChangesDoc, dialogBundleEl, false);
+                    IDiff::createDiffs(IDiff::DiffAction_Remove, changesDoc, dialogBundleEl, false);
                     break;
                   }
                   dialogBundleEl = dialogBundleEl->findNextSiblingElement("dialogBundle");
@@ -2401,16 +3033,15 @@ namespace openpeer
               }
             }
 
-            if (!mChangesDoc) return false;  // nothing to do
           }
 
-          // the changes need to be adopted/processed by the document
-          mPublication->update(mChangesDoc);
-          mChangesDoc.reset();
+          if (changesDoc) {
+            // the changes need to be adopted/processed by the document
+            mPublication->update(changesDoc);
+          }
 
           // check if the permissions document needs updating too...
-          if ((mContactsChanged.size() > 0) ||
-              (mContactsRemoved.size() > 0)) {
+          if (contactsAddedOrRemoved) {
 
             if (ThreadType_Host == mType) {
               // Only need to update this document when acting as a host and
@@ -2436,8 +3067,6 @@ namespace openpeer
             }
           }
 
-          resetChanged();
-
           // scope: double check if any contacts can be published at this time
           {
             const ThreadContactMap &contacts = mContacts->contacts();
@@ -2447,6 +3076,11 @@ namespace openpeer
               publishContact(contact->contact());
             }
           }
+
+          resetChanged();
+
+          publish(repository, mMustPublish || (bool)changesDoc, mMustPublish || contactsAddedOrRemoved);
+          mMustPublish = false;
 
           return true;
         }
@@ -2459,7 +3093,7 @@ namespace openpeer
           if (state == mDetails->state()) return; // nothing changed
 
           mDetailsChanged = true;
-          mDetails = Details::create(mDetails->version()+1, mDetails->baseThreadID(), mDetails->hostThreadID(), mDetails->topic(), mDetails->replacesThreadID(), state);
+          mDetails = Details::create(mDetails->version()+1, mDetails->baseThreadID(), mDetails->hostThreadID(), mDetails->topic(), mDetails->replacesThreadID(), mDetails->serverName(), state);
         }
 
         //---------------------------------------------------------------------
@@ -2477,13 +3111,16 @@ namespace openpeer
           for (ThreadContactMap::const_iterator iter = contacts.begin(); iter != contacts.end(); ++iter)
           {
             const ContactURI &id = (*iter).first;
-            const ThreadContactPtr &contact = (*iter).second;
+            const ThreadContactPtr &newContact = (*iter).second;
 
             // first check if it's already on the list...
             ThreadContactMap::const_iterator found = oldContacts.find(id);
-            if (found != oldContacts.end()) continue;       // already have this contact on the old list
+            if (found != oldContacts.end()) {
+              const ThreadContactPtr &oldContact = (*found).second;
+              if (oldContact == ThreadContact::prepareNewContact(oldContact, newContact)) continue;
+            }
 
-            mContactsChanged[id] = contact;
+            mContactsChanged[id] = newContact;
           }
 
           // figure out which contacts need to be removed...
@@ -2513,13 +3150,16 @@ namespace openpeer
           for (ThreadContactMap::const_iterator iter = contacts.begin(); iter != contacts.end(); ++iter)
           {
             const ContactURI &id = (*iter).first;
-            const ThreadContactPtr &contact = (*iter).second;
+            const ThreadContactPtr &newContact = (*iter).second;
 
             // first check if it's already on the list...
             ThreadContactMap::const_iterator found = oldContactsToAdd.find(id);
-            if (found != oldContactsToAdd.end()) continue;       // already have this contact on the old list
+            if (found != oldContactsToAdd.end()) {
+              const ThreadContactPtr &oldContact = (*found).second;
+              if (oldContact == ThreadContact::prepareNewContact(oldContact, newContact)) continue;
+            }
 
-            mContactsToAddChanged[id] = contact;
+            mContactsToAddChanged[id] = newContact;
           }
 
           // figure out which contacts need to be removed...
@@ -2608,71 +3248,27 @@ namespace openpeer
         }
 
         //---------------------------------------------------------------------
-        void Thread::setReceived(MessagePtr message)
+        void Thread::setDelivered(MessagePtr message)
         {
-          ZS_THROW_INVALID_USAGE_IF((!mCanModify) || (!mModifying))
-
-          mMessageReceiptsChanged.clear();
-
-          mMessageReceiptsChanged[message->messageID()] = zsLib::now();
+          setReceipts(mMessagesDelivered, message, mMessagesDeliveredChanged);
         }
 
         //---------------------------------------------------------------------
-        void Thread::setReceived(const MessageReceiptMap &messages)
+        void Thread::setDelivered(const MessageReceiptMap &messages)
         {
-          ZS_THROW_INVALID_USAGE_IF((!mCanModify) || (!mModifying))
+          setReceipts(mMessagesDelivered, messages, mMessagesDeliveredChanged);
+        }
 
-          if (mMessageReceiptsChanged.size() > 0) {
-            // since there is already changes acknowledged just update the changes now...
-            mMessageReceiptsChanged = messages;
-            return;
-          }
+        //---------------------------------------------------------------------
+        void Thread::setRead(MessagePtr message)
+        {
+          setReceipts(mMessagesRead, message, mMessagesReadChanged);
+        }
 
-          bool changed = false;
-
-          // check if anything is added...
-          for (MessageReceiptMap::const_iterator iter = messages.begin(); iter != messages.end(); ++iter)
-          {
-            const MessageID &id = (*iter).first;
-            const Time &time = (*iter).second;
-            MessageReceiptMap::const_iterator found = mMessageReceipts->receipts().find(id);
-            if (found == mMessageReceipts->receipts().end()) {
-              changed = true;
-              break;
-            }
-            const Time &oldTime = (*found).second;
-            if (time != oldTime) {
-              changed = true;
-              break;
-            }
-          }
-
-          if (!changed) {
-            // check if anything is removed...
-            for (MessageReceiptMap::const_iterator iter = mMessageReceipts->receipts().begin(); iter != mMessageReceipts->receipts().end(); ++iter)
-            {
-              const MessageID &id = (*iter).first;
-              const Time &time = (*iter).second;
-              MessageReceiptMap::const_iterator found = messages.find(id);
-              if (found == messages.end()) {
-                changed = true;
-                break;
-              }
-              const Time &oldTime = (*found).second;
-              if (time != oldTime) {
-                changed = true;
-                break;
-              }
-            }
-          }
-
-          if (!changed) {
-            ZS_LOG_TRACE(log("no message receipts changed detected from previous received map (thus ignoring request to set received)"))
-            // nothing changed thus do not cause an update
-            return;
-          }
-
-          mMessageReceiptsChanged = messages;
+        //---------------------------------------------------------------------
+        void Thread::setRead(const MessageReceiptMap &messages)
+        {
+          setReceipts(mMessagesRead, messages, mMessagesReadChanged);
         }
 
         //---------------------------------------------------------------------
@@ -2707,22 +3303,43 @@ namespace openpeer
         }
 
         //---------------------------------------------------------------------
-        void Thread::getContactPublicationsToPublish(ContactPublicationMap &outContactPublications)
+        void Thread::publish(
+                             IPublicationRepositoryPtr repository,
+                             bool publication,
+                             bool permissions
+                             )
         {
-          for (ContactPublicationMap::iterator iter = mContactPublications.begin(); iter != mContactPublications.end(); ++iter)
+          if (!repository) {
+            ZS_LOG_WARNING(Detail, log("publication repository is not available"))
+            return;
+          }
+
+          // scope: publish contacts
           {
-            const String &contactURI = (*iter).first;
-            IPublicationPtr &publication = (*iter).second;
-            if (!publication) {
-              ZS_LOG_TRACE(log("contact already published"))
-              continue;
+            ContactPublicationMap &publishDocuments = mContactPublications;
+            for (thread::ContactPublicationMap::iterator iter = publishDocuments.begin(); iter != publishDocuments.end(); ++iter)
+            {
+              const String &uri = (*iter).first;
+              IPublicationPtr contactPublication = (*iter).second;
+
+              // remember that this publication was published
+              mContactPublicationsCompleted[uri] = IPublicationPtr();
+
+              ZS_LOG_DEBUG(log("publishing host contact document"))
+              repository->publish(IPublicationPublisherDelegateProxy::createNoop(UseStack::queueCore()), contactPublication);
             }
 
-            // transfer ownership of publication to caller
-            outContactPublications[contactURI] = publication;
+            mContactPublications.clear();
+          }
 
-            // make sure it will never be published again
-            publication.reset();
+          if (permissions) {
+            ZS_LOG_DEBUG(log("publishing thread permission document"))
+            repository->publish(IPublicationPublisherDelegateProxy::createNoop(UseStack::queueCore()), mPermissionPublication);
+          }
+
+          if (publication) {
+            ZS_LOG_DEBUG(log("publishing thread document"))
+            repository->publish(IPublicationPublisherDelegateProxy::createNoop(UseStack::queueCore()), mPublication);
           }
         }
 
@@ -2731,36 +3348,42 @@ namespace openpeer
         {
           ElementPtr resultEl = Element::create("core::thread::Thread");
 
-          IHelper::debugAppend(resultEl, "id", mID);
-          IHelper::debugAppend(resultEl, "type", toString(mType));
-          IHelper::debugAppend(resultEl, "can modify", mCanModify);
-          IHelper::debugAppend(resultEl, "modifying", mModifying);
-          IHelper::debugAppend(resultEl, IPublication::toDebug(mPublication));
-          IHelper::debugAppend(resultEl, IPublication::toDebug(mPermissionPublication));
-          IHelper::debugAppend(resultEl, "contact publications", mContactPublications.size());
-          IHelper::debugAppend(resultEl, Details::toDebug(mDetails));
-          IHelper::debugAppend(resultEl, ThreadContacts::toDebug(mContacts));
-          IHelper::debugAppend(resultEl, "message version", mMessagesVersion);
-          IHelper::debugAppend(resultEl, "message list", mMessageList.size());
-          IHelper::debugAppend(resultEl, "message map", mMessageMap.size());
-          IHelper::debugAppend(resultEl, MessageReceipts::toDebug(mMessageReceipts));
-          IHelper::debugAppend(resultEl, "dialog version", mDialogsVersion);
-          IHelper::debugAppend(resultEl, "dialogs", mDialogs.size());
-          IHelper::debugAppend(resultEl, "changes", (bool)mChangesDoc);
-          IHelper::debugAppend(resultEl, "details changed", mDetailsChanged);
-          IHelper::debugAppend(resultEl, "contacts changed", mContactsChanged.size());
-          IHelper::debugAppend(resultEl, "contacts removed", mContactsRemoved.size());
-          IHelper::debugAppend(resultEl, "contacts to add changed", mContactsToAddChanged.size());
-          IHelper::debugAppend(resultEl, "contacts to add removed", mContactsToAddRemoved.size());
-          IHelper::debugAppend(resultEl, "contacts to remove changed", mContactsToRemoveChanged.size());
-          IHelper::debugAppend(resultEl, "contacts to remove removed", mContactsToRemoveRemoved.size());
-          IHelper::debugAppend(resultEl, "messages changed", mMessagesChanged.size());
-          IHelper::debugAppend(resultEl, "messages changed time", mMessagesChangedTime);
-          IHelper::debugAppend(resultEl, "messages receipts changed", mMessageReceiptsChanged.size());
-          IHelper::debugAppend(resultEl, "dialogs changed", mDialogsChanged.size());
-          IHelper::debugAppend(resultEl, "dialogs removed", mDialogsRemoved.size());
-          IHelper::debugAppend(resultEl, "descriptions changed", mDescriptionsChanged.size());
-          IHelper::debugAppend(resultEl, "descriptions removed", mDescriptionsRemoved.size());
+          UseServicesHelper::debugAppend(resultEl, "id", mID);
+          UseServicesHelper::debugAppend(resultEl, "type", toString(mType));
+          UseServicesHelper::debugAppend(resultEl, "can modify", mCanModify);
+          UseServicesHelper::debugAppend(resultEl, "modifying", mModifying);
+
+          UseServicesHelper::debugAppend(resultEl, "must publish", mMustPublish);
+          UseServicesHelper::debugAppend(resultEl, IPublication::toDebug(mPublication));
+          UseServicesHelper::debugAppend(resultEl, IPublication::toDebug(mPermissionPublication));
+          UseServicesHelper::debugAppend(resultEl, "contact publications", mContactPublications.size());
+          UseServicesHelper::debugAppend(resultEl, "contact publications completed", mContactPublicationsCompleted.size());
+
+          UseServicesHelper::debugAppend(resultEl, Details::toDebug(mDetails));
+          UseServicesHelper::debugAppend(resultEl, ThreadContacts::toDebug(mContacts));
+          UseServicesHelper::debugAppend(resultEl, "message version", mMessagesVersion);
+          UseServicesHelper::debugAppend(resultEl, "message list", mMessageList.size());
+          UseServicesHelper::debugAppend(resultEl, "message map", mMessageMap.size());
+          UseServicesHelper::debugAppend(resultEl, MessageReceipts::toDebug(mMessagesDelivered));
+          UseServicesHelper::debugAppend(resultEl, MessageReceipts::toDebug(mMessagesRead));
+          UseServicesHelper::debugAppend(resultEl, "dialog version", mDialogsVersion);
+          UseServicesHelper::debugAppend(resultEl, "dialogs", mDialogs.size());
+
+          UseServicesHelper::debugAppend(resultEl, "details changed", mDetailsChanged);
+          UseServicesHelper::debugAppend(resultEl, "contacts changed", mContactsChanged.size());
+          UseServicesHelper::debugAppend(resultEl, "contacts removed", mContactsRemoved.size());
+          UseServicesHelper::debugAppend(resultEl, "contacts to add changed", mContactsToAddChanged.size());
+          UseServicesHelper::debugAppend(resultEl, "contacts to add removed", mContactsToAddRemoved.size());
+          UseServicesHelper::debugAppend(resultEl, "contacts to remove changed", mContactsToRemoveChanged.size());
+          UseServicesHelper::debugAppend(resultEl, "contacts to remove removed", mContactsToRemoveRemoved.size());
+          UseServicesHelper::debugAppend(resultEl, "messages changed", mMessagesChanged.size());
+          UseServicesHelper::debugAppend(resultEl, "messages changed time", mMessagesChangedTime);
+          UseServicesHelper::debugAppend(resultEl, "messages receipts changed", mMessagesDeliveredChanged.size());
+          UseServicesHelper::debugAppend(resultEl, "messages receipts changed", mMessagesReadChanged.size());
+          UseServicesHelper::debugAppend(resultEl, "dialogs changed", mDialogsChanged.size());
+          UseServicesHelper::debugAppend(resultEl, "dialogs removed", mDialogsRemoved.size());
+          UseServicesHelper::debugAppend(resultEl, "descriptions changed", mDescriptionsChanged.size());
+          UseServicesHelper::debugAppend(resultEl, "descriptions removed", mDescriptionsRemoved.size());
           
           return resultEl;
         }
@@ -2769,7 +3392,7 @@ namespace openpeer
         Log::Params Thread::log(const char *message) const
         {
           ElementPtr objectEl = Element::create("core::thread::Thread");
-          IHelper::debugAppend(objectEl, "id", mID);
+          UseServicesHelper::debugAppend(objectEl, "id", mID);
           return Log::Params(message, objectEl);
         }
 
@@ -2784,7 +3407,8 @@ namespace openpeer
           mContactsToRemoveChanged.clear();
           mContactsToRemoveRemoved.clear();
           mMessagesChanged.clear();
-          mMessageReceiptsChanged.clear();
+          mMessagesDeliveredChanged.clear();
+          mMessagesReadChanged.clear();
           mDialogsChanged.clear();
           mDialogsRemoved.clear();
           mDescriptionsChanged.clear();
@@ -2827,7 +3451,7 @@ namespace openpeer
             return;
           }
 
-          if (mContactPublications.end() != mContactPublications.find(contact->getPeerURI())) {
+          if (mContactPublicationsCompleted.end() != mContactPublicationsCompleted.find(contact->getPeerURI())) {
             ZS_LOG_TRACE(log("contact already published") + UseContact::toDebug(contact))
             return;
           }
@@ -2878,8 +3502,135 @@ namespace openpeer
           mContactPublications[contact->getPeerURI()] = contactPublication;
         }
 
+        //-----------------------------------------------------------------------
+        void Thread::mergedChanged(
+                                   MessageReceiptsPtr oldReceipts,
+                                   MessageReceiptsPtr newReceipts,
+                                   MessageReceiptMap &ioChanged
+                                   )
+        {
+          if (!newReceipts) return;
+
+          for (MessageReceiptMap::const_iterator iter = newReceipts->receipts().begin(); iter != newReceipts->receipts().end(); ++iter)
+          {
+            const MessageID &id = (*iter).first;
+            const Time &time = (*iter).second;
+            if (oldReceipts) {
+              MessageReceiptMap::const_iterator found = oldReceipts->receipts().find(id);
+              if (found != oldReceipts->receipts().end()) continue;
+            }
+            // did not have this receipt last time so it's new...
+            ioChanged[id] = time;
+          }
+        }
+
+        //---------------------------------------------------------------------
+        void Thread::createReceiptDiffs(
+                                        DocumentPtr &ioChangesDoc,
+                                        ElementPtr inReceiptsEl,
+                                        const char *inSubElementName,
+                                        const MessageReceiptMap &inChanged,
+                                        MessageReceiptsPtr &ioReceipts
+                                        )
+        {
+          ElementPtr subEl = inReceiptsEl->findFirstChildElement(inSubElementName);
+
+          if (inChanged.size() > 0) {
+            if (ioReceipts) {
+              ioReceipts = MessageReceipts::create(inSubElementName, ioReceipts->version()+1, inChanged);
+            } else {
+              ioReceipts = MessageReceipts::create(inSubElementName, 1, inChanged);
+            }
+
+            IDiff::createDiffs(IDiff::DiffAction_Replace, ioChangesDoc, subEl, false, ioReceipts->receiptsElement());
+          }
+        }
+
+        //---------------------------------------------------------------------
+        void Thread::setReceipts(
+                                 MessageReceiptsPtr receipts,
+                                 MessagePtr inMessage,
+                                 MessageReceiptMap &ioChanged
+                                 )
+        {
+          ZS_THROW_INVALID_USAGE_IF((!mCanModify) || (!mModifying))
+
+          MessageReceiptMap newlyChanged;
+
+          newlyChanged[inMessage->messageID()] = zsLib::now();
+          setReceipts(receipts, newlyChanged, ioChanged);
+        }
+
+        //---------------------------------------------------------------------
+        void Thread::setReceipts(
+                                 MessageReceiptsPtr receipts,
+                                 const MessageReceiptMap &inMessages,
+                                 MessageReceiptMap &ioChanged
+                                 )
+        {
+          ZS_THROW_INVALID_USAGE_IF((!mCanModify) || (!mModifying))
+
+          // only want to create a "changed" list if there is some new receipt
+          // that hasn't been previously acknowledged (otherwise a new version
+          // of receipts will be created each and every time).
+
+          if (ioChanged.size() > 0) {
+            // since there is already changes acknowledged just update the
+            // changes now...
+            ioChanged = inMessages;
+            return;
+          }
+
+          if (!receipts) {
+            // there is no previous receipts object thus a new one needs to
+            // be created.
+            ioChanged = inMessages;
+            return;
+          }
+
+          bool changed = false;
+
+          // check if anything is added or updated from previous...
+          for (MessageReceiptMap::const_iterator iter = inMessages.begin(); iter != inMessages.end(); ++iter)
+          {
+            const MessageID &id = (*iter).first;
+            const Time &time = (*iter).second;
+            MessageReceiptMap::const_iterator found = receipts->receipts().find(id);
+            if (found == receipts->receipts().end()) {
+              changed = true;
+              break;
+            }
+            const Time &oldTime = (*found).second;
+            if (time != oldTime) {
+              changed = true;
+              break;
+            }
+          }
+
+          if (!changed) {
+            // check if anything is removed...
+            for (MessageReceiptMap::const_iterator iter = receipts->receipts().begin(); iter != receipts->receipts().end(); ++iter)
+            {
+              const MessageID &id = (*iter).first;
+              MessageReceiptMap::const_iterator found = inMessages.find(id);
+              if (found == inMessages.end()) {
+                changed = true;
+                break;
+              }
+            }
+          }
+
+          if (!changed) {
+            ZS_LOG_TRACE(log("no message receipts changed detected from previous received map (thus ignoring request to set receipts)"))
+            // nothing changed thus do not cause an update
+            return;
+          }
+
+          ioChanged = inMessages;
+        }
+
       }
-      
+
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------

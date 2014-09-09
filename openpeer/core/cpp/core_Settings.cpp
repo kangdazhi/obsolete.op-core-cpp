@@ -48,7 +48,7 @@ namespace openpeer
 
     namespace internal
     {
-      using services::IHelper;
+      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
 
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -64,6 +64,22 @@ namespace openpeer
         SettingsPtr singleton = Settings::singleton();
         if (!singleton) return;
         singleton->applyDefaultsIfNoDelegatePresent();
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark ISettingsForStack
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      Duration ISettingsForThread::getThreadMoveMessageToCacheTimeInSeconds()
+      {
+        SettingsPtr singleton = Settings::singleton();
+        if (!singleton) return Duration(Seconds(120));
+        return singleton->getThreadMoveMessageToCacheTimeInSeconds();
       }
 
       //-----------------------------------------------------------------------
@@ -142,6 +158,9 @@ namespace openpeer
         }
 
         setUInt(OPENPEER_CORE_SETTING_ACCOUNT_BACKGROUNDING_PHASE, 1);
+        setUInt(OPENPEER_CORE_SETTING_THREAD_MOVE_MESSAGE_TO_CACHE_TIME_IN_SECONDS, 120);
+
+        setUInt(OPENPEER_CORE_SETTING_CONVERSATION_THREAD_HOST_INACTIVE_CLOSE_TIME_IN_SECONDS, 600);
 
         setString(OPENPEER_CORE_SETTING_STACK_CORE_THREAD_PRIORITY, "normal");
         setString(OPENPEER_CORE_SETTING_STACK_MEDIA_THREAD_PRIORITY, "real-time");
@@ -169,6 +188,32 @@ namespace openpeer
         ZS_LOG_WARNING(Detail, log("To prevent issues with missing settings, the default settings are being applied. Recommend installing a settings delegate to fetch settings required from a externally."))
 
         applyDefaults();
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
+      #pragma mark Settings => ISettingsForThread
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      Duration Settings::getThreadMoveMessageToCacheTimeInSeconds()
+      {
+        {
+          AutoRecursiveLock lock(mLock);
+          if (Duration() != mThreadMoveMessageToCacheTimeInSeconds) return mThreadMoveMessageToCacheTimeInSeconds;
+        }
+
+        Duration cacheDuration = Seconds(getUInt(OPENPEER_CORE_SETTING_THREAD_MOVE_MESSAGE_TO_CACHE_TIME_IN_SECONDS));
+
+        {
+          AutoRecursiveLock lock(mLock);
+          mThreadMoveMessageToCacheTimeInSeconds = cacheDuration;
+        }
+
+        return cacheDuration;
       }
 
       //-----------------------------------------------------------------------
@@ -399,7 +444,7 @@ namespace openpeer
       Log::Params Settings::log(const char *message) const
       {
         ElementPtr objectEl = Element::create("core::Settings");
-        IHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
         return Log::Params(message, objectEl);
       }
 
