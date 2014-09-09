@@ -44,7 +44,7 @@ namespace openpeer
   {
     namespace internal
     {
-      using services::IHelper;
+      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
 
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -195,7 +195,7 @@ namespace openpeer
       Log::Params Backgrounding::log(const char *message) const
       {
         ElementPtr objectEl = Element::create("core::Backgrounding");
-        IHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
         return Log::Params(message, objectEl);
       }
 
@@ -216,7 +216,7 @@ namespace openpeer
       {
         ElementPtr resultEl = Element::create("core::Backgrounding");
 
-        IHelper::debugAppend(resultEl, "id", mID);
+        UseServicesHelper::debugAppend(resultEl, "id", mID);
         return resultEl;
       }
 
@@ -285,7 +285,7 @@ namespace openpeer
       Log::Params Backgrounding::Completion::log(const char *message) const
       {
         ElementPtr objectEl = Element::create("core::Backgrounding::Completion");
-        IHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
         return Log::Params(message, objectEl);
       }
 
@@ -398,7 +398,7 @@ namespace openpeer
       Log::Params Backgrounding::Subscription::log(const char *message) const
       {
         ElementPtr objectEl = Element::create("core::Backgrounding::Subscription");
-        IHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
         return Log::Params(message, objectEl);
       }
 

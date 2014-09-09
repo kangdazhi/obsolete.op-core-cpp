@@ -34,6 +34,9 @@
 #include <openpeer/core/internal/core_ConversationThread.h>
 #include <openpeer/core/internal/core_Account.h>
 #include <openpeer/core/internal/core_Contact.h>
+#include <openpeer/core/internal/core_Helper.h>
+
+#include <openpeer/core/ComposingStatus.h>
 
 #include <openpeer/services/IHelper.h>
 #include <openpeer/services/ISettings.h>
@@ -53,10 +56,12 @@ namespace openpeer
       ZS_DECLARE_TYPEDEF_PTR(ConversationThreadHost::UseContact, UseContact)
       ZS_DECLARE_TYPEDEF_PTR(ConversationThreadHost::UseConversationThread, UseConversationThread)
 
-      using services::IHelper;
       ZS_DECLARE_TYPEDEF_PTR(services::ISettings, UseSettings)
 
       using namespace core::internal::thread;
+
+      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
+      ZS_DECLARE_TYPEDEF_PTR(core::internal::IHelperForInternal, UseHelper)
 
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -91,7 +96,8 @@ namespace openpeer
         mCurrentState(PeerContactState_Pending),
         mOuter(host),
         mContact(contact),
-        mIdentityContacts(identityContacts)
+        mIdentityContacts(identityContacts),
+        mReportedContactStatus(false)  // upon adding the outer will automatically report a "gone" status thus no need to report again
       {
         ZS_LOG_DETAIL(log("created") + UseContact::toDebug(contact))
       }
@@ -101,7 +107,7 @@ namespace openpeer
       {
         AutoRecursiveLock lock(*this);
 
-        mBackgroundingSubscription = IBackgrounding::subscribe(mThisWeak.lock(), UseSettings::getUInt(OPENPEER_CORE_SETTINGS_CONVERSATION_THREAD_HOST_BACKGROUNDING_PHASE));
+        mBackgroundingSubscription = IBackgrounding::subscribe(mThisWeak.lock(), UseSettings::getUInt(OPENPEER_CORE_SETTING_CONVERSATION_THREAD_HOST_BACKGROUNDING_PHASE));
 
         ULONG autoFindSeconds = services::ISettings::getUInt(OPENPEER_CORE_SETTING_CONVERSATION_THREAD_HOST_PEER_CONTACT);
 
@@ -171,11 +177,14 @@ namespace openpeer
             ZS_LOG_WARNING(Detail, log("failed to create peer location") + ILocation::toDebug(peerLocation))
             return;
           }
+
           ZS_LOG_DEBUG(log("created new oeer location") + UseContact::toDebug(mContact))
           mPeerLocations[location->getLocationID()] = location;
         }
 
         location->notifyPublicationUpdated(peerLocation, metaData, split);
+
+        IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
       }
 
       //-----------------------------------------------------------------------
@@ -230,7 +239,7 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      IConversationThread::ContactStates ConversationThreadHost::PeerContact::getContactState() const
+      IConversationThread::ContactConnectionStates ConversationThreadHost::PeerContact::getContactConnectionState() const
       {
         AutoRecursiveLock lock(*this);
 
@@ -239,30 +248,30 @@ namespace openpeer
         {
           const PeerLocationPtr &peerLocation = (*iter).second;
           if (peerLocation->isConnected()) {
-            return IConversationThread::ContactState_Connected;
+            return IConversationThread::ContactConnectionState_Connected;
           }
         }
 
         if (mContact) {
           switch (mContact->getPeer()->getFindState()) {
-            case IPeer::PeerFindState_Pending:    return IConversationThread::ContactState_NotApplicable;
-            case IPeer::PeerFindState_Idle:       return (mPeerLocations.size() > 0 ? IConversationThread::ContactState_Disconnected : IConversationThread::ContactState_NotApplicable);
-            case IPeer::PeerFindState_Finding:    return IConversationThread::ContactState_Finding;
-            case IPeer::PeerFindState_Completed:  return (mPeerLocations.size() > 0 ? IConversationThread::ContactState_Disconnected : IConversationThread::ContactState_NotApplicable);
+            case IPeer::PeerFindState_Pending:    return IConversationThread::ContactConnectionState_NotApplicable;
+            case IPeer::PeerFindState_Idle:       return (mPeerLocations.size() > 0 ? IConversationThread::ContactConnectionState_Disconnected : IConversationThread::ContactConnectionState_NotApplicable);
+            case IPeer::PeerFindState_Finding:    return IConversationThread::ContactConnectionState_Finding;
+            case IPeer::PeerFindState_Completed:  return (mPeerLocations.size() > 0 ? IConversationThread::ContactConnectionState_Disconnected : IConversationThread::ContactConnectionState_NotApplicable);
           }
         }
 
-        return IConversationThread::ContactState_NotApplicable;
+        return IConversationThread::ContactConnectionState_NotApplicable;
       }
 
       //-----------------------------------------------------------------------
-      void ConversationThreadHost::PeerContact::gatherMessageReceipts(MessageReceiptMap &receipts) const
+      void ConversationThreadHost::PeerContact::gatherMessagesDelivered(MessageReceiptMap &delivered) const
       {
         AutoRecursiveLock lock(*this);
         for (PeerLocationMap::const_iterator iter = mPeerLocations.begin(); iter != mPeerLocations.end(); ++iter)
         {
           const PeerLocationPtr &peerLocation = (*iter).second;
-          peerLocation->gatherMessageReceipts(receipts);
+          peerLocation->gatherMessagesDelivered(delivered);
         }
       }
 
@@ -584,6 +593,23 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      void ConversationThreadHost::PeerContact::notifyContactStatus(const ContactStatusInfo &status)
+      {
+        ZS_LOG_DEBUG(log("notified contact status changed"))
+
+        AutoRecursiveLock lock(*this);
+
+        ConversationThreadHostPtr outer = mOuter.lock();
+        if (!outer) {
+          ZS_LOG_DEBUG(log("unable to notify of contact status as host thread is gone"))
+          return;
+        }
+
+        mReportedContactStatus = true;
+        outer->notifyContactStatus(mContact, status);
+      }
+
+      //-----------------------------------------------------------------------
       void ConversationThreadHost::PeerContact::notifyStateChanged(PeerLocationPtr peerLocation)
       {
         AutoRecursiveLock lock(*this);
@@ -631,8 +657,8 @@ namespace openpeer
         }
 
         ElementPtr objectEl = Element::create("core::ConversationThreadHost::PeerContact");
-        IHelper::debugAppend(objectEl, "id", mID);
-        IHelper::debugAppend(objectEl, "peer uri", peerURI);
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "peer uri", peerURI);
         return Log::Params(message, objectEl);
       }
 
@@ -643,25 +669,26 @@ namespace openpeer
 
         ElementPtr resultEl = Element::create("core::ConversationThreadHost::PeerContact");
 
-        IHelper::debugAppend(resultEl, "id", mID);
+        UseServicesHelper::debugAppend(resultEl, "id", mID);
+        UseServicesHelper::debugAppend(resultEl, "graceful shutdown reference", (bool)mGracefulShutdownReference);
 
-        IHelper::debugAppend(resultEl, "state", toString(mCurrentState));
+        UseServicesHelper::debugAppend(resultEl, "state", toString(mCurrentState));
 
-        IHelper::debugAppend(resultEl, UseContact::toDebug(mContact));
+        UseServicesHelper::debugAppend(resultEl, UseContact::toDebug(mContact));
+        UseServicesHelper::debugAppend(resultEl, "identity contacts", mIdentityContacts.size());
+        UseServicesHelper::debugAppend(resultEl, "reported contact status", mReportedContactStatus);
 
-        IHelper::debugAppend(resultEl, "identity contacts", mIdentityContacts.size());
+        UseServicesHelper::debugAppend(resultEl, "backgrounding subsscription id", mBackgroundingSubscription ? mBackgroundingSubscription->getID() : 0);
+        UseServicesHelper::debugAppend(resultEl, "backgrounding notifier id", mBackgroundingNotifier ? mBackgroundingNotifier->getID() : 0);
+        UseServicesHelper::debugAppend(resultEl, "backgrounding now", mBackgroundingNow);
 
-        IHelper::debugAppend(resultEl, "backgrounding subsscription id", mBackgroundingSubscription ? mBackgroundingSubscription->getID() : 0);
-        IHelper::debugAppend(resultEl, "backgrounding notifier id", mBackgroundingNotifier ? mBackgroundingNotifier->getID() : 0);
-        IHelper::debugAppend(resultEl, "backgrounding now", mBackgroundingNow);
+        UseServicesHelper::debugAppend(resultEl, IPeerSubscription::toDebug(mSlaveSubscription));
 
-        IHelper::debugAppend(resultEl, IPeerSubscription::toDebug(mSlaveSubscription));
+        UseServicesHelper::debugAppend(resultEl, "locations", mPeerLocations.size());
 
-        IHelper::debugAppend(resultEl, "locations", mPeerLocations.size());
+        UseServicesHelper::debugAppend(resultEl, "delivery states", mMessageDeliveryStates.size());
 
-        IHelper::debugAppend(resultEl, "delivery states", mMessageDeliveryStates.size());
-
-        IHelper::debugAppend(resultEl, "auto find timer", (bool)mAutoFindTimer);
+        UseServicesHelper::debugAppend(resultEl, "auto find timer", (bool)mAutoFindTimer);
 
         return resultEl;
       }
@@ -736,6 +763,8 @@ namespace openpeer
           return;
         }
 
+        stepNotifyContactStatus();
+
         ThreadPtr hostThread = outer->getHostThread();
         if (!hostThread) {
           ZS_LOG_WARNING(Detail, log("host thread not available"))
@@ -780,7 +809,7 @@ namespace openpeer
           MessageDeliveryStatesMap::iterator found = mMessageDeliveryStates.find(message->messageID());
           if (found != mMessageDeliveryStates.end()) {
             MessageDeliveryStatePtr &deliveryState = (*found).second;
-            if (IConversationThread::MessageDeliveryState_Delivered != deliveryState->mState) {
+            if (IConversationThread::MessageDeliveryState_Delivered > deliveryState->mState) {
               ZS_LOG_DEBUG(log("requires subscription because of undelivered message") + message->toDebug() + ZS_PARAM("was in delivery state", IConversationThread::toString(deliveryState->mState)))
               requiresSubscription = true;
             }
@@ -841,8 +870,9 @@ namespace openpeer
                 case IConversationThread::MessageDeliveryState_Discovering:   {
                   break;
                 }
+                case IConversationThread::MessageDeliveryState_UserNotAvailable:
                 case IConversationThread::MessageDeliveryState_Delivered:
-                case IConversationThread::MessageDeliveryState_UserNotAvailable: {
+                case IConversationThread::MessageDeliveryState_Read:          {
                   stopProcessing = true;
                   break;
                 }
@@ -871,7 +901,38 @@ namespace openpeer
           }
         }
 
-        outer->notifyContactState(mContact, getContactState());
+        outer->notifyContactConnectionState(mContact, getContactConnectionState());
+      }
+
+      //-----------------------------------------------------------------------
+      void ConversationThreadHost::PeerContact::stepNotifyContactStatus()
+      {
+        ConversationThreadHostPtr outer = mOuter.lock();
+        ZS_THROW_INVALID_ASSUMPTION_IF(!outer)
+
+        // see if need to report a status based upon locations having arrived or locations having gone
+        if (mReportedContactStatus) {
+          if (mPeerLocations.size() > 0) return;
+        } else {
+          if (mPeerLocations.size() < 1) return;
+        }
+
+        bool reportGone = (mPeerLocations.size() < 1);
+
+        ContactStatusInfo status;
+
+        if (reportGone) {
+          ElementPtr statusEl = IConversationThread::createEmptyStatus();
+          ComposingStatus statusGone(ComposingStatus::ComposingState_Gone);
+
+          statusGone.insert(statusEl);
+
+          status = ContactStatusInfo(statusEl);
+        }
+
+        outer->notifyContactStatus(mContact, status, true);
+
+        mReportedContactStatus = (!reportGone);
       }
 
       //-----------------------------------------------------------------------
@@ -972,8 +1033,9 @@ namespace openpeer
 
         switch (mState) {
           case IConversationThread::MessageDeliveryState_Discovering:       break;  // not possible anyway
+          case IConversationThread::MessageDeliveryState_UserNotAvailable:
           case IConversationThread::MessageDeliveryState_Delivered:
-          case IConversationThread::MessageDeliveryState_UserNotAvailable:  mOuter.reset(); break;  // no longer require link to outer
+          case IConversationThread::MessageDeliveryState_Read:              mOuter.reset(); break;  // no longer require link to outer
         }
       }
 

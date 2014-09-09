@@ -45,7 +45,7 @@ namespace openpeer
   {
     namespace internal
     {
-      using services::IHelper;
+      ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
 
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -377,8 +377,8 @@ namespace openpeer
       Log::Params Account::ContactSubscription::log(const char *message) const
       {
         ElementPtr objectEl = Element::create("Account::ContactSubscription");
-        IHelper::debugAppend(objectEl, "id", mID);
-        IHelper::debugAppend(objectEl, "peer uri", mContact->getPeerURI());
+        UseServicesHelper::debugAppend(objectEl, "id", mID);
+        UseServicesHelper::debugAppend(objectEl, "peer uri", mContact->getPeerURI());
         return Log::Params(message, objectEl);
       }
 
@@ -389,12 +389,12 @@ namespace openpeer
 
         ElementPtr resultEl = Element::create("core::Account::ContactSubscription");
 
-        IHelper::debugAppend(resultEl, "id", mID);
-        IHelper::debugAppend(resultEl, "state", toString(mCurrentState));
-        IHelper::debugAppend(resultEl, UseContact::toDebug(mContact));
-        IHelper::debugAppend(resultEl, IPeerSubscription::toDebug(mPeerSubscription));
-        IHelper::debugAppend(resultEl, "timer", (bool)mPeerSubscriptionAutoCloseTimer);
-        IHelper::debugAppend(resultEl, "locations", mLocations.size() > 0);
+        UseServicesHelper::debugAppend(resultEl, "id", mID);
+        UseServicesHelper::debugAppend(resultEl, "state", toString(mCurrentState));
+        UseServicesHelper::debugAppend(resultEl, UseContact::toDebug(mContact));
+        UseServicesHelper::debugAppend(resultEl, IPeerSubscription::toDebug(mPeerSubscription));
+        UseServicesHelper::debugAppend(resultEl, "timer", (bool)mPeerSubscriptionAutoCloseTimer);
+        UseServicesHelper::debugAppend(resultEl, "locations", mLocations.size() > 0);
 
         return resultEl;
       }

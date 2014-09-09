@@ -79,6 +79,21 @@ namespace openpeer
         int bytesReceived;
         int packetsReceived;
       };
+      
+      struct CaptureCapability
+      {
+        int width;
+        int height;
+        int maxFPS;
+        
+        CaptureCapability() {
+          width = 0;
+          height = 0;
+          maxFPS = 0;
+        }
+      };
+      
+      ZS_DECLARE_TYPEDEF_PTR(std::list<CaptureCapability>, CaptureCapabilityList)
 
       static IMediaEnginePtr singleton();
 
@@ -89,7 +104,12 @@ namespace openpeer
       virtual void setVideoOrientation() = 0;
 
       virtual void setCaptureRenderView(void *renderView) = 0;
+      virtual void *getCaptureRenderView() const = 0;
       virtual void setChannelRenderView(void *renderView) = 0;
+      virtual void *getChannelRenderView() const = 0;
+      
+      virtual void setCaptureCapability(CaptureCapability capability, CameraTypes cameraType) = 0;
+      virtual CaptureCapabilityList getCaptureCapabilities(CameraTypes cameraType) = 0;
 
       virtual void setEcEnabled(bool enabled) = 0;
       virtual void setAgcEnabled(bool enabled) = 0;

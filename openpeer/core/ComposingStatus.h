@@ -1,6 +1,6 @@
 /*
 
- Copyright (c) 2013, SMB Phone Inc.
+ Copyright (c) 2014, Hookflash Inc.
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -32,18 +32,47 @@
 #pragma once
 
 #include <openpeer/core/types.h>
-#include <openpeer/core/IAccount.h>
-#include <openpeer/core/IBackgrounding.h>
-#include <openpeer/core/ICache.h>
-#include <openpeer/core/ICall.h>
-#include <openpeer/core/ComposingStatus.h>
-#include <openpeer/core/IConversationThread.h>
-#include <openpeer/core/IContact.h>
-#include <openpeer/core/IHelper.h>
-#include <openpeer/core/IIdentity.h>
-#include <openpeer/core/IIdentityLookup.h>
-#include <openpeer/core/ILogger.h>
-#include <openpeer/core/IMediaEngine.h>
-#include <openpeer/core/ISettings.h>
-#include <openpeer/core/IStack.h>
-#include <openpeer/core/ISystemMessage.h>
+
+namespace openpeer
+{
+  namespace core
+  {
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    #pragma mark
+    #pragma mark struct ComposingStatus
+    #pragma mark
+
+    struct ComposingStatus
+    {
+      enum ComposingStates
+      {
+        ComposingState_None,      // contact has no composing status
+
+        ComposingState_Inactive,  // contact is not actively participating in conversation (assumed default if "none")
+        ComposingState_Active,    // contact is active in the conversation
+        ComposingState_Gone,      // contact is effectively gone from conversation
+        ComposingState_Composing, // contact is composing a message
+        ComposingState_Paused,    // contact was composing a message but is no longer composing
+      };
+
+      static const char *toString(ComposingStates state);
+      static ComposingStates toComposingState(const char *state);
+
+      ComposingStates mComposingStatus;
+
+      ComposingStatus();
+      ComposingStatus(ComposingStates state);
+      ComposingStatus(const ComposingStatus &rValue);
+
+      static ComposingStatusPtr extract(ElementPtr dataEl);
+      void insert(ElementPtr dataEl);
+
+      bool hasData() const;
+      ElementPtr toDebug() const;
+    };
+
+  }
+}

@@ -60,6 +60,19 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       #pragma mark
+      #pragma mark ISettingsForThread
+      #pragma mark
+
+      interaction ISettingsForThread
+      {
+        static Duration getThreadMoveMessageToCacheTimeInSeconds();
+      };
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
       #pragma mark Settings
       #pragma mark
 
@@ -70,6 +83,7 @@ namespace openpeer
       public:
         friend interaction ISettings;
         friend interaction ISettingsForStack;
+        friend interaction ISettingsForThread;
 
       protected:
         Settings();
@@ -99,6 +113,13 @@ namespace openpeer
         #pragma mark
 
         virtual void applyDefaultsIfNoDelegatePresent();
+
+        //---------------------------------------------------------------------
+        #pragma mark
+        #pragma mark Settings => ISettingsForThread
+        #pragma mark
+
+        virtual Duration getThreadMoveMessageToCacheTimeInSeconds();
 
         //---------------------------------------------------------------------
         #pragma mark
@@ -161,6 +182,8 @@ namespace openpeer
         ISettingsDelegatePtr mDelegate;
 
         AutoBool mAppliedDefaults;
+
+        Duration mThreadMoveMessageToCacheTimeInSeconds;
       };
     }
   }
