@@ -1487,6 +1487,7 @@ namespace openpeer
                   break;
                 }
                 case IConversationThread::MessageDeliveryState_UserNotAvailable:
+                case IConversationThread::MessageDeliveryState_Sent:
                 case IConversationThread::MessageDeliveryState_Delivered:
                 case IConversationThread::MessageDeliveryState_Read:          {
                   stopProcessing = true;
@@ -1719,6 +1720,7 @@ namespace openpeer
         switch (mState) {
           case IConversationThread::MessageDeliveryState_Discovering:       break;  // not possible anyway
           case IConversationThread::MessageDeliveryState_UserNotAvailable:
+          case IConversationThread::MessageDeliveryState_Sent:
           case IConversationThread::MessageDeliveryState_Delivered:
           case IConversationThread::MessageDeliveryState_Read:              mOuter.reset(); break;  // no longer require link to outer
         }
