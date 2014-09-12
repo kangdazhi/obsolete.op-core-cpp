@@ -136,6 +136,14 @@ namespace openpeer
         mCameraType(CameraType_Front),
         mCaptureRenderView(NULL),
         mChannelRenderView(NULL),
+        mCaptureRenderViewCropLeft(0.0F),
+        mCaptureRenderViewCropTop(0.0F),
+        mCaptureRenderViewCropRight(1.0F),
+        mCaptureRenderViewCropBottom(1.0F),
+        mChannelRenderViewCropLeft(0.0F),
+        mChannelRenderViewCropTop(0.0F),
+        mChannelRenderViewCropRight(1.0F),
+        mChannelRenderViewCropBottom(1.0F),
         mContinuousVideoCapture(true),
         mVoiceChannel(OPENPEER_MEDIA_ENGINE_INVALID_CHANNEL),
         mVoiceTransport(&mRedirectVoiceTransport),
@@ -188,6 +196,14 @@ namespace openpeer
         mLifetimeWantCameraType(CameraType_Front),
         mLifetimeWantCaptureRenderView(NULL),
         mLifetimeWantChannelRenderView(NULL),
+        mLifetimeWantCaptureRenderViewCropLeft(0.0F),
+        mLifetimeWantCaptureRenderViewCropTop(0.0F),
+        mLifetimeWantCaptureRenderViewCropRight(1.0F),
+        mLifetimeWantCaptureRenderViewCropBottom(1.0F),
+        mLifetimeWantChannelRenderViewCropLeft(0.0F),
+        mLifetimeWantChannelRenderViewCropTop(0.0F),
+        mLifetimeWantChannelRenderViewCropRight(1.0F),
+        mLifetimeWantChannelRenderViewCropBottom(1.0F),
         mLifetimeWantContinuousVideoCapture(true),
         mLifetimeWantVideoRecordFile(""),
         mLifetimeWantSaveVideoToLibrary(false),
@@ -223,6 +239,14 @@ namespace openpeer
         mCameraType(CameraType_Front),
         mCaptureRenderView(NULL),
         mChannelRenderView(NULL),
+        mCaptureRenderViewCropLeft(0.0F),
+        mCaptureRenderViewCropTop(0.0F),
+        mCaptureRenderViewCropRight(1.0F),
+        mCaptureRenderViewCropBottom(1.0F),
+        mChannelRenderViewCropLeft(0.0F),
+        mChannelRenderViewCropTop(0.0F),
+        mChannelRenderViewCropRight(1.0F),
+        mChannelRenderViewCropBottom(1.0F),
         mContinuousVideoCapture(true),
         mVoiceChannel(OPENPEER_MEDIA_ENGINE_INVALID_CHANNEL),
         mVoiceTransport(NULL),
@@ -275,6 +299,14 @@ namespace openpeer
         mLifetimeWantCameraType(CameraType_Front),
         mLifetimeWantCaptureRenderView(NULL),
         mLifetimeWantChannelRenderView(NULL),
+        mLifetimeWantCaptureRenderViewCropLeft(0.0F),
+        mLifetimeWantCaptureRenderViewCropTop(0.0F),
+        mLifetimeWantCaptureRenderViewCropRight(1.0F),
+        mLifetimeWantCaptureRenderViewCropBottom(1.0F),
+        mLifetimeWantChannelRenderViewCropLeft(0.0F),
+        mLifetimeWantChannelRenderViewCropTop(0.0F),
+        mLifetimeWantChannelRenderViewCropRight(1.0F),
+        mLifetimeWantChannelRenderViewCropBottom(1.0F),
         mLifetimeWantContinuousVideoCapture(true),
         mLifetimeWantVideoRecordFile(""),
         mLifetimeWantSaveVideoToLibrary(false),
@@ -821,6 +853,44 @@ namespace openpeer
             return CaptureCapabilityList();
           }
         }
+      }
+      
+      //-----------------------------------------------------------------------
+      void MediaEngine::setCaptureRenderViewCropping(
+                                                     float left,
+                                                     float top,
+                                                     float right,
+                                                     float bottom
+                                                     )
+      {
+        {
+          AutoRecursiveLock lock(mLifetimeLock);
+          mLifetimeWantCaptureRenderViewCropLeft = left;
+          mLifetimeWantCaptureRenderViewCropTop = top;
+          mLifetimeWantCaptureRenderViewCropRight = right;
+          mLifetimeWantCaptureRenderViewCropBottom = bottom;
+        }
+        
+        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+      }
+
+      //-----------------------------------------------------------------------
+      void MediaEngine::setChannelRenderViewCropping(
+                                                     float left,
+                                                     float top,
+                                                     float right,
+                                                     float bottom
+                                                     )
+      {
+        {
+          AutoRecursiveLock lock(mLifetimeLock);
+          mLifetimeWantChannelRenderViewCropLeft = left;
+          mLifetimeWantChannelRenderViewCropTop = top;
+          mLifetimeWantChannelRenderViewCropRight = right;
+          mLifetimeWantChannelRenderViewCropBottom = bottom;
+        }
+        
+        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
       }
 
       //-----------------------------------------------------------------------
@@ -1613,6 +1683,14 @@ namespace openpeer
         CaptureCapability wantBackCameraCaptureCapability;
         CaptureCapabilityList frontCameraCaptureCapabilityList;
         CaptureCapabilityList backCameraCaptureCapabilityList;
+        float wantCaptureRenderViewCropLeft;
+        float wantCaptureRenderViewCropTop;
+        float wantCaptureRenderViewCropRight;
+        float wantCaptureRenderViewCropBottom;
+        float wantChannelRenderViewCropLeft;
+        float wantChannelRenderViewCropTop;
+        float wantChannelRenderViewCropRight;
+        float wantChannelRenderViewCropBottom;
         bool wantContinuousVideoCapture = false;
         String wantVideoRecordFile;
         bool wantSaveVideoToLibrary = false;
@@ -1668,6 +1746,14 @@ namespace openpeer
           wantChannelRenderView = mLifetimeWantChannelRenderView;
           wantFrontCameraCaptureCapability = mLifetimeWantFrontCameraCaptureCapability;
           wantBackCameraCaptureCapability = mLifetimeWantBackCameraCaptureCapability;
+          wantCaptureRenderViewCropLeft = mLifetimeWantCaptureRenderViewCropLeft;
+          wantCaptureRenderViewCropTop = mLifetimeWantCaptureRenderViewCropTop;
+          wantCaptureRenderViewCropRight = mLifetimeWantCaptureRenderViewCropRight;
+          wantCaptureRenderViewCropBottom = mLifetimeWantCaptureRenderViewCropBottom;
+          wantChannelRenderViewCropLeft = mLifetimeWantChannelRenderViewCropLeft;
+          wantChannelRenderViewCropTop = mLifetimeWantChannelRenderViewCropTop;
+          wantChannelRenderViewCropRight = mLifetimeWantChannelRenderViewCropRight;
+          wantChannelRenderViewCropBottom = mLifetimeWantChannelRenderViewCropBottom;
           wantContinuousVideoCapture = mLifetimeWantContinuousVideoCapture;
           wantVideoRecordFile = mLifetimeWantVideoRecordFile;
           wantSaveVideoToLibrary = mLifetimeWantSaveVideoToLibrary;
@@ -1689,6 +1775,26 @@ namespace openpeer
               wantBackCameraCaptureCapability.height != mBackCameraCaptureCapability.height ||
               wantBackCameraCaptureCapability.maxFPS != mBackCameraCaptureCapability.maxFPS) {
             mBackCameraCaptureCapability = wantBackCameraCaptureCapability;
+          }
+          
+          if (wantCaptureRenderViewCropLeft != mCaptureRenderViewCropLeft ||
+              wantCaptureRenderViewCropTop != mCaptureRenderViewCropTop ||
+              wantCaptureRenderViewCropRight != mCaptureRenderViewCropRight ||
+              wantCaptureRenderViewCropBottom != mCaptureRenderViewCropBottom) {
+            mCaptureRenderViewCropLeft = wantCaptureRenderViewCropLeft;
+            mCaptureRenderViewCropTop = wantCaptureRenderViewCropTop;
+            mCaptureRenderViewCropRight = wantCaptureRenderViewCropRight;
+            mCaptureRenderViewCropBottom = wantCaptureRenderViewCropBottom;
+          }
+          
+          if (wantChannelRenderViewCropLeft != mChannelRenderViewCropLeft ||
+              wantChannelRenderViewCropTop != mChannelRenderViewCropTop ||
+              wantChannelRenderViewCropRight != mChannelRenderViewCropRight ||
+              wantChannelRenderViewCropBottom != mChannelRenderViewCropBottom) {
+            mChannelRenderViewCropLeft = wantChannelRenderViewCropLeft;
+            mChannelRenderViewCropTop = wantChannelRenderViewCropTop;
+            mChannelRenderViewCropRight = wantChannelRenderViewCropRight;
+            mChannelRenderViewCropBottom = wantChannelRenderViewCropBottom;
           }
           
           if (wantEcEnabled != mEcEnabled) {
@@ -2432,6 +2538,15 @@ namespace openpeer
           return;
         }
         
+#if defined(_ANDROID)
+        mError = mVideoRender->SetStreamCropping(mCaptureId, mCaptureRenderViewCropLeft, mCaptureRenderViewCropTop,
+            mCaptureRenderViewCropRight, mCaptureRenderViewCropBottom);
+        if (0 != mError) {
+          ZS_LOG_ERROR(Detail, log("failed to set cropping parameters for video capture") + ZS_PARAM("error", mVideoBase->LastError()))
+          return;
+        }
+#endif
+        
         mError = mVideoRender->StartRender(mCaptureId);
         if (mError != 0) {
           ZS_LOG_ERROR(Detail, log("failed to start rendering video capture") + ZS_PARAM("error", mVideoBase->LastError()))
@@ -2654,6 +2769,15 @@ namespace openpeer
           ZS_LOG_ERROR(Detail, log("failed to add renderer for video channel") + ZS_PARAM("error", mVideoBase->LastError()))
           return;
         }
+        
+#if defined(_ANDROID)
+        mError = mVideoRender->SetStreamCropping(mVideoChannel, mChannelRenderViewCropLeft, mChannelRenderViewCropTop,
+            mChannelRenderViewCropRight, mChannelRenderViewCropBottom);
+        if (0 != mError) {
+          ZS_LOG_ERROR(Detail, log("failed to set cropping parameters for video channel") + ZS_PARAM("error", mVideoBase->LastError()))
+          return;
+        }
+#endif
         
         mError = mVideoRender->StartRender(mVideoChannel);
         if (mError != 0) {
