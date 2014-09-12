@@ -110,6 +110,19 @@ namespace openpeer
       
       virtual void setCaptureCapability(CaptureCapability capability, CameraTypes cameraType) = 0;
       virtual CaptureCapabilityList getCaptureCapabilities(CameraTypes cameraType) = 0;
+      
+      virtual void setCaptureRenderViewCropping(
+                                                float left,
+                                                float top,
+                                                float right,
+                                                float bottom
+                                                ) = 0;
+      virtual void setChannelRenderViewCropping(
+                                                float left,
+                                                float top,
+                                                float right,
+                                                float bottom
+                                                ) = 0;
 
       virtual void setEcEnabled(bool enabled) = 0;
       virtual void setAgcEnabled(bool enabled) = 0;

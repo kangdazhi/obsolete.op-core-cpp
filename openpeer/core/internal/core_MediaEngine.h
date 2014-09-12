@@ -192,6 +192,19 @@ namespace openpeer
         
         virtual void setCaptureCapability(CaptureCapability capability, CameraTypes cameraType);
         virtual CaptureCapabilityList getCaptureCapabilities(CameraTypes cameraType);
+        
+        virtual void setCaptureRenderViewCropping(
+                                                  float left,
+                                                  float top,
+                                                  float right,
+                                                  float bottom
+                                                  );
+        virtual void setChannelRenderViewCropping(
+                                                  float left,
+                                                  float top,
+                                                  float right,
+                                                  float bottom
+                                                  );
 
         virtual void setEcEnabled(bool enabled);
         virtual void setAgcEnabled(bool enabled);
@@ -409,6 +422,14 @@ namespace openpeer
         void *mChannelRenderView;
         CaptureCapability mFrontCameraCaptureCapability;
         CaptureCapability mBackCameraCaptureCapability;
+        float mCaptureRenderViewCropLeft;
+        float mCaptureRenderViewCropTop;
+        float mCaptureRenderViewCropRight;
+        float mCaptureRenderViewCropBottom;
+        float mChannelRenderViewCropLeft;
+        float mChannelRenderViewCropTop;
+        float mChannelRenderViewCropRight;
+        float mChannelRenderViewCropBottom;
         bool mContinuousVideoCapture;
 
         int mVoiceChannel;
@@ -476,6 +497,14 @@ namespace openpeer
         CaptureCapability mLifetimeWantBackCameraCaptureCapability;
         CaptureCapabilityList mLifetimeFrontCameraCaptureCapabilityList;
         CaptureCapabilityList mLifetimeBackCameraCaptureCapabilityList;
+        float mLifetimeWantCaptureRenderViewCropLeft;
+        float mLifetimeWantCaptureRenderViewCropTop;
+        float mLifetimeWantCaptureRenderViewCropRight;
+        float mLifetimeWantCaptureRenderViewCropBottom;
+        float mLifetimeWantChannelRenderViewCropLeft;
+        float mLifetimeWantChannelRenderViewCropTop;
+        float mLifetimeWantChannelRenderViewCropRight;
+        float mLifetimeWantChannelRenderViewCropBottom;
         bool mLifetimeWantContinuousVideoCapture;
         String mLifetimeWantVideoRecordFile;
         bool mLifetimeWantSaveVideoToLibrary;
