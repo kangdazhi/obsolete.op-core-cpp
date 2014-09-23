@@ -175,10 +175,9 @@ namespace openpeer
       ElementPtr callStatusEl = dataEl->findFirstChildElement("callStatus");
       if (!callStatusEl) return CallSystemMessagePtr();
 
-      String typeStr = UseMessageHelper::getElementText(callStatusEl);
+      String typeStr = UseMessageHelper::getElementText(callStatusEl->findFirstChildElement("type"));
 
-
-      CallSystemMessageTypes type =toCallSystemMessageType(typeStr);
+      CallSystemMessageTypes type = toCallSystemMessageType(typeStr);
       if (CallSystemMessageType_None == type) return CallSystemMessagePtr();
 
       CallSystemMessagePtr pThis(new CallSystemMessage);

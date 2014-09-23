@@ -187,7 +187,25 @@ namespace openpeer
         virtual void setVideoOrientation();
 
         virtual void setCaptureRenderView(void *renderView);
+        virtual void *getCaptureRenderView() const;
         virtual void setChannelRenderView(void *renderView);
+        virtual void *getChannelRenderView() const;
+        
+        virtual void setCaptureCapability(CaptureCapability capability, CameraTypes cameraType);
+        virtual CaptureCapabilityList getCaptureCapabilities(CameraTypes cameraType);
+        
+        virtual void setCaptureRenderViewCropping(
+                                                  float left,
+                                                  float top,
+                                                  float right,
+                                                  float bottom
+                                                  );
+        virtual void setChannelRenderViewCropping(
+                                                  float left,
+                                                  float top,
+                                                  float right,
+                                                  float bottom
+                                                  );
 
         virtual void setEcEnabled(bool enabled);
         virtual void setAgcEnabled(bool enabled);
@@ -285,15 +303,14 @@ namespace openpeer
 
       protected:
         
-        void *getCaptureRenderView() const;
-        void *getChannelRenderView() const;
-
         virtual void internalStartVoice();
         virtual void internalStopVoice();
         
         virtual int registerVoiceTransport();
+        virtual int deregisterVoiceTransport();
         virtual int setVoiceTransportParameters();
 
+        virtual CaptureCapabilityList internalGetCaptureCapabilities(CameraTypes cameraType);
         virtual void internalSetVideoOrientation();
         virtual void internalSetEcEnabled(bool enabled);
         virtual void internalSetAgcEnabled(bool enabled);
@@ -404,6 +421,16 @@ namespace openpeer
         CameraTypes mCameraType;
         void *mCaptureRenderView;
         void *mChannelRenderView;
+        CaptureCapability mFrontCameraCaptureCapability;
+        CaptureCapability mBackCameraCaptureCapability;
+        float mCaptureRenderViewCropLeft;
+        float mCaptureRenderViewCropTop;
+        float mCaptureRenderViewCropRight;
+        float mCaptureRenderViewCropBottom;
+        float mChannelRenderViewCropLeft;
+        float mChannelRenderViewCropTop;
+        float mChannelRenderViewCropRight;
+        float mChannelRenderViewCropBottom;
         bool mContinuousVideoCapture;
 
         int mVoiceChannel;
@@ -467,6 +494,18 @@ namespace openpeer
         CameraTypes mLifetimeWantCameraType;
         void *mLifetimeWantCaptureRenderView;
         void *mLifetimeWantChannelRenderView;
+        CaptureCapability mLifetimeWantFrontCameraCaptureCapability;
+        CaptureCapability mLifetimeWantBackCameraCaptureCapability;
+        CaptureCapabilityList mLifetimeFrontCameraCaptureCapabilityList;
+        CaptureCapabilityList mLifetimeBackCameraCaptureCapabilityList;
+        float mLifetimeWantCaptureRenderViewCropLeft;
+        float mLifetimeWantCaptureRenderViewCropTop;
+        float mLifetimeWantCaptureRenderViewCropRight;
+        float mLifetimeWantCaptureRenderViewCropBottom;
+        float mLifetimeWantChannelRenderViewCropLeft;
+        float mLifetimeWantChannelRenderViewCropTop;
+        float mLifetimeWantChannelRenderViewCropRight;
+        float mLifetimeWantChannelRenderViewCropBottom;
         bool mLifetimeWantContinuousVideoCapture;
         String mLifetimeWantVideoRecordFile;
         bool mLifetimeWantSaveVideoToLibrary;

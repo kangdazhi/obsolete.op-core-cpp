@@ -383,10 +383,10 @@ namespace openpeer
 
         // scope: check for the remote contact (and only the remote contact)
         {
-          ThreadContactMap contactsChanged = mSlaveThread->contactsChanged();
-          ThreadContactMap::iterator found = contactsChanged.find(mPeerLocation->getPeerURI());
-          if (found != contactsChanged.end()) {
-            ThreadContactPtr threadContact = (*found).second;
+          const ThreadContactMap &contacts = mSlaveThread->contacts()->contacts();
+          ThreadContactMap::const_iterator found = contacts.find(mPeerLocation->getPeerURI());
+          if (found != contacts.end()) {
+            const ThreadContactPtr &threadContact = (*found).second;
             outer->notifyContactStatus(threadContact->status());
           }
         }

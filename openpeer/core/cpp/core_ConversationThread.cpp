@@ -887,12 +887,18 @@ namespace openpeer
         if (found != mLastReportedContactConnectionStates.end()) {
           ContactConnectionStatePair &statePair = (*found).second;
           lastState = statePair.second;
+          statePair.second = state;
           changed = (lastState != state);
         } else {
+          // remember the last reported state so it isn't repeated
+          mLastReportedContactConnectionStates[contact->getPeerURI()] = ContactConnectionStatePair(contact, state);
           changed = true;
         }
 
-        if (!changed) return;
+        if (!changed) {
+          ZS_LOG_TRACE(log("contact connection state did not change") + ZS_PARAM("new state", IConversationThread::toString(state)) + UseContact::toDebug(contact))
+          return;
+        }
 
         ZS_LOG_DEBUG(log("contact connection state changed") + ZS_PARAM("old state", IConversationThread::toString(lastState)) + ZS_PARAM("new state", IConversationThread::toString(state)) + UseContact::toDebug(contact))
 
@@ -900,9 +906,6 @@ namespace openpeer
           ZS_LOG_WARNING(Detail, log("conversation thread delegate not found"))
           return;
         }
-
-        // remember the last reported state so it isn't repeated
-        mLastReportedContactConnectionStates[contact->getPeerURI()] = ContactConnectionStatePair(contact, state);
 
         try {
           mDelegate->onConversationThreadContactConnectionStateChanged(mThisWeak.lock(), Contact::convert(contact), state);
@@ -924,7 +927,7 @@ namespace openpeer
         }
 
         ComposingStatusPtr existingComposingStatus = ComposingStatus::extract(existingStatus.mStatusEl);
-        ComposingStatusPtr newComposingStatus = ComposingStatus::extract(existingStatus.mStatusEl);
+        ComposingStatusPtr newComposingStatus = ComposingStatus::extract(newStatus.mStatusEl);
 
 
         ComposingStatus::ComposingStates existingState = (existingComposingStatus ? existingComposingStatus->mComposingStatus : ComposingStatus::ComposingState_None);
@@ -1903,7 +1906,13 @@ namespace openpeer
 
           bool changed = false;
 
+          if (IConversationThread::ContactConnectionState_NotApplicable == state) {
+            ZS_LOG_TRACE(log("contact connection state is not known yet") + UseContact::toDebug(contact))
+            continue;
+          }
+
           ContactConnectionStateMap::iterator found = mLastReportedContactConnectionStates.find(contact->getPeerURI());
+
           if (found != mLastReportedContactConnectionStates.end()) {
             ContactConnectionStatePair &statePair = (*found).second;
             if (statePair.second != state) {
@@ -1915,11 +1924,13 @@ namespace openpeer
             changed = true;
           }
 
-          try {
-            ZS_LOG_DEBUG(log("notifying of contact state changed") + ZS_PARAM("state", IConversationThread::toString(state)) + UseContact::toDebug(contact))
-            mDelegate->onConversationThreadContactConnectionStateChanged(mThisWeak.lock(), Contact::convert(contact), state);
-          } catch (IConversationThreadDelegateProxy::Exceptions::DelegateGone &) {
-            ZS_LOG_WARNING(Detail, log("conversation thread delegate gone"))
+          if (changed) {
+            try {
+              ZS_LOG_DEBUG(log("notifying of contact connection state changed") + ZS_PARAM("state", IConversationThread::toString(state)) + UseContact::toDebug(contact))
+              mDelegate->onConversationThreadContactConnectionStateChanged(mThisWeak.lock(), Contact::convert(contact), state);
+            } catch (IConversationThreadDelegateProxy::Exceptions::DelegateGone &) {
+              ZS_LOG_WARNING(Detail, log("conversation thread delegate gone"))
+            }
           }
         }
 

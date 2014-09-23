@@ -171,7 +171,8 @@ namespace openpeer
 
           MessageDataPtr parseFromElement(
                                           UseAccountPtr account,
-                                          ElementPtr messageBundleEl
+                                          ElementPtr messageBundleEl,
+                                          bool okayToAdoptBundleEl
                                           ) const;
 
         private:
