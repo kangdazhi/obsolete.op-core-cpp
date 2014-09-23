@@ -51,8 +51,9 @@ namespace openpeer
       {
         MessageDeliveryState_Discovering      = 0,
         MessageDeliveryState_UserNotAvailable = 1,
-        MessageDeliveryState_Delivered        = 2,
-        MessageDeliveryState_Read             = 3,
+        MessageDeliveryState_Sent             = 2,
+        MessageDeliveryState_Delivered        = 3,
+        MessageDeliveryState_Read             = 4,
       };
 
       enum ContactConnectionStates

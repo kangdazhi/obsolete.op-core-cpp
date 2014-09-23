@@ -2032,6 +2032,7 @@ namespace openpeer
       switch (state) {
         case MessageDeliveryState_Discovering:      return "Discovering";
         case MessageDeliveryState_UserNotAvailable: return "User not available";
+        case MessageDeliveryState_Sent:             return "Sent";
         case MessageDeliveryState_Delivered:        return "Delivered";
         case MessageDeliveryState_Read:             return "Read";
       }
