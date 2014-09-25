@@ -59,7 +59,7 @@ namespace openpeer
       // PURPOSE: decrypt the next block of data and return result data
       // RETURN:  next block of decrypted data or null SecureByteBlockPtr()
       //          when no more data is available (or error occured).
-      virtual SecureByteBlockPtr decrypt();
+      virtual SecureByteBlockPtr decrypt() = 0;
 
       //-----------------------------------------------------------------------
       // PURPOSE: finalize and return success/fail status

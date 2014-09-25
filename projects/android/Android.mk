@@ -49,7 +49,6 @@ LOCAL_SRC_FILES := $(SOURCE_PATH)/core_Account_ContactSubscription.cpp \
 		   $(SOURCE_PATH)/core_CallTransport.cpp \
 		   $(SOURCE_PATH)/core_ComposingStatus.cpp \
 		   $(SOURCE_PATH)/core_Contact.cpp \
-		   $(SOURCE_PATH)/core_ComposingStatus.cpp \
 		   $(SOURCE_PATH)/core_ConversationThread.cpp \
 		   $(SOURCE_PATH)/core_ConversationThreadDocumentFetcher.cpp \
 		   $(SOURCE_PATH)/core_ConversationThreadHost.cpp \
@@ -61,7 +60,6 @@ LOCAL_SRC_FILES := $(SOURCE_PATH)/core_Account_ContactSubscription.cpp \
 		   $(SOURCE_PATH)/core_Helper.cpp \
 		   $(SOURCE_PATH)/core_ISystemMessage.cpp \
 		   $(SOURCE_PATH)/core_Identity.cpp \
-		   $(SOURCE_PATH)/core_ISystemMessage.cpp \
 		   $(SOURCE_PATH)/core_IdentityLookup.cpp \
 		   $(SOURCE_PATH)/core_Logger.cpp \
 		   $(SOURCE_PATH)/core_Settings.cpp \
@@ -69,9 +67,13 @@ LOCAL_SRC_FILES := $(SOURCE_PATH)/core_Account_ContactSubscription.cpp \
 		   $(SOURCE_PATH)/core.cpp \
 		   $(SOURCE_PATH)/core_thread.cpp \
 		   $(SOURCE_PATH)/core_MediaEngine.cpp \
+		   $(SOURCE_PATH)/core_PushMailboxManager.cpp \
 		   $(SOURCE_PATH)/core_PushMessaging.cpp \
 		   $(SOURCE_PATH)/core_PushMessaging_PushQuery.cpp \
 		   $(SOURCE_PATH)/core_PushMessaging_RegisterQuery.cpp \
+		   $(SOURCE_PATH)/core_PushPresence.cpp \
+		   $(SOURCE_PATH)/core_PushPresence_Presence.cpp \
+		   $(SOURCE_PATH)/core_PushPresence_RegisterQuery.cpp \
 		   #$(SOURCE_PATH)/../test/TestMediaEngine.cpp \
 		   #$(SOURCE_PATH)/../test/boost_replacement.cpp
 
