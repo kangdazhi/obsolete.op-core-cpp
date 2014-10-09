@@ -810,7 +810,7 @@ namespace openpeer
         {
           AutoRecursiveLock lock(mLifetimeLock);
           if (cameraType == CameraType_Front) {
-            mLifetimeBackCameraCaptureCapabilityList = capabilityList;
+            mLifetimeFrontCameraCaptureCapabilityList = capabilityList;
             mLifetimeInProgress = false;
             return mLifetimeFrontCameraCaptureCapabilityList;
           } else if (cameraType == CameraType_Back) {
