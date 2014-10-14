@@ -38,7 +38,7 @@ fi
 
 #Set path
 echo "----------------- Exporting the android-ndk path ----------------"
-export PATH=$PATH:$Input:$Input/toolchains/arm-linux-androideabi-4.7/prebuilt/$HOST_OS-$ARCHTYPE/bin
+export PATH=$PATH:$Input:$Input/toolchains/arm-linux-androideabi-4.8/prebuilt/$HOST_OS-$ARCHTYPE/bin
 
 #create install directories
 mkdir -p ./../../../build
@@ -52,7 +52,8 @@ mkdir -p ./../../../build/android/op-core-cpp
 #rm -rf ./obj/*
 export ANDROIDNDK_PATH=$Input
 export NDK_PROJECT_PATH=`pwd`
-ndk-build NDK_DEBUG=1 APP_PLATFORM=android-9 V=1 NDK_LOG=1
+PLATFORM=android-9
+ndk-build NDK_DEBUG=1 APP_PLATFORM=$PLATFORM V=1 NDK_LOG=1
 popd
 
 echo "-------- Installing op-core-cpp libs -----"
