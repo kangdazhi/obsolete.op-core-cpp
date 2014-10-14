@@ -2689,7 +2689,7 @@ namespace openpeer
         }
         
 #else
-        webrtc::RotateCapturedFrame orientation = webrtc::RotateCapturedFrame_0;
+        webrtc::RotateCapturedFrame orientation = webrtc::RotateCapturedFrame_90;
 #endif
         
         int width = 0, height = 0, maxFramerate = 0, maxBitrate = 0;
@@ -3320,36 +3320,72 @@ namespace openpeer
         }
 #else
         if (mCameraType == CameraType_Back) {
-          if (mBackCameraCaptureCapability.width != 0 && mBackCameraCaptureCapability.height != 0) {
-            width = mBackCameraCaptureCapability.width;
-            height = mBackCameraCaptureCapability.height;
-            if (mBackCameraCaptureCapability.maxFPS != 0) {
-              maxFramerate = mBackCameraCaptureCapability.maxFPS;
+          if (orientation == webrtc::RotateCapturedFrame_0 || orientation == webrtc::RotateCapturedFrame_180) {
+            if (mBackCameraCaptureCapability.width != 0 && mBackCameraCaptureCapability.height != 0) {
+              width = mBackCameraCaptureCapability.width;
+              height = mBackCameraCaptureCapability.height;
+              if (mBackCameraCaptureCapability.maxFPS != 0) {
+                maxFramerate = mBackCameraCaptureCapability.maxFPS;
+              } else {
+                maxFramerate = 15;
+              }
+              maxBitrate = 400;
             } else {
+              width = 720;
+              height = 480;
               maxFramerate = 15;
+              maxBitrate = 400;
             }
-            maxBitrate = 400;
-          } else {
-            width = 720;
-            height = 480;
-            maxFramerate = 15;
-            maxBitrate = 400;
+          } else if (orientation == webrtc::RotateCapturedFrame_90 || orientation == webrtc::RotateCapturedFrame_270) {
+            if (mBackCameraCaptureCapability.width != 0 && mBackCameraCaptureCapability.height != 0) {
+              width = mBackCameraCaptureCapability.height;
+              height = mBackCameraCaptureCapability.width;
+              if (mBackCameraCaptureCapability.maxFPS != 0) {
+                maxFramerate = mBackCameraCaptureCapability.maxFPS;
+              } else {
+                maxFramerate = 15;
+              }
+              maxBitrate = 400;
+            } else {
+              width = 480;
+              height = 720;
+              maxFramerate = 15;
+              maxBitrate = 400;
+            }
           }
         } else if (mCameraType == CameraType_Front) {
-          if (mFrontCameraCaptureCapability.width != 0 && mFrontCameraCaptureCapability.height != 0) {
-            width = mFrontCameraCaptureCapability.width;
-            height = mFrontCameraCaptureCapability.height;
-            if (mFrontCameraCaptureCapability.maxFPS != 0) {
-              maxFramerate = mFrontCameraCaptureCapability.maxFPS;
+          if (orientation == webrtc::RotateCapturedFrame_0 || orientation == webrtc::RotateCapturedFrame_180) {
+            if (mFrontCameraCaptureCapability.width != 0 && mFrontCameraCaptureCapability.height != 0) {
+              width = mFrontCameraCaptureCapability.width;
+              height = mFrontCameraCaptureCapability.height;
+              if (mFrontCameraCaptureCapability.maxFPS != 0) {
+                maxFramerate = mFrontCameraCaptureCapability.maxFPS;
+              } else {
+                maxFramerate = 15;
+              }
+              maxBitrate = 400;
             } else {
+              width = 720;
+              height = 480;
               maxFramerate = 15;
+              maxBitrate = 400;
             }
-            maxBitrate = 400;
-          } else {
-            width = 720;
-            height = 480;
-            maxFramerate = 15;
-            maxBitrate = 400;
+          } else if (orientation == webrtc::RotateCapturedFrame_90 || orientation == webrtc::RotateCapturedFrame_270) {
+            if (mFrontCameraCaptureCapability.width != 0 && mFrontCameraCaptureCapability.height != 0) {
+              width = mFrontCameraCaptureCapability.height;
+              height = mFrontCameraCaptureCapability.width;
+              if (mFrontCameraCaptureCapability.maxFPS != 0) {
+                maxFramerate = mFrontCameraCaptureCapability.maxFPS;
+              } else {
+                maxFramerate = 15;
+              }
+              maxBitrate = 400;
+            } else {
+              width = 480;
+              height = 720;
+              maxFramerate = 15;
+              maxBitrate = 400;
+            }
           }
         } else {
           ZS_LOG_ERROR(Detail, log("camera type is not set"))
@@ -3419,7 +3455,7 @@ namespace openpeer
           return mError;
         }
 #else
-        webrtc::RotateCapturedFrame orientation = webrtc::RotateCapturedFrame_0;
+        webrtc::RotateCapturedFrame orientation = webrtc::RotateCapturedFrame_90;
 #endif
         
         int width = 0, height = 0, maxFramerate = 0, maxBitrate = 0;
