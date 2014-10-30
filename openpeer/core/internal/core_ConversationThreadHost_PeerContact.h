@@ -215,6 +215,9 @@ namespace openpeer
                                                  const String &messageID,
                                                  IConversationThread::MessageDeliveryStates state
                                                  );
+
+          void notifyContactPeerFileLoaded(IPeerPtr peer);
+
           void notifyContactStatus(const ContactStatusInfo &status);
 
           void notifyStateChanged(PeerLocationPtr peerLocation);

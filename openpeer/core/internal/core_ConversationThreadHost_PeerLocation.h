@@ -170,6 +170,11 @@ namespace openpeer
                                                 MessageDeliveryStates applyDeliveryState,
                                                 const MessageReceiptMap &messagesChanged
                                                 );
+          void ensureHasSlavePeerFiles(
+                                       IPublicationPtr publication,
+                                       const ThreadContactMap &contacts
+                                       );
+
         protected:
           //-------------------------------------------------------------------
           #pragma mark
