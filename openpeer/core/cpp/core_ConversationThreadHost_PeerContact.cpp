@@ -593,6 +593,23 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      void ConversationThreadHost::PeerContact::notifyContactPeerFileLoaded(IPeerPtr peer)
+      {
+        ZS_LOG_DEBUG(log("notified peer file loaded") + IPeer::toDebug(peer))
+
+        AutoRecursiveLock lock(*this);
+
+        ConversationThreadHostPtr outer = mOuter.lock();
+        if (!outer) {
+          ZS_LOG_DEBUG(log("unable to notify of contact peer file being loaded as host thread is gone"))
+          return;
+        }
+
+        mReportedContactStatus = true;
+        outer->notifyContactPeerFileLoaded(peer);
+      }
+
+      //-----------------------------------------------------------------------
       void ConversationThreadHost::PeerContact::notifyContactStatus(const ContactStatusInfo &status)
       {
         ZS_LOG_DEBUG(log("notified contact status changed"))

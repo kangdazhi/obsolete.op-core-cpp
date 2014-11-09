@@ -943,6 +943,14 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      void ConversationThreadHost::notifyContactPeerFileLoaded(IPeerPtr peer)
+      {
+        ZS_LOG_DEBUG(log("notified peer file loaded") + IPeer::toDebug(peer))
+
+        IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
+      }
+
+      //-----------------------------------------------------------------------
       void ConversationThreadHost::notifyContactStatus(
                                                        UseContactPtr contact,
                                                        const ContactStatusInfo &status,
@@ -1172,6 +1180,24 @@ namespace openpeer
           peerContact->notifyStep();
         }
 
+        bool missingPeerFile = false;
+
+        for (ThreadContactMap::iterator iter = contactsToAdd.begin(); iter != contactsToAdd.end(); ++iter)
+        {
+          ThreadContactPtr &threadContact = (*iter).second;
+          UseContactPtr contact = Contact::convert(threadContact->contact());
+          if (!contact->getPeerFilePublic()) {
+            ZS_LOG_WARNING(Debug, log("cannot add slave added contact just yet because a peer file is missing") + UseContact::toDebug(contact))
+            missingPeerFile = true;
+          }
+        }
+
+        if (missingPeerFile) {
+          ZS_LOG_WARNING(Detail, log("not ready to add or remove contacts until all added contacts peer files are known"))
+          contactsToAdd.clear();
+          contactsToRemove.clear();
+        }
+
         mHostThread->updateBegin();
         mHostThread->setDelivered(delivered);
         if (mMarkAllRead) {
@@ -1186,6 +1212,8 @@ namespace openpeer
 
         if ((contactsToAdd.size() > 0) ||
             (contactsToRemove.size() > 0)) {
+          ZS_LOG_DEBUG(log("ready to add or remove contacts from slave(s)") + ZS_PARAM("adding", contactsToAdd.size()) + ZS_PARAM("removing", contactsToRemove.size()))
+
           ContactProfileInfoList contactsAsList;
           for (ThreadContactMap::iterator iter = contactsToAdd.begin(); iter != contactsToAdd.end(); ++iter)
           {

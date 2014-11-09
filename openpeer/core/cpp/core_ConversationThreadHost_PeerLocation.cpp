@@ -362,6 +362,8 @@ namespace openpeer
           }
 
           ZS_LOG_DEBUG(log("successfully loaded peer contact") + IPublication::toDebug(publication))
+
+          outer->notifyContactPeerFileLoaded(tempPeer);
           return;
         }
 
@@ -395,40 +397,9 @@ namespace openpeer
         // scope: ensure all peer files are fetched for each contact
         {
           const ThreadContactMap &contacts = mSlaveThread->contacts()->contacts();
-          for (ThreadContactMap::const_iterator iter = contacts.begin(); iter != contacts.end(); ++iter)
-          {
-            const ThreadContactPtr &threadContact = (*iter).second;
-            UseContactPtr contact = threadContact->contact();
-
-            bool hasPeerFilePulic = (bool)contact->getPeerFilePublic();
-            if (hasPeerFilePulic) {
-              ZS_LOG_TRACE(log("peer file public is found for contact") + UseContact::toDebug(contact))
-              continue;
-            }
-
-            if (mPreviouslyFetchedContacts.end() != mPreviouslyFetchedContacts.find(contact->getPeerURI())) {
-              ZS_LOG_TRACE(log("already attempted to fetch this contact") + UseContact::toDebug(contact))
-              continue;
-            }
-
-            ZS_LOG_WARNING(Detail, log("peer file public is missing for contact") + UseContact::toDebug(contact))
-
-            IPublicationMetaData::PublishToRelationshipsMap empty;
-            IPublicationMetaDataPtr contactMetaData = IPublicationMetaData::create(
-                                                                                   0, 0, 0,
-                                                                                   publication->getCreatorLocation(),
-                                                                                   mSlaveThread->getContactDocumentName(contact),
-                                                                                   publication->getMimeType(),
-                                                                                   publication->getEncoding(),
-                                                                                   empty,
-                                                                                   publication->getPublishedLocation()
-                                                                                   );
-
-            // singal to the fetcher it's been updated so the fetcher will download the document immediately
-            mFetcher->notifyPublicationUpdated(mPeerLocation, contactMetaData);
-
-            mPreviouslyFetchedContacts[contact->getPeerURI()] = true;
-          }
+          const ThreadContactMap &addContacts = mSlaveThread->contacts()->addContacts();
+          ensureHasSlavePeerFiles(publication, contacts);
+          ensureHasSlavePeerFiles(publication, addContacts);
         }
         
         //.......................................................................
@@ -728,6 +699,48 @@ namespace openpeer
               }
             }
           }
+        }
+      }
+
+      //-----------------------------------------------------------------------
+      void ConversationThreadHost::PeerLocation::ensureHasSlavePeerFiles(
+                                                                         IPublicationPtr publication,
+                                                                         const ThreadContactMap &contacts
+                                                                         )
+      {
+        for (ThreadContactMap::const_iterator iter = contacts.begin(); iter != contacts.end(); ++iter)
+        {
+          const ThreadContactPtr &threadContact = (*iter).second;
+          UseContactPtr contact = threadContact->contact();
+
+          bool hasPeerFilePulic = (bool)contact->getPeerFilePublic();
+          if (hasPeerFilePulic) {
+            ZS_LOG_TRACE(log("peer file public is found for contact") + UseContact::toDebug(contact))
+            continue;
+          }
+
+          if (mPreviouslyFetchedContacts.end() != mPreviouslyFetchedContacts.find(contact->getPeerURI())) {
+            ZS_LOG_TRACE(log("already attempted to fetch this contact") + UseContact::toDebug(contact))
+            continue;
+          }
+
+          ZS_LOG_WARNING(Detail, log("peer file public is missing for contact") + UseContact::toDebug(contact))
+
+          IPublicationMetaData::PublishToRelationshipsMap empty;
+          IPublicationMetaDataPtr contactMetaData = IPublicationMetaData::create(
+                                                                                 0, 0, 0,
+                                                                                 publication->getCreatorLocation(),
+                                                                                 mSlaveThread->getContactDocumentName(contact),
+                                                                                 publication->getMimeType(),
+                                                                                 publication->getEncoding(),
+                                                                                 empty,
+                                                                                 publication->getPublishedLocation()
+                                                                                 );
+
+          // singal to the fetcher it's been updated so the fetcher will download the document immediately
+          mFetcher->notifyPublicationUpdated(mPeerLocation, contactMetaData);
+
+          mPreviouslyFetchedContacts[contact->getPeerURI()] = true;
         }
       }
 

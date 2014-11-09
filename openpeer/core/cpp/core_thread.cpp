@@ -3077,6 +3077,16 @@ namespace openpeer
             }
           }
 
+          // scope: double check if any "add" contacts can be published at this time
+          {
+            const ThreadContactMap &contacts = mContacts->addContacts();
+            for (ThreadContactMap::const_iterator iter = contacts.begin(); iter != contacts.end(); ++iter)
+            {
+              const ThreadContactPtr &contact = (*iter).second;
+              publishContact(contact->contact());
+            }
+          }
+
           resetChanged();
 
           publish(repository, mMustPublish || (bool)changesDoc, mMustPublish || contactsAddedOrRemoved);
