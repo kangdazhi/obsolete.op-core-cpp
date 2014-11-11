@@ -39,7 +39,6 @@
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 #include <openpeer/core/internal/core_MediaEngine.h>
-#include <openpeer/core/internal/core_Factory.h>
 
 #include <zsLib/Timer.h>
 
@@ -170,7 +169,7 @@ namespace openpeer
       #pragma mark TestMediaEngineFactory
       #pragma mark
       
-      class TestMediaEngineFactory : public internal::Factory
+      class TestMediaEngineFactory : public internal::MediaEngineFactory
       {
       public:
         TestMediaEngineFactory() {}

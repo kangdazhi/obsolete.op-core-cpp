@@ -34,6 +34,8 @@
 #include "config.h"
 #include "boost_replacement.h"
 
+#include <openpeer/core/ILogger.h>
+
 #ifdef __QNX__
 extern char *__progname;
 #elif defined _ANDROID
@@ -52,6 +54,7 @@ namespace openpeer { namespace core { namespace test { ZS_IMPLEMENT_SUBSYSTEM(op
 //#define OPENPEER_MEDIA_ENGINE_ENABLE_TIMER
 
 using namespace std;
+using openpeer::core::ILogger;
 
 namespace openpeer
 {
@@ -381,9 +384,9 @@ void doMediaEngineTest()
   BOOST_INSTALL_LOGGER();
   
   TestMediaEngineFactoryPtr overrideFactory(new TestMediaEngineFactory);
-  
-  openpeer::core::internal::Factory::override(overrideFactory);
-  
+
+  openpeer::core::internal::MediaEngineFactory::override(overrideFactory);
+
   BOOST_UNINSTALL_LOGGER()
   zsLib::proxyDump();
   BOOST_EQUAL(zsLib::proxyGetTotalConstructed(), 0);

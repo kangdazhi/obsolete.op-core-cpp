@@ -55,15 +55,7 @@ namespace openpeer
       {
         IStack::singleton()->setup(
                                    mThisWeak.lock(),
-                                   mThisWeak.lock(),
-                                   "com.xyz123.app1",
-                                   "Hookflash",
-                                   "https://app.com/image.png",
-                                   "https://app.com/app/",
-                                   "hookflash/1.0.1001a (iOS/iPad)", 
-                                   "123456",
-                                   "iOS 5.0.3",
-                                   "iPad 2"
+                                   mThisWeak.lock()
                                    );
       }
 
@@ -85,6 +77,14 @@ namespace openpeer
 #ifdef __APPLE__
         CFRunLoopStop(CFRunLoopGetCurrent());
 #endif // __APPLE__
+      }
+
+      void FakeGUI::onMediaEngineAudioSessionInterruptionBegan()
+      {
+      }
+
+      void FakeGUI::onMediaEngineAudioSessionInterruptionEnded()
+      {
       }
 
       void FakeGUI::onMediaEngineAudioRouteChanged(OutputAudioRoutes audioRoute)

@@ -73,18 +73,12 @@ namespace openpeer
 
         virtual void onMediaEngineAudioRouteChanged(OutputAudioRoutes audioRoute);
         
-        //---------------------------------------------------------------------
-        #pragma mark
-        #pragma mark FakeGUI => IMediaEngineDelegate
-        #pragma mark
-        
+        virtual void onMediaEngineAudioSessionInterruptionBegan();
+
+        virtual void onMediaEngineAudioSessionInterruptionEnded();
+
         virtual void onMediaEngineFaceDetected();
 
-        //---------------------------------------------------------------------
-        #pragma mark
-        #pragma mark FakeGUI => IMediaEngineDelegate
-        #pragma mark
-        
         virtual void onMediaEngineVideoCaptureRecordStopped();
 
     private:

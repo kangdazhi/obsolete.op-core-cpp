@@ -130,7 +130,7 @@
   
     openpeer::core::test::TestMediaEngineFactoryPtr overrideFactory(new openpeer::core::test::TestMediaEngineFactory);
   
-    openpeer::core::internal::Factory::override(overrideFactory);
+    openpeer::core::internal::MediaEngineFactory::override(overrideFactory);
   
     openpeer::core::internal::IMediaEngineForStack::setup(mediaEngineDelegatePtr);
   
