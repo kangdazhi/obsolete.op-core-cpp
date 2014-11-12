@@ -40,9 +40,7 @@ namespace openpeer
   {
     namespace test
     {
-      class FakeGUI;
-      typedef boost::shared_ptr<FakeGUI> FakeGUIPtr;
-      typedef boost::weak_ptr<FakeGUI> FakeGUIWeakPtr;
+      ZS_DECLARE_CLASS_PTR(FakeGUI)
 
       //-----------------------------------------------------------------------
       class FakeGUI : public IStackDelegate,

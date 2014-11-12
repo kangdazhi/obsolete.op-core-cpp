@@ -37,8 +37,6 @@
 #include <zsLib/types.h>
 #include <zsLib/Proxy.h>
 
-#include <boost/shared_array.hpp>
-
 #include <list>
 
 namespace openpeer

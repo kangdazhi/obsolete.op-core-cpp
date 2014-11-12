@@ -11,11 +11,11 @@
 
 using namespace openpeer::core;
 
+ZS_DECLARE_CLASS_PTR(MediaEngineDelegateWrapper)
+
 class MediaEngineDelegateWrapper : public IMediaEngineDelegate
 {
 public:
-  typedef boost::shared_ptr<MediaEngineDelegateWrapper> MediaEngineDelegateWrapperPtr;
-  
   static MediaEngineDelegateWrapperPtr create();
   
   virtual void onMediaEngineAudioRouteChanged(IMediaEngine::OutputAudioRoutes audioRoute);
@@ -25,5 +25,3 @@ public:
   virtual void onMediaEngineVideoCaptureRecordStopped();
   
 };
-
-typedef boost::shared_ptr<MediaEngineDelegateWrapper> MediaEngineDelegateWrapperPtr;

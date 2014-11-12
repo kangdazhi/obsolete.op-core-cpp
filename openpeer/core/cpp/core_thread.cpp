@@ -529,9 +529,8 @@ namespace openpeer
 
           GeneratorPtr generator = Generator::createJSONGenerator();
 
-          boost::shared_array<char> output;
           size_t length = 0;
-          output = generator->write(doc, &length);
+          std::unique_ptr<char[]> output = generator->write(doc, &length);
 
           if (mData->mBundleEl)
             mData->mBundleEl->orphan();

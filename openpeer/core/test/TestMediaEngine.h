@@ -48,14 +48,8 @@ namespace openpeer
   {
     namespace test
     {
-      
-      class TestMediaEngine;
-      typedef boost::shared_ptr<TestMediaEngine> TestMediaEnginePtr;
-      typedef boost::weak_ptr<TestMediaEngine> TestMediaEngineWeakPtr;
-      
-      class TestMediaEngineFactory;
-      typedef boost::shared_ptr<TestMediaEngineFactory> TestMediaEngineFactoryPtr;
-      typedef boost::weak_ptr<TestMediaEngineFactory> TestMediaEngineFactoryWeakPtr;
+      ZS_DECLARE_CLASS_PTR(TestMediaEngine)
+      ZS_DECLARE_CLASS_PTR(TestMediaEngineFactory)
 
       typedef webrtc::test::VoiceChannelTransport VoiceChannelTransport;
       typedef webrtc::test::VideoChannelTransport VideoChannelTransport;
