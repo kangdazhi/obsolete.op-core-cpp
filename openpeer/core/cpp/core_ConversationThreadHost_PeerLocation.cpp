@@ -41,8 +41,9 @@
 
 #include <openpeer/services/IHelper.h>
 
-#include <zsLib/RegEx.h>
 #include <zsLib/XML.h>
+
+#include <regex>
 
 namespace openpeer { namespace core { ZS_DECLARE_SUBSYSTEM(openpeer_core) } }
 
@@ -334,8 +335,8 @@ namespace openpeer
         }
 
         // check to see the type of publication
-        zsLib::RegEx e("^\\/contacts\\/1\\.0\\/.*$");
-        if (e.hasMatch(publication->getName())) {
+        std::regex e("^\\/contacts\\/1\\.0\\/.*$");
+        if (std::regex_match(publication->getName(), e)) {
           // this it a public peer file document to process
           IPublicationLockerPtr locker;
           DocumentPtr doc = publication->getJSON(locker);
