@@ -16,8 +16,8 @@
 -(IBAction)test1
 {
     openpeer::core::internal::MediaEnginePtr mediaEngineInternal =
-        boost::dynamic_pointer_cast<openpeer::core::internal::MediaEngine>(openpeer::core::internal::IMediaEngineForCallTransport::singleton());
-    openpeer::core::test::TestMediaEnginePtr testMediaEngineInternal = boost::dynamic_pointer_cast<openpeer::core::test::TestMediaEngine>(mediaEngineInternal);
+        std::dynamic_pointer_cast<openpeer::core::internal::MediaEngine>(openpeer::core::internal::IMediaEngineForCallTransport::singleton());
+    openpeer::core::test::TestMediaEnginePtr testMediaEngineInternal = std::dynamic_pointer_cast<openpeer::core::test::TestMediaEngine>(mediaEngineInternal);
     openpeer::core::IMediaEnginePtr mediaEngine = openpeer::core::IMediaEngine::singleton();
     
     mediaEngine->setCaptureRenderView((__bridge void*)_imgView1);
@@ -49,8 +49,8 @@
 -(IBAction)test2
 {
     openpeer::core::internal::MediaEnginePtr mediaEngineInternal =
-        boost::dynamic_pointer_cast<openpeer::core::internal::MediaEngine>(openpeer::core::internal::IMediaEngineForCallTransport::singleton());
-    openpeer::core::test::TestMediaEnginePtr testMediaEngineInternal = boost::dynamic_pointer_cast<openpeer::core::test::TestMediaEngine>(mediaEngineInternal);
+        std::dynamic_pointer_cast<openpeer::core::internal::MediaEngine>(openpeer::core::internal::IMediaEngineForCallTransport::singleton());
+    openpeer::core::test::TestMediaEnginePtr testMediaEngineInternal = std::dynamic_pointer_cast<openpeer::core::test::TestMediaEngine>(mediaEngineInternal);
     openpeer::core::IMediaEnginePtr mediaEngine = openpeer::core::IMediaEngine::singleton();
     
     testMediaEngineInternal->setReceiverAddress("127.0.0.1");
@@ -62,8 +62,8 @@
 -(IBAction)test3
 {
     openpeer::core::internal::MediaEnginePtr mediaEngineInternal =
-        boost::dynamic_pointer_cast<openpeer::core::internal::MediaEngine>(openpeer::core::internal::IMediaEngineForCallTransport::singleton());
-    openpeer::core::test::TestMediaEnginePtr testMediaEngineInternal = boost::dynamic_pointer_cast<openpeer::core::test::TestMediaEngine>(mediaEngineInternal);
+        std::dynamic_pointer_cast<openpeer::core::internal::MediaEngine>(openpeer::core::internal::IMediaEngineForCallTransport::singleton());
+    openpeer::core::test::TestMediaEnginePtr testMediaEngineInternal = std::dynamic_pointer_cast<openpeer::core::test::TestMediaEngine>(mediaEngineInternal);
     openpeer::core::IMediaEnginePtr mediaEngine = openpeer::core::IMediaEngine::singleton();
     
     openpeer::core::internal::IMediaEngineForCallTransport::singleton()->stopVoice();
@@ -73,8 +73,8 @@
 -(IBAction)test4
 {
     openpeer::core::internal::MediaEnginePtr mediaEngineInternal =
-        boost::dynamic_pointer_cast<openpeer::core::internal::MediaEngine>(openpeer::core::internal::IMediaEngineForCallTransport::singleton());
-    openpeer::core::test::TestMediaEnginePtr testMediaEngineInternal = boost::dynamic_pointer_cast<openpeer::core::test::TestMediaEngine>(mediaEngineInternal);
+        std::dynamic_pointer_cast<openpeer::core::internal::MediaEngine>(openpeer::core::internal::IMediaEngineForCallTransport::singleton());
+    openpeer::core::test::TestMediaEnginePtr testMediaEngineInternal = std::dynamic_pointer_cast<openpeer::core::test::TestMediaEngine>(mediaEngineInternal);
     openpeer::core::IMediaEnginePtr mediaEngine = openpeer::core::IMediaEngine::singleton();
     
 //    mediaEngine->stopRecordVideoCapture();

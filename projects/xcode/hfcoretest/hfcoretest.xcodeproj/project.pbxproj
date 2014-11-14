@@ -25,6 +25,9 @@
 		00C5B0DC177CA2C900D6F8AC /* libcryptopp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C5B0D7177CA27D00D6F8AC /* libcryptopp.a */; };
 		00C5B0DD177CA2DC00D6F8AC /* libudns.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C5B0D2177CA27D00D6F8AC /* libudns.a */; };
 		00C82C271832025D005B87E0 /* boost.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C82C261832025C005B87E0 /* boost.framework */; };
+		00CF4BF51A15BEC600573A34 /* libidnkit.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00CF4BF01A15BEAF00573A34 /* libidnkit.a */; };
+		00CF4CCE1A15C97E00573A34 /* libeasysqlite.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00CF4CCB1A15C94E00573A34 /* libeasysqlite.a */; };
+		00CF4CCF1A15C9A200573A34 /* libortclib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 004B8DA6189C2BF300D4F6A8 /* libortclib.a */; };
 		E23C2EBF192E11BB00706ADA /* libacm2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E23C2EBD192E11BB00706ADA /* libacm2.a */; };
 		E23C2EC1192E11FF00706ADA /* TestMediaEngine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E210969316D4CECA002147D1 /* TestMediaEngine.cpp */; };
 		E2E22EF81939311300664265 /* libwebrtc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E23C2EE6192E1B0400706ADA /* libwebrtc.a */; };
@@ -168,6 +171,48 @@
 			remoteGlobalIDString = 0066829F16C9DC3D00259F81;
 			remoteInfo = cryptopp;
 		};
+		00CF4BEF1A15BEAF00573A34 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00CF4BEB1A15BEAB00573A34 /* idnkit.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 00CF44301A15505B00573A34;
+			remoteInfo = idnkit;
+		};
+		00CF4C021A15C45300573A34 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 004A55921839D67D00AEF378 /* ortclib.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 008F56031821367E009863AA;
+			remoteInfo = ortclib;
+		};
+		00CF4C041A15C45300573A34 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00CF4BEB1A15BEAB00573A34 /* idnkit.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 00CF442F1A15505B00573A34;
+			remoteInfo = idnkit;
+		};
+		00CF4CCA1A15C94E00573A34 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00CF4CC61A15C94E00573A34 /* easysqlite.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 004EDE6A1A1106ED008976F7;
+			remoteInfo = easysqlite;
+		};
+		00CF4CCC1A15C96A00573A34 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00CF4CC61A15C94E00573A34 /* easysqlite.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 004EDE691A1106ED008976F7;
+			remoteInfo = easysqlite;
+		};
+		00CF4DA41A15CCD200573A34 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2E460C8192C0175005BAED9 /* webrtc_osx.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 307C243DFDDBFD9EF8440480;
+			remoteInfo = All;
+		};
 		E23C2EE5192E1B0400706ADA /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = E2E460C8192C0175005BAED9 /* webrtc_osx.xcodeproj */;
@@ -213,6 +258,8 @@
 		0063D5BF16CB32AD00E6DB4D /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
 		0063D5C116CB32B500E6DB4D /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		00C82C261832025C005B87E0 /* boost.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = boost.framework; path = "../../../../ortc-lib/libs/boost/osx/framework/boost.framework"; sourceTree = "<group>"; };
+		00CF4BEB1A15BEAB00573A34 /* idnkit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = idnkit.xcodeproj; path = "../../../../ortc-lib/libs/idnkit/projects/xcode/idnkit.xcodeproj"; sourceTree = "<group>"; };
+		00CF4CC61A15C94E00573A34 /* easysqlite.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = easysqlite.xcodeproj; path = ../../../../easysqlite/projects/xcode/easysqlite.xcodeproj; sourceTree = "<group>"; };
 		E210969316D4CECA002147D1 /* TestMediaEngine.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TestMediaEngine.cpp; sourceTree = "<group>"; };
 		E210969416D4CECA002147D1 /* TestMediaEngine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TestMediaEngine.h; sourceTree = "<group>"; };
 		E23C2EBD192E11BB00706ADA /* libacm2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libacm2.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -321,7 +368,10 @@
 				0063D03416CAF1C200E6DB4D /* libcurl.dylib in Frameworks */,
 				0063D37516CB2BB600E6DB4D /* libhfcore.a in Frameworks */,
 				0063D37416CB2B3400E6DB4D /* libhfstack.a in Frameworks */,
+				00CF4CCE1A15C97E00573A34 /* libeasysqlite.a in Frameworks */,
+				00CF4CCF1A15C9A200573A34 /* libortclib.a in Frameworks */,
 				0063D37316CB2B2E00E6DB4D /* libhfservices.a in Frameworks */,
+				00CF4BF51A15BEC600573A34 /* libidnkit.a in Frameworks */,
 				00C5B0DC177CA2C900D6F8AC /* libcryptopp.a in Frameworks */,
 				00C5B0DD177CA2DC00D6F8AC /* libudns.a in Frameworks */,
 				0063D37016CB2B1D00E6DB4D /* libzsLib.a in Frameworks */,
@@ -403,9 +453,11 @@
 			children = (
 				0063D35E16CB297600E6DB4D /* hfcore.xcodeproj */,
 				0063D35816CB296D00E6DB4D /* hfstack.xcodeproj */,
+				00CF4CC61A15C94E00573A34 /* easysqlite.xcodeproj */,
 				004A55921839D67D00AEF378 /* ortclib.xcodeproj */,
 				0063D35216CB296600E6DB4D /* hfservices.xcodeproj */,
 				0063D34C16CB296000E6DB4D /* cryptopp.xcodeproj */,
+				00CF4BEB1A15BEAB00573A34 /* idnkit.xcodeproj */,
 				0063D34616CB294B00E6DB4D /* udns.xcodeproj */,
 				0063D34016CB293C00E6DB4D /* zsLib.xcodeproj */,
 				E2E460C8192C0175005BAED9 /* webrtc_osx.xcodeproj */,
@@ -531,6 +583,22 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		00CF4BEC1A15BEAB00573A34 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				00CF4BF01A15BEAF00573A34 /* libidnkit.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		00CF4CC71A15C94E00573A34 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				00CF4CCB1A15C94E00573A34 /* libeasysqlite.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		E23C2EDE192E1B0400706ADA /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -553,12 +621,16 @@
 			buildRules = (
 			);
 			dependencies = (
-				00C5B0D9177CA2B200D6F8AC /* PBXTargetDependency */,
-				00C5B0DB177CA2B200D6F8AC /* PBXTargetDependency */,
 				0063D36716CB29C600E6DB4D /* PBXTargetDependency */,
 				0063D36D16CB29C600E6DB4D /* PBXTargetDependency */,
+				00CF4CCD1A15C96A00573A34 /* PBXTargetDependency */,
+				00CF4C031A15C45300573A34 /* PBXTargetDependency */,
 				0063D36B16CB29C600E6DB4D /* PBXTargetDependency */,
+				00C5B0DB177CA2B200D6F8AC /* PBXTargetDependency */,
+				00CF4C051A15C45300573A34 /* PBXTargetDependency */,
+				00C5B0D9177CA2B200D6F8AC /* PBXTargetDependency */,
 				0063D36916CB29C600E6DB4D /* PBXTargetDependency */,
+				00CF4DA51A15CCD200573A34 /* PBXTargetDependency */,
 			);
 			name = hfcoreTest;
 			productName = hfcoreTest;
@@ -590,6 +662,10 @@
 					ProjectRef = 0063D34C16CB296000E6DB4D /* cryptopp.xcodeproj */;
 				},
 				{
+					ProductGroup = 00CF4CC71A15C94E00573A34 /* Products */;
+					ProjectRef = 00CF4CC61A15C94E00573A34 /* easysqlite.xcodeproj */;
+				},
+				{
 					ProductGroup = 0063D35F16CB297600E6DB4D /* Products */;
 					ProjectRef = 0063D35E16CB297600E6DB4D /* hfcore.xcodeproj */;
 				},
@@ -600,6 +676,10 @@
 				{
 					ProductGroup = 0063D35916CB296D00E6DB4D /* Products */;
 					ProjectRef = 0063D35816CB296D00E6DB4D /* hfstack.xcodeproj */;
+				},
+				{
+					ProductGroup = 00CF4BEC1A15BEAB00573A34 /* Products */;
+					ProjectRef = 00CF4BEB1A15BEAB00573A34 /* idnkit.xcodeproj */;
 				},
 				{
 					ProductGroup = 004B8DA2189C2BF300D4F6A8 /* Products */;
@@ -675,6 +755,20 @@
 			remoteRef = 00C5B0D6177CA27D00D6F8AC /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
+		00CF4BF01A15BEAF00573A34 /* libidnkit.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libidnkit.a;
+			remoteRef = 00CF4BEF1A15BEAF00573A34 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		00CF4CCB1A15C94E00573A34 /* libeasysqlite.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libeasysqlite.a;
+			remoteRef = 00CF4CCA1A15C94E00573A34 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 		E23C2EE6192E1B0400706ADA /* libwebrtc.a */ = {
 			isa = PBXReferenceProxy;
 			fileType = archive.ar;
@@ -728,6 +822,26 @@
 			isa = PBXTargetDependency;
 			name = cryptopp;
 			targetProxy = 00C5B0DA177CA2B200D6F8AC /* PBXContainerItemProxy */;
+		};
+		00CF4C031A15C45300573A34 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = ortclib;
+			targetProxy = 00CF4C021A15C45300573A34 /* PBXContainerItemProxy */;
+		};
+		00CF4C051A15C45300573A34 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = idnkit;
+			targetProxy = 00CF4C041A15C45300573A34 /* PBXContainerItemProxy */;
+		};
+		00CF4CCD1A15C96A00573A34 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = easysqlite;
+			targetProxy = 00CF4CCC1A15C96A00573A34 /* PBXContainerItemProxy */;
+		};
+		00CF4DA51A15CCD200573A34 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = All;
+			targetProxy = 00CF4DA41A15CCD200573A34 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -844,11 +958,7 @@
 		0063CD7716CAEFE400E6DB4D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					/Volumes/Hookflash/Repos/ios/opios/libs/op/libs/boost/osx/framework,
-					"/Volumes/Hookflash/Repos/ios/t/opios/libs/op/libs/ortc-lib/libs/boost/osx/framework",
-				);
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"DEBUG=1",
@@ -862,11 +972,7 @@
 		0063CD7816CAEFE400E6DB4D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					/Volumes/Hookflash/Repos/ios/opios/libs/op/libs/boost/osx/framework,
-					"/Volumes/Hookflash/Repos/ios/t/opios/libs/op/libs/ortc-lib/libs/boost/osx/framework",
-				);
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"NDEBUG=1",
