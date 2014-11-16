@@ -29,16 +29,16 @@
  
  */
 
-#ifndef BOOST_AUTO_TEST_SUITE
+#ifndef TESTING_AUTO_TEST_SUITE
 
 #include <zsLib/types.h>
 
 #include <iostream>
 
-namespace BoostReplacement
+namespace Testing
 {
-  zsLib::ULONG &getGlobalPassedVar();
-  zsLib::ULONG &getGlobalFailedVar();
+  std::atomic_uint &getGlobalPassedVar();
+  std::atomic_uint &getGlobalFailedVar();
 
   void installLogger();
   void uninstallLogger();
@@ -48,24 +48,24 @@ namespace BoostReplacement
   void runAllTests();
 }
 
-#define BOOST_INSTALL_LOGGER()                                             \
-  {BoostReplacement::installLogger();}
+#define TESTING_INSTALL_LOGGER()                                             \
+  {Testing::installLogger();}
 
-#define BOOST_UNINSTALL_LOGGER()                                           \
-  {BoostReplacement::uninstallLogger();}
+#define TESTING_UNINSTALL_LOGGER()                                           \
+  {Testing::uninstallLogger();}
 
-#define BOOST_AUTO_TEST_SUITE(xParam) namespace xParam {
+#define TESTING_AUTO_TEST_SUITE(xParam) namespace xParam {
 
-#define BOOST_AUTO_TEST_SUITE_END() }
+#define TESTING_AUTO_TEST_SUITE_END() }
 
-#define BOOST_AUTO_TEST_CASE(xTestCase) static struct Test_##xTestCase {   \
+#define TESTING_AUTO_TEST_CASE(xTestCase) static struct Test_##xTestCase {   \
            Test_##xTestCase()                                              \
            {                                                               \
              std::cout << "STARTING:     " #xTestCase "\n";                \
              try                                                           \
              { test_func(); }                                              \
              catch(...)                                                    \
-             { std::cout << "***UNCAUGHT EXCEPTION IN***: " #xTestCase "\n"; BoostReplacement::failed(); }   \
+             { std::cout << "***UNCAUGHT EXCEPTION IN***: " #xTestCase "\n"; Testing::failed(); }   \
              std::cout << "ENDING:       " #xTestCase "\n\n";              \
            }                                                               \
            void test_func();                                               \
@@ -73,26 +73,26 @@ namespace BoostReplacement
          \
         void Test_##xTestCase::test_func()
 
-#define BOOST_CHECK(xValue)                                         \
+#define TESTING_CHECK(xValue)                                         \
   if (!(xValue))                                                    \
-  { std::cout << "***FAILED***: " #xValue "\n"; BoostReplacement::failed(); }                   \
+  { std::cout << "***FAILED***: " #xValue "\n"; Testing::failed(); }                   \
   else                                                              \
-  { std::cout << "PASSED:       " #xValue "\n"; BoostReplacement::passed(); }
+  { std::cout << "PASSED:       " #xValue "\n"; Testing::passed(); }
 
-#define BOOST_EQUAL(xValue1, xValue2)                               \
+#define TESTING_EQUAL(xValue1, xValue2)                               \
   if (!((xValue1) == (xValue2)))                                    \
-  { std::cout << "***FAILED***: " #xValue1 " == " #xValue2 ", V1=" << (xValue1) << ", V2=" << (xValue2) << "\n"; BoostReplacement::failed(); }                   \
+  { std::cout << "***FAILED***: " #xValue1 " == " #xValue2 ", V1=" << (xValue1) << ", V2=" << (xValue2) << "\n"; Testing::failed(); }                   \
   else                                                              \
-  { std::cout << "PASSED:       " #xValue1 " == " #xValue2 ", V1=" << (xValue1) << ", V2=" << (xValue2) << "\n"; BoostReplacement::passed(); }
+  { std::cout << "PASSED:       " #xValue1 " == " #xValue2 ", V1=" << (xValue1) << ", V2=" << (xValue2) << "\n"; Testing::passed(); }
 
-#define BOOST_RUN_TEST_FUNC(xTestCase) \
+#define TESTING_RUN_TEST_FUNC(xTestCase) \
 {                                                               \
 std::cout << "STARTING:     " #xTestCase "\n";                \
 try                                                           \
 { xTestCase(); }                                              \
 catch(...)                                                    \
-{ std::cout << "***UNCAUGHT EXCEPTION IN***: " #xTestCase "\n"; BoostReplacement::failed(); }   \
+{ std::cout << "***UNCAUGHT EXCEPTION IN***: " #xTestCase "\n"; Testing::failed(); }   \
 std::cout << "ENDING:       " #xTestCase "\n\n";              \
 }                                                               \
 
-#endif //BOOST_AUTO_TEST_SUITE
+#endif //TESTING_AUTO_TEST_SUITE

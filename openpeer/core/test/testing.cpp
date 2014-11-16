@@ -29,7 +29,7 @@
  
  */
 
-#include "boost_replacement.h"
+#include "testing.h"
 #include "config.h"
 
 #include <zsLib/types.h>
@@ -43,27 +43,27 @@ typedef openpeer::services::ILogger ILogger;
 void doFakeGUITest();
 void doMediaEngineTest();
 
-namespace BoostReplacement
+namespace Testing
 {
-  zsLib::ULONG &getGlobalPassedVar()
+  std::atomic_uint &getGlobalPassedVar()
   {
-    static zsLib::ULONG value = 0;
+    static std::atomic_uint value {};
     return value;
   }
-  
-  zsLib::ULONG &getGlobalFailedVar()
+
+  std::atomic_uint &getGlobalFailedVar()
   {
-    static zsLib::ULONG value = 0;
+    static std::atomic_uint value {};
     return value;
   }
   
   void passed()
   {
-    zsLib::atomicIncrement(getGlobalPassedVar());
+    ++(getGlobalPassedVar());
   }
   void failed()
   {
-    zsLib::atomicIncrement(getGlobalFailedVar());
+    ++(getGlobalFailedVar());
   }
   
   void installLogger()
@@ -106,9 +106,9 @@ namespace BoostReplacement
   
   void output()
   {
-    std::cout << "PASSED:       [" << BoostReplacement::getGlobalPassedVar() << "]\n";
-    if (0 != BoostReplacement::getGlobalFailedVar()) {
-      std::cout << "***FAILED***: [" << BoostReplacement::getGlobalFailedVar() << "]\n";
+    std::cout << "PASSED:       [" << Testing::getGlobalPassedVar() << "]\n";
+    if (0 != Testing::getGlobalFailedVar()) {
+      std::cout << "***FAILED***: [" << Testing::getGlobalFailedVar() << "]\n";
     }
   }
   

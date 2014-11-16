@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0063CF5616CAF01A00E6DB4D /* boost_replacement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063CDB816CAF01900E6DB4D /* boost_replacement.cpp */; };
+		0063CF5616CAF01A00E6DB4D /* testing.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063CDB816CAF01900E6DB4D /* testing.cpp */; };
 		0063CF5716CAF01A00E6DB4D /* desktop_FakeGUI.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063CDBB16CAF01900E6DB4D /* desktop_FakeGUI.cpp */; };
 		0063CF5816CAF01A00E6DB4D /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063CDBD16CAF01900E6DB4D /* main.cpp */; };
 		0063D03416CAF1C200E6DB4D /* libcurl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 0063D03316CAF1C200E6DB4D /* libcurl.dylib */; };
@@ -24,7 +24,6 @@
 		0063D5C216CB32B500E6DB4D /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0063D5C116CB32B500E6DB4D /* OpenGL.framework */; };
 		00C5B0DC177CA2C900D6F8AC /* libcryptopp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C5B0D7177CA27D00D6F8AC /* libcryptopp.a */; };
 		00C5B0DD177CA2DC00D6F8AC /* libudns.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C5B0D2177CA27D00D6F8AC /* libudns.a */; };
-		00C82C271832025D005B87E0 /* boost.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C82C261832025C005B87E0 /* boost.framework */; };
 		00CF4BF51A15BEC600573A34 /* libidnkit.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00CF4BF01A15BEAF00573A34 /* libidnkit.a */; };
 		00CF4CCE1A15C97E00573A34 /* libeasysqlite.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00CF4CCB1A15C94E00573A34 /* libeasysqlite.a */; };
 		00CF4CCF1A15C9A200573A34 /* libortclib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 004B8DA6189C2BF300D4F6A8 /* libortclib.a */; };
@@ -237,10 +236,10 @@
 /* Begin PBXFileReference section */
 		004A55921839D67D00AEF378 /* ortclib.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = ortclib.xcodeproj; path = "../../../../ortc-lib/projects/xcode/ortclib/ortclib.xcodeproj"; sourceTree = "<group>"; };
 		0063CD6D16CAEFE400E6DB4D /* hfcoreTest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = hfcoreTest; sourceTree = BUILT_PRODUCTS_DIR; };
-		0063CDB816CAF01900E6DB4D /* boost_replacement.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = boost_replacement.cpp; sourceTree = "<group>"; };
-		0063CDB916CAF01900E6DB4D /* boost_replacement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = boost_replacement.h; sourceTree = "<group>"; };
+		0063CDB816CAF01900E6DB4D /* testing.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = testing.cpp; sourceTree = "<group>"; };
+		0063CDB916CAF01900E6DB4D /* testing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; lineEnding = 0; path = testing.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objcpp; };
 		0063CDBA16CAF01900E6DB4D /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
-		0063CDBB16CAF01900E6DB4D /* desktop_FakeGUI.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = desktop_FakeGUI.cpp; sourceTree = "<group>"; };
+		0063CDBB16CAF01900E6DB4D /* desktop_FakeGUI.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = desktop_FakeGUI.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		0063CDBC16CAF01900E6DB4D /* desktop_FakeGUI.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = desktop_FakeGUI.h; sourceTree = "<group>"; };
 		0063CDBD16CAF01900E6DB4D /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		0063D03316CAF1C200E6DB4D /* libcurl.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcurl.dylib; path = usr/lib/libcurl.dylib; sourceTree = SDKROOT; };
@@ -257,7 +256,6 @@
 		0063D5BD16CB32A500E6DB4D /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		0063D5BF16CB32AD00E6DB4D /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
 		0063D5C116CB32B500E6DB4D /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
-		00C82C261832025C005B87E0 /* boost.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = boost.framework; path = "../../../../ortc-lib/libs/boost/osx/framework/boost.framework"; sourceTree = "<group>"; };
 		00CF4BEB1A15BEAB00573A34 /* idnkit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = idnkit.xcodeproj; path = "../../../../ortc-lib/libs/idnkit/projects/xcode/idnkit.xcodeproj"; sourceTree = "<group>"; };
 		00CF4CC61A15C94E00573A34 /* easysqlite.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = easysqlite.xcodeproj; path = ../../../../easysqlite/projects/xcode/easysqlite.xcodeproj; sourceTree = "<group>"; };
 		E210969316D4CECA002147D1 /* TestMediaEngine.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TestMediaEngine.cpp; sourceTree = "<group>"; };
@@ -377,7 +375,6 @@
 				0063D37016CB2B1D00E6DB4D /* libzsLib.a in Frameworks */,
 				0063D5BE16CB32A500E6DB4D /* AudioToolbox.framework in Frameworks */,
 				0063D5BA16CB329000E6DB4D /* AppKit.framework in Frameworks */,
-				00C82C271832025D005B87E0 /* boost.framework in Frameworks */,
 				0063D5BC16CB329E00E6DB4D /* CoreAudio.framework in Frameworks */,
 				0063D03616CAF1D000E6DB4D /* CoreFoundation.framework in Frameworks */,
 				0063D5C016CB32AE00E6DB4D /* CoreVideo.framework in Frameworks */,
@@ -437,8 +434,8 @@
 			isa = PBXGroup;
 			children = (
 				0063CDBA16CAF01900E6DB4D /* config.h */,
-				0063CDB816CAF01900E6DB4D /* boost_replacement.cpp */,
-				0063CDB916CAF01900E6DB4D /* boost_replacement.h */,
+				0063CDB816CAF01900E6DB4D /* testing.cpp */,
+				0063CDB916CAF01900E6DB4D /* testing.h */,
 				0063CDBB16CAF01900E6DB4D /* desktop_FakeGUI.cpp */,
 				0063CDBC16CAF01900E6DB4D /* desktop_FakeGUI.h */,
 				0063CDBD16CAF01900E6DB4D /* main.cpp */,
@@ -523,7 +520,6 @@
 				E2E22F251939311C00664265 /* libyuv.a */,
 				E23C2EBD192E11BB00706ADA /* libacm2.a */,
 				0063D03316CAF1C200E6DB4D /* libcurl.dylib */,
-				00C82C261832025C005B87E0 /* boost.framework */,
 				0063D5C116CB32B500E6DB4D /* OpenGL.framework */,
 				0063D5BF16CB32AD00E6DB4D /* CoreVideo.framework */,
 				0063D5BD16CB32A500E6DB4D /* AudioToolbox.framework */,
@@ -784,7 +780,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E23C2EC1192E11FF00706ADA /* TestMediaEngine.cpp in Sources */,
-				0063CF5616CAF01A00E6DB4D /* boost_replacement.cpp in Sources */,
+				0063CF5616CAF01A00E6DB4D /* testing.cpp in Sources */,
 				0063CF5716CAF01A00E6DB4D /* desktop_FakeGUI.cpp in Sources */,
 				0063CF5816CAF01A00E6DB4D /* main.cpp in Sources */,
 			);
@@ -860,7 +856,7 @@
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				FRAMEWORK_SEARCH_PATHS = "../../../../ortc-lib/libs/boost/osx/framework";
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
@@ -869,7 +865,6 @@
 					"$(inherited)",
 					CRYPTOPP_DISABLE_ASM,
 				);
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
@@ -880,7 +875,6 @@
 					"../../../../ortc-lib/libs",
 					"../../../../ortc-lib/libs/zsLib",
 					"../../../../ortc-lib/libs/op-services-cpp",
-					"../../../../ortc-lib/libs/boost/osx/framework/boost.framework/Headers",
 					"../../../../ortc-lib/libs/webRTC",
 					"../../../../ortc-lib/libs/webRTC/webrtc/modules/video_render/main/source/iPhone",
 					"../../../../ortc-lib/libs/webRTC/webrtc/video_engine/main/interface",
@@ -895,6 +889,7 @@
 					"../../../../ortc-lib/libs/webRTC/webrtc",
 					"../../../../ortc-lib/libs/webRTC/webrtc/video_engine/include",
 					"../../../../ortc-lib/libs/webRTC/webrtc/video_engine/main/interface",
+					"$(inherited)",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.8;
 				ONLY_ACTIVE_ARCH = YES;
@@ -917,7 +912,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				FRAMEWORK_SEARCH_PATHS = "../../../../ortc-lib/libs/boost/osx/framework";
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -934,7 +929,6 @@
 					"../../../../ortc-lib/libs",
 					"../../../../ortc-lib/libs/zsLib",
 					"../../../../ortc-lib/libs/op-services-cpp",
-					"../../../../ortc-lib/libs/boost/osx/framework/boost.framework/Headers",
 					"../../../../ortc-lib/libs/webRTC",
 					"../../../../ortc-lib/libs/webRTC/webrtc/modules/video_render/main/source/iPhone",
 					"../../../../ortc-lib/libs/webRTC/webrtc/video_engine/main/interface",
@@ -949,6 +943,7 @@
 					"../../../../ortc-lib/libs/webRTC/webrtc",
 					"../../../../ortc-lib/libs/webRTC/webrtc/video_engine/include",
 					"../../../../ortc-lib/libs/webRTC/webrtc/video_engine/main/interface",
+					"$(inherited)",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.8;
 				SDKROOT = macosx;
@@ -963,6 +958,7 @@
 					"$(inherited)",
 					"DEBUG=1",
 				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				PRODUCT_NAME = "$(TARGET_NAME)";

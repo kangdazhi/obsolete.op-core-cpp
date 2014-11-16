@@ -32,7 +32,7 @@
 #include "TestMediaEngine.h"
 
 #include "config.h"
-#include "boost_replacement.h"
+#include "testing.h"
 
 #include <openpeer/core/ILogger.h>
 
@@ -381,13 +381,13 @@ void doMediaEngineTest()
 {
   if (!OPENPEER_CORE_TEST_DO_MEDIA_ENGINE_TEST) return;
   
-  BOOST_INSTALL_LOGGER();
+  TESTING_INSTALL_LOGGER();
   
   TestMediaEngineFactoryPtr overrideFactory(new TestMediaEngineFactory);
 
   openpeer::core::internal::MediaEngineFactory::override(overrideFactory);
 
-  BOOST_UNINSTALL_LOGGER()
+  TESTING_UNINSTALL_LOGGER()
   zsLib::proxyDump();
-  BOOST_EQUAL(zsLib::proxyGetTotalConstructed(), 0);
+  TESTING_EQUAL(zsLib::proxyGetTotalConstructed(), 0);
 }

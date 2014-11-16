@@ -31,7 +31,7 @@
 
 #include "config.h"
 #include "desktop_FakeGUI.h"
-#include "boost_replacement.h"
+#include "testing.h"
 
 #ifdef __APPLE__
 #include <CoreFoundation/CoreFoundation.h>
@@ -110,7 +110,7 @@ void doFakeGUITest()
 {
   if (!OPENPEER_CORE_TEST_DO_FAKE_GUI_TEST) return;
 
-  BOOST_INSTALL_LOGGER();
+  TESTING_INSTALL_LOGGER();
 
   FakeGUIPtr fakeGUI = FakeGUI::create();
 
@@ -135,7 +135,7 @@ void foo()
 {
 //  if (!OPENPEER_STACK_TEST_DO_STACK_TEST) return;
 //
-//  BOOST_INSTALL_LOGGER();
+//  TESTING_INSTALL_LOGGER();
 //
 //  zsLib::MessageQueueThreadPtr thread(zsLib::MessageQueueThread::createBasic());
 //  zsLib::MessageQueueThreadPtr threadDelegate(zsLib::MessageQueueThread::createBasic());
@@ -170,20 +170,20 @@ void foo()
 //
 //      if (totalProcessed < expectingProcessed) {
 //        ++totalWait;
-//        boost::this_thread::sleep(zsLib::Seconds(1));
+//        std::this_thread::sleep_for(zsLib::Seconds(1));
 //      }
 //      else
 //        break;
 //    } while (totalWait < (60)); // max three minutes
-//    BOOST_CHECK(totalWait < (60));
+//    TESTING_CHECK(totalWait < (60));
 //  }
 //
 //  std::cout << "\n\nWAITING:      All tests have finished. Waiting for 'bogus' events to process (10 second wait).\n";
-//  boost::this_thread::sleep(zsLib::Seconds(10));
+//  std::this_thread::sleep_for(zsLib::Seconds(10));
 //
-//  BOOST_CHECK(testObject->mNetworkDone)
-//  BOOST_CHECK(testObject->mNetwork->isPreparationComplete())
-//  BOOST_CHECK(testObject->mNetwork->wasSuccessful())
+//  TESTING_CHECK(testObject->mNetworkDone)
+//  TESTING_CHECK(testObject->mNetwork->isPreparationComplete())
+//  TESTING_CHECK(testObject->mNetwork->wasSuccessful())
 //
 //  // wait for shutdown
 //  {
@@ -197,12 +197,12 @@ void foo()
 //      count += threadStack->getTotalUnprocessedMessages();
 //      count += threadServices->getTotalUnprocessedMessages();
 //      if (0 != count)
-//        boost::this_thread::yield();
+//        std::this_thread::yield();
 //    } while (count > 0);
 //    
 //    thread->waitForShutdown();
 //  }
-//  BOOST_UNINSTALL_LOGGER()
+//  TESTING_UNINSTALL_LOGGER()
 //  zsLib::proxyDump();
-//  BOOST_EQUAL(zsLib::proxyGetTotalConstructed(), 0);
+//  TESTING_EQUAL(zsLib::proxyGetTotalConstructed(), 0);
 }

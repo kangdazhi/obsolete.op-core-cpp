@@ -282,8 +282,8 @@ namespace openpeer
       String offsetStr = UseMessageHelper::getElementText(extractEl->findFirstChildElement("offset"));
       if (offsetStr.hasData()) {
         try {
-          pThis->mOffset = Seconds(Numeric<Duration::sec_type>(offsetStr));
-        } catch(Numeric<Duration::sec_type>::ValueOutOfRange &) {
+          pThis->mOffset = Numeric<Duration>(offsetStr);
+        } catch(Numeric<Duration>::ValueOutOfRange &) {
           ZS_LOG_WARNING(Detail, internal::PresenceTimeZoneLocation_slog("value out of range"))
         }
       }
@@ -307,7 +307,7 @@ namespace openpeer
       ElementPtr insertEl = Element::create("timeZone");
 
       if (Duration() != mOffset) {
-        insertEl->adoptAsLastChild(UseMessageHelper::createElementWithNumber("priority", string(mOffset.total_seconds())));
+        insertEl->adoptAsLastChild(UseMessageHelper::createElementWithNumber("offset", string(mOffset)));
       }
 
       if (mAbbreviation.hasData()) {
@@ -742,8 +742,8 @@ namespace openpeer
         String lengthStr = UseMessageHelper::getElementText(extractEl->findFirstChildElement("length"));
         if (lengthStr.hasData()) {
           try {
-            info.mSize = Numeric<Duration::tick_type>(lengthStr);
-          } catch(Numeric<Duration::tick_type>::ValueOutOfRange &) {
+            info.mLength = Numeric<Duration>(lengthStr);
+          } catch(Numeric<Duration>::ValueOutOfRange &) {
             ZS_LOG_WARNING(Detail, internal::PresenceResources_slog("value out of range"))
           }
         }
@@ -802,7 +802,7 @@ namespace openpeer
           resourceEl->adoptAsLastChild(UseMessageHelper::createElementWithNumber("height", string(info.mHeight)));
         }
         if (Duration() != info.mLength) {
-          resourceEl->adoptAsLastChild(UseMessageHelper::createElementWithNumber("length", string(info.mLength.total_milliseconds())));
+          resourceEl->adoptAsLastChild(UseMessageHelper::createElementWithNumber("length", string(info.mLength)));
         }
 
         if (info.mExternalLinkURL.hasData()) {

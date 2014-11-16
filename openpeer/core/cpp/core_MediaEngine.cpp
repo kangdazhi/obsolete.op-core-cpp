@@ -39,7 +39,7 @@
 #include <zsLib/helpers.h>
 #include <zsLib/XML.h>
 
-#include <boost/thread.hpp>
+#include <thread>
 
 #include <video_capture_factory.h>
 
@@ -695,7 +695,7 @@ namespace openpeer
           mLifetimeWantDefaultVideoOrientation = orientation;
         }
         
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
       }
       
       //-------------------------------------------------------------------------
@@ -719,7 +719,7 @@ namespace openpeer
           mLifetimeWantRecordVideoOrientation = orientation;
         }
         
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
       }
       
       //-------------------------------------------------------------------------
@@ -740,7 +740,7 @@ namespace openpeer
           mLifetimeWantSetVideoOrientation = true;
         }
         
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
       }
 
       //-----------------------------------------------------------------------
@@ -754,7 +754,7 @@ namespace openpeer
           mLifetimeWantCaptureRenderView = renderView;
         }
         
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
       }
       
       //-----------------------------------------------------------------------
@@ -778,7 +778,7 @@ namespace openpeer
           mLifetimeWantChannelRenderView = renderView;
         }
         
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
       }
       
       //-----------------------------------------------------------------------
@@ -802,7 +802,7 @@ namespace openpeer
             mLifetimeWantBackCameraCaptureCapability = capability;
         }
         
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
 
       }
       
@@ -871,7 +871,7 @@ namespace openpeer
           mLifetimeWantCaptureRenderViewCropBottom = bottom;
         }
         
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
       }
 
       //-----------------------------------------------------------------------
@@ -890,7 +890,7 @@ namespace openpeer
           mLifetimeWantChannelRenderViewCropBottom = bottom;
         }
         
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
       }
 
       //-----------------------------------------------------------------------
@@ -901,7 +901,7 @@ namespace openpeer
           mLifetimeWantEcEnabled = enabled;
         }
         
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
       }
       
       //-----------------------------------------------------------------------
@@ -912,7 +912,7 @@ namespace openpeer
           mLifetimeWantAgcEnabled = enabled;
         }
         
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
       }
       
       //-----------------------------------------------------------------------
@@ -923,7 +923,7 @@ namespace openpeer
           mLifetimeWantNsEnabled = enabled;
         }
         
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
       }
       
       //-------------------------------------------------------------------------
@@ -937,7 +937,7 @@ namespace openpeer
           mLifetimeWantVoiceRecordFile = fileName;
         }
         
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
       }
 
       //-------------------------------------------------------------------------
@@ -958,7 +958,7 @@ namespace openpeer
           mLifetimeWantMuteEnabled = enabled;
         }
         
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
       }
       
       //-----------------------------------------------------------------------
@@ -1005,7 +1005,7 @@ namespace openpeer
           mLifetimeWantLoudspeakerEnabled = enabled;
         }
         
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
       }
       
       //-----------------------------------------------------------------------
@@ -1077,7 +1077,7 @@ namespace openpeer
           mLifetimeWantContinuousVideoCapture = continuousVideoCapture;
         }
         
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
       }
       
       //-----------------------------------------------------------------------
@@ -1101,7 +1101,7 @@ namespace openpeer
           mLifetimeWantFaceDetection = faceDetection;
         }
         
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
       }
       
       //-----------------------------------------------------------------------
@@ -1122,7 +1122,7 @@ namespace openpeer
           mLifetimeWantCameraType = type;
         }
 
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
       }
       
       //-----------------------------------------------------------------------
@@ -1143,7 +1143,7 @@ namespace openpeer
           mLifetimeWantVideoCapture = true;
         }
         
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
       }
       
       //-----------------------------------------------------------------------
@@ -1154,7 +1154,7 @@ namespace openpeer
           mLifetimeWantVideoCapture = false;
         }
         
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
       }
       
       //-------------------------------------------------------------------------
@@ -1167,7 +1167,7 @@ namespace openpeer
           mLifetimeWantSaveVideoToLibrary = saveToLibrary;
         }
         
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
       }
       
       //-------------------------------------------------------------------------
@@ -1178,7 +1178,7 @@ namespace openpeer
           mLifetimeWantRecordVideoCapture = false;
         }
         
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
       }
       
       //-----------------------------------------------------------------------
@@ -1240,7 +1240,7 @@ namespace openpeer
             mLifetimeWantAudio = true;
         }
         
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
       }
 
       //-----------------------------------------------------------------------
@@ -1273,7 +1273,7 @@ namespace openpeer
           mLifetimeWantAudio = true;
         }
 
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
       }
 
       //-----------------------------------------------------------------------
@@ -1284,7 +1284,7 @@ namespace openpeer
           mLifetimeWantAudio = false;
         }
 
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
       }
 
       //-----------------------------------------------------------------------
@@ -1295,7 +1295,7 @@ namespace openpeer
           mLifetimeWantVideoChannel = true;
         }
 
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
       }
 
       //-----------------------------------------------------------------------
@@ -1306,7 +1306,7 @@ namespace openpeer
           mLifetimeWantVideoChannel = false;
         }
 
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
       }
 
       //-----------------------------------------------------------------------
@@ -1320,7 +1320,7 @@ namespace openpeer
           mLifetimeWantVoiceExternalTransport = &transport;
         }
         
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
 
         return 0;
       }
@@ -1336,7 +1336,7 @@ namespace openpeer
           mLifetimeWantVoiceExternalTransport = NULL;
         }
         
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
 
         return 0;
       }
@@ -1400,7 +1400,7 @@ namespace openpeer
           mLifetimeWantVideoExternalTransport = &transport;
         }
         
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
 
         return 0;
       }
@@ -1416,7 +1416,7 @@ namespace openpeer
           mLifetimeWantVideoExternalTransport = NULL;
         }
         
-        ThreadPtr(new boost::thread(boost::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
 
         return 0;
       }
@@ -1643,13 +1643,8 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void MediaEngine::operator()()
       {
-#if !defined(_ANDROID) && !defined(_LINUX)
-#ifdef __QNX__
-        pthread_setname_np(pthread_self(), "org.openpeer.core.mediaEngine");
-#else
-        pthread_setname_np("org.openpeer.core.mediaEngine");
-#endif
-#endif
+        zsLib::debugSetCurrentThreadName("org.openpeer.core.mediaEngine");
+
         ZS_LOG_DEBUG(log("media engine lifetime thread spawned"))
 
         bool repeat = false;
@@ -1703,7 +1698,7 @@ namespace openpeer
         while (true)
         {
           if (!firstAttempt) {
-            boost::this_thread::sleep(zsLib::Milliseconds(10));       // do not hammer CPU
+            std::this_thread::sleep_for(zsLib::Milliseconds(10));       // do not hammer CPU
           }
           firstAttempt = false;
 

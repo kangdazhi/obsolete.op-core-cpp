@@ -32,7 +32,7 @@
 		0063D5F816CB35D800E6DB4D /* MasterViewController_iPad.xib in Resources */ = {isa = PBXBuildFile; fileRef = 0063D5F616CB35D800E6DB4D /* MasterViewController_iPad.xib */; };
 		0063D5FB16CB35D800E6DB4D /* DetailViewController_iPhone.xib in Resources */ = {isa = PBXBuildFile; fileRef = 0063D5F916CB35D800E6DB4D /* DetailViewController_iPhone.xib */; };
 		0063D5FE16CB35D800E6DB4D /* DetailViewController_iPad.xib in Resources */ = {isa = PBXBuildFile; fileRef = 0063D5FC16CB35D800E6DB4D /* DetailViewController_iPad.xib */; };
-		0063D7D816CB362400E6DB4D /* boost_replacement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063D63A16CB362300E6DB4D /* boost_replacement.cpp */; };
+		0063D7D816CB362400E6DB4D /* testing.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063D63A16CB362300E6DB4D /* testing.cpp */; };
 		0063D7D916CB362400E6DB4D /* desktop_FakeGUI.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063D63D16CB362300E6DB4D /* desktop_FakeGUI.cpp */; };
 		0063D89016CB38FE00E6DB4D /* libcurl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0063D88C16CB38FE00E6DB4D /* libcurl.a */; };
 		0063D8C416CB3ABD00E6DB4D /* libhfservices_ios.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0063D8A816CB39B000E6DB4D /* libhfservices_ios.a */; };
@@ -44,8 +44,6 @@
 		0063DA1316CB48A400E6DB4D /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0063DA1216CB48A400E6DB4D /* CoreVideo.framework */; };
 		0063DA1716CB4A0F00E6DB4D /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0063DA1616CB4A0F00E6DB4D /* AVFoundation.framework */; };
 		0063DA1916CB4A8200E6DB4D /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0063DA1816CB4A8200E6DB4D /* CoreMedia.framework */; };
-		007845A81839B7A200E9622C /* boost.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C82C2818320349005B87E0 /* boost.framework */; };
-		00C82C2918320349005B87E0 /* boost.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C82C2818320349005B87E0 /* boost.framework */; };
 		00CF4C001A15BF0500573A34 /* libidnkit_ios.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00CF4BFB1A15BEF400573A34 /* libidnkit_ios.a */; };
 		00CF4C011A15BF1400573A34 /* libidnkit_ios.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00CF4BFB1A15BEF400573A34 /* libidnkit_ios.a */; };
 		E22F931916CE78E600AB0A9E /* TestMediaEngine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E22F931716CE78E600AB0A9E /* TestMediaEngine.cpp */; };
@@ -346,10 +344,10 @@
 		0063D5F716CB35D800E6DB4D /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MasterViewController_iPad.xib; sourceTree = "<group>"; };
 		0063D5FA16CB35D800E6DB4D /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/DetailViewController_iPhone.xib; sourceTree = "<group>"; };
 		0063D5FD16CB35D800E6DB4D /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/DetailViewController_iPad.xib; sourceTree = "<group>"; };
-		0063D63A16CB362300E6DB4D /* boost_replacement.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = boost_replacement.cpp; sourceTree = "<group>"; };
-		0063D63B16CB362300E6DB4D /* boost_replacement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = boost_replacement.h; sourceTree = "<group>"; };
+		0063D63A16CB362300E6DB4D /* testing.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = testing.cpp; sourceTree = "<group>"; };
+		0063D63B16CB362300E6DB4D /* testing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; lineEnding = 0; path = testing.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objcpp; };
 		0063D63C16CB362300E6DB4D /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
-		0063D63D16CB362300E6DB4D /* desktop_FakeGUI.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = desktop_FakeGUI.cpp; sourceTree = "<group>"; };
+		0063D63D16CB362300E6DB4D /* desktop_FakeGUI.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = desktop_FakeGUI.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		0063D63E16CB362300E6DB4D /* desktop_FakeGUI.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = desktop_FakeGUI.h; sourceTree = "<group>"; };
 		0063D63F16CB362300E6DB4D /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		0063D88C16CB38FE00E6DB4D /* libcurl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcurl.a; path = "../../../../ortc-lib/libs/curl-build-scripts/curl/lib/libcurl.a"; sourceTree = SOURCE_ROOT; };
@@ -365,7 +363,6 @@
 		0063DA1216CB48A400E6DB4D /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
 		0063DA1616CB4A0F00E6DB4D /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		0063DA1816CB4A8200E6DB4D /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
-		00C82C2818320349005B87E0 /* boost.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = boost.framework; path = "../../../../ortc-lib/libs/boost/ios/framework/boost.framework"; sourceTree = "<group>"; };
 		00CF4BF61A15BEF300573A34 /* idnkit_ios.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = idnkit_ios.xcodeproj; path = "../../../../ortc-lib/libs/idnkit/projects/xcode/idnkit_ios.xcodeproj"; sourceTree = "<group>"; };
 		E22F931716CE78E600AB0A9E /* TestMediaEngine.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TestMediaEngine.cpp; sourceTree = "<group>"; };
 		E22F931816CE78E600AB0A9E /* TestMediaEngine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TestMediaEngine.h; sourceTree = "<group>"; };
@@ -446,7 +443,6 @@
 				002F74AC1839BD1700581FA7 /* AssetsLibrary.framework in Frameworks */,
 				0063DA1116CB488D00E6DB4D /* AudioToolbox.framework in Frameworks */,
 				0063DA1716CB4A0F00E6DB4D /* AVFoundation.framework in Frameworks */,
-				00C82C2918320349005B87E0 /* boost.framework in Frameworks */,
 				0063DA0D16CB487400E6DB4D /* CoreAudio.framework in Frameworks */,
 				E2FD1DC41753A03B00C3D4A3 /* CoreImage.framework in Frameworks */,
 				0063DA0F16CB488200E6DB4D /* CoreFoundation.framework in Frameworks */,
@@ -519,7 +515,6 @@
 				E2506E56170DA584005A43D2 /* AssetsLibrary.framework in Frameworks */,
 				E2437F3016CBD62200441ABD /* AudioToolbox.framework in Frameworks */,
 				E2437F3116CBD62200441ABD /* AVFoundation.framework in Frameworks */,
-				007845A81839B7A200E9622C /* boost.framework in Frameworks */,
 				E2506E54170DA55C005A43D2 /* CoreImage.framework in Frameworks */,
 				E2437F3216CBD62200441ABD /* CoreAudio.framework in Frameworks */,
 				E2437F3316CBD62200441ABD /* CoreFoundation.framework in Frameworks */,
@@ -636,7 +631,6 @@
 				E2E4601B192BF820005BAED9 /* libacm2.a */,
 				E2E46018192BF7EC005BAED9 /* librbe_components.a */,
 				0012C515177CE1E70017FF5E /* libz.dylib */,
-				00C82C2818320349005B87E0 /* boost.framework */,
 				00243921178F473500B79368 /* Security.framework */,
 				E2506E55170DA584005A43D2 /* AssetsLibrary.framework */,
 				E2506E53170DA55C005A43D2 /* CoreImage.framework */,
@@ -707,8 +701,8 @@
 			isa = PBXGroup;
 			children = (
 				0063D63C16CB362300E6DB4D /* config.h */,
-				0063D63A16CB362300E6DB4D /* boost_replacement.cpp */,
-				0063D63B16CB362300E6DB4D /* boost_replacement.h */,
+				0063D63A16CB362300E6DB4D /* testing.cpp */,
+				0063D63B16CB362300E6DB4D /* testing.h */,
 				0063D63D16CB362300E6DB4D /* desktop_FakeGUI.cpp */,
 				0063D63E16CB362300E6DB4D /* desktop_FakeGUI.h */,
 				0063D63F16CB362300E6DB4D /* main.cpp */,
@@ -1039,7 +1033,7 @@
 				0063D5E616CB35D800E6DB4D /* AppDelegate.m in Sources */,
 				0063D5EF16CB35D800E6DB4D /* MasterViewController.m in Sources */,
 				0063D5F216CB35D800E6DB4D /* DetailViewController.m in Sources */,
-				0063D7D816CB362400E6DB4D /* boost_replacement.cpp in Sources */,
+				0063D7D816CB362400E6DB4D /* testing.cpp in Sources */,
 				0063D7D916CB362400E6DB4D /* desktop_FakeGUI.cpp in Sources */,
 				E22F931916CE78E600AB0A9E /* TestMediaEngine.cpp in Sources */,
 			);
@@ -1226,16 +1220,14 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
-				FRAMEWORK_SEARCH_PATHS = "../../../../ortc-lib/libs/boost/ios/framework";
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					CRYPTOPP_DISABLE_ASM,
 				);
-				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
@@ -1245,7 +1237,6 @@
 					"../../../../ortc-lib/libs",
 					"../../../../ortc-lib/libs/op-services-cpp",
 					"../../../../ortc-lib/libs/zsLib",
-					"../../../../ortc-lib/libs/boost/ios/framework/boost.framework/Headers",
 					"../../../../ortc-lib/libs/curl-build-scripts/curl",
 					"../../../../ortc-lib/libs/webrtc",
 					"../../../../ortc-lib/libs/webrtc/webrtc",
@@ -1260,6 +1251,7 @@
 					"../../../../ortc-lib/libs/webrtc/webrtc/voice_engine/include",
 					"../../../../ortc-lib/libs/webrtc/webrtc/video_engine/include",
 					"../../../../ortc-lib/libs/webrtc/webrtc/video_engine/include",
+					"$(inherited)",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
 				LIBRARY_SEARCH_PATHS = "../../../../ortc-lib/libs/curl-build-scripts/curl/lib";
@@ -1284,14 +1276,12 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = YES;
-				FRAMEWORK_SEARCH_PATHS = "../../../../ortc-lib/libs/boost/ios/framework";
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
-				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					CRYPTOPP_DISABLE_ASM,
 				);
-				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
@@ -1301,7 +1291,6 @@
 					"../../../../ortc-lib/libs",
 					"../../../../ortc-lib/libs/op-services-cpp",
 					"../../../../ortc-lib/libs/zsLib",
-					"../../../../ortc-lib/libs/boost/ios/framework/boost.framework/Headers",
 					"../../../../ortc-lib/libs/curl-build-scripts/curl",
 					"../../../../ortc-lib/libs/webrtc",
 					"../../../../ortc-lib/libs/webrtc/webrtc",
@@ -1316,6 +1305,7 @@
 					"../../../../ortc-lib/libs/webrtc/webrtc/voice_engine/include",
 					"../../../../ortc-lib/libs/webrtc/webrtc/video_engine/include",
 					"../../../../ortc-lib/libs/webrtc/webrtc/video_engine/include",
+					"$(inherited)",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
 				LIBRARY_SEARCH_PATHS = "../../../../ortc-lib/libs/curl-build-scripts/curl/lib";
@@ -1336,6 +1326,7 @@
 					"$(inherited)",
 					"DEBUG=1",
 				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = "hfcoreTest_ios/hfcoreTest_ios-Info.plist";
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
@@ -1371,6 +1362,7 @@
 					"$(inherited)",
 					"DEBUG=1",
 				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = "hfcoreMediaTest_ios/hfcoreMediaTest_ios-Info.plist";
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
