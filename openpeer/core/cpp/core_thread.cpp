@@ -551,7 +551,7 @@ namespace openpeer
               return;
             }
 
-            Duration diff = zsLib::now() - mData->mScheduledAt;
+            Seconds diff = zsLib::toSeconds(zsLib::now() - mData->mScheduledAt);
             if (diff < (UseSettings::getThreadMoveMessageToCacheTimeInSeconds()/2)) return; // plenty of time left on the timer thus do nothing
 
             scheduleCaching();

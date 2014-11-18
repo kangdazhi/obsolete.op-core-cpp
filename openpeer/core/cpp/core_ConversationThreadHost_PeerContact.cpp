@@ -112,7 +112,7 @@ namespace openpeer
         ULONG autoFindSeconds = services::ISettings::getUInt(OPENPEER_CORE_SETTING_CONVERSATION_THREAD_HOST_PEER_CONTACT);
 
         if (0 != autoFindSeconds) {
-          Duration timeout = Seconds(autoFindSeconds);
+          Seconds timeout = Seconds(autoFindSeconds);
           ZS_LOG_DEBUG(log("will perform autofind") + ZS_PARAM("duration (s)", timeout))
           mAutoFindTimer = Timer::create(mThisWeak.lock(), timeout, false);
         }

@@ -506,7 +506,7 @@ namespace openpeer
       //-----------------------------------------------------------------------
       Time Stack::getAuthorizedApplicationIDExpiry(
                                                    const char *authorizedApplicationID,
-                                                   Duration *outRemainingDurationAvailable
+                                                   Seconds *outRemainingDurationAvailable
                                                    )
       {
         ZS_THROW_INVALID_ARGUMENT_IF(!authorizedApplicationID)
@@ -541,7 +541,7 @@ namespace openpeer
         Time now = zsLib::now();
         if (now < expires) {
           if (outRemainingDurationAvailable) {
-            *outRemainingDurationAvailable = (expires - now);
+            *outRemainingDurationAvailable = zsLib::toSeconds(expires - now);
           }
         }
 
@@ -551,10 +551,10 @@ namespace openpeer
       //-----------------------------------------------------------------------
       bool Stack::isAuthorizedApplicationIDExpiryWindowStillValid(
                                                                   const char *authorizedApplicationID,
-                                                                  Duration minimumValidityWindowRequired
+                                                                  Seconds minimumValidityWindowRequired
                                                                   )
       {
-        Duration available;
+        Seconds available;
         Time expires = getAuthorizedApplicationIDExpiry(authorizedApplicationID, &available);
 
         if (available < minimumValidityWindowRequired) {
@@ -782,7 +782,7 @@ namespace openpeer
     //-------------------------------------------------------------------------
     Time IStack::getAuthorizedApplicationIDExpiry(
                                                   const char *authorizedApplicationID,
-                                                  Duration *outRemainingDurationAvailable
+                                                  Seconds *outRemainingDurationAvailable
                                                   )
     {
       return internal::Stack::getAuthorizedApplicationIDExpiry(authorizedApplicationID, outRemainingDurationAvailable);
@@ -791,7 +791,7 @@ namespace openpeer
     //-------------------------------------------------------------------------
     bool IStack::isAuthorizedApplicationIDExpiryWindowStillValid(
                                                                const char *authorizedApplicationID,
-                                                               Duration minimumValidityWindowRequired
+                                                               Seconds minimumValidityWindowRequired
                                                                )
     {
       return internal::Stack::isAuthorizedApplicationIDExpiryWindowStillValid(authorizedApplicationID, minimumValidityWindowRequired);

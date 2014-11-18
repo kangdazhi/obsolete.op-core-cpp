@@ -1356,7 +1356,7 @@ namespace openpeer
           return -1;
         }
 
-        mError = mVoiceNetwork->ReceivedRTPPacket(channel, data, length);
+        mError = mVoiceNetwork->ReceivedRTPPacket(channel, data, (unsigned int)length);
         if (0 != mError) {
           ZS_LOG_ERROR(Detail, log("received voice RTP packet failed") + ZS_PARAM("error", mVoiceBase->LastError()))
           return mError;
@@ -1380,7 +1380,7 @@ namespace openpeer
           return -1;
         }
 
-        mError = mVoiceNetwork->ReceivedRTCPPacket(channel, data, length);
+        mError = mVoiceNetwork->ReceivedRTCPPacket(channel, data, (unsigned int)length);
         if (0 != mError) {
           ZS_LOG_ERROR(Detail, log("received voice RTCP packet failed") + ZS_PARAM("error", mVoiceBase->LastError()))
           return mError;
@@ -1436,7 +1436,7 @@ namespace openpeer
           return -1;
         }
 
-        mError = mVideoNetwork->ReceivedRTPPacket(channel, data, length, webrtc::PacketTime());
+        mError = mVideoNetwork->ReceivedRTPPacket(channel, data, (unsigned int)length, webrtc::PacketTime());
         if (0 != mError) {
           ZS_LOG_ERROR(Detail, log("received video RTP packet failed") + ZS_PARAM("error", mVideoBase->LastError()))
           return mError;
@@ -1460,7 +1460,7 @@ namespace openpeer
           return -1;
         }
 
-        mError = mVideoNetwork->ReceivedRTCPPacket(channel, data, length);
+        mError = mVideoNetwork->ReceivedRTCPPacket(channel, data, (unsigned int)length);
         if (0 != mError) {
           ZS_LOG_ERROR(Detail, log("received video RTCP packet failed") + ZS_PARAM("error", mVideoBase->LastError()))
           return mError;

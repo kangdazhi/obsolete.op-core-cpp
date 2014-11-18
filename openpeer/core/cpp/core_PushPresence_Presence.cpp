@@ -282,8 +282,8 @@ namespace openpeer
       String offsetStr = UseMessageHelper::getElementText(extractEl->findFirstChildElement("offset"));
       if (offsetStr.hasData()) {
         try {
-          pThis->mOffset = Numeric<Duration>(offsetStr);
-        } catch(Numeric<Duration>::ValueOutOfRange &) {
+          pThis->mOffset = Numeric<Seconds>(offsetStr);
+        } catch(Numeric<Seconds>::ValueOutOfRange &) {
           ZS_LOG_WARNING(Detail, internal::PresenceTimeZoneLocation_slog("value out of range"))
         }
       }
@@ -306,7 +306,7 @@ namespace openpeer
 
       ElementPtr insertEl = Element::create("timeZone");
 
-      if (Duration() != mOffset) {
+      if (Seconds() != mOffset) {
         insertEl->adoptAsLastChild(UseMessageHelper::createElementWithNumber("offset", string(mOffset)));
       }
 
@@ -337,7 +337,7 @@ namespace openpeer
     //-------------------------------------------------------------------------
     bool PresenceTimeZoneLocation::hasData() const
     {
-      return ((Duration() != mOffset) ||
+      return ((Seconds() != mOffset) ||
               (mAbbreviation.hasData()) ||
               (mName.hasData()) ||
 
@@ -742,8 +742,8 @@ namespace openpeer
         String lengthStr = UseMessageHelper::getElementText(extractEl->findFirstChildElement("length"));
         if (lengthStr.hasData()) {
           try {
-            info.mLength = Numeric<Duration>(lengthStr);
-          } catch(Numeric<Duration>::ValueOutOfRange &) {
+            info.mLength = Numeric<Seconds>(lengthStr);
+          } catch(Numeric<Seconds>::ValueOutOfRange &) {
             ZS_LOG_WARNING(Detail, internal::PresenceResources_slog("value out of range"))
           }
         }
@@ -801,7 +801,7 @@ namespace openpeer
         if (0 != info.mHeight) {
           resourceEl->adoptAsLastChild(UseMessageHelper::createElementWithNumber("height", string(info.mHeight)));
         }
-        if (Duration() != info.mLength) {
+        if (Seconds() != info.mLength) {
           resourceEl->adoptAsLastChild(UseMessageHelper::createElementWithNumber("length", string(info.mLength)));
         }
 
@@ -864,7 +864,7 @@ namespace openpeer
 
               (0 != mWidth) ||
               (0 != mHeight) ||
-              (Duration() != mLength) ||
+              (Seconds() != mLength) ||
 
               (mExternalLinkURL.hasData()) ||
               (mEncoding.hasData()));

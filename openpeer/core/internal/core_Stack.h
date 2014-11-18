@@ -135,12 +135,12 @@ namespace openpeer
 
         static Time getAuthorizedApplicationIDExpiry(
                                                      const char *authorizedApplicationID,
-                                                     Duration *outRemainingDurationAvailable = NULL
+                                                     Seconds *outRemainingDurationAvailable = NULL
                                                      );
 
         static bool isAuthorizedApplicationIDExpiryWindowStillValid(
                                                                     const char *authorizedApplicationID,
-                                                                    Duration minimumValidityWindowRequired
+                                                                    Seconds minimumValidityWindowRequired
                                                                     );
 
         //---------------------------------------------------------------------

@@ -65,7 +65,7 @@ namespace openpeer
 
       interaction ISettingsForThread
       {
-        static Duration getThreadMoveMessageToCacheTimeInSeconds();
+        static Seconds getThreadMoveMessageToCacheTimeInSeconds();
       };
 
       //-----------------------------------------------------------------------
@@ -119,7 +119,7 @@ namespace openpeer
         #pragma mark Settings => ISettingsForThread
         #pragma mark
 
-        virtual Duration getThreadMoveMessageToCacheTimeInSeconds();
+        virtual Seconds getThreadMoveMessageToCacheTimeInSeconds();
 
         //---------------------------------------------------------------------
         #pragma mark
@@ -183,7 +183,7 @@ namespace openpeer
 
         bool mAppliedDefaults {};
 
-        Duration mThreadMoveMessageToCacheTimeInSeconds;
+        Seconds mThreadMoveMessageToCacheTimeInSeconds;
       };
     }
   }

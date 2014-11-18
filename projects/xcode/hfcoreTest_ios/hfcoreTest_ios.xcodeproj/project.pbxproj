@@ -72,7 +72,6 @@
 		E243806816CBD91900441ABD /* MediaEngineDelegateWrapper.mm in Sources */ = {isa = PBXBuildFile; fileRef = E243806416CBD91900441ABD /* MediaEngineDelegateWrapper.mm */; };
 		E243806916CBD91900441ABD /* ViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = E243806616CBD91900441ABD /* ViewController.mm */; };
 		E243806C16CBD93000441ABD /* ViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = E243806A16CBD93000441ABD /* ViewController.xib */; };
-		E243807016CBD95400441ABD /* hfcoreMediaTest_ios-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = E243806D16CBD95400441ABD /* hfcoreMediaTest_ios-Info.plist */; };
 		E243807116CBD95400441ABD /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = E243806F16CBD95400441ABD /* main.m */; };
 		E243807416CBD96A00441ABD /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = E243807216CBD96A00441ABD /* InfoPlist.strings */; };
 		E2506E4D170DA49F005A43D2 /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E2506E4C170DA49E005A43D2 /* MobileCoreServices.framework */; };
@@ -1017,7 +1016,6 @@
 				E2437F4016CBD62200441ABD /* DetailViewController_iPhone.xib in Resources */,
 				E2437F4116CBD62200441ABD /* DetailViewController_iPad.xib in Resources */,
 				E243806C16CBD93000441ABD /* ViewController.xib in Resources */,
-				E243807016CBD95400441ABD /* hfcoreMediaTest_ios-Info.plist in Resources */,
 				E243807416CBD96A00441ABD /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1320,6 +1318,7 @@
 		0063D60216CB35D800E6DB4D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "hfcoreTest_ios/hfcoreTest_ios-Prefix.pch";
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -1338,6 +1337,7 @@
 		0063D60316CB35D800E6DB4D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "hfcoreTest_ios/hfcoreTest_ios-Prefix.pch";
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -1356,6 +1356,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "hfcoreMediaTest_ios/hfcoreMediaTest_ios-Prefix.pch";
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -1378,6 +1379,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "hfcoreMediaTest_ios/hfcoreMediaTest_ios-Prefix.pch";
 				GCC_PREPROCESSOR_DEFINITIONS = (

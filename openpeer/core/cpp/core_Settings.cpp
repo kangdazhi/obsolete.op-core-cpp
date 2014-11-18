@@ -75,10 +75,10 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      Duration ISettingsForThread::getThreadMoveMessageToCacheTimeInSeconds()
+      Seconds ISettingsForThread::getThreadMoveMessageToCacheTimeInSeconds()
       {
         SettingsPtr singleton = Settings::singleton();
-        if (!singleton) return Duration(Seconds(120));
+        if (!singleton) return Seconds(120);
         return singleton->getThreadMoveMessageToCacheTimeInSeconds();
       }
 
@@ -210,14 +210,14 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      Duration Settings::getThreadMoveMessageToCacheTimeInSeconds()
+      Seconds Settings::getThreadMoveMessageToCacheTimeInSeconds()
       {
         {
           AutoRecursiveLock lock(mLock);
-          if (Duration() != mThreadMoveMessageToCacheTimeInSeconds) return mThreadMoveMessageToCacheTimeInSeconds;
+          if (Seconds() != mThreadMoveMessageToCacheTimeInSeconds) return mThreadMoveMessageToCacheTimeInSeconds;
         }
 
-        Duration cacheDuration = Seconds(getUInt(OPENPEER_CORE_SETTING_THREAD_MOVE_MESSAGE_TO_CACHE_TIME_IN_SECONDS));
+        Seconds cacheDuration = Seconds(getUInt(OPENPEER_CORE_SETTING_THREAD_MOVE_MESSAGE_TO_CACHE_TIME_IN_SECONDS));
 
         {
           AutoRecursiveLock lock(mLock);

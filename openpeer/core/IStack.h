@@ -89,7 +89,7 @@ namespace openpeer
       //          remaining is returned.
       static Time getAuthorizedApplicationIDExpiry(
                                                    const char *authorizedApplicationID,
-                                                   Duration *outRemainingDurationAvailable = NULL
+                                                   Seconds *outRemainingDurationAvailable = NULL
                                                    );
 
       //-----------------------------------------------------------------------
@@ -106,7 +106,7 @@ namespace openpeer
       //          authorized application ID needs to be generated.
       static bool isAuthorizedApplicationIDExpiryWindowStillValid(
                                                                   const char *authorizedApplicationID,
-                                                                  Duration minimumValidityWindowRequired
+                                                                  Seconds minimumValidityWindowRequired
                                                                   );
     };
 
