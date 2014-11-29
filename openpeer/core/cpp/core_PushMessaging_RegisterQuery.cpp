@@ -72,30 +72,12 @@ namespace openpeer
                                                   IMessageQueuePtr queue,
                                                   const SharedRecursiveLock &lock,
                                                   IPushMessagingRegisterQueryDelegatePtr delegate,
-                                                  const char *deviceToken,
-                                                  Time expires,
-                                                  const char *mappedType,
-                                                  bool unreadBadge,
-                                                  const char *sound,
-                                                  const char *action,
-                                                  const char *launchImage,
-                                                  unsigned int priority,
-                                                  const ValueNameList &valueNames
+                                                  const RegisterDeviceInfo &deviceInfo
                                                   ) :
         MessageQueueAssociator(queue),
         SharedRecursiveLock(SharedRecursiveLock::create()),
         mDelegate(IPushMessagingRegisterQueryDelegateProxy::createWeak(UseStack::queueApplication(), delegate)),
-        mDeviceToken(deviceToken),
-        mExpires(expires),
-        mMappedType(mappedType),
-        mUnreadBadge(unreadBadge),
-        mSound(sound),
-        mAction(action),
-        mLaunchImage(launchImage),
-        mPriority(priority),
-        mValueNames(valueNames),
-
-        mLastErrorCode(0)
+        mDeviceInfo(deviceInfo)
       {
         ZS_LOG_BASIC(log("created"))
       }
@@ -128,18 +110,10 @@ namespace openpeer
                                                                            IMessageQueuePtr queue,
                                                                            const SharedRecursiveLock &lock,
                                                                            IPushMessagingRegisterQueryDelegatePtr delegate,
-                                                                           const char *deviceToken,
-                                                                           Time expires,
-                                                                           const char *mappedType,
-                                                                           bool unreadBadge,
-                                                                           const char *sound,
-                                                                           const char *action,
-                                                                           const char *launchImage,
-                                                                           unsigned int priority,
-                                                                           const ValueNameList &valueNames
+                                                                           const RegisterDeviceInfo &deviceInfo
                                                                            )
       {
-        RegisterQueryPtr pThis(new RegisterQuery(UseStack::queueCore(), lock, delegate, deviceToken, expires, mappedType, unreadBadge, sound, action, launchImage, priority, valueNames));
+        RegisterQueryPtr pThis(new RegisterQuery(UseStack::queueCore(), lock, delegate, deviceInfo));
         pThis->init();
         return pThis;
       }
@@ -147,13 +121,27 @@ namespace openpeer
       //-----------------------------------------------------------------------
       void PushMessaging::RegisterQuery::attachMailbox(IServicePushMailboxSessionPtr mailbox)
       {
+        typedef IServicePushMailboxSession::RegisterDeviceInfo UseMailboxRegisterDeviceInfo;
+
         ZS_LOG_DEBUG(log("attach mailbox called"))
 
         ZS_THROW_INVALID_ARGUMENT_IF(!mailbox)
 
         AutoRecursiveLock lock(*this);
 
-        mQuery = mailbox->registerDevice(mThisWeak.lock(), mDeviceToken, UseSettings::getString(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MAILBOX_FOLDER), mExpires, mMappedType, mUnreadBadge, mSound, mAction, mLaunchImage, mPriority, mValueNames);
+        UseMailboxRegisterDeviceInfo info;
+        info.mDeviceToken = mDeviceInfo.mDeviceToken;
+        info.mFolder = UseSettings::getString(OPENPEER_CORE_SETTING_PUSH_MESSAGING_DEFAULT_PUSH_MAILBOX_FOLDER);
+        info.mExpires = mDeviceInfo.mExpires;
+        info.mMappedType = mDeviceInfo.mMappedType;
+        info.mUnreadBadge = mDeviceInfo.mUnreadBadge;
+        info.mSound = mDeviceInfo.mSound;
+        info.mAction = mDeviceInfo.mAction;
+        info.mLaunchImage = mDeviceInfo.mLaunchImage;
+        info.mPriority = mDeviceInfo.mPriority;
+        info.mValueNames = mDeviceInfo.mValueNames;
+
+        mQuery = mailbox->registerDevice(mThisWeak.lock(), info);
 
         mHadQuery = true;
       }

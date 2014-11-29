@@ -10,6 +10,8 @@
 		0002BA5D19AF8E750004B288 /* core_PushMailboxManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0002BA5C19AF8E750004B288 /* core_PushMailboxManager.cpp */; };
 		000DA77E19ACE1AB00DAFCA9 /* core_PushPresence.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 000DA77D19ACE1AB00DAFCA9 /* core_PushPresence.cpp */; };
 		000DA78119ACEA5400DAFCA9 /* core_PushPresence_RegisterQuery.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 000DA78019ACEA5400DAFCA9 /* core_PushPresence_RegisterQuery.cpp */; };
+		0017A9E31A2A010B0099A0D5 /* core_PushMessaging_TransferNotifier.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0017A9E11A2A010B0099A0D5 /* core_PushMessaging_TransferNotifier.cpp */; };
+		0017A9E41A2A010B0099A0D5 /* core_PushPresence_TransferNotifier.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0017A9E21A2A010B0099A0D5 /* core_PushPresence_TransferNotifier.cpp */; };
 		0028818C18BF9257005C78F9 /* core_Backgrounding.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0028818B18BF9257005C78F9 /* core_Backgrounding.cpp */; };
 		0041DAB2185E6472004D4219 /* core_thread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0041DAB1185E6472004D4219 /* core_thread.cpp */; };
 		005F60B61756B7DB00BC3DD6 /* core_Cache.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 005F60B51756B7DB00BC3DD6 /* core_Cache.cpp */; };
@@ -63,6 +65,10 @@
 		000DA77F19ACE1BD00DAFCA9 /* core_PushPresence.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_PushPresence.h; sourceTree = "<group>"; };
 		000DA78019ACEA5400DAFCA9 /* core_PushPresence_RegisterQuery.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_PushPresence_RegisterQuery.cpp; sourceTree = "<group>"; };
 		000DA78219ACEA6500DAFCA9 /* core_PushPresence_RegisterQuery.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_PushPresence_RegisterQuery.h; sourceTree = "<group>"; };
+		0017A9E11A2A010B0099A0D5 /* core_PushMessaging_TransferNotifier.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_PushMessaging_TransferNotifier.cpp; sourceTree = "<group>"; };
+		0017A9E21A2A010B0099A0D5 /* core_PushPresence_TransferNotifier.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_PushPresence_TransferNotifier.cpp; sourceTree = "<group>"; };
+		0017A9E51A2A014F0099A0D5 /* core_PushMessaging_TransferNotifier.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_PushMessaging_TransferNotifier.h; sourceTree = "<group>"; };
+		0017A9E61A2A014F0099A0D5 /* core_PushPresence_TransferNotifier.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_PushPresence_TransferNotifier.h; sourceTree = "<group>"; };
 		0026040C1981DB480004F594 /* core_PushMessaging_PushQuery.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_PushMessaging_PushQuery.h; sourceTree = "<group>"; };
 		0026040D1981DDB80004F594 /* core_PushMessaging_RegisterQuery.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_PushMessaging_RegisterQuery.h; sourceTree = "<group>"; };
 		0028818918BF8B96005C78F9 /* IBackgrounding.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IBackgrounding.h; sourceTree = "<group>"; };
@@ -247,9 +253,11 @@
 				00D223A01936863A0053AF47 /* core_PushMessaging.cpp */,
 				0088E8F71982956A00A7C6B7 /* core_PushMessaging_PushQuery.cpp */,
 				0088E8F91982CD6D00A7C6B7 /* core_PushMessaging_RegisterQuery.cpp */,
+				0017A9E11A2A010B0099A0D5 /* core_PushMessaging_TransferNotifier.cpp */,
 				000DA77D19ACE1AB00DAFCA9 /* core_PushPresence.cpp */,
 				00F2B5A919AE1990001391CE /* core_PushPresence_Presence.cpp */,
 				000DA78019ACEA5400DAFCA9 /* core_PushPresence_RegisterQuery.cpp */,
+				0017A9E21A2A010B0099A0D5 /* core_PushPresence_TransferNotifier.cpp */,
 				00F11C37189B4BDC00EB33BB /* core_Settings.cpp */,
 				0063BF6816CA9B6900E6DB4D /* core_Stack.cpp */,
 				00F8073F19895D8400E14A52 /* core_ISystemMessage.cpp */,
@@ -289,9 +297,11 @@
 				00D223A2193686540053AF47 /* core_PushMessaging.h */,
 				0026040C1981DB480004F594 /* core_PushMessaging_PushQuery.h */,
 				0026040D1981DDB80004F594 /* core_PushMessaging_RegisterQuery.h */,
+				0017A9E51A2A014F0099A0D5 /* core_PushMessaging_TransferNotifier.h */,
 				000DA77F19ACE1BD00DAFCA9 /* core_PushPresence.h */,
 				00F2B5AB19AE19A9001391CE /* core_PushPresence_Presence.h */,
 				000DA78219ACEA6500DAFCA9 /* core_PushPresence_RegisterQuery.h */,
+				0017A9E61A2A014F0099A0D5 /* core_PushPresence_TransferNotifier.h */,
 				0063BF8516CA9B6900E6DB4D /* core_Stack.h */,
 				00F11C39189B4BEC00EB33BB /* core_Settings.h */,
 				0041DAB3185E6481004D4219 /* core_thread.h */,
@@ -364,11 +374,13 @@
 				00AE218F18D3ECA100F8CDB9 /* core_Account_ContactSubscription.cpp in Sources */,
 				0028818C18BF9257005C78F9 /* core_Backgrounding.cpp in Sources */,
 				0063C11916CA9B6A00E6DB4D /* core_Contact.cpp in Sources */,
+				0017A9E31A2A010B0099A0D5 /* core_PushMessaging_TransferNotifier.cpp in Sources */,
 				00E493C41997A75100335BB5 /* core_Encryptor.cpp in Sources */,
 				0063C11B16CA9B6A00E6DB4D /* core_ConversationThread.cpp in Sources */,
 				0088E8F81982956A00A7C6B7 /* core_PushMessaging_PushQuery.cpp in Sources */,
 				007B84F01862AE1300BB1284 /* core_ConversationThreadHost_PeerLocation.cpp in Sources */,
 				0041DAB2185E6472004D4219 /* core_thread.cpp in Sources */,
+				0017A9E41A2A010B0099A0D5 /* core_PushPresence_TransferNotifier.cpp in Sources */,
 				0063C11C16CA9B6A00E6DB4D /* core_ConversationThreadDocumentFetcher.cpp in Sources */,
 				0063C11D16CA9B6A00E6DB4D /* core_ConversationThreadHost.cpp in Sources */,
 				0063C11E16CA9B6A00E6DB4D /* core_ConversationThreadSlave.cpp in Sources */,

@@ -75,13 +75,11 @@ namespace openpeer
         ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSession, IServicePushMailboxSession)
         ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSessionDelegate, IServicePushMailboxSessionDelegate)
         ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSessionSubscription, IServicePushMailboxSessionSubscription)
-        ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxDatabaseAbstractionDelegate, IServicePushMailboxDatabaseAbstractionDelegate)
-
+        ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSessionTransferDelegate, IServicePushMailboxSessionTransferDelegate)
 
         static IServicePushMailboxSessionPtr create(
                                                     IServicePushMailboxSessionDelegatePtr inDelegate,
-                                                    IServicePushMailboxDatabaseAbstractionDelegatePtr inDatabaseDelegate,
-                                                    IMessageQueuePtr inQueue,
+                                                    IServicePushMailboxSessionTransferDelegatePtr inTransferDelegate,
                                                     IAccountPtr inAccount,
                                                     IServicePushMailboxSessionSubscriptionPtr &outSubscription
                                                     );
@@ -105,12 +103,11 @@ namespace openpeer
         ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSession, IServicePushMailboxSession)
         ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSessionDelegate, IServicePushMailboxSessionDelegate)
         ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSessionSubscription, IServicePushMailboxSessionSubscription)
-        ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxDatabaseAbstractionDelegate, IServicePushMailboxDatabaseAbstractionDelegate)
+        ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSessionTransferDelegate, IServicePushMailboxSessionTransferDelegate)
 
         static IServicePushMailboxSessionPtr create(
                                                     IServicePushMailboxSessionDelegatePtr inDelegate,
-                                                    IServicePushMailboxDatabaseAbstractionDelegatePtr inDatabaseDelegate,
-                                                    IMessageQueuePtr inQueue,
+                                                    IServicePushMailboxSessionTransferDelegatePtr inTransferDelegate,
                                                     IAccountPtr inAccount,
                                                     IServicePushMailboxSessionSubscriptionPtr &outSubscription
                                                     );
@@ -141,7 +138,7 @@ namespace openpeer
         ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSession, IServicePushMailboxSession)
         ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSessionDelegate, IServicePushMailboxSessionDelegate)
         ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSessionSubscription, IServicePushMailboxSessionSubscription)
-        ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxDatabaseAbstractionDelegate, IServicePushMailboxDatabaseAbstractionDelegate)
+        ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSessionTransferDelegate, IServicePushMailboxSessionTransferDelegate)
 
         struct Mailbox
         {
@@ -178,8 +175,7 @@ namespace openpeer
 
         virtual IServicePushMailboxSessionPtr create(
                                                     IServicePushMailboxSessionDelegatePtr inDelegate,
-                                                    IServicePushMailboxDatabaseAbstractionDelegatePtr inDatabaseDelegate,
-                                                    IMessageQueuePtr inQueue,
+                                                    IServicePushMailboxSessionTransferDelegatePtr inTransferDelegate,
                                                     IAccountPtr inAccount,
                                                     IServicePushMailboxSessionSubscriptionPtr &outSubscription
                                                     );
@@ -191,8 +187,7 @@ namespace openpeer
 
         // (duplicate) virtual IServicePushMailboxSessionPtr create(
         //                                                          IServicePushMailboxSessionDelegatePtr inDelegate,
-        //                                                          IServicePushMailboxDatabaseAbstractionDelegatePtr inDatabaseDelegate,
-        //                                                          IMessageQueuePtr inQueue,
+        //                                                          IServicePushMailboxSessionTransferDelegatePtr inTransferDelegate,
         //                                                          IAccountPtr inAccount,
         //                                                          IServicePushMailboxSessionSubscriptionPtr &outSubscription
         //                                                          );

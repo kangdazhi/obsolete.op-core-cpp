@@ -65,15 +65,7 @@ namespace openpeer
                         IMessageQueuePtr queue,
                         const SharedRecursiveLock &lock,
                         IPushMessagingRegisterQueryDelegatePtr delegate,
-                        const char *deviceToken,
-                        Time expires,
-                        const char *mappedType,
-                        bool unreadBadge,
-                        const char *sound,
-                        const char *action,
-                        const char *launchImage,
-                        unsigned int priority,
-                        const ValueNameList &valueNames
+                        const RegisterDeviceInfo &deviceInfo
                         );
 
           void init();
@@ -90,15 +82,7 @@ namespace openpeer
                                          IMessageQueuePtr queue,
                                          const SharedRecursiveLock &lock,
                                          IPushMessagingRegisterQueryDelegatePtr delegate,
-                                         const char *deviceToken,
-                                         Time expires,
-                                         const char *mappedType,
-                                         bool unreadBadge,
-                                         const char *sound,
-                                         const char *action,
-                                         const char *launchImage,
-                                         unsigned int priority,
-                                         const ValueNameList &valueNames
+                                         const RegisterDeviceInfo &deviceInfo
                                          );
 
           void attachMailbox(IServicePushMailboxSessionPtr mailbox);
@@ -145,17 +129,9 @@ namespace openpeer
           bool mHadQuery {};
           IServicePushMailboxRegisterQueryPtr mQuery;
 
-          String mDeviceToken;
-          Time mExpires;
-          String mMappedType;
-          bool mUnreadBadge;
-          String mSound;
-          String mAction;
-          String mLaunchImage;
-          unsigned int mPriority;
-          ValueNameList mValueNames;
+          RegisterDeviceInfo mDeviceInfo;
 
-          WORD mLastErrorCode;
+          WORD mLastErrorCode {};
           String mLastErrorReason;
         };
 

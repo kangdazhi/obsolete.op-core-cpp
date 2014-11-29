@@ -45,8 +45,11 @@ namespace openpeer
   {
     using zsLib::PUID;
     using zsLib::WORD;
+    using zsLib::UINT;
     using zsLib::LONG;
     using zsLib::ULONG;
+    using zsLib::LONGEST;
+    using zsLib::ULONGEST;
     using zsLib::BYTE;
     using zsLib::Time;
     using zsLib::String;
@@ -221,8 +224,10 @@ namespace openpeer
     ZS_DECLARE_INTERACTION_PTR(IPushMessaging)
     ZS_DECLARE_INTERACTION_PTR(IPushMessagingQuery)
     ZS_DECLARE_INTERACTION_PTR(IPushMessagingRegisterQuery)
+    ZS_DECLARE_INTERACTION_PTR(IPushMessagingTransferNotifier)
     ZS_DECLARE_INTERACTION_PTR(IPushPresence)
     ZS_DECLARE_INTERACTION_PTR(IPushPresenceRegisterQuery)
+    ZS_DECLARE_INTERACTION_PTR(IPushPresenceTransferNotifier)
     ZS_DECLARE_INTERACTION_PTR(ISettings)
     ZS_DECLARE_INTERACTION_PTR(ISettingsDelegate)
     ZS_DECLARE_INTERACTION_PTR(ISystemMessage)
@@ -241,14 +246,13 @@ namespace openpeer
     ZS_DECLARE_INTERACTION_PROXY(IIdentityLookupDelegate)
     ZS_DECLARE_INTERACTION_PROXY(IMediaEngineDelegate)
     ZS_DECLARE_INTERACTION_PROXY(IPushMessagingDelegate)
+    ZS_DECLARE_INTERACTION_PROXY(IPushMessagingTransferDelegate)
     ZS_DECLARE_INTERACTION_PROXY(IPushMessagingQueryDelegate)
     ZS_DECLARE_INTERACTION_PROXY(IPushMessagingRegisterQueryDelegate)
     ZS_DECLARE_INTERACTION_PROXY(IPushPresenceDelegate)
+    ZS_DECLARE_INTERACTION_PROXY(IPushPresenceTransferDelegate)
     ZS_DECLARE_INTERACTION_PROXY(IPushPresenceRegisterQueryDelegate)
     ZS_DECLARE_INTERACTION_PROXY(IStackDelegate)
-
-    ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxDatabaseAbstractionDelegate, IPushMessagingDatabaseAbstractionDelegate)
-    ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxDatabaseAbstractionDelegate, IPushPresenceDatabaseAbstractionDelegate)
 
     ZS_DECLARE_TYPEDEF_PTR(std::list<IContactPtr>, ContactList)
     ZS_DECLARE_TYPEDEF_PTR(std::list<ContactProfileInfo>, ContactProfileInfoList)

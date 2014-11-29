@@ -75,19 +75,24 @@ namespace openpeer
                            public IPushPresence,
                            public IWakeDelegate,
                            public IAccountDelegate,
-                           public stack::IServicePushMailboxSessionDelegate
+                           public stack::IServicePushMailboxSessionDelegate,
+                           public stack::IServicePushMailboxSessionTransferDelegate
       {
       public:
         friend interaction IPushPresenceFactory;
         friend interaction IPushPresence;
         friend class RegisterQuery;
+        friend class TransferNotifier;
 
         ZS_DECLARE_CLASS_PTR(RegisterQuery)
+        ZS_DECLARE_CLASS_PTR(TransferNotifier)
 
         ZS_DECLARE_TYPEDEF_PTR(IPushMailboxManagerForPushPresence, UsePushMailboxManager)
 
         ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSession, IServicePushMailboxSession)
         ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSessionSubscription, IServicePushMailboxSessionSubscription)
+        ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSessionTransferNotifier, IServicePushMailboxSessionTransferNotifier)
+
         ZS_DECLARE_TYPEDEF_PTR(IAccountForPushPresence, UseAccount)
         ZS_DECLARE_TYPEDEF_PTR(IContactForPushPresence, UseContact)
 
@@ -105,7 +110,7 @@ namespace openpeer
         PushPresence(
                       IMessageQueuePtr queue,
                       IPushPresenceDelegatePtr delegate,
-                      IPushPresenceDatabaseAbstractionDelegatePtr databaseDelegate,
+                      IPushPresenceTransferDelegatePtr transferDelegate,
                       UseAccountPtr account
                       );
         
@@ -132,7 +137,7 @@ namespace openpeer
 
         static PushPresencePtr create(
                                       IPushPresenceDelegatePtr delegate,
-                                      IPushPresenceDatabaseAbstractionDelegatePtr databaseDelegate,
+                                      IPushPresenceTransferDelegatePtr transferDelegate,
                                       IAccountPtr account
                                       );
 
@@ -147,15 +152,7 @@ namespace openpeer
 
         virtual IPushPresenceRegisterQueryPtr registerDevice(
                                                              IPushPresenceRegisterQueryDelegatePtr inDelegate,
-                                                             const char *inDeviceToken,
-                                                             Time inExpires,
-                                                             const char *inMappedType,
-                                                             bool inUnreadBadge,
-                                                             const char *inSound,
-                                                             const char *inAction,
-                                                             const char *inLaunchImage,
-                                                             unsigned int inPriority,
-                                                             const ValueNameList &inValueNames
+                                                             const RegisterDeviceInfo &deviceInfo
                                                              );
 
         virtual void send(
@@ -206,6 +203,29 @@ namespace openpeer
                                                               const char *folder
                                                               );
 
+        //---------------------------------------------------------------------
+        #pragma mark
+        #pragma mark PushMessaging => IServicePushMailboxSessionTransferDelegate
+        #pragma mark
+
+        virtual void onServicePushMailboxSessionTransferUploadFileDataToURL(
+                                                                    IServicePushMailboxSessionPtr session,
+                                                                    const char *postURL,
+                                                                    const char *fileNameContainingData,
+                                                                    ULONGEST totalFileSizeInBytes,
+                                                                    ULONGEST remainingBytesToUpload,
+                                                                    IServicePushMailboxSessionTransferNotifierPtr notifier
+                                                                    );
+
+        virtual void onServicePushMailboxSessionTransferDownloadDataFromURL(
+                                                                    IServicePushMailboxSessionPtr session,
+                                                                    const char *getURL,
+                                                                    const char *fileNameToAppendData,
+                                                                    ULONGEST finalFileSizeInBytes,
+                                                                    ULONGEST remainingBytesToBeDownloaded,
+                                                                    IServicePushMailboxSessionTransferNotifierPtr notifier
+                                                                    );
+
       private:
         //---------------------------------------------------------------------
         #pragma mark
@@ -238,6 +258,10 @@ namespace openpeer
 #include <openpeer/core/internal/core_PushPresence_RegisterQuery.h>
 #undef OPENPEER_CORE_PUSH_PRESENCE_REGISTER_QUERY
 
+#define OPENPEER_CORE_PUSH_PRESENCE_TRANSFER_NOTIFIER
+#include <openpeer/core/internal/core_PushPresence_TransferNotifier.h>
+#undef OPENPEER_CORE_PUSH_PRESENCE_TRANSFER_NOTIFIER
+
       protected:
         //---------------------------------------------------------------------
         #pragma mark
@@ -249,7 +273,7 @@ namespace openpeer
         PushPresencePtr mGracefulShutdownReference;
 
         IPushPresenceDelegatePtr mDelegate;
-        IPushPresenceDatabaseAbstractionDelegatePtr mDatabase;
+        IPushPresenceTransferDelegatePtr mTransferDelegate;
 
         IServicePushMailboxSessionPtr mMailbox;
         IServicePushMailboxSessionSubscriptionPtr mMailboxSubscription;
@@ -283,7 +307,7 @@ namespace openpeer
 
         virtual PushPresencePtr create(
                                        IPushPresenceDelegatePtr delegate,
-                                       IPushPresenceDatabaseAbstractionDelegatePtr databaseDelegate,
+                                       IPushPresenceTransferDelegatePtr transferDelegate,
                                        IAccountPtr account
                                        );
       };

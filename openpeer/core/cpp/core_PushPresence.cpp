@@ -90,13 +90,13 @@ namespace openpeer
       PushPresence::PushPresence(
                                  IMessageQueuePtr queue,
                                  IPushPresenceDelegatePtr delegate,
-                                 IPushPresenceDatabaseAbstractionDelegatePtr databaseDelegate,
+                                 IPushPresenceTransferDelegatePtr transferDelegate,
                                  UseAccountPtr account
                                  ) :
         MessageQueueAssociator(queue),
         SharedRecursiveLock(SharedRecursiveLock::create()),
         mDelegate(IPushPresenceDelegateProxy::createWeak(UseStack::queueApplication(), delegate)),
-        mDatabase(databaseDelegate),
+        mTransferDelegate(IPushPresenceTransferDelegateProxy::createWeak(UseStack::queueApplication(), transferDelegate)),
         mAccount(account),
         mCurrentState(PushPresenceState_Pending)
       {
@@ -148,11 +148,11 @@ namespace openpeer
       //-----------------------------------------------------------------------
       PushPresencePtr PushPresence::create(
                                            IPushPresenceDelegatePtr delegate,
-                                           IPushPresenceDatabaseAbstractionDelegatePtr databaseDelegate,
+                                           IPushPresenceTransferDelegatePtr transferDelegate,
                                            IAccountPtr inAccount
                                            )
       {
-        PushPresencePtr pThis(new PushPresence(UseStack::queueCore(), delegate, databaseDelegate, Account::convert(inAccount)));
+        PushPresencePtr pThis(new PushPresence(UseStack::queueCore(), delegate, transferDelegate, Account::convert(inAccount)));
         pThis->init();
         return pThis;
       }
@@ -182,20 +182,12 @@ namespace openpeer
       //-----------------------------------------------------------------------
       IPushPresenceRegisterQueryPtr PushPresence::registerDevice(
                                                                  IPushPresenceRegisterQueryDelegatePtr inDelegate,
-                                                                 const char *inDeviceToken,
-                                                                 Time inExpires,
-                                                                 const char *inMappedType,
-                                                                 bool inUnreadBadge,
-                                                                 const char *inSound,
-                                                                 const char *inAction,
-                                                                 const char *inLaunchImage,
-                                                                 unsigned int inPriority,
-                                                                 const ValueNameList &inValueNames
+                                                                 const RegisterDeviceInfo &deviceInfo
                                                                  )
       {
-        ZS_LOG_DEBUG(log("register called") + ZS_PARAM("delegate", (bool)inDelegate) + ZS_PARAM("device token", inDeviceToken) + ZS_PARAM("expires", inExpires) + ZS_PARAM("mapped type", inMappedType) + ZS_PARAM("unread badge", inUnreadBadge) + ZS_PARAM("sound", inSound) + ZS_PARAM("action", inAction) + ZS_PARAM("launch image", inLaunchImage) + ZS_PARAM("priority", inPriority) + ZS_PARAM("value names", inValueNames.size()))
+        ZS_LOG_DEBUG(log("register called") + ZS_PARAM("delegate", (bool)inDelegate) + deviceInfo.toDebug())
 
-        RegisterQueryPtr query = RegisterQuery::create(getAssociatedMessageQueue(), *this, inDelegate, inDeviceToken, inExpires, inMappedType, inUnreadBadge, inSound, inAction, inLaunchImage, inPriority, inValueNames);
+        RegisterQueryPtr query = RegisterQuery::create(getAssociatedMessageQueue(), *this, inDelegate, deviceInfo);
         if (mMailbox) query->attachMailbox(mMailbox);
 
         AutoRecursiveLock lock(*this);
@@ -376,6 +368,58 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       #pragma mark
+      #pragma mark PushPresence => IServicePushMailboxSessionTransferDelegate
+      #pragma mark
+
+      //-----------------------------------------------------------------------
+      void PushPresence::onServicePushMailboxSessionTransferUploadFileDataToURL(
+                                                                                IServicePushMailboxSessionPtr session,
+                                                                                const char *postURL,
+                                                                                const char *fileNameContainingData,
+                                                                                ULONGEST totalFileSizeInBytes,
+                                                                                ULONGEST remainingBytesToUpload,
+                                                                                IServicePushMailboxSessionTransferNotifierPtr inNotifier
+                                                                                )
+      {
+        ZS_LOG_DEBUG(log("upload file to url") + ZS_PARAM("session", session->getID()) + ZS_PARAM("url", postURL) + ZS_PARAM("filename", fileNameContainingData) + ZS_PARAM("total file size", totalFileSizeInBytes) + ZS_PARAM("remaining", remainingBytesToUpload))
+
+        AutoRecursiveLock lock(*this);
+
+        TransferNotifierPtr notifier = TransferNotifier::create(inNotifier);
+
+        try {
+          mTransferDelegate->onPushPresenceTransferUploadFileDataToURL(mThisWeak.lock(), postURL, fileNameContainingData, totalFileSizeInBytes, remainingBytesToUpload, notifier);
+        } catch (IPushPresenceTransferDelegateProxy::Exceptions::DelegateGone &) {
+        }
+      }
+
+      //-----------------------------------------------------------------------
+      void PushPresence::onServicePushMailboxSessionTransferDownloadDataFromURL(
+                                                                                IServicePushMailboxSessionPtr session,
+                                                                                const char *getURL,
+                                                                                const char *fileNameToAppendData,
+                                                                                ULONGEST finalFileSizeInBytes,
+                                                                                ULONGEST remainingBytesToBeDownloaded,
+                                                                                IServicePushMailboxSessionTransferNotifierPtr inNotifier
+                                                                                )
+      {
+        ZS_LOG_DEBUG(log("download file from url") + ZS_PARAM("session", session->getID()) + ZS_PARAM("url", getURL) + ZS_PARAM("filename", fileNameToAppendData) + ZS_PARAM("total file size", finalFileSizeInBytes) + ZS_PARAM("remaining", remainingBytesToBeDownloaded))
+
+        AutoRecursiveLock lock(*this);
+
+        TransferNotifierPtr notifier = TransferNotifier::create(inNotifier);
+
+        try {
+          mTransferDelegate->onPushPresenceTransferDownloadDataFromURL(mThisWeak.lock(), getURL, fileNameToAppendData, finalFileSizeInBytes, remainingBytesToBeDownloaded, notifier);
+        } catch (IPushPresenceTransferDelegateProxy::Exceptions::DelegateGone &) {
+        }
+      }
+
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      //-----------------------------------------------------------------------
+      #pragma mark
       #pragma mark PushPresence => (internal)
       #pragma mark
 
@@ -411,7 +455,7 @@ namespace openpeer
         UseServicesHelper::debugAppend(resultEl, "graceful shutdown reference", (bool)mGracefulShutdownReference);
 
         UseServicesHelper::debugAppend(resultEl, "delegate", (bool)mDelegate);
-        UseServicesHelper::debugAppend(resultEl, "database delegate", (bool)mDatabase);
+        UseServicesHelper::debugAppend(resultEl, "transfer delegate", (bool)mTransferDelegate);
 
         UseServicesHelper::debugAppend(resultEl, IServicePushMailboxSession::toDebug(mMailbox));
         UseServicesHelper::debugAppend(resultEl, "mailbox subscription", mMailboxSubscription ? mMailboxSubscription->getID() : 0);
@@ -616,7 +660,7 @@ namespace openpeer
 
         ZS_LOG_DEBUG(log("step mailbox - setting up mailbox"))
 
-        mMailbox = UsePushMailboxManager::create(mThisWeak.lock(), mDatabase, UseStack::queueApplication(), Account::convert(mAccount), mMailboxSubscription);
+        mMailbox = UsePushMailboxManager::create(mThisWeak.lock(), mThisWeak.lock(), Account::convert(mAccount), mMailboxSubscription);
 
         String monitorFolder = UseSettings::getString(OPENPEER_CORE_SETTING_PUSH_PRESENCE_DEFAULT_PUSH_MAILBOX_FOLDER);
 
@@ -780,12 +824,12 @@ namespace openpeer
       //-----------------------------------------------------------------------
       PushPresencePtr IPushPresenceFactory::create(
                                                    IPushPresenceDelegatePtr delegate,
-                                                   IPushPresenceDatabaseAbstractionDelegatePtr databaseDelegate,
+                                                   IPushPresenceTransferDelegatePtr transferDelegate,
                                                    IAccountPtr account
                                                    )
       {
         if (this) {}
-        return PushPresence::create(delegate, databaseDelegate, account);
+        return PushPresence::create(delegate, transferDelegate, account);
       }
 
       //-----------------------------------------------------------------------
@@ -823,11 +867,11 @@ namespace openpeer
     //-------------------------------------------------------------------------
     IPushPresencePtr IPushPresence::create(
                                            IPushPresenceDelegatePtr delegate,
-                                           IPushPresenceDatabaseAbstractionDelegatePtr databaseDelegate,
+                                           IPushPresenceTransferDelegatePtr transferDelegate,
                                            IAccountPtr account
                                            )
     {
-      return internal::IPushPresenceFactory::singleton().create(delegate, databaseDelegate, account);
+      return internal::IPushPresenceFactory::singleton().create(delegate, transferDelegate, account);
     }
 
     //-------------------------------------------------------------------------
@@ -889,6 +933,46 @@ namespace openpeer
       UseServicesHelper::debugAppend(resultEl, "expires", mExpires);
 
       UseServicesHelper::debugAppend(resultEl, IContact::toDebug(mFrom));
+
+      return resultEl;
+    }
+
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    #pragma mark
+    #pragma mark IPushPresence::Status
+    #pragma mark
+
+    //-------------------------------------------------------------------------
+    bool IPushPresence::RegisterDeviceInfo::hasData() const
+    {
+      return ((mDeviceToken.hasData()) ||
+              (Time() != mExpires) ||
+              (mMappedType.hasData()) ||
+              (mUnreadBadge) ||
+              (mSound.hasData()) ||
+              (mAction.hasData()) ||
+              (mLaunchImage.hasData()) ||
+              (0 != mPriority) ||
+              (mValueNames.size() > 0));
+    }
+
+    //-------------------------------------------------------------------------
+    ElementPtr IPushPresence::RegisterDeviceInfo::toDebug() const
+    {
+      ElementPtr resultEl = Element::create("core::IPushPresence::RegisterDeviceInfo");
+
+      UseServicesHelper::debugAppend(resultEl, "device token", mDeviceToken);
+      UseServicesHelper::debugAppend(resultEl, "expires", mExpires);
+      UseServicesHelper::debugAppend(resultEl, "mapped type", mMappedType);
+      UseServicesHelper::debugAppend(resultEl, "unread badge", mUnreadBadge);
+      UseServicesHelper::debugAppend(resultEl, "sound", mSound);
+      UseServicesHelper::debugAppend(resultEl, "action", mAction);
+      UseServicesHelper::debugAppend(resultEl, "launch image", mLaunchImage);
+      UseServicesHelper::debugAppend(resultEl, "priority", mPriority);
+      UseServicesHelper::debugAppend(resultEl, "value names", mValueNames.size());
 
       return resultEl;
     }

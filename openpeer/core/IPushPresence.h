@@ -101,7 +101,7 @@ namespace openpeer
       // PURPOSE: create a connection to the push presence service
       static IPushPresencePtr create(
                                      IPushPresenceDelegatePtr delegate,
-                                     IPushPresenceDatabaseAbstractionDelegatePtr databaseDelegate,
+                                     IPushPresenceTransferDelegatePtr transferDelegate,
                                      IAccountPtr account
                                      );
 
@@ -120,19 +120,27 @@ namespace openpeer
       // PURPOSE: shutdown the connection to the push presence service
       virtual void shutdown() = 0;
 
+      struct RegisterDeviceInfo
+      {
+        String  mDeviceToken;       // a token used for pushing to this particular service
+        Time    mExpires;           // how long should the subscription for push messaging last; pass in Time() to remove a previous subscription
+        String  mMappedType;        // for APNS maps to "loc-key"
+        bool    mUnreadBadge {};    // true causes total unread messages to be displayed in badge
+        String  mSound;             // what sound to play upon receiving a message. For APNS, maps to "sound" field
+        String  mAction;            // for APNS, maps to "action-loc-key"
+        String  mLaunchImage;       // for APNS, maps to "launch-image"
+        UINT    mPriority {};       // for APNS, maps to push priority
+        ValueNameList mValueNames;  // list of values requested from each push from the push server (in order they should be delivered); empty = all values
+
+        bool hasData() const;
+        ElementPtr toDebug() const;
+      };
+
       //-----------------------------------------------------------------------
       // PURPOSE: register or unregister for push presence status updates
       virtual IPushPresenceRegisterQueryPtr registerDevice(
                                                            IPushPresenceRegisterQueryDelegatePtr inDelegate,
-                                                           const char *inDeviceToken,        // a token used for pushing to this particular service
-                                                           Time inExpires,                   // how long should the subscription for push messaging last; pass in Time() to remove a previous subscription
-                                                           const char *inMappedType,         // for APNS maps to "loc-key"
-                                                           bool inUnreadBadge,               // true causes total unread messages to be displayed in badge
-                                                           const char *inSound,              // what sound to play upon receiving a message. For APNS, maps to "sound" field
-                                                           const char *inAction,             // for APNS, maps to "action-loc-key"
-                                                           const char *inLaunchImage,        // for APNS, maps to "launch-image"
-                                                           unsigned int inPriority,          // for APNS, maps to push priority
-                                                           const ValueNameList &inValueNames // list of values requested from each push from the push server (in order they should be delivered); empty = all values
+                                                           const RegisterDeviceInfo &inDeviceInfo
                                                            ) = 0;
 
       //-----------------------------------------------------------------------
@@ -214,6 +222,60 @@ namespace openpeer
     interaction IPushPresenceRegisterQueryDelegate
     {
       virtual void onPushPresenceRegisterQueryCompleted(IPushPresenceRegisterQueryPtr query) = 0;
+    };
+
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    #pragma mark
+    #pragma mark IPushPresenceTransferDelegate
+    #pragma mark
+
+    interaction IPushPresenceTransferDelegate
+    {
+      //-----------------------------------------------------------------------
+      // PURPOSE: upload a file to a url
+      // NOTES:   - this upload should occur even while the application goes
+      //            to the background
+      //          - this method is called asynchronously on the application's
+      //            thread
+      virtual void onPushPresenceTransferUploadFileDataToURL(
+                                                             IPushPresencePtr session,
+                                                             const char *postURL,
+                                                             const char *fileNameContainingData,
+                                                             ULONGEST totalFileSizeInBytes,            // the total bytes that exists within the file
+                                                             ULONGEST remainingBytesToUpload,          // the file should be seeked to the position of (total size - remaining) and upload the remaining bytes from this position in the file
+                                                             IPushPresenceTransferNotifierPtr notifier
+                                                             ) = 0;
+
+      //-----------------------------------------------------------------------
+      // PURPOSE: download a file from a URL
+      // NOTES:   - this download should occur even while the application goes
+      //            to the background
+      //          - this method is called asynchronously on the application's
+      //            thread
+      virtual void onPushPresenceTransferDownloadDataFromURL(
+                                                             IPushPresencePtr session,
+                                                             const char *getURL,
+                                                             const char *fileNameToAppendData,          // the existing file name to open and append
+                                                             ULONGEST finalFileSizeInBytes,             // when the download completes the file size will be this size
+                                                             ULONGEST remainingBytesToBeDownloaded,     // the downloaded data will be appended to the end of the existing file and this is the total bytes that are to be downloaded
+                                                             IPushPresenceTransferNotifierPtr notifier
+                                                             ) = 0;
+    };
+
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    #pragma mark
+    #pragma mark IPushPresenceTransferNotifier
+    #pragma mark
+
+    interaction IPushPresenceTransferNotifier
+    {
+      virtual void notifyComplete(bool wasSuccessful) = 0;
     };
 
     //-------------------------------------------------------------------------
@@ -413,4 +475,11 @@ ZS_DECLARE_PROXY_END()
 ZS_DECLARE_PROXY_BEGIN(openpeer::core::IPushPresenceRegisterQueryDelegate)
 ZS_DECLARE_PROXY_TYPEDEF(openpeer::core::IPushPresenceRegisterQueryPtr, IPushPresenceRegisterQueryPtr)
 ZS_DECLARE_PROXY_METHOD_1(onPushPresenceRegisterQueryCompleted, IPushPresenceRegisterQueryPtr)
+ZS_DECLARE_PROXY_END()
+
+ZS_DECLARE_PROXY_BEGIN(openpeer::core::IPushPresenceTransferDelegate)
+ZS_DECLARE_PROXY_SUBSCRIPTIONS_TYPEDEF(openpeer::core::IPushPresencePtr, IPushPresencePtr)
+ZS_DECLARE_PROXY_SUBSCRIPTIONS_TYPEDEF(openpeer::core::IPushPresenceTransferNotifierPtr, IPushPresenceTransferNotifierPtr)
+ZS_DECLARE_PROXY_METHOD_6(onPushPresenceTransferUploadFileDataToURL, IPushPresencePtr, const char *, const char *, ULONGEST, ULONGEST, IPushPresenceTransferNotifierPtr)
+ZS_DECLARE_PROXY_METHOD_6(onPushPresenceTransferDownloadDataFromURL, IPushPresencePtr, const char *, const char *, ULONGEST, ULONGEST, IPushPresenceTransferNotifierPtr)
 ZS_DECLARE_PROXY_END()

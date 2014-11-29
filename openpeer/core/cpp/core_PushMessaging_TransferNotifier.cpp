@@ -29,7 +29,7 @@
 
  */
 
-#include <openpeer/core/internal/core_PushPresence.h>
+#include <openpeer/core/internal/core_PushMessaging.h>
 #include <openpeer/core/internal/core_Stack.h>
 
 #include <openpeer/services/IHelper.h>
@@ -64,37 +64,27 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       #pragma mark
-      #pragma mark PushPresence::RegisterQuery
+      #pragma mark PushMessaging::RegisterQuery
       #pragma mark
 
       //-----------------------------------------------------------------------
-      PushPresence::RegisterQuery::RegisterQuery(
-                                                  IMessageQueuePtr queue,
-                                                  const SharedRecursiveLock &lock,
-                                                  IPushPresenceRegisterQueryDelegatePtr delegate,
-                                                 const RegisterDeviceInfo &deviceInfo
-                                                  ) :
-        MessageQueueAssociator(queue),
-        SharedRecursiveLock(SharedRecursiveLock::create()),
-        mDelegate(IPushPresenceRegisterQueryDelegateProxy::createWeak(UseStack::queueApplication(), delegate)),
-        mDeviceInfo(deviceInfo)
+      PushMessaging::TransferNotifier::TransferNotifier(IServicePushMailboxSessionTransferNotifierPtr notifier) :
+        mNotifier(notifier)
       {
         ZS_LOG_BASIC(log("created"))
       }
 
       //-----------------------------------------------------------------------
-      void PushPresence::RegisterQuery::init()
+      void PushMessaging::TransferNotifier::init()
       {
-        AutoRecursiveLock lock(*this);
         ZS_LOG_DEBUG(log("init called"))
       }
 
       //-----------------------------------------------------------------------
-      PushPresence::RegisterQuery::~RegisterQuery()
+      PushMessaging::TransferNotifier::~TransferNotifier()
       {
         mThisWeak.reset();
         ZS_LOG_BASIC(log("destroyed"))
-        cancel();
       }
 
       //-----------------------------------------------------------------------
@@ -102,117 +92,31 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       #pragma mark
-      #pragma mark PushPresence::RegisterQuery => friend PushPresence
+      #pragma mark PushMessaging::TransferNotifier => friend PushMessaging
       #pragma mark
 
       //-----------------------------------------------------------------------
-      PushPresence::RegisterQueryPtr PushPresence::RegisterQuery::create(
-                                                                         IMessageQueuePtr queue,
-                                                                         const SharedRecursiveLock &lock,
-                                                                         IPushPresenceRegisterQueryDelegatePtr delegate,
-                                                                         const RegisterDeviceInfo &deviceInfo
-                                                                         )
+      PushMessaging::TransferNotifierPtr PushMessaging::TransferNotifier::create(IServicePushMailboxSessionTransferNotifierPtr notifier)
       {
-        RegisterQueryPtr pThis(new RegisterQuery(UseStack::queueCore(), lock, delegate, deviceInfo));
+        TransferNotifierPtr pThis(new TransferNotifier(notifier));
         pThis->init();
         return pThis;
       }
 
       //-----------------------------------------------------------------------
-      void PushPresence::RegisterQuery::attachMailbox(IServicePushMailboxSessionPtr mailbox)
-      {
-        typedef IServicePushMailboxSession::RegisterDeviceInfo UseMailboxRegisterDeviceInfo;
-
-        ZS_LOG_DEBUG(log("attach mailbox called"))
-
-        ZS_THROW_INVALID_ARGUMENT_IF(!mailbox)
-
-        AutoRecursiveLock lock(*this);
-
-        UseMailboxRegisterDeviceInfo info;
-        info.mDeviceToken = mDeviceInfo.mDeviceToken;
-        info.mFolder = UseSettings::getString(OPENPEER_CORE_SETTING_PUSH_PRESENCE_DEFAULT_PUSH_MAILBOX_FOLDER);
-        info.mExpires = mDeviceInfo.mExpires;
-        info.mMappedType = mDeviceInfo.mMappedType;
-        info.mUnreadBadge = mDeviceInfo.mUnreadBadge;
-        info.mSound = mDeviceInfo.mSound;
-        info.mAction = mDeviceInfo.mAction;
-        info.mLaunchImage = mDeviceInfo.mLaunchImage;
-        info.mPriority = mDeviceInfo.mPriority;
-        info.mValueNames = mDeviceInfo.mValueNames;
-
-        mQuery = mailbox->registerDevice(mThisWeak.lock(), info);
-
-        mHadQuery = true;
-      }
-
-      //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       #pragma mark
-      #pragma mark PushPresence::RegisterQuery => IPushPresenceQuery
+      #pragma mark PushMessaging::RegisterQuery => IPushMessagingTransferNotifier
       #pragma mark
 
       //-----------------------------------------------------------------------
-      void PushPresence::RegisterQuery::cancel()
-      {
-        ZS_LOG_DEBUG(log("cancel called"))
-
-        AutoRecursiveLock lock(*this);
-
-        if (mQuery) {
-          mQuery->isComplete(&mLastErrorCode, &mLastErrorReason);
-          mQuery.reset();
-        }
-
-        mDelegate.reset();
-      }
-
-      //-----------------------------------------------------------------------
-      bool PushPresence::RegisterQuery::isComplete(
-                                                    WORD *outErrorCode,
-                                                    String *outErrorReason
-                                                    ) const
-      {
-        ZS_LOG_TRACE("is complete called")
-
-        AutoRecursiveLock lock(*this);
-
-        if (outErrorCode)
-          *outErrorCode = mLastErrorCode;
-        if (outErrorReason)
-          *outErrorReason = mLastErrorReason;
-
-        if (!mQuery) return mHadQuery;
-
-        return mQuery->isComplete(outErrorCode, outErrorReason);
-      }
-
-      //-----------------------------------------------------------------------
-      //-----------------------------------------------------------------------
-      //-----------------------------------------------------------------------
-      //-----------------------------------------------------------------------
-      #pragma mark
-      #pragma mark PushPresence::RegisterQuery => IServicePushMailboxSendQueryDelegate
-      #pragma mark
-
-      //-----------------------------------------------------------------------
-      void PushPresence::RegisterQuery::onPushMailboxRegisterQueryCompleted(IServicePushMailboxRegisterQueryPtr query)
+      void PushMessaging::TransferNotifier::notifyComplete(bool wasSuccessful)
       {
         ZS_LOG_DEBUG(log("notified complete"))
 
-        AutoRecursiveLock lock(*this);
-
-        if (!mDelegate) return;
-
-        try {
-          mDelegate->onPushPresenceRegisterQueryCompleted(mThisWeak.lock());
-        } catch (IPushPresenceRegisterQueryDelegateProxy::Exceptions::DelegateGone &) {
-          ZS_LOG_WARNING(Detail, log("delegate gone"))
-        }
-
-        mDelegate.reset();
+        mNotifier->notifyComplete(wasSuccessful);
       }
 
       //-----------------------------------------------------------------------
@@ -220,13 +124,13 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       #pragma mark
-      #pragma mark PushPresence::RegisterQuery => (internal)
+      #pragma mark PushMessaging::RegisterQuery => (internal)
       #pragma mark
 
       //-----------------------------------------------------------------------
-      Log::Params PushPresence::RegisterQuery::log(const char *message) const
+      Log::Params PushMessaging::TransferNotifier::log(const char *message) const
       {
-        ElementPtr objectEl = Element::create("core::PushPresence::RegisterQuery");
+        ElementPtr objectEl = Element::create("core::PushMessaging::TransferNotifier");
         UseServicesHelper::debugAppend(objectEl, "id", mID);
         return Log::Params(message, objectEl);
       }

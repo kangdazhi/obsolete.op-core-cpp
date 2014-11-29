@@ -91,15 +91,14 @@ namespace openpeer
       //-----------------------------------------------------------------------
       IServicePushMailboxSessionPtr IPushMailboxManagerForPushMessaging::create(
                                                                                 IServicePushMailboxSessionDelegatePtr inDelegate,
-                                                                                IServicePushMailboxDatabaseAbstractionDelegatePtr inDatabaseDelegate,
-                                                                                IMessageQueuePtr inQueue,
+                                                                                IServicePushMailboxSessionTransferDelegatePtr inTransferDelegate,
                                                                                 IAccountPtr inAccount,
                                                                                 IServicePushMailboxSessionSubscriptionPtr &outSubscription
                                                                                 )
       {
         PushMailboxManagerPtr singleton = IPushMailboxManagerFactory::singleton().singletonManager();
 
-        return singleton->create(inDelegate, inDatabaseDelegate, inQueue, inAccount, outSubscription);
+        return singleton->create(inDelegate, inTransferDelegate, inAccount, outSubscription);
       }
 
       //-----------------------------------------------------------------------
@@ -113,15 +112,14 @@ namespace openpeer
       //-----------------------------------------------------------------------
       IServicePushMailboxSessionPtr IPushMailboxManagerForPushPresence::create(
                                                                                IServicePushMailboxSessionDelegatePtr inDelegate,
-                                                                               IServicePushMailboxDatabaseAbstractionDelegatePtr inDatabaseDelegate,
-                                                                               IMessageQueuePtr inQueue,
+                                                                               IServicePushMailboxSessionTransferDelegatePtr inTransferDelegate,
                                                                                IAccountPtr inAccount,
                                                                                IServicePushMailboxSessionSubscriptionPtr &outSubscription
                                                                                )
       {
         PushMailboxManagerPtr singleton = IPushMailboxManagerFactory::singleton().singletonManager();
 
-        return singleton->create(inDelegate, inDatabaseDelegate, inQueue, inAccount, outSubscription);
+        return singleton->create(inDelegate, inTransferDelegate, inAccount, outSubscription);
       }
 
       //-----------------------------------------------------------------------
@@ -195,14 +193,12 @@ namespace openpeer
       //-----------------------------------------------------------------------
       IServicePushMailboxSessionPtr PushMailboxManager::create(
                                                                IServicePushMailboxSessionDelegatePtr inDelegate,
-                                                               IServicePushMailboxDatabaseAbstractionDelegatePtr inDatabaseDelegate,
-                                                               IMessageQueuePtr inQueue,
+                                                               IServicePushMailboxSessionTransferDelegatePtr inTransferDelegate,
                                                                IAccountPtr inAccount,
                                                                IServicePushMailboxSessionSubscriptionPtr &outSubscription
                                                                )
       {
-        ZS_THROW_INVALID_ARGUMENT_IF(!inDatabaseDelegate)
-        ZS_THROW_INVALID_ARGUMENT_IF(!inQueue)
+        ZS_THROW_INVALID_ARGUMENT_IF(!inTransferDelegate)
         ZS_THROW_INVALID_ARGUMENT_IF(!inAccount)
 
         AutoRecursiveLock lock(*this);
@@ -250,7 +246,7 @@ namespace openpeer
         Mailbox mailbox;
         mailbox.mAccount = expectingAccount;
 
-        IServicePushMailboxSessionPtr pushMailbox = IServicePushMailboxSession::create(inDelegate, inDatabaseDelegate, inQueue, servicePushMailbox, expectingAccount->getStackAccount(), expectingAccount->getNamespaceGrantSession(), expectingAccount->getLockboxSession());
+        IServicePushMailboxSessionPtr pushMailbox = IServicePushMailboxSession::create(inDelegate, inTransferDelegate, servicePushMailbox, expectingAccount->getStackAccount(), expectingAccount->getNamespaceGrantSession(), expectingAccount->getLockboxSession());
         mailbox.mMailbox = pushMailbox;
 
         if (inDelegate) {

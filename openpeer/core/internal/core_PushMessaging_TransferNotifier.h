@@ -29,7 +29,7 @@
 
  */
 
-#ifdef OPENPEER_CORE_PUSH_PRESENCE_REGISTER_QUERY
+#ifdef OPENPEER_CORE_PUSH_MESSAGING_TRANSFER_NOTIFIER
 
 #if 0
 namespace openpeer
@@ -38,7 +38,7 @@ namespace openpeer
   {
     namespace internal
     {
-      class PushPresence //...
+      class PushMessaging //...
       {
 #endif //0
 
@@ -48,69 +48,39 @@ namespace openpeer
         //---------------------------------------------------------------------
         //---------------------------------------------------------------------
         #pragma mark
-        #pragma mark PushPresence::PushQuery
+        #pragma mark PushMessaging::PushQuery
         #pragma mark
 
-        class RegisterQuery : public MessageQueueAssociator,
-                              public SharedRecursiveLock,
-                              public IPushPresenceRegisterQuery,
-                              public stack::IServicePushMailboxRegisterQueryDelegate
+        class TransferNotifier : public IPushMessagingTransferNotifier
         {
         public:
-          typedef IPushPresence::ValueNameList ValueNameList;
-          ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxRegisterQuery, IServicePushMailboxRegisterQuery)
+          ZS_DECLARE_TYPEDEF_PTR(stack::IServicePushMailboxSessionTransferNotifier, IServicePushMailboxSessionTransferNotifier)
 
         protected:
-          RegisterQuery(
-                        IMessageQueuePtr queue,
-                        const SharedRecursiveLock &lock,
-                        IPushPresenceRegisterQueryDelegatePtr delegate,
-                        const RegisterDeviceInfo &deviceInfo
-                        );
+          TransferNotifier(IServicePushMailboxSessionTransferNotifierPtr notifier);
 
           void init();
 
         public:
-          ~RegisterQuery();
+          ~TransferNotifier();
 
           //-------------------------------------------------------------------
           #pragma mark
-          #pragma mark PushPresence::RegisterQuery => friend PushPresence
+          #pragma mark PushMessaging::TransferNotifier => friend PushMessaging
           #pragma mark
 
-          static RegisterQueryPtr create(
-                                         IMessageQueuePtr queue,
-                                         const SharedRecursiveLock &lock,
-                                         IPushPresenceRegisterQueryDelegatePtr delegate,
-                                         const RegisterDeviceInfo &deviceInfo
-                                         );
-
-          void attachMailbox(IServicePushMailboxSessionPtr mailbox);
-
-          void cancel();
+          static TransferNotifierPtr create(IServicePushMailboxSessionTransferNotifierPtr notifier);
 
           //-------------------------------------------------------------------
           #pragma mark
-          #pragma mark PushPresence::RegisterQuery => IPushPresenceQuery
+          #pragma mark PushMessaging::TransferNotifier => IPushMessagingTransferNotifier
           #pragma mark
 
-          virtual PUID getID() const {return mID;}
-
-          virtual bool isComplete(
-                                  WORD *outErrorCode = NULL,
-                                  String *outErrorReason = NULL
-                                  ) const;
+          virtual void notifyComplete(bool wasSuccessful);
 
           //-------------------------------------------------------------------
           #pragma mark
-          #pragma mark PushPresence::RegisterQuery => IServicePushMailboxRegisterQueryDelegate
-          #pragma mark
-
-          virtual void onPushMailboxRegisterQueryCompleted(IServicePushMailboxRegisterQueryPtr query);
-
-          //-------------------------------------------------------------------
-          #pragma mark
-          #pragma mark PushPresence::PushQuery => (internal)
+          #pragma mark PushMessaging::TransferNotifier => (internal)
           #pragma mark
 
           Log::Params log(const char *message) const;
@@ -118,21 +88,13 @@ namespace openpeer
         protected:
           //-------------------------------------------------------------------
           #pragma mark
-          #pragma mark PushPresence::PushQuery => (data)
+          #pragma mark PushMessaging::TransferNotifier => (data)
           #pragma mark
 
           AutoPUID mID;
-          RegisterQueryWeakPtr mThisWeak;
+          TransferNotifierWeakPtr mThisWeak;
 
-          IPushPresenceRegisterQueryDelegatePtr mDelegate;
-
-          bool mHadQuery {};
-          IServicePushMailboxRegisterQueryPtr mQuery;
-
-          RegisterDeviceInfo mDeviceInfo;
-
-          WORD mLastErrorCode {};
-          String mLastErrorReason;
+          IServicePushMailboxSessionTransferNotifierPtr mNotifier;
         };
 
 #if 0
@@ -144,5 +106,5 @@ namespace openpeer
 #endif //0
 
 #else
-#include <openpeer/core/internal/core_PushPresence.h>
-#endif //OPENPEER_CORE_PUSH_PRESENCE_REGISTER_QUERY
+#include <openpeer/core/internal/core_PushMessaging.h>
+#endif //OPENPEER_CORE_PUSH_MESSAGING_TRANSFER_NOTIFIER
