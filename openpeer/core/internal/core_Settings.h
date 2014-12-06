@@ -52,7 +52,7 @@ namespace openpeer
 
       interaction ISettingsForStack
       {
-        static void applyDefaultsIfNoDelegatePresent();
+        static void verifyRequiredSettingsOnce() throw (ISettings::InvalidUsage);
       };
 
       //-----------------------------------------------------------------------
@@ -107,12 +107,14 @@ namespace openpeer
 
         virtual void applyDefaults();
 
+        virtual void verifyRequiredSettings() throw (InvalidUsage);
+
         //---------------------------------------------------------------------
         #pragma mark
         #pragma mark Settings => ISettingsForStack
         #pragma mark
 
-        virtual void applyDefaultsIfNoDelegatePresent();
+        virtual void verifyRequiredSettingsOnce() throw (ISettings::InvalidUsage);
 
         //---------------------------------------------------------------------
         #pragma mark
@@ -160,6 +162,8 @@ namespace openpeer
 
         virtual void clear(const char *key);
 
+        virtual void clearAll();
+
       protected:
         //---------------------------------------------------------------------
         #pragma mark
@@ -168,6 +172,8 @@ namespace openpeer
 
         Log::Params log(const char *message) const;
         static Log::Params slog(const char *message);
+
+        virtual void applyDefaultsIfNoDelegatePresent();
 
       protected:
         //---------------------------------------------------------------------
@@ -181,6 +187,7 @@ namespace openpeer
 
         ISettingsDelegatePtr mDelegate;
 
+        bool mVerifiedOnce {};
         bool mAppliedDefaults {};
 
         Seconds mThreadMoveMessageToCacheTimeInSeconds;

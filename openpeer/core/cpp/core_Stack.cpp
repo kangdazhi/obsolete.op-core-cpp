@@ -409,12 +409,12 @@ namespace openpeer
                         IMediaEngineDelegatePtr mediaEngineDelegate
                         )
       {
+        ISettingsForStack::verifyRequiredSettingsOnce();
+
         UseServicesHelper::setSocketThreadPriority();
         UseServicesHelper::setTimerThreadPriority();
 
         AutoRecursiveLock lock(mLock);
-
-        ISettingsForStack::applyDefaultsIfNoDelegatePresent();
 
         String deviceID = services::ISettings::getString(OPENPEER_COMMON_SETTING_DEVICE_ID);
         String instanceID = services::ISettings::getString(OPENPEER_COMMON_SETTING_INSTANCE_ID);
@@ -475,6 +475,8 @@ namespace openpeer
         ZS_THROW_INVALID_ARGUMENT_IF(!applicationIDSharedSecret)
         ZS_THROW_INVALID_ARGUMENT_IF(Time() == expires)
 
+        ISettingsForStack::verifyRequiredSettingsOnce();
+
         String fakeDomain = String(applicationID) + ".com";
 
         String splitChar = services::ISettings::getString(OPENPEER_CORE_SETTING_STACK_AUTHORIZED_APPLICATION_ID_SPLIT_CHAR);
@@ -510,6 +512,8 @@ namespace openpeer
                                                    )
       {
         ZS_THROW_INVALID_ARGUMENT_IF(!authorizedApplicationID)
+
+        ISettingsForStack::verifyRequiredSettingsOnce();
 
         if (outRemainingDurationAvailable) {
           *outRemainingDurationAvailable = Seconds(0);
