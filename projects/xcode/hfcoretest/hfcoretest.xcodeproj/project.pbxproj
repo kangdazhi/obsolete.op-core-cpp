@@ -872,6 +872,8 @@
 				HEADER_SEARCH_PATHS = (
 					../../..,
 					"../../../../op-stack-cpp",
+					../../../../easysqlite/easySQLite/easySQLite,
+					../../../../easysqlite/sqlite,
 					"../../../../ortc-lib/libs",
 					"../../../../ortc-lib/libs/zsLib",
 					"../../../../ortc-lib/libs/op-services-cpp",
@@ -926,6 +928,8 @@
 				HEADER_SEARCH_PATHS = (
 					../../..,
 					"../../../../op-stack-cpp",
+					../../../../easysqlite/easySQLite/easySQLite,
+					../../../../easysqlite/sqlite,
 					"../../../../ortc-lib/libs",
 					"../../../../ortc-lib/libs/zsLib",
 					"../../../../ortc-lib/libs/op-services-cpp",
