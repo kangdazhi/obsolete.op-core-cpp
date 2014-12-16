@@ -51,6 +51,7 @@ namespace openpeer
   namespace core
   {
     ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
+    ZS_DECLARE_TYPEDEF_PTR(core::IHelper, UseCoreHelper)
 
     namespace internal
     {
@@ -227,6 +228,33 @@ namespace openpeer
       mProfileURL = rolodexInfo.mProfileURL;
       mVProfileURL = rolodexInfo.mVProfileURL;
       mAvatars = rolodexInfo.mAvatars;
+    }
+
+    //-------------------------------------------------------------------------
+    IdentityContact::IdentityContact(const IdentityContact &info) :
+      mPriority(0),
+      mWeight(0)
+    {
+      // rolodex disposition is "lost" as it has no meaning once translated into an actual identity structure
+      mDisposition = info.mDisposition;
+      mIdentityURI = info.mIdentityURI;
+      mIdentityProvider = info.mIdentityProvider;
+
+      mName = info.mName;
+      mProfileURL = info.mProfileURL;
+      mVProfileURL = info.mVProfileURL;
+      mAvatars = info.mAvatars;
+
+      mStableID = info.mStableID;
+      
+      mPeerFilePublic = info.mPeerFilePublic;
+      mIdentityProofBundleEl = info.mIdentityProofBundleEl ? UseCoreHelper::clone(info.mIdentityProofBundleEl) : ElementPtr();
+
+      mPriority = info.mPriority;
+      mWeight = info.mWeight;
+      
+      mLastUpdated = info.mLastUpdated;
+      mExpires = info.mExpires;
     }
 
     //-------------------------------------------------------------------------

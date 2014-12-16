@@ -151,6 +151,7 @@ namespace openpeer
 
       IdentityContact();
       IdentityContact(const RolodexContact &);
+      IdentityContact(const IdentityContact &);
       bool hasData() const;
 
       bool operator==(const IdentityContact &rValue) const;

@@ -256,7 +256,9 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ConversationThreadPtr IConversationThreadFactory::createConversationThread(
                                                                                  AccountPtr account,
-                                                                                 const IdentityContactList &identityContacts
+                                                                                 const IdentityContactList &identityContacts,
+                                                                                 const ContactProfileInfoList &addContacts,
+                                                                                 const char *threadID
                                                                                  )
       {
         if (this) {}

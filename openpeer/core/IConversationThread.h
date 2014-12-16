@@ -75,7 +75,9 @@ namespace openpeer
       //          current contact.
       static IConversationThreadPtr create(
                                            IAccountPtr account,
-                                           const IdentityContactList &identityContactsOfSelf    // filter only the identities that are desired for anyone who joins the conversation thread to know
+                                           const IdentityContactList &identityContactsOfSelf,                     // filter only the identities that are desired for anyone who joins the conversation thread to know
+                                           const ContactProfileInfoList &addContacts = ContactProfileInfoList(),  // add these contacts by default to the conversation (can be empty)
+                                           const char *threadID = NULL                                            // optional thread ID to use for new thread
                                            );
 
       //-----------------------------------------------------------------------
@@ -211,6 +213,16 @@ namespace openpeer
                                            const char *messageID,
                                            MessageDeliveryStates &outDeliveryState
                                            ) const = 0;
+      
+      //-----------------------------------------------------------------------
+      // PURPOSE: Sets the current delivery state of a message by its message
+      //          ID.
+      // NOTE:    A message cannot go to a lessor delivery state. If done the
+      //          delivery state will be set to the
+      virtual void setMesssageDeliveryState(
+                                            const char *inMessageID,
+                                            MessageDeliveryStates inDeliveryState
+                                            ) = 0;
 
       //-----------------------------------------------------------------------
       // PURPOSE: mark all received messages thus far as read

@@ -283,14 +283,16 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ConversationThreadPtr ConversationThread::create(
                                                        AccountPtr inAccount,
-                                                       const IdentityContactList &identityContacts
+                                                       const IdentityContactList &identityContacts,
+                                                       const ContactProfileInfoList &addContacts,
+                                                       const char *threadID
                                                        )
       {
         ZS_THROW_INVALID_ARGUMENT_IF(!inAccount)
 
         UseAccountPtr account(inAccount);
 
-        ConversationThreadPtr pThis(new ConversationThread(UseStack::queueCore(), inAccount, NULL, NULL));
+        ConversationThreadPtr pThis(new ConversationThread(UseStack::queueCore(), inAccount, threadID, NULL));
         pThis->mThisWeak = pThis;
         pThis->mSelfIdentityContacts = identityContacts;
 
@@ -305,6 +307,11 @@ namespace openpeer
         info.mContact = account->getSelfContact();
         info.mIdentityContacts = identityContacts;
         contacts.push_back(info);
+        
+        for (ContactProfileInfoList::const_iterator iter = addContacts.begin(); iter != addContacts.end(); ++iter) {
+          const ContactProfileInfo &contact = (*iter);
+          contacts.push_back(contact);
+        }
 
         pThis->addContacts(contacts);
 
@@ -708,6 +715,33 @@ namespace openpeer
         }
         outDeliveryState = (*found).second;
         return true;
+      }
+
+      //-----------------------------------------------------------------------
+      void ConversationThread::setMesssageDeliveryState(
+                                                        const char *inMessageID,
+                                                        MessageDeliveryStates inDeliveryState
+                                                        )
+      {
+        String messageID(inMessageID);
+        ZS_THROW_INVALID_ARGUMENT_IF(messageID.empty())
+        
+        ZS_LOG_TRACE(log("setting message delivery state") + ZS_PARAM("message ID", inMessageID) + ZS_PARAM("delivery state", IConversationThread::toString(inDeliveryState)))
+        
+        AutoRecursiveLock lock(*this);
+        MessageDeliveryStatesMap::iterator found = mMessageDeliveryStates.find(messageID);
+        if (found == mMessageDeliveryStates.end()) {
+          mMessageDeliveryStates[messageID] = inDeliveryState;
+          return;
+        }
+        
+        MessageDeliveryStates &currentDeliveryState = (*found).second;
+        if (currentDeliveryState >= inDeliveryState) {
+          ZS_LOG_WARNING(Trace, log("cannot set to an equal or lower delivery state") + ZS_PARAM("message ID", inMessageID)+ ZS_PARAM("current state", IConversationThread::toString(currentDeliveryState)) + ZS_PARAM("set state", IConversationThread::toString(inDeliveryState)))
+          return;
+        }
+
+        currentDeliveryState = inDeliveryState;
       }
 
       //-----------------------------------------------------------------------
@@ -2024,10 +2058,12 @@ namespace openpeer
     //-----------------------------------------------------------------------
     IConversationThreadPtr IConversationThread::create(
                                                        IAccountPtr account,
-                                                       const IdentityContactList &identityContacts
+                                                       const IdentityContactList &identityContacts,
+                                                       const ContactProfileInfoList &addContacts,
+                                                       const char *threadID
                                                        )
     {
-      return internal::IConversationThreadFactory::singleton().createConversationThread(internal::Account::convert(account), identityContacts);
+      return internal::IConversationThreadFactory::singleton().createConversationThread(internal::Account::convert(account), identityContacts, addContacts, threadID);
     }
 
     //-----------------------------------------------------------------------

@@ -442,7 +442,9 @@ namespace openpeer
 
         static ConversationThreadPtr create(
                                             AccountPtr account,
-                                            const IdentityContactList &identityContacts
+                                            const IdentityContactList &identityContacts,
+                                            const ContactProfileInfoList &addContacts = ContactProfileInfoList(),
+                                            const char *threadID = NULL
                                             );
 
         static ConversationThreadListPtr getConversationThreads(IAccountPtr account);
@@ -496,6 +498,11 @@ namespace openpeer
                                              const char *messageID,
                                              MessageDeliveryStates &outDeliveryState
                                              ) const;
+
+        virtual void setMesssageDeliveryState(
+                                              const char *inMessageID,
+                                              MessageDeliveryStates inDeliveryState
+                                              );
 
         virtual void markAllMessagesRead();
 
@@ -723,8 +730,11 @@ namespace openpeer
 
         virtual ConversationThreadPtr createConversationThread(
                                                                AccountPtr account,
-                                                               const IdentityContactList &identityContacts
+                                                               const IdentityContactList &identityContacts,
+                                                               const ContactProfileInfoList &addContacts = ContactProfileInfoList(),
+                                                               const char *threadID = NULL
                                                                );
+
         virtual ConversationThreadPtr createConversationThread(
                                                                AccountPtr account,
                                                                ILocationPtr peerLocation,
