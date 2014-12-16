@@ -192,14 +192,14 @@ namespace openpeer
       ConversationThread::ConversationThread(
                                              IMessageQueuePtr queue,
                                              AccountPtr account,
-                                             const char *threadID,
+                                             const String &threadID,
                                              const char *serverName
                                              ) :
         MessageQueueAssociator(queue),
         SharedRecursiveLock(*account),
         mAccount(account),
         mDelegate(UseAccountPtr(account)->getConversationThreadDelegate()),
-        mThreadID(threadID ? String(threadID) : services::IHelper::randomString(32)),
+        mThreadID(threadID.hasData() ? threadID : services::IHelper::randomString(32)),
         mServerName(serverName),
         mCurrentState(ConversationThreadState_Pending),
         mMustNotifyAboutNewThread(false),
@@ -292,7 +292,7 @@ namespace openpeer
 
         UseAccountPtr account(inAccount);
 
-        ConversationThreadPtr pThis(new ConversationThread(UseStack::queueCore(), inAccount, threadID, NULL));
+        ConversationThreadPtr pThis(new ConversationThread(UseStack::queueCore(), inAccount, String(threadID), NULL));
         pThis->mThisWeak = pThis;
         pThis->mSelfIdentityContacts = identityContacts;
 

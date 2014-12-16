@@ -410,7 +410,7 @@ namespace openpeer
         ConversationThread(
                            IMessageQueuePtr queue,
                            AccountPtr account,
-                           const char *threadID,
+                           const String &threadID,
                            const char *serverName
                            );
         
