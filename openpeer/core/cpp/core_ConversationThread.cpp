@@ -718,7 +718,7 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      void ConversationThread::setMesssageDeliveryState(
+      void ConversationThread::setMessageDeliveryState(
                                                         const char *inMessageID,
                                                         MessageDeliveryStates inDeliveryState
                                                         )

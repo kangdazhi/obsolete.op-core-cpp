@@ -499,7 +499,7 @@ namespace openpeer
                                              MessageDeliveryStates &outDeliveryState
                                              ) const;
 
-        virtual void setMesssageDeliveryState(
+        virtual void setMessageDeliveryState(
                                               const char *inMessageID,
                                               MessageDeliveryStates inDeliveryState
                                               );

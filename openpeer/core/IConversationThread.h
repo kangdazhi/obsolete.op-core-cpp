@@ -219,7 +219,7 @@ namespace openpeer
       //          ID.
       // NOTE:    A message cannot go to a lessor delivery state. If done the
       //          delivery state will be set to the
-      virtual void setMesssageDeliveryState(
+      virtual void setMessageDeliveryState(
                                             const char *inMessageID,
                                             MessageDeliveryStates inDeliveryState
                                             ) = 0;
