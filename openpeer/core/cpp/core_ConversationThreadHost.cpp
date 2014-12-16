@@ -172,6 +172,7 @@ namespace openpeer
                                      "",
                                      "",
                                      mServerName,
+                                     baseThread->getMetaData(),
                                      state
                                      );
 

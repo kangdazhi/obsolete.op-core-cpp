@@ -664,6 +664,16 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      ElementPtr ConversationThreadSlave::getHostMetaData() const
+      {
+        if (!mHostThread) return ElementPtr();
+        
+        ElementPtr metaData = mHostThread->details()->metaData();
+        if (!metaData) return ElementPtr();
+        return metaData->clone()->toElement();
+      }
+
+      //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -915,6 +925,7 @@ namespace openpeer
                                         NULL,
                                         NULL,
                                         mServerName,
+                                        mHostThread->details()->metaData(),
                                         Details::ConversationThreadState_None,
                                         publication->getPublishedLocation()
                                         );

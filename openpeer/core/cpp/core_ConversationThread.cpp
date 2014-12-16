@@ -41,6 +41,8 @@
 
 #include <openpeer/core/ComposingStatus.h>
 
+#include <openpeer/core/IHelper.h>
+
 #include <openpeer/stack/IHelper.h>
 
 #include <openpeer/services/IHelper.h>
@@ -73,6 +75,7 @@ namespace openpeer
 
       ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
       ZS_DECLARE_TYPEDEF_PTR(IHelperForInternal, UseHelper)
+      ZS_DECLARE_TYPEDEF_PTR(core::IHelper, UseCoreHelper)
       ZS_DECLARE_TYPEDEF_PTR(services::ISettings, UseSettings)
 
       //-----------------------------------------------------------------------
@@ -193,7 +196,8 @@ namespace openpeer
                                              IMessageQueuePtr queue,
                                              AccountPtr account,
                                              const String &threadID,
-                                             const char *serverName
+                                             const char *serverName,
+                                             ElementPtr metaData
                                              ) :
         MessageQueueAssociator(queue),
         SharedRecursiveLock(*account),
@@ -201,6 +205,7 @@ namespace openpeer
         mDelegate(UseAccountPtr(account)->getConversationThreadDelegate()),
         mThreadID(threadID.hasData() ? threadID : services::IHelper::randomString(32)),
         mServerName(serverName),
+        mMetaData(UseCoreHelper::clone(metaData)),
         mCurrentState(ConversationThreadState_Pending),
         mMustNotifyAboutNewThread(false),
         mOpenThreadInactivityTimeout(Seconds(UseSettings::getUInt(OPENPEER_CORE_SETTING_CONVERSATION_THREAD_HOST_INACTIVE_CLOSE_TIME_IN_SECONDS))),
@@ -285,14 +290,15 @@ namespace openpeer
                                                        AccountPtr inAccount,
                                                        const IdentityContactList &identityContacts,
                                                        const ContactProfileInfoList &addContacts,
-                                                       const char *threadID
+                                                       const char *threadID,
+                                                       ElementPtr metaData
                                                        )
       {
         ZS_THROW_INVALID_ARGUMENT_IF(!inAccount)
 
         UseAccountPtr account(inAccount);
 
-        ConversationThreadPtr pThis(new ConversationThread(UseStack::queueCore(), inAccount, String(threadID), NULL));
+        ConversationThreadPtr pThis(new ConversationThread(UseStack::queueCore(), inAccount, String(threadID), NULL, metaData));
         pThis->mThisWeak = pThis;
         pThis->mSelfIdentityContacts = identityContacts;
 
@@ -370,6 +376,13 @@ namespace openpeer
         return Account::convert(mAccount.lock());
       }
 
+      //-----------------------------------------------------------------------
+      ElementPtr ConversationThread::getMetaData() const
+      {
+        AutoRecursiveLock lock(*this);
+        return mMetaData ? mMetaData->clone()->toElement() : ElementPtr();
+      }
+      
       //-----------------------------------------------------------------------
       ContactListPtr ConversationThread::getContacts() const
       {
@@ -718,10 +731,10 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      void ConversationThread::setMesssageDeliveryState(
-                                                        const char *inMessageID,
-                                                        MessageDeliveryStates inDeliveryState
-                                                        )
+      void ConversationThread::setMessageDeliveryState(
+                                                       const char *inMessageID,
+                                                       MessageDeliveryStates inDeliveryState
+                                                       )
       {
         String messageID(inMessageID);
         ZS_THROW_INVALID_ARGUMENT_IF(messageID.empty())
@@ -772,7 +785,7 @@ namespace openpeer
                                                        const SplitMap &split
                                                        )
       {
-        ConversationThreadPtr pThis(new ConversationThread(UseStack::queueCore(), inAccount, services::IHelper::get(split, OPENPEER_CONVERSATION_THREAD_BASE_THREAD_ID_INDEX), NULL));
+        ConversationThreadPtr pThis(new ConversationThread(UseStack::queueCore(), inAccount, services::IHelper::get(split, OPENPEER_CONVERSATION_THREAD_BASE_THREAD_ID_INDEX), NULL, ElementPtr()));
         pThis->mThisWeak = pThis;
         pThis->mMustNotifyAboutNewThread = true;
 
@@ -1315,8 +1328,9 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      void ConversationThread::notifyAboutNewThreadNowIfNotNotified(ConversationThreadSlavePtr slave)
+      void ConversationThread::notifyAboutNewThreadNowIfNotNotified(ConversationThreadSlavePtr inSlave)
       {
+        UseConversationThreadSlavePtr slave = inSlave;
         AutoRecursiveLock lock(*this);
         if (!mMustNotifyAboutNewThread) {
           ZS_LOG_DEBUG(log("no need to notify about thread creation as it is already created"))
@@ -1330,6 +1344,10 @@ namespace openpeer
         }
 
         ZS_LOG_DEBUG(log("notifying that new conversation thread is now created"))
+        
+        if (!mMetaData) {
+          mMetaData = slave->getHostMetaData();
+        }
 
         if (!mLastOpenThread) {
           ZS_LOG_DEBUG(log("slave has now become last open thread"))
@@ -2063,7 +2081,8 @@ namespace openpeer
                                                        IAccountPtr account,
                                                        const IdentityContactList &identityContacts,
                                                        const ContactProfileInfoList &addContacts,
-                                                       const char *threadID
+                                                       const char *threadID,
+                                                       ElementPtr metaData
                                                        )
     {
       return internal::IConversationThreadFactory::singleton().createConversationThread(internal::Account::convert(account), identityContacts, addContacts, threadID);

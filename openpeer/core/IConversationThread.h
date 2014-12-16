@@ -77,7 +77,8 @@ namespace openpeer
                                            IAccountPtr account,
                                            const IdentityContactList &identityContactsOfSelf,                     // filter only the identities that are desired for anyone who joins the conversation thread to know
                                            const ContactProfileInfoList &addContacts = ContactProfileInfoList(),  // add these contacts by default to the conversation (can be empty)
-                                           const char *threadID = NULL                                            // optional thread ID to use for new thread
+                                           const char *threadID = NULL,                                           // optional thread ID to use for new thread
+                                           ElementPtr metaData = ElementPtr()                                     // optional meta data to assign to the thread
                                            );
 
       //-----------------------------------------------------------------------
@@ -118,6 +119,11 @@ namespace openpeer
       //          conversation thread.
       // RETURNS: The associated account object.
       virtual IAccountPtr getAssociatedAccount() const = 0;
+      
+      //-----------------------------------------------------------------------
+      // PURPOSE: Get the meta data associated with a converation thread
+      // RETURNS: The associated meta data or ElementPtr if none
+      virtual ElementPtr getMetaData() const = 0;
 
       //-----------------------------------------------------------------------
       // PURPOSE: Get the list of contacts currently in the conversation
@@ -219,10 +225,10 @@ namespace openpeer
       //          ID.
       // NOTE:    A message cannot go to a lessor delivery state. If done the
       //          delivery state will be set to the
-      virtual void setMesssageDeliveryState(
-                                            const char *inMessageID,
-                                            MessageDeliveryStates inDeliveryState
-                                            ) = 0;
+      virtual void setMessageDeliveryState(
+                                           const char *inMessageID,
+                                           MessageDeliveryStates inDeliveryState
+                                           ) = 0;
 
       //-----------------------------------------------------------------------
       // PURPOSE: mark all received messages thus far as read
@@ -272,6 +278,44 @@ namespace openpeer
                                                    IContactPtr contact
                                                    ) = 0;
     };
+    
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    #pragma mark
+    #pragma mark ConversationThreadType
+    #pragma mark
+    
+    struct ConversationThreadType
+    {
+      enum ConversationThreadTypes
+      {
+        ConversationThreadType_None,
+
+        ConversationThreadType_ContactBased,
+        ConversationThreadType_ThreadBased,
+        ConversationThreadType_RoomBased,
+      };
+      
+      static const char *toString(ConversationThreadTypes type);
+      static ConversationThreadTypes toConversationThreadType(const char *str);
+      
+      
+      ConversationThreadTypes mThreadType;
+      
+      
+      static ConversationThreadTypePtr extract(ElementPtr converationThreadMetaDataEl);
+      void insert(ElementPtr &converationThreadMetaDataEl) const;
+      
+      bool hasData() const;
+      
+      ConversationThreadType();
+      ConversationThreadType(const ConversationThreadType &op2);
+
+      ElementPtr toDebug() const;
+    };
+
   }
 }
 

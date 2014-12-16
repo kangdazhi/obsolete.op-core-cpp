@@ -608,6 +608,7 @@ namespace openpeer
                                    const char *topic,
                                    const char *replaces,
                                    const char *serverName,  // only set if local is a server otherwise pass in NULL
+                                   ElementPtr inMetaDataEl,
                                    ConversationThreadStates state
                                    );
 
@@ -622,6 +623,7 @@ namespace openpeer
           const String &topic() const             {return mTopic;}
           Time created() const                    {return mCreated;}
           const String &serverName() const        {return mServerName;}
+          const ElementPtr metaData() const       {return mMetaDataEl;}
 
           ElementPtr toDebug() const;
 
@@ -641,6 +643,7 @@ namespace openpeer
           String mTopic;
           Time mCreated;
           String mServerName;
+          ElementPtr mMetaDataEl;
         };
 
         typedef Details::ConversationThreadStates ConversationThreadStates;
@@ -692,6 +695,7 @@ namespace openpeer
                                   const char *topic,
                                   const char *replaces,
                                   const char *serverName,         // only set if local is a server
+                                  ElementPtr inMetaDataEl,
                                   ConversationThreadStates state,
                                   ILocationPtr peerHostLocation = ILocationPtr()
                                   );
