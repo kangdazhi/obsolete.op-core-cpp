@@ -896,8 +896,10 @@ namespace openpeer
       void ConversationThread::notifyStateChanged(IConversationThreadHostSlaveBasePtr thread)
       {
         AutoRecursiveLock lock(*this);
-        step();
-        handleContactsChanged();
+        
+        ZS_LOG_TRACE(log("notify state changed"))
+        
+        IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
       }
 
       //-----------------------------------------------------------------------
@@ -1895,6 +1897,7 @@ namespace openpeer
         }
 
         handleLastOpenThreadChanged();
+        handleContactsChanged();
 
         ZS_LOG_TRACE(log("step completed"))
       }

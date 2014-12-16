@@ -485,6 +485,8 @@ namespace openpeer
         mHostThread->updateEnd(getPublicationRepostiory());
 
         IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
+
+        baseThread->notifyStateChanged(mThisWeak.lock());
       }
 
       //-----------------------------------------------------------------------
@@ -1313,6 +1315,8 @@ namespace openpeer
         mHostThread->updateBegin();
         mHostThread->setContacts(contactMap);
         mHostThread->updateEnd(getPublicationRepostiory());
+        
+        baseThread->notifyStateChanged(mThisWeak.lock());
       }
 
       //-----------------------------------------------------------------------
