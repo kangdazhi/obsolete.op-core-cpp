@@ -130,10 +130,9 @@
   
     openpeer::core::test::TestMediaEngineFactoryPtr overrideFactory(new openpeer::core::test::TestMediaEngineFactory);
   
-    openpeer::core::internal::MediaEngineFactory::override(overrideFactory);
+    openpeer::services::IFactory<openpeer::core::internal::IMediaEngineFactory>::override(overrideFactory);
   
     openpeer::core::internal::IMediaEngineForStack::setup(mediaEngineDelegatePtr);
-  
   
 //    IClient::setLogLevel(IClient::Log::Trace);
 //    IClient::setLogLevel("openpeer_services", IClient::Log::Debug);      // recommend Debug

@@ -360,12 +360,19 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       #pragma mark
-      #pragma mark TestMediaEngineFactory
+      #pragma mark ITestMediaEngineFactory
       #pragma mark
       
-      //-----------------------------------------------------------------------
-      internal::MediaEnginePtr TestMediaEngineFactory::createMediaEngine(IMediaEngineDelegatePtr delegate)
+      //-------------------------------------------------------------------------
+      ITestMediaEngineFactory &ITestMediaEngineFactory::singleton()
       {
+        return TestMediaEngineFactory::singleton();
+      }
+      
+      //-------------------------------------------------------------------------
+      internal::MediaEnginePtr ITestMediaEngineFactory::create(IMediaEngineDelegatePtr delegate)
+      {
+        if (this) {}
         return TestMediaEngine::create(delegate);
       }
     }
@@ -383,9 +390,9 @@ void doMediaEngineTest()
   
   TESTING_INSTALL_LOGGER();
   
-  TestMediaEngineFactoryPtr overrideFactory(new TestMediaEngineFactory);
+  openpeer::core::test::TestMediaEngineFactoryPtr overrideFactory(new openpeer::core::test::TestMediaEngineFactory);
 
-  openpeer::core::internal::MediaEngineFactory::override(overrideFactory);
+  openpeer::services::IFactory<openpeer::core::test::ITestMediaEngineFactory>::override(overrideFactory);
 
   TESTING_UNINSTALL_LOGGER()
   zsLib::proxyDump();

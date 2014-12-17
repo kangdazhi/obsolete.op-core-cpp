@@ -77,6 +77,8 @@
 		E2506E4D170DA49F005A43D2 /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E2506E4C170DA49E005A43D2 /* MobileCoreServices.framework */; };
 		E2506E54170DA55C005A43D2 /* CoreImage.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E2506E53170DA55C005A43D2 /* CoreImage.framework */; };
 		E2506E56170DA584005A43D2 /* AssetsLibrary.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E2506E55170DA584005A43D2 /* AssetsLibrary.framework */; };
+		E27A756D1A40A9FB000A3D5C /* libeasysqlite_ios.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E27A75661A40A9C0000A3D5C /* libeasysqlite_ios.a */; };
+		E27A756E1A40AA0B000A3D5C /* libeasysqlite_ios.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E27A75661A40A9C0000A3D5C /* libeasysqlite_ios.a */; };
 		E2D8ED911804400F00FB0EAE /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00243921178F473500B79368 /* Security.framework */; };
 		E2E46022192BF978005BAED9 /* libacm2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E4601B192BF820005BAED9 /* libacm2.a */; };
 		E2E46023192BF978005BAED9 /* librbe_components.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2E46018192BF7EC005BAED9 /* librbe_components.a */; };
@@ -309,6 +311,27 @@
 			remoteGlobalIDString = 0095DC1416CA8802005F53D3;
 			remoteInfo = hfservices_ios;
 		};
+		E27A75651A40A9C0000A3D5C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E27A75611A40A9BF000A3D5C /* easysqlite_ios.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 004B220C1A10793F00239AAC;
+			remoteInfo = easysqlite_ios;
+		};
+		E27A75691A40A9DE000A3D5C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E27A75611A40A9BF000A3D5C /* easysqlite_ios.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 004B220B1A10793F00239AAC;
+			remoteInfo = easysqlite_ios;
+		};
+		E27A756B1A40A9E8000A3D5C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E27A75611A40A9BF000A3D5C /* easysqlite_ios.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 004B220B1A10793F00239AAC;
+			remoteInfo = easysqlite_ios;
+		};
 		E2F35D2B191D138000089A18 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = E2F35D19191D137F00089A18 /* webrtc_ios.xcodeproj */;
@@ -380,6 +403,7 @@
 		E2506E4C170DA49E005A43D2 /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MobileCoreServices.framework; path = System/Library/Frameworks/MobileCoreServices.framework; sourceTree = SDKROOT; };
 		E2506E53170DA55C005A43D2 /* CoreImage.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreImage.framework; path = System/Library/Frameworks/CoreImage.framework; sourceTree = SDKROOT; };
 		E2506E55170DA584005A43D2 /* AssetsLibrary.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AssetsLibrary.framework; path = System/Library/Frameworks/AssetsLibrary.framework; sourceTree = SDKROOT; };
+		E27A75611A40A9BF000A3D5C /* easysqlite_ios.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = easysqlite_ios.xcodeproj; path = ../../../../easysqlite/projects/xcode/easysqlite_ios.xcodeproj; sourceTree = "<group>"; };
 		E2E46018192BF7EC005BAED9 /* librbe_components.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = librbe_components.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2E4601B192BF820005BAED9 /* libacm2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libacm2.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2E46025192BF979005BAED9 /* libaudio_coding_module.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libaudio_coding_module.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -430,6 +454,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E27A756D1A40A9FB000A3D5C /* libeasysqlite_ios.a in Frameworks */,
 				0063D8C616CB3ACA00E6DB4D /* libhfcore_ios.a in Frameworks */,
 				0063D8C516CB3AC200E6DB4D /* libhfstack_ios.a in Frameworks */,
 				0063D8C416CB3ABD00E6DB4D /* libhfservices_ios.a in Frameworks */,
@@ -459,6 +484,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E27A756E1A40AA0B000A3D5C /* libeasysqlite_ios.a in Frameworks */,
 				E2E460C4192C010C005BAED9 /* libopus.a in Frameworks */,
 				E2E460C5192C010C005BAED9 /* libyuv_neon.a in Frameworks */,
 				E2E460C6192C010C005BAED9 /* libyuv.a in Frameworks */,
@@ -722,6 +748,7 @@
 		0063D88816CB38D900E6DB4D /* Projects */ = {
 			isa = PBXGroup;
 			children = (
+				E27A75611A40A9BF000A3D5C /* easysqlite_ios.xcodeproj */,
 				00CF4BF61A15BEF300573A34 /* idnkit_ios.xcodeproj */,
 				0063D8AF16CB39C500E6DB4D /* hfcore_ios.xcodeproj */,
 				0063D8A916CB39BC00E6DB4D /* hfstack_ios.xcodeproj */,
@@ -793,6 +820,14 @@
 			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
+		E27A75621A40A9BF000A3D5C /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E27A75661A40A9C0000A3D5C /* libeasysqlite_ios.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		E2F35D1A191D137F00089A18 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -815,6 +850,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				E27A756C1A40A9E8000A3D5C /* PBXTargetDependency */,
 				0063D8BA16CB3A9400E6DB4D /* PBXTargetDependency */,
 				0063D8B816CB3A9400E6DB4D /* PBXTargetDependency */,
 				00CF4C181A15C53500573A34 /* PBXTargetDependency */,
@@ -841,6 +877,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				E27A756A1A40A9DE000A3D5C /* PBXTargetDependency */,
 				E2437EE616CBD62200441ABD /* PBXTargetDependency */,
 				E2437EE816CBD62200441ABD /* PBXTargetDependency */,
 				E2437EEA16CBD62200441ABD /* PBXTargetDependency */,
@@ -864,6 +901,14 @@
 			attributes = {
 				LastUpgradeCheck = 0460;
 				ORGANIZATIONNAME = "SMB Phone Inc.";
+				TargetAttributes = {
+					0063D5D116CB35D700E6DB4D = {
+						DevelopmentTeam = Z5WRU4N5VJ;
+					};
+					E2437E8F16CBD62200441ABD = {
+						DevelopmentTeam = Z5WRU4N5VJ;
+					};
+				};
 			};
 			buildConfigurationList = 0063D5CD16CB35D700E6DB4D /* Build configuration list for PBXProject "hfcoreTest_ios" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -879,6 +924,10 @@
 				{
 					ProductGroup = 0012C4FE177CAB8B0017FF5E /* Products */;
 					ProjectRef = 0063D89D16CB39A600E6DB4D /* cryptopp_ios.xcodeproj */;
+				},
+				{
+					ProductGroup = E27A75621A40A9BF000A3D5C /* Products */;
+					ProjectRef = E27A75611A40A9BF000A3D5C /* easysqlite_ios.xcodeproj */;
 				},
 				{
 					ProductGroup = 0063D8B016CB39C500E6DB4D /* Products */;
@@ -976,6 +1025,13 @@
 			fileType = archive.ar;
 			path = libidnkit_ios.a;
 			remoteRef = 00CF4BFA1A15BEF400573A34 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		E27A75661A40A9C0000A3D5C /* libeasysqlite_ios.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libeasysqlite_ios.a;
+			remoteRef = E27A75651A40A9C0000A3D5C /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 		E2F35D2C191D138000089A18 /* libwebrtc.a */ = {
@@ -1141,6 +1197,16 @@
 			isa = PBXTargetDependency;
 			name = hfservices_ios;
 			targetProxy = E2437EEB16CBD62200441ABD /* PBXContainerItemProxy */;
+		};
+		E27A756A1A40A9DE000A3D5C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = easysqlite_ios;
+			targetProxy = E27A75691A40A9DE000A3D5C /* PBXContainerItemProxy */;
+		};
+		E27A756C1A40A9E8000A3D5C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = easysqlite_ios;
+			targetProxy = E27A756B1A40A9E8000A3D5C /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1322,6 +1388,7 @@
 		0063D60216CB35D800E6DB4D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "hfcoreTest_ios/hfcoreTest_ios-Prefix.pch";
@@ -1341,6 +1408,7 @@
 		0063D60316CB35D800E6DB4D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "hfcoreTest_ios/hfcoreTest_ios-Prefix.pch";
@@ -1359,6 +1427,7 @@
 		E2437F4316CBD62200441ABD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -1382,6 +1451,7 @@
 		E2437F4416CBD62200441ABD /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;

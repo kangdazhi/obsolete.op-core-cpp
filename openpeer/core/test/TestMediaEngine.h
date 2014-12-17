@@ -65,7 +65,7 @@ namespace openpeer
       class TestMediaEngine : public internal::MediaEngine, public zsLib::ITimerDelegate
       {
       public:
-        friend interaction TestMediaEngineFactory;
+        friend interaction ITestMediaEngineFactory;
 
         
         //---------------------------------------------------------------------
@@ -160,16 +160,17 @@ namespace openpeer
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       #pragma mark
-      #pragma mark TestMediaEngineFactory
+      #pragma mark ITestMediaEngineFactory
       #pragma mark
       
-      class TestMediaEngineFactory : public internal::MediaEngineFactory
+      interaction ITestMediaEngineFactory : public internal::IMediaEngineFactory
       {
-      public:
-        TestMediaEngineFactory() {}
+        static ITestMediaEngineFactory &singleton();
         
-        virtual internal::MediaEnginePtr createMediaEngine(IMediaEngineDelegatePtr delegate);
+        virtual internal::MediaEnginePtr create(IMediaEngineDelegatePtr delegate);
       };
+      
+      class TestMediaEngineFactory : public internal::IFactory<ITestMediaEngineFactory> {};
     }
   }
 }
