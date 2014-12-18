@@ -70,6 +70,17 @@ namespace openpeer
 
       static ElementPtr toDebug(IConversationThreadPtr thread);
 
+      struct Definitions
+      {
+        struct Names {
+          //-------------------------------------------------------------------
+          // PURPOSE: Returns the "name" part for the json meta data object
+          //          as contained in JSON blob {"metaData" : {...} }
+          static const char *metaDataName()                                     {return "metaData";}
+        };
+      };
+
+
       //-----------------------------------------------------------------------
       // PURPOSE: Create a new conversation thread with only "self" as the
       //          current contact.
@@ -300,10 +311,29 @@ namespace openpeer
       
       static const char *toString(ConversationThreadTypes type);
       static ConversationThreadTypes toConversationThreadType(const char *str);
+
+      struct Definitions
+      {
+        struct Names {
+          //-------------------------------------------------------------------
+          // PURPOSE: Returns the "name" part for the json meta data object
+          //          as contained in JSON blob
+          //          {"metaData" : "conversationType" : {...} } }
+          static const char *conversationType()                                 {return "conversationType";}
+        };
+        
+        //---------------------------------------------------------------------
+        // PURPOSE: Return the value keywords for use within meta data json
+        //          for converstation thread types
+        struct ValueKeywords {
+          static const char *contactBased()                                     {return "contact";}
+          static const char *threadBased()                                      {return "thread";}
+          static const char *roomBased()                                        {return "room";}
+        };
+      };
       
-      
+
       ConversationThreadTypes mThreadType;
-      
       
       static ConversationThreadTypePtr extract(ElementPtr converationThreadMetaDataEl);
       void insert(ElementPtr &converationThreadMetaDataEl) const;

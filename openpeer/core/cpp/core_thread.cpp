@@ -2042,10 +2042,10 @@ namespace openpeer
           ElementPtr serverNameEl = createElementWithTextAndJSONEncode("server", pThis->mServerName);
           ElementPtr metaDataEl;
           if (inMetaDataEl) {
-            if ("metaData" == inMetaDataEl->getValue()) {
+            if (IConversationThread::Definitions::Names::metaDataName() == inMetaDataEl->getValue()) {
               pThis->mMetaDataEl = inMetaDataEl->clone()->toElement();
             } else {
-              pThis->mMetaDataEl = Element::create("metaData");
+              pThis->mMetaDataEl = Element::create(IConversationThread::Definitions::Names::metaDataName());
               pThis->mMetaDataEl->adoptAsLastChild(inMetaDataEl->clone());
             }
           }
@@ -2099,7 +2099,7 @@ namespace openpeer
               pThis->mServerName = IMessageHelper::getElementTextAndDecode(serverEl);
             }
 
-            pThis->mMetaDataEl = detailsEl->findFirstChildElement("metaData");
+            pThis->mMetaDataEl = detailsEl->findFirstChildElement(IConversationThread::Definitions::Names::metaDataName());
 
           } catch(CheckFailed &) {
             ZS_LOG_ERROR(Detail, pThis->log("details element parse check failed"))

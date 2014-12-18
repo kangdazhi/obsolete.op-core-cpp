@@ -39,9 +39,6 @@
 #include <zsLib/XML.h>
 
 
-#define OPENPEER_CORE_CONVERSATION_THREAD_TYPE_ROOT_NAME "meta"
-#define OPENPEER_CORE_CONVERSATION_THREAD_TYPE_ELEMENT_NAME "threadType"
-
 namespace openpeer { namespace core { ZS_DECLARE_SUBSYSTEM(openpeer_core) } }
 
 namespace openpeer
@@ -64,9 +61,9 @@ namespace openpeer
     {
       switch (type) {
         case ConversationThreadType_None:         return "";
-        case ConversationThreadType_ContactBased: return "contact";
-        case ConversationThreadType_ThreadBased:  return "thread";
-        case ConversationThreadType_RoomBased:    return "room";
+        case ConversationThreadType_ContactBased: return Definitions::ValueKeywords::contactBased();
+        case ConversationThreadType_ThreadBased:  return Definitions::ValueKeywords::threadBased();
+        case ConversationThreadType_RoomBased:    return Definitions::ValueKeywords::roomBased();
       }
 
       return "";
@@ -100,7 +97,7 @@ namespace openpeer
       ConversationThreadTypePtr type(new ConversationThreadType);
       if (!converationThreadMetaDataEl) return type;
 
-      ElementPtr foundEl = converationThreadMetaDataEl->findFirstChildElement(OPENPEER_CORE_CONVERSATION_THREAD_TYPE_ELEMENT_NAME);
+      ElementPtr foundEl = converationThreadMetaDataEl->findFirstChildElement(Definitions::Names::conversationType());
       if (!foundEl) return type;
 
       String result = UseMessageHelper::getElementText(foundEl);
@@ -114,12 +111,12 @@ namespace openpeer
     void ConversationThreadType::insert(ElementPtr &converationThreadMetaDataEl) const
     {
       if (!converationThreadMetaDataEl) {
-        converationThreadMetaDataEl = Element::create(OPENPEER_CORE_CONVERSATION_THREAD_TYPE_ROOT_NAME);
+        converationThreadMetaDataEl = Element::create(IConversationThread::Definitions::Names::metaDataName());
       }
 
-      ElementPtr insertEl = UseMessageHelper::createElementWithText(OPENPEER_CORE_CONVERSATION_THREAD_TYPE_ELEMENT_NAME, toString(mThreadType));
+      ElementPtr insertEl = UseMessageHelper::createElementWithText(Definitions::Names::conversationType(), toString(mThreadType));
 
-      ElementPtr foundEl = converationThreadMetaDataEl->findFirstChildElement(OPENPEER_CORE_CONVERSATION_THREAD_TYPE_ELEMENT_NAME);
+      ElementPtr foundEl = converationThreadMetaDataEl->findFirstChildElement(Definitions::Names::conversationType());
       if (!foundEl) {
         converationThreadMetaDataEl->adoptAsLastChild(insertEl);
         return;
