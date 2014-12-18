@@ -318,7 +318,7 @@ namespace openpeer
           //-------------------------------------------------------------------
           // PURPOSE: Returns the "name" part for the json meta data object
           //          as contained in JSON blob
-          //          {"metaData" : "conversationType" : {...} } }
+          //          {"metaData" : { "conversationType" : {...} } }
           static const char *conversationType()                                 {return "conversationType";}
         };
         
