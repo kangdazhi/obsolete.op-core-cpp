@@ -370,7 +370,7 @@ namespace openpeer
       }
       
       //-------------------------------------------------------------------------
-      internal::MediaEnginePtr ITestMediaEngineFactory::create(IMediaEngineDelegatePtr delegate)
+      internal::MediaEnginePtr ITestMediaEngineFactory::createMediaEngine(IMediaEngineDelegatePtr delegate)
       {
         if (this) {}
         return TestMediaEngine::create(delegate);

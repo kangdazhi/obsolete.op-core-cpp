@@ -695,7 +695,8 @@ namespace openpeer
           mLifetimeWantDefaultVideoOrientation = orientation;
         }
         
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
       }
       
       //-------------------------------------------------------------------------
@@ -719,7 +720,8 @@ namespace openpeer
           mLifetimeWantRecordVideoOrientation = orientation;
         }
         
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
       }
       
       //-------------------------------------------------------------------------
@@ -740,7 +742,8 @@ namespace openpeer
           mLifetimeWantSetVideoOrientation = true;
         }
         
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
       }
 
       //-----------------------------------------------------------------------
@@ -754,7 +757,8 @@ namespace openpeer
           mLifetimeWantCaptureRenderView = renderView;
         }
         
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
       }
       
       //-----------------------------------------------------------------------
@@ -778,7 +782,8 @@ namespace openpeer
           mLifetimeWantChannelRenderView = renderView;
         }
         
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
       }
       
       //-----------------------------------------------------------------------
@@ -802,8 +807,8 @@ namespace openpeer
             mLifetimeWantBackCameraCaptureCapability = capability;
         }
         
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
-
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
       }
       
       //-----------------------------------------------------------------------
@@ -871,7 +876,8 @@ namespace openpeer
           mLifetimeWantCaptureRenderViewCropBottom = bottom;
         }
         
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
       }
 
       //-----------------------------------------------------------------------
@@ -890,7 +896,8 @@ namespace openpeer
           mLifetimeWantChannelRenderViewCropBottom = bottom;
         }
         
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
       }
 
       //-----------------------------------------------------------------------
@@ -901,7 +908,8 @@ namespace openpeer
           mLifetimeWantEcEnabled = enabled;
         }
         
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
       }
       
       //-----------------------------------------------------------------------
@@ -912,7 +920,8 @@ namespace openpeer
           mLifetimeWantAgcEnabled = enabled;
         }
         
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
       }
       
       //-----------------------------------------------------------------------
@@ -923,7 +932,8 @@ namespace openpeer
           mLifetimeWantNsEnabled = enabled;
         }
         
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
       }
       
       //-------------------------------------------------------------------------
@@ -937,7 +947,8 @@ namespace openpeer
           mLifetimeWantVoiceRecordFile = fileName;
         }
         
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
       }
 
       //-------------------------------------------------------------------------
@@ -958,7 +969,8 @@ namespace openpeer
           mLifetimeWantMuteEnabled = enabled;
         }
         
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
       }
       
       //-----------------------------------------------------------------------
@@ -1005,7 +1017,8 @@ namespace openpeer
           mLifetimeWantLoudspeakerEnabled = enabled;
         }
         
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
       }
       
       //-----------------------------------------------------------------------
@@ -1077,7 +1090,8 @@ namespace openpeer
           mLifetimeWantContinuousVideoCapture = continuousVideoCapture;
         }
         
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
       }
       
       //-----------------------------------------------------------------------
@@ -1101,7 +1115,8 @@ namespace openpeer
           mLifetimeWantFaceDetection = faceDetection;
         }
         
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
       }
       
       //-----------------------------------------------------------------------
@@ -1122,7 +1137,8 @@ namespace openpeer
           mLifetimeWantCameraType = type;
         }
 
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
       }
       
       //-----------------------------------------------------------------------
@@ -1143,7 +1159,8 @@ namespace openpeer
           mLifetimeWantVideoCapture = true;
         }
         
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
       }
       
       //-----------------------------------------------------------------------
@@ -1154,7 +1171,8 @@ namespace openpeer
           mLifetimeWantVideoCapture = false;
         }
         
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
       }
       
       //-------------------------------------------------------------------------
@@ -1167,7 +1185,8 @@ namespace openpeer
           mLifetimeWantSaveVideoToLibrary = saveToLibrary;
         }
         
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
       }
       
       //-------------------------------------------------------------------------
@@ -1178,7 +1197,8 @@ namespace openpeer
           mLifetimeWantRecordVideoCapture = false;
         }
         
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
       }
       
       //-----------------------------------------------------------------------
@@ -1240,7 +1260,8 @@ namespace openpeer
             mLifetimeWantAudio = true;
         }
         
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
       }
 
       //-----------------------------------------------------------------------
@@ -1273,7 +1294,8 @@ namespace openpeer
           mLifetimeWantAudio = true;
         }
 
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
       }
 
       //-----------------------------------------------------------------------
@@ -1284,7 +1306,8 @@ namespace openpeer
           mLifetimeWantAudio = false;
         }
 
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
       }
 
       //-----------------------------------------------------------------------
@@ -1295,7 +1318,8 @@ namespace openpeer
           mLifetimeWantVideoChannel = true;
         }
 
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
       }
 
       //-----------------------------------------------------------------------
@@ -1306,7 +1330,8 @@ namespace openpeer
           mLifetimeWantVideoChannel = false;
         }
 
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
       }
 
       //-----------------------------------------------------------------------
@@ -1320,7 +1345,8 @@ namespace openpeer
           mLifetimeWantVoiceExternalTransport = &transport;
         }
         
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
 
         return 0;
       }
@@ -1336,7 +1362,8 @@ namespace openpeer
           mLifetimeWantVoiceExternalTransport = NULL;
         }
         
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
 
         return 0;
       }
@@ -1400,7 +1427,8 @@ namespace openpeer
           mLifetimeWantVideoExternalTransport = &transport;
         }
         
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
 
         return 0;
       }
@@ -1416,7 +1444,8 @@ namespace openpeer
           mLifetimeWantVideoExternalTransport = NULL;
         }
         
-        ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        ThreadPtr thread = ThreadPtr(new std::thread(std::ref(*((mThisWeak.lock()).get()))));
+        thread->detach();
 
         return 0;
       }

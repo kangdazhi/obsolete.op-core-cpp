@@ -167,7 +167,7 @@ namespace openpeer
       {
         static ITestMediaEngineFactory &singleton();
         
-        virtual internal::MediaEnginePtr create(IMediaEngineDelegatePtr delegate);
+        virtual internal::MediaEnginePtr createMediaEngine(IMediaEngineDelegatePtr delegate);
       };
       
       class TestMediaEngineFactory : public internal::IFactory<ITestMediaEngineFactory> {};
