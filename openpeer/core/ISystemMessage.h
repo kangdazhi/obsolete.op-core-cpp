@@ -90,6 +90,7 @@ namespace openpeer
           //   "callStatus" : {
           //     "$id": "...",
           //     "status" : "...",  // i.e. "placed", "answered", "hungup"
+          //     "mediaType" : "",
           //     "callee" : "...",
           //     "error" : { "$id": 404 }
           //   }
