@@ -328,7 +328,7 @@ namespace openpeer
 
     struct PresenceTimeZoneLocation
     {
-      Seconds mOffset;            // +/- offset from GMT / UTC to calculate local time from UTC time
+      Seconds mOffset {};         // +/- offset from GMT / UTC to calculate local time from UTC time
       String mAbbreviation;       // time zone abbreviation for active time zone
       String mName;               // current time zone full name for active time zone
 
@@ -439,7 +439,7 @@ namespace openpeer
 
         int mWidth {};                    // width in pixels if known; negative means unknown
         int mHeight {};                   // height in pixels if known; negative means unknown
-        Seconds mLength;                 // how long is audio/video
+        Seconds mLength {};               // how long is audio/video
 
         String mExternalLinkURL;          // external link to resource
 

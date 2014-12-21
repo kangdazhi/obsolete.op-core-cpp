@@ -558,7 +558,7 @@ namespace openpeer
                                                                   Seconds minimumValidityWindowRequired
                                                                   )
       {
-        Seconds available;
+        Seconds available {};
         Time expires = getAuthorizedApplicationIDExpiry(authorizedApplicationID, &available);
 
         if (available < minimumValidityWindowRequired) {

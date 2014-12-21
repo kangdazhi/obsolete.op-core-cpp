@@ -687,7 +687,7 @@ namespace openpeer
         IConversationThreadHostSlaveBasePtr mLastOpenThread;  // if there is was an open thread, this is valid
 
         TimerPtr mTimer;
-        Seconds mOpenThreadInactivityTimeout;
+        Seconds mOpenThreadInactivityTimeout {};
 
         IConversationThreadHostSlaveBasePtr mHandleThreadChanged;
         DWORD mHandleContactsChangedCRC;
