@@ -108,7 +108,7 @@ namespace openpeer
 
         case CallSystemMessageStatus_Placed:    return Definitions::ValueKeywords::placed();
         case CallSystemMessageStatus_Answered:  return Definitions::ValueKeywords::answered();
-        case CallSystemMessageStatus_Hungup:    return Definitions::ValueKeywords::answered();
+        case CallSystemMessageStatus_Hungup:    return Definitions::ValueKeywords::hungup();
       }
       return "UNDEFINED";
     }
