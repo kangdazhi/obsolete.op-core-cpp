@@ -380,7 +380,7 @@ namespace openpeer
       ElementPtr ConversationThread::getMetaData() const
       {
         AutoRecursiveLock lock(*this);
-        return mMetaData ? mMetaData->clone()->toElement() : ElementPtr();
+        return UseCoreHelper::clone(mMetaData);
       }
       
       //-----------------------------------------------------------------------
@@ -2085,7 +2085,7 @@ namespace openpeer
                                                        ElementPtr metaData
                                                        )
     {
-      return internal::IConversationThreadFactory::singleton().createConversationThread(internal::Account::convert(account), identityContacts, addContacts, threadID);
+      return internal::IConversationThreadFactory::singleton().createConversationThread(internal::Account::convert(account), identityContacts, addContacts, threadID, metaData);
     }
 
     //-----------------------------------------------------------------------

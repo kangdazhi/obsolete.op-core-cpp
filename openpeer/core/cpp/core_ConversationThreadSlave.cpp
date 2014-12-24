@@ -65,6 +65,7 @@ namespace openpeer
       typedef ConversationThreadSlave::UseContactPtr UseContactPtr;
 
       ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
+      ZS_DECLARE_TYPEDEF_PTR(core::internal::Helper, UseCoreHelper)
 
       ZS_DECLARE_TYPEDEF_PTR(services::ISettings, UseSettings)
 
@@ -668,9 +669,7 @@ namespace openpeer
       {
         if (!mHostThread) return ElementPtr();
         
-        ElementPtr metaData = mHostThread->details()->metaData();
-        if (!metaData) return ElementPtr();
-        return metaData->clone()->toElement();
+        return UseCoreHelper::clone(mHostThread->details()->metaData());
       }
 
       //-----------------------------------------------------------------------
