@@ -27,6 +27,8 @@ $(LOCAL_PATH)/../ortc-lib/libs/zsLib/zsLib/internal \
 $(LOCAL_PATH)/../ortc-lib/libs/zsLib/zsLib/extras \
 $(LOCAL_PATH)/../ortc-lib/libs/op-services-cpp \
 $(LOCAL_PATH)/../op-stack-cpp \
+$(LOCAL_PATH)/../easysqlite/easySQLite/easySQLite \
+$(LOCAL_PATH)/../sqlite/build \
 $(LOCAL_PATH)/../ortc-lib/libs \
 $(LOCAL_PATH)/.. \
 $(LOCAL_PATH)/../ortc-lib/libs/build/android/curl/include \
