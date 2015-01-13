@@ -469,7 +469,7 @@ namespace openpeer
         }
 
         if (mLastOpenThread->safeToChangeContacts()) {
-          ZS_LOG_DEBUG(log("able to add contacts to the current thread"))
+          ZS_LOG_DEBUG(log("able to remove contacts to the current thread"))
           mLastOpenThread->removeContacts(contacts);
           handleContactsChanged();
           return;
