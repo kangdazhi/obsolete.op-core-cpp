@@ -621,5 +621,11 @@ namespace openpeer
     {
       UseServicesSettings::verifySettingExists(key);
     }
+    
+    //-------------------------------------------------------------------------
+    void ISettings::verifyRequiredSettings() throw (InvalidUsage)
+    {
+      UseServicesSettings::verifyRequiredSettings();
+    }
   }
 }
