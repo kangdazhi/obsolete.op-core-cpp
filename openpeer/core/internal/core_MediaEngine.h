@@ -366,8 +366,8 @@ namespace openpeer
           #pragma mark MediaEngine::RedirectTransport => webrtc::Transport
           #pragma mark
 
-          virtual int SendPacket(int channel, const void *data, int len);
-          virtual int SendRTCPPacket(int channel, const void *data, int len);
+          virtual int SendPacket(int channel, const void *data, size_t len);
+          virtual int SendRTCPPacket(int channel, const void *data, size_t len);
 
           //-------------------------------------------------------------------
           #pragma mark

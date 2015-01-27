@@ -2243,9 +2243,9 @@ namespace openpeer
           return mError;
         }
         
-        unsigned int bytesSent;
+        size_t bytesSent;
         unsigned int packetsSent;
-        unsigned int bytesReceived;
+        size_t bytesReceived;
         unsigned int packetsReceived;
         
         mError = mVideoRtpRtcp->GetRTPStatistics(mVideoChannel, bytesSent, packetsSent, bytesReceived, packetsReceived);
@@ -3536,7 +3536,7 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      int MediaEngine::RedirectTransport::SendPacket(int channel, const void *data, int len)
+      int MediaEngine::RedirectTransport::SendPacket(int channel, const void *data, size_t len)
       {
         Transport *transport = NULL;
         {
@@ -3552,7 +3552,7 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      int MediaEngine::RedirectTransport::SendRTCPPacket(int channel, const void *data, int len)
+      int MediaEngine::RedirectTransport::SendRTCPPacket(int channel, const void *data, size_t len)
       {
         Transport *transport = NULL;
         {

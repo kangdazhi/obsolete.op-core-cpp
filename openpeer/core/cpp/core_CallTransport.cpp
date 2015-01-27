@@ -1035,7 +1035,7 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      int CallTransport::TransportSocket::SendPacket(int channel, const void *data, int len)
+      int CallTransport::TransportSocket::SendPacket(int channel, const void *data, size_t len)
       {
         if (len < (sizeof(BYTE)*2)) return 0;
 
@@ -1052,7 +1052,7 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
-      int CallTransport::TransportSocket::SendRTCPPacket(int channel, const void *data, int len)
+      int CallTransport::TransportSocket::SendRTCPPacket(int channel, const void *data, size_t len)
       {
         if (len < (sizeof(BYTE)*2)) return 0;
 
