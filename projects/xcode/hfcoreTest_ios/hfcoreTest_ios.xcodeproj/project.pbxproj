@@ -119,7 +119,6 @@
 		E2FED07F1A73051900795C40 /* libcurl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2FED07E1A73051900795C40 /* libcurl.a */; };
 		E2FED0B81A730D2800795C40 /* libaudio_decoder_interface.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2FED0AB1A730D2800795C40 /* libaudio_decoder_interface.a */; };
 		E2FED0B91A730D2800795C40 /* libaudio_encoder_interface.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2FED0AC1A730D2800795C40 /* libaudio_encoder_interface.a */; };
-		E2FED0BA1A730D2800795C40 /* libbwe_tools_util.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2FED0AD1A730D2800795C40 /* libbwe_tools_util.a */; };
 		E2FED0BB1A730D2800795C40 /* libneteq.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2FED0AE1A730D2800795C40 /* libneteq.a */; };
 		E2FED0BC1A730D2800795C40 /* libred.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2FED0AF1A730D2800795C40 /* libred.a */; };
 		E2FED0BD1A730D2800795C40 /* librtc_base_approved.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E2FED0B01A730D2800795C40 /* librtc_base_approved.a */; };
@@ -377,7 +376,6 @@
 		E2FED07E1A73051900795C40 /* libcurl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcurl.a; path = "../../../../ortc-lib/libs/curl-build-scripts/curl/ios-appstore/lib/libcurl.a"; sourceTree = SOURCE_ROOT; };
 		E2FED0AB1A730D2800795C40 /* libaudio_decoder_interface.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libaudio_decoder_interface.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2FED0AC1A730D2800795C40 /* libaudio_encoder_interface.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libaudio_encoder_interface.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E2FED0AD1A730D2800795C40 /* libbwe_tools_util.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libbwe_tools_util.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2FED0AE1A730D2800795C40 /* libneteq.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libneteq.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2FED0AF1A730D2800795C40 /* libred.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libred.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2FED0B01A730D2800795C40 /* librtc_base_approved.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = librtc_base_approved.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -485,7 +483,6 @@
 				E2FED0C41A730D2800795C40 /* libwebrtc.a in Frameworks */,
 				E2506E54170DA55C005A43D2 /* CoreImage.framework in Frameworks */,
 				E2437F3216CBD62200441ABD /* CoreAudio.framework in Frameworks */,
-				E2FED0BA1A730D2800795C40 /* libbwe_tools_util.a in Frameworks */,
 				E2437F3316CBD62200441ABD /* CoreFoundation.framework in Frameworks */,
 				E2437F3416CBD62200441ABD /* CoreGraphics.framework in Frameworks */,
 				E2437F3516CBD62200441ABD /* CoreMedia.framework in Frameworks */,
@@ -564,7 +561,6 @@
 				E2FED1011A7313D700795C40 /* libvideo_coding_utility.a */,
 				E2FED0AB1A730D2800795C40 /* libaudio_decoder_interface.a */,
 				E2FED0AC1A730D2800795C40 /* libaudio_encoder_interface.a */,
-				E2FED0AD1A730D2800795C40 /* libbwe_tools_util.a */,
 				E2FED0AE1A730D2800795C40 /* libneteq.a */,
 				E2FED0AF1A730D2800795C40 /* libred.a */,
 				E2FED0B01A730D2800795C40 /* librtc_base_approved.a */,
