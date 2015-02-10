@@ -77,6 +77,8 @@ namespace openpeer
                                                const SplitMap &split,
                                                const char *serverName
                                                );
+        
+        virtual ElementPtr getHostMetaData() const = 0;
       };
 
       //-----------------------------------------------------------------------
@@ -235,6 +237,8 @@ namespace openpeer
                                                  const SplitMap &split,
                                                  const char *serverName
                                                  );
+
+        virtual ElementPtr getHostMetaData() const;
 
         //---------------------------------------------------------------------
         #pragma mark

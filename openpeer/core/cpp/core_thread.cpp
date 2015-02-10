@@ -2011,6 +2011,7 @@ namespace openpeer
                                    const char *topic,
                                    const char *replaces,
                                    const char *inServerName,
+                                   ElementPtr inMetaDataEl,
                                    ConversationThreadStates state
                                    )
         {
@@ -2039,6 +2040,15 @@ namespace openpeer
           ElementPtr topicEl = createElementWithTextAndJSONEncode("topic", pThis->mTopic);
           ElementPtr createdEl = createElementWithNumber("created", UseServicesHelper::timeToString(pThis->mCreated));
           ElementPtr serverNameEl = createElementWithTextAndJSONEncode("server", pThis->mServerName);
+          ElementPtr metaDataEl;
+          if (inMetaDataEl) {
+            if (IConversationThread::Definitions::Names::metaDataName() == inMetaDataEl->getValue()) {
+              pThis->mMetaDataEl = inMetaDataEl->clone()->toElement();
+            } else {
+              pThis->mMetaDataEl = Element::create(IConversationThread::Definitions::Names::metaDataName());
+              pThis->mMetaDataEl->adoptAsLastChild(inMetaDataEl->clone());
+            }
+          }
 
           detailsEl->adoptAsLastChild(threadBaseEl);
           detailsEl->adoptAsLastChild(threadHostEl);
@@ -2048,6 +2058,9 @@ namespace openpeer
           detailsEl->adoptAsLastChild(createdEl);
           if (pThis->mServerName.hasData()) {
             detailsEl->adoptAsLastChild(serverNameEl);
+          }
+          if (pThis->mMetaDataEl) {
+            detailsEl->adoptAsLastChild(pThis->mMetaDataEl);
           }
           pThis->mDetailsEl = detailsEl;
           return pThis;
@@ -2085,6 +2098,8 @@ namespace openpeer
             if (serverEl) {
               pThis->mServerName = IMessageHelper::getElementTextAndDecode(serverEl);
             }
+
+            pThis->mMetaDataEl = detailsEl->findFirstChildElement(IConversationThread::Definitions::Names::metaDataName());
 
           } catch(CheckFailed &) {
             ZS_LOG_ERROR(Detail, pThis->log("details element parse check failed"))
@@ -2718,6 +2733,7 @@ namespace openpeer
                                  const char *topic,
                                  const char *replaces,
                                  const char *serverName,
+                                 ElementPtr inMetaDataEl,
                                  ConversationThreadStates state,
                                  ILocationPtr peerHostLocation
                                  )
@@ -2738,7 +2754,7 @@ namespace openpeer
             return ThreadPtr();
           }
 
-          pThis->mDetails = Details::create(1, baseThreadID, hostThreadID, topic, replaces, serverName, state);
+          pThis->mDetails = Details::create(1, baseThreadID, hostThreadID, topic, replaces, serverName, inMetaDataEl, state);
           if (!pThis->mDetails) return ThreadPtr();
 
           ThreadContactList empty;
@@ -3103,7 +3119,7 @@ namespace openpeer
           if (state == mDetails->state()) return; // nothing changed
 
           mDetailsChanged = true;
-          mDetails = Details::create(mDetails->version()+1, mDetails->baseThreadID(), mDetails->hostThreadID(), mDetails->topic(), mDetails->replacesThreadID(), mDetails->serverName(), state);
+          mDetails = Details::create(mDetails->version()+1, mDetails->baseThreadID(), mDetails->hostThreadID(), mDetails->topic(), mDetails->replacesThreadID(), mDetails->serverName(), mDetails->metaData(), state);
         }
 
         //---------------------------------------------------------------------
