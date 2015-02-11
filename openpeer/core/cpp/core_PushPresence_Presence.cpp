@@ -771,7 +771,7 @@ namespace openpeer
       for (ResourceList::const_iterator iter = mResources.begin(); iter != mResources.end(); ++iter) {
         const Resource &info = (*iter);
 
-        ElementPtr resourceEl = UseMessageHelper::createElementWithID("resource", info.mID);
+        ElementPtr resourceEl = UseMessageHelper::createElementWithTextID("resource", info.mID);
 
         if (info.mRelatedID) {
           resourceEl->setAttribute("related", info.mRelatedID);

@@ -97,7 +97,7 @@ namespace openpeer
         //---------------------------------------------------------------------
         static ElementPtr createElement(const char *elementName, const char *id)
         {
-          return IMessageHelper::createElementWithID(elementName ? String(elementName) : String(), id ? String(id) : String());
+          return IMessageHelper::createElementWithTextID(elementName ? String(elementName) : String(), id ? String(id) : String());
         }
 
         //---------------------------------------------------------------------
@@ -822,7 +822,7 @@ namespace openpeer
         ElementPtr MessageReceipts::constructReceiptsElement() const
         {
           ElementPtr receiptsEl = Element::create(mReceiptsElementName);
-          receiptsEl->setAttribute("version", string(mVersion));
+          receiptsEl->setAttribute("version", string(mVersion), false);
 
           ElementPtr messagesEl = Element::create("messages");
           receiptsEl->adoptAsLastChild(messagesEl);
@@ -1023,7 +1023,7 @@ namespace openpeer
           ElementPtr contactEl = createElement("contact", mContact->getPeerURI());
 
           if (0 != mVersion) {
-            contactEl->setAttribute("version", string(mVersion));
+            contactEl->setAttribute("version", string(mVersion), false);
           }
 
           if (mIdentityContacts.size() > 0) {
@@ -1142,7 +1142,7 @@ namespace openpeer
           }
           if (updatedContact) {
             if (0 != updatedContact->version()) {
-              threadContactReplacementEl->setAttribute("version", string(updatedContact->version()));
+              threadContactReplacementEl->setAttribute("version", string(updatedContact->version()), false);
             }
           }
           if (updatedDisposition.hasData()) {
@@ -1303,7 +1303,7 @@ namespace openpeer
           pThis->mVersion = existingContacts->version() + 1;
 
           ElementPtr setEl = Element::create();
-          setEl->setAttribute("version", string(pThis->mVersion));
+          setEl->setAttribute("version", string(pThis->mVersion), false);
 
           // put the corrected version on the contacts element
           IDiff::createDiffsForAttributes(ioChangesDoc, ioContactsEl, false, setEl);
@@ -1625,7 +1625,7 @@ namespace openpeer
           ElementPtr dialogBundleEl = createElement("dialogBundle", ("bundle_" + dialogID).c_str());
           ElementPtr dialogEl = createElement("dialog", dialogID);
           if (0 != version) {
-            dialogEl->setAttribute("version", string(version));
+            dialogEl->setAttribute("version", string(version), false);
           }
           dialogBundleEl->adoptAsLastChild(dialogEl);
 
@@ -1666,7 +1666,7 @@ namespace openpeer
             ElementPtr descriptionEl = createElement("description", description->mDescriptionID);
             descriptionEl->setAttribute("type", description->mType);
             if (0 != description->mVersion) {
-              descriptionEl->setAttribute("version", string(description->mVersion));
+              descriptionEl->setAttribute("version", string(description->mVersion), false);
             }
 
             ElementPtr ssrcEl = createElementWithText("ssrc", string(description->mSSRC));
@@ -2028,7 +2028,7 @@ namespace openpeer
 
           ElementPtr detailsEl = Element::create("details");
           if (0 != version) {
-            detailsEl->setAttribute("version", string(version));
+            detailsEl->setAttribute("version", string(version), false);
           }
 
           ElementPtr threadBaseEl = createElement("threadBase", baseThreadID);
@@ -2752,11 +2752,11 @@ namespace openpeer
           ElementPtr threadEl = Element::create("thread");
           ElementPtr messagesEl = Element::create("messages");
           if (0 != pThis->mMessagesVersion) {
-            messagesEl->setAttribute("version", string(pThis->mMessagesVersion));
+            messagesEl->setAttribute("version", string(pThis->mMessagesVersion), false);
           }
           ElementPtr dialogsEl = Element::create("dialogs");
           if (0 != pThis->mDialogsVersion) {
-            dialogsEl->setAttribute("version", string(pThis->mDialogsVersion));
+            dialogsEl->setAttribute("version", string(pThis->mDialogsVersion), false);
           }
 
           doc->adoptAsLastChild(threadEl);
@@ -2944,7 +2944,7 @@ namespace openpeer
               ++mMessagesVersion;
 
               ElementPtr setEl = Element::create();
-              setEl->setAttribute("version", string(mMessagesVersion));
+              setEl->setAttribute("version", string(mMessagesVersion), false);
 
               // put the corrected version on the messages element...
               IDiff::createDiffsForAttributes(changesDoc, messagesEl, false, setEl);
@@ -2974,7 +2974,7 @@ namespace openpeer
               ++mDialogsVersion;
 
               ElementPtr setEl = Element::create();
-              setEl->setAttribute("version", string(mDialogsVersion));
+              setEl->setAttribute("version", string(mDialogsVersion), false);
 
               IDiff::createDiffsForAttributes(changesDoc, dialogsEl, false, setEl);
 

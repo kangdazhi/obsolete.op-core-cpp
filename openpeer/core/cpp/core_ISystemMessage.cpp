@@ -215,7 +215,7 @@ namespace openpeer
       callStatuEl->adoptAsLastChild(UseMessageHelper::createElementWithTextAndJSONEncode("callee", mCallee->getPeerURI()));
 
       if (0 != mErrorCode) {
-        callStatuEl->adoptAsLastChild(IMessageHelper::createElementWithID("error", internal::string(mErrorCode)));
+        callStatuEl->adoptAsLastChild(IMessageHelper::createElementWithTextID("error", internal::string(mErrorCode)));
       }
 
       if (existingCallStatusEl) {
