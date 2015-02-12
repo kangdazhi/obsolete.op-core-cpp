@@ -413,7 +413,7 @@ namespace openpeer
       Time Call::getRingTime() const
       {
         AutoRecursiveLock lock(mLock);
-        return mCreationTime;
+        return mRingTime;
       }
 
       //-----------------------------------------------------------------------
