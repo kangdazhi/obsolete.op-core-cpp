@@ -1570,6 +1570,7 @@ namespace openpeer
 
         switch (state) {
           case IServiceLockboxSession::SessionState_Pending:
+          case IServiceLockboxSession::SessionState_PendingWithLockboxAccessReady:
           {
             ZS_LOG_DEBUG(log("lockbox is pending"))
             setState(AccountState_Pending);
