@@ -170,6 +170,7 @@ namespace openpeer
 
       IdentityContact();
       IdentityContact(const RolodexContact &);
+      IdentityContact(const IdentityContact &);
       bool hasData() const;
 
       bool operator==(const IdentityContact &rValue) const;
@@ -201,6 +202,8 @@ namespace openpeer
     #pragma mark
     #pragma mark (other)
     #pragma mark
+    
+    ZS_DECLARE_STRUCT_PTR(ConversationThreadType)
 
     ZS_DECLARE_INTERACTION_PTR(IAccount)
     ZS_DECLARE_INTERACTION_PTR(IBackgrounding)

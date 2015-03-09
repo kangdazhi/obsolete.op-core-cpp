@@ -48,7 +48,6 @@
 
 namespace openpeer { namespace core { ZS_DECLARE_SUBSYSTEM(openpeer_core) } }
 
-#define OPENPEEER_CORE_CONVERSATION_THREAD_SYSTEM_MESSAGE_TYPE "text/json-system-message"
 
 namespace openpeer
 {
@@ -81,13 +80,13 @@ namespace openpeer
     //-------------------------------------------------------------------------
     ElementPtr ISystemMessage::createEmptySystemMessage()
     {
-      return Element::create("system");
+      return Element::create(Definitions::Names::systemMessageRoot());
     }
 
     //-------------------------------------------------------------------------
     String ISystemMessage::getMessageType()
     {
-      return OPENPEEER_CORE_CONVERSATION_THREAD_SYSTEM_MESSAGE_TYPE;
+      return Definitions::ValueKeywords::systemMessageType();
     }
 
 
@@ -102,55 +101,59 @@ namespace openpeer
     #pragma mark
 
     //-------------------------------------------------------------------------
-    const char *CallSystemMessage::toString(CallSystemMessageTypes type)
+    const char *CallSystemMessage::toString(CallSystemMessageStatuses type)
     {
       switch (type) {
-        case CallSystemMessageType_None:      return "none";
+        case CallSystemMessageStatus_None:      return "none";
 
-        case CallSystemMessageType_Placed:    return "placed";
-        case CallSystemMessageType_Answered:  return "answered";
-        case CallSystemMessageType_Hungup:    return "hungup";
+        case CallSystemMessageStatus_Placed:    return Definitions::ValueKeywords::placed();
+        case CallSystemMessageStatus_Answered:  return Definitions::ValueKeywords::answered();
+        case CallSystemMessageStatus_Hungup:    return Definitions::ValueKeywords::hungup();
       }
       return "UNDEFINED";
     }
 
     //-------------------------------------------------------------------------
-    CallSystemMessage::CallSystemMessageTypes CallSystemMessage::toCallSystemMessageType(const char *inType)
+    CallSystemMessage::CallSystemMessageStatuses CallSystemMessage::toCallSystemMessageStatus(const char *inType)
     {
-      static CallSystemMessageTypes types[] =
+      static CallSystemMessageStatuses types[] =
       {
-        CallSystemMessageType_Placed,
-        CallSystemMessageType_Answered,
-        CallSystemMessageType_Hungup,
+        CallSystemMessageStatus_Placed,
+        CallSystemMessageStatus_Answered,
+        CallSystemMessageStatus_Hungup,
 
-        CallSystemMessageType_None
+        CallSystemMessageStatus_None
       };
 
       String type(inType);
-      if (type.isEmpty()) return CallSystemMessageType_None;
+      if (type.isEmpty()) return CallSystemMessageStatus_None;
 
-      for (int index = 0; CallSystemMessageType_None != types[index]; ++index)
+      for (int index = 0; CallSystemMessageStatus_None != types[index]; ++index)
       {
         if (type == toString(types[index])) return types[index];
       }
 
-      return CallSystemMessageType_None;
+      return CallSystemMessageStatus_None;
     }
 
     //-------------------------------------------------------------------------
     CallSystemMessage::CallSystemMessage() :
-      mType(CallSystemMessageType_None),
+      mStatus(CallSystemMessageStatus_None),
       mErrorCode(0)
     {
     }
 
     //-------------------------------------------------------------------------
     CallSystemMessage::CallSystemMessage(
-                                         CallSystemMessageTypes type,
+                                         CallSystemMessageStatuses status,
+                                         const char *mediaType,
+                                         const char *callID,
                                          IContactPtr callee,
                                          WORD errorCode
                                          ) :
-      mType(type),
+      mStatus(status),
+      mMediaType(mediaType),
+      mCallID(callID),
       mCallee(callee),
       mErrorCode(errorCode)
     {
@@ -158,7 +161,9 @@ namespace openpeer
 
     //-------------------------------------------------------------------------
     CallSystemMessage::CallSystemMessage(const CallSystemMessage &rValue) :
-      mType(rValue.mType),
+      mStatus(rValue.mStatus),
+      mMediaType(rValue.mMediaType),
+      mCallID(rValue.mCallID),
       mCallee(rValue.mCallee),
       mErrorCode(rValue.mErrorCode)
     {
@@ -172,20 +177,22 @@ namespace openpeer
     {
       if (!dataEl) return CallSystemMessagePtr();
 
-      ElementPtr callStatusEl = dataEl->findFirstChildElement("callStatus");
+      ElementPtr callStatusEl = dataEl->findFirstChildElement(Definitions::Names::callStatusRoot());
       if (!callStatusEl) return CallSystemMessagePtr();
 
-      String typeStr = UseMessageHelper::getElementText(callStatusEl->findFirstChildElement("type"));
+      String statusStr = UseMessageHelper::getElementText(callStatusEl->findFirstChildElement(Definitions::Names::status()));
 
-      CallSystemMessageTypes type = toCallSystemMessageType(typeStr);
-      if (CallSystemMessageType_None == type) return CallSystemMessagePtr();
+      CallSystemMessageStatuses status = toCallSystemMessageStatus(statusStr);
+      if (CallSystemMessageStatus_None == status) return CallSystemMessagePtr();
 
       CallSystemMessagePtr pThis(new CallSystemMessage);
 
-      pThis->mType = type;
+      pThis->mStatus = status;
 
-      String calleeStr = IMessageHelper::getElementTextAndDecode(callStatusEl->findFirstChildElement("callee"));
-      String errorStr = IMessageHelper::getAttributeID(callStatusEl->findFirstChildElement("error"));
+      pThis->mCallID = IMessageHelper::getAttributeID(callStatusEl);
+      pThis->mMediaType = IMessageHelper::getElementTextAndDecode(callStatusEl->findFirstChildElement(Definitions::Names::mediaType()));
+      String calleeStr = IMessageHelper::getElementTextAndDecode(callStatusEl->findFirstChildElement(Definitions::Names::callee()));
+      String errorStr = IMessageHelper::getAttributeID(callStatusEl->findFirstChildElement(Definitions::Names::error()));
 
       try {
         pThis->mErrorCode = Numeric<WORD>(errorStr);
@@ -203,19 +210,18 @@ namespace openpeer
     {
       ZS_THROW_INVALID_ARGUMENT_IF(!dataEl)
 
-      ElementPtr messageEl = Element::create("system");
+      if (CallSystemMessageStatus_None == mStatus) return;
 
-      if (CallSystemMessageType_None == mType) return;
+      ElementPtr existingCallStatusEl = dataEl->findFirstChildElement(Definitions::Names::callStatusRoot());
 
-      ElementPtr existingCallStatusEl = dataEl->findFirstChildElement("callStatus");
+      ElementPtr callStatuEl = IMessageHelper::createElementWithID(Definitions::Names::callStatusRoot(), mCallID);
 
-      ElementPtr callStatuEl = Element::create("callStatus");
-
-      callStatuEl->adoptAsLastChild(UseMessageHelper::createElementWithText("type", toString(mType)));
-      callStatuEl->adoptAsLastChild(UseMessageHelper::createElementWithTextAndJSONEncode("callee", mCallee->getPeerURI()));
+      callStatuEl->adoptAsLastChild(UseMessageHelper::createElementWithTextAndJSONEncode(Definitions::Names::mediaType(), mMediaType));
+      callStatuEl->adoptAsLastChild(UseMessageHelper::createElementWithText(Definitions::Names::status(), toString(mStatus)));
+      callStatuEl->adoptAsLastChild(UseMessageHelper::createElementWithTextAndJSONEncode(Definitions::Names::callee(), mCallee->getPeerURI()));
 
       if (0 != mErrorCode) {
-        callStatuEl->adoptAsLastChild(IMessageHelper::createElementWithTextID("error", internal::string(mErrorCode)));
+        callStatuEl->adoptAsLastChild(IMessageHelper::createElementWithTextID(Definitions::Names::error(), internal::string(mErrorCode)));
       }
 
       if (existingCallStatusEl) {
@@ -229,7 +235,8 @@ namespace openpeer
     //-------------------------------------------------------------------------
     bool CallSystemMessage::hasData() const
     {
-      return ((CallSystemMessageType_None != mType) ||
+      return ((CallSystemMessageStatus_None != mStatus) ||
+              (mCallID.hasData()) ||
               ((bool)mCallee) ||
               (0 != mErrorCode));
     }
@@ -238,7 +245,9 @@ namespace openpeer
     ElementPtr CallSystemMessage::toDebug() const
     {
       ElementPtr resultEl = Element::create("core::CallSystemMessage");
-      UseServicesHelper::debugAppend(resultEl, "type", toString(mType));
+      UseServicesHelper::debugAppend(resultEl, "status", toString(mStatus));
+      UseServicesHelper::debugAppend(resultEl, "media type", mMediaType);
+      UseServicesHelper::debugAppend(resultEl, "call id", mCallID);
       UseServicesHelper::debugAppend(resultEl, "calle", mCallee ? mCallee->getPeerURI() : String());
       UseServicesHelper::debugAppend(resultEl, "error", mErrorCode);
       return resultEl;

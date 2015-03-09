@@ -295,6 +295,8 @@ namespace openpeer
         virtual void requestRemoveIncomingCallHandler(const char *dialogID) = 0;
 
         virtual void notifyPossibleCallReplyStateChange(const char *dialogID) = 0;
+
+        virtual ElementPtr getMetaData() const = 0;
       };
 
       //-------------------------------------------------------------------------
@@ -411,8 +413,9 @@ namespace openpeer
         ConversationThread(
                            IMessageQueuePtr queue,
                            AccountPtr account,
-                           const char *threadID,
-                           const char *serverName
+                           const String &threadID,
+                           const char *serverName,
+                           ElementPtr metaData
                            );
         
         ConversationThread(Noop) :
@@ -443,7 +446,10 @@ namespace openpeer
 
         static ConversationThreadPtr create(
                                             AccountPtr account,
-                                            const IdentityContactList &identityContacts
+                                            const IdentityContactList &identityContacts,
+                                            const ContactProfileInfoList &addContacts = ContactProfileInfoList(),
+                                            const char *threadID = NULL,
+                                            ElementPtr metaData = ElementPtr()
                                             );
 
         static ConversationThreadListPtr getConversationThreads(IAccountPtr account);
@@ -458,6 +464,8 @@ namespace openpeer
 
         virtual bool amIHost() const;
         virtual IAccountPtr getAssociatedAccount() const;
+
+        virtual ElementPtr getMetaData() const;
 
         virtual ContactListPtr getContacts() const;
         virtual void addContacts(const ContactProfileInfoList &contactProfileInfos);
@@ -497,6 +505,11 @@ namespace openpeer
                                              const char *messageID,
                                              MessageDeliveryStates &outDeliveryState
                                              ) const;
+
+        virtual void setMessageDeliveryState(
+                                             const char *inMessageID,
+                                             MessageDeliveryStates inDeliveryState
+                                             );
 
         virtual void markAllMessagesRead();
 
@@ -585,6 +598,8 @@ namespace openpeer
         virtual void requestRemoveIncomingCallHandler(const char *dialogID);
 
         virtual void notifyPossibleCallReplyStateChange(const char *dialogID);
+
+        // (duplicate) virtual ElementPtr getMetaData() const;
 
         //-----------------------------------------------------------------------
         #pragma mark
@@ -679,6 +694,7 @@ namespace openpeer
 
         String mThreadID;
         String mServerName;
+        ElementPtr mMetaData;
 
         ConversationThreadStates mCurrentState;
         bool mMustNotifyAboutNewThread;
@@ -724,8 +740,12 @@ namespace openpeer
 
         virtual ConversationThreadPtr createConversationThread(
                                                                AccountPtr account,
-                                                               const IdentityContactList &identityContacts
+                                                               const IdentityContactList &identityContacts,
+                                                               const ContactProfileInfoList &addContacts = ContactProfileInfoList(),
+                                                               const char *threadID = NULL,
+                                                               ElementPtr metaData = ElementPtr()
                                                                );
+
         virtual ConversationThreadPtr createConversationThread(
                                                                AccountPtr account,
                                                                ILocationPtr peerLocation,

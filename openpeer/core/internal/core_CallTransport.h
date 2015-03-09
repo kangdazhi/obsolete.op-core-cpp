@@ -380,8 +380,8 @@ namespace openpeer
           //-------------------------------------------------------------------
           #pragma mark CallTransport::TransportSocket => webrtc::Transport
 
-          virtual int SendPacket(int channel, const void *data, int len);
-          virtual int SendRTCPPacket(int channel, const void *data, int len);
+          virtual int SendPacket(int channel, const void *data, size_t len);
+          virtual int SendRTCPPacket(int channel, const void *data, size_t len);
 
         protected:
           //-------------------------------------------------------------------

@@ -66,6 +66,7 @@ namespace openpeer
       typedef ConversationThreadSlave::UseContactPtr UseContactPtr;
 
       ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
+      ZS_DECLARE_TYPEDEF_PTR(core::internal::Helper, UseCoreHelper)
 
       ZS_DECLARE_TYPEDEF_PTR(services::ISettings, UseSettings)
 
@@ -665,6 +666,14 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      ElementPtr ConversationThreadSlave::getHostMetaData() const
+      {
+        if (!mHostThread) return ElementPtr();
+        
+        return UseCoreHelper::clone(mHostThread->details()->metaData());
+      }
+
+      //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
       //-----------------------------------------------------------------------
@@ -916,6 +925,7 @@ namespace openpeer
                                         NULL,
                                         NULL,
                                         mServerName,
+                                        mHostThread->details()->metaData(),
                                         Details::ConversationThreadState_None,
                                         publication->getPublishedLocation()
                                         );

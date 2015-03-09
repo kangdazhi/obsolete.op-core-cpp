@@ -41,6 +41,8 @@
 
 #include <openpeer/core/ComposingStatus.h>
 
+#include <openpeer/core/IHelper.h>
+
 #include <openpeer/stack/IHelper.h>
 
 #include <openpeer/services/IHelper.h>
@@ -73,6 +75,7 @@ namespace openpeer
 
       ZS_DECLARE_TYPEDEF_PTR(services::IHelper, UseServicesHelper)
       ZS_DECLARE_TYPEDEF_PTR(IHelperForInternal, UseHelper)
+      ZS_DECLARE_TYPEDEF_PTR(core::IHelper, UseCoreHelper)
       ZS_DECLARE_TYPEDEF_PTR(services::ISettings, UseSettings)
 
       //-----------------------------------------------------------------------
@@ -192,15 +195,17 @@ namespace openpeer
       ConversationThread::ConversationThread(
                                              IMessageQueuePtr queue,
                                              AccountPtr account,
-                                             const char *threadID,
-                                             const char *serverName
+                                             const String &threadID,
+                                             const char *serverName,
+                                             ElementPtr metaData
                                              ) :
         MessageQueueAssociator(queue),
         SharedRecursiveLock(*account),
         mAccount(account),
         mDelegate(UseAccountPtr(account)->getConversationThreadDelegate()),
-        mThreadID(threadID ? String(threadID) : services::IHelper::randomString(32)),
+        mThreadID(threadID.hasData() ? threadID : services::IHelper::randomString(32)),
         mServerName(serverName),
+        mMetaData(UseCoreHelper::clone(metaData)),
         mCurrentState(ConversationThreadState_Pending),
         mMustNotifyAboutNewThread(false),
         mOpenThreadInactivityTimeout(Seconds(UseSettings::getUInt(OPENPEER_CORE_SETTING_CONVERSATION_THREAD_HOST_INACTIVE_CLOSE_TIME_IN_SECONDS))),
@@ -283,14 +288,17 @@ namespace openpeer
       //-----------------------------------------------------------------------
       ConversationThreadPtr ConversationThread::create(
                                                        AccountPtr inAccount,
-                                                       const IdentityContactList &identityContacts
+                                                       const IdentityContactList &identityContacts,
+                                                       const ContactProfileInfoList &addContacts,
+                                                       const char *threadID,
+                                                       ElementPtr metaData
                                                        )
       {
         ZS_THROW_INVALID_ARGUMENT_IF(!inAccount)
 
         UseAccountPtr account(inAccount);
 
-        ConversationThreadPtr pThis(new ConversationThread(UseStack::queueCore(), inAccount, NULL, NULL));
+        ConversationThreadPtr pThis(new ConversationThread(UseStack::queueCore(), inAccount, String(threadID), NULL, metaData));
         pThis->mThisWeak = pThis;
         pThis->mSelfIdentityContacts = identityContacts;
 
@@ -305,6 +313,11 @@ namespace openpeer
         info.mContact = account->getSelfContact();
         info.mIdentityContacts = identityContacts;
         contacts.push_back(info);
+        
+        for (ContactProfileInfoList::const_iterator iter = addContacts.begin(); iter != addContacts.end(); ++iter) {
+          const ContactProfileInfo &contact = (*iter);
+          contacts.push_back(contact);
+        }
 
         pThis->addContacts(contacts);
 
@@ -363,6 +376,13 @@ namespace openpeer
         return Account::convert(mAccount.lock());
       }
 
+      //-----------------------------------------------------------------------
+      ElementPtr ConversationThread::getMetaData() const
+      {
+        AutoRecursiveLock lock(*this);
+        return UseCoreHelper::clone(mMetaData);
+      }
+      
       //-----------------------------------------------------------------------
       ContactListPtr ConversationThread::getContacts() const
       {
@@ -449,7 +469,7 @@ namespace openpeer
         }
 
         if (mLastOpenThread->safeToChangeContacts()) {
-          ZS_LOG_DEBUG(log("able to add contacts to the current thread"))
+          ZS_LOG_DEBUG(log("able to remove contacts to the current thread"))
           mLastOpenThread->removeContacts(contacts);
           handleContactsChanged();
           return;
@@ -711,6 +731,33 @@ namespace openpeer
       }
 
       //-----------------------------------------------------------------------
+      void ConversationThread::setMessageDeliveryState(
+                                                       const char *inMessageID,
+                                                       MessageDeliveryStates inDeliveryState
+                                                       )
+      {
+        String messageID(inMessageID);
+        ZS_THROW_INVALID_ARGUMENT_IF(messageID.empty())
+        
+        ZS_LOG_TRACE(log("setting message delivery state") + ZS_PARAM("message ID", inMessageID) + ZS_PARAM("delivery state", IConversationThread::toString(inDeliveryState)))
+        
+        AutoRecursiveLock lock(*this);
+        MessageDeliveryStatesMap::iterator found = mMessageDeliveryStates.find(messageID);
+        if (found == mMessageDeliveryStates.end()) {
+          mMessageDeliveryStates[messageID] = inDeliveryState;
+          return;
+        }
+        
+        MessageDeliveryStates &currentDeliveryState = (*found).second;
+        if (currentDeliveryState >= inDeliveryState) {
+          ZS_LOG_WARNING(Trace, log("cannot set to an equal or lower delivery state") + ZS_PARAM("message ID", inMessageID)+ ZS_PARAM("current state", IConversationThread::toString(currentDeliveryState)) + ZS_PARAM("set state", IConversationThread::toString(inDeliveryState)))
+          return;
+        }
+
+        currentDeliveryState = inDeliveryState;
+      }
+
+      //-----------------------------------------------------------------------
       void ConversationThread::markAllMessagesRead()
       {
         AutoRecursiveLock lock(*this);
@@ -738,7 +785,7 @@ namespace openpeer
                                                        const SplitMap &split
                                                        )
       {
-        ConversationThreadPtr pThis(new ConversationThread(UseStack::queueCore(), inAccount, services::IHelper::get(split, OPENPEER_CONVERSATION_THREAD_BASE_THREAD_ID_INDEX), NULL));
+        ConversationThreadPtr pThis(new ConversationThread(UseStack::queueCore(), inAccount, services::IHelper::get(split, OPENPEER_CONVERSATION_THREAD_BASE_THREAD_ID_INDEX), NULL, ElementPtr()));
         pThis->mThisWeak = pThis;
         pThis->mMustNotifyAboutNewThread = true;
 
@@ -862,8 +909,10 @@ namespace openpeer
       void ConversationThread::notifyStateChanged(IConversationThreadHostSlaveBasePtr thread)
       {
         AutoRecursiveLock lock(*this);
-        step();
-        handleContactsChanged();
+        
+        ZS_LOG_TRACE(log("notify state changed"))
+        
+        IWakeDelegateProxy::create(mThisWeak.lock())->onWake();
       }
 
       //-----------------------------------------------------------------------
@@ -1279,8 +1328,9 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      void ConversationThread::notifyAboutNewThreadNowIfNotNotified(ConversationThreadSlavePtr slave)
+      void ConversationThread::notifyAboutNewThreadNowIfNotNotified(ConversationThreadSlavePtr inSlave)
       {
+        UseConversationThreadSlavePtr slave = inSlave;
         AutoRecursiveLock lock(*this);
         if (!mMustNotifyAboutNewThread) {
           ZS_LOG_DEBUG(log("no need to notify about thread creation as it is already created"))
@@ -1294,6 +1344,10 @@ namespace openpeer
         }
 
         ZS_LOG_DEBUG(log("notifying that new conversation thread is now created"))
+        
+        if (!mMetaData) {
+          mMetaData = slave->getHostMetaData();
+        }
 
         if (!mLastOpenThread) {
           ZS_LOG_DEBUG(log("slave has now become last open thread"))
@@ -1861,6 +1915,7 @@ namespace openpeer
         }
 
         handleLastOpenThreadChanged();
+        handleContactsChanged();
 
         ZS_LOG_TRACE(log("step completed"))
       }
@@ -2061,10 +2116,13 @@ namespace openpeer
     //-----------------------------------------------------------------------
     IConversationThreadPtr IConversationThread::create(
                                                        IAccountPtr account,
-                                                       const IdentityContactList &identityContacts
+                                                       const IdentityContactList &identityContacts,
+                                                       const ContactProfileInfoList &addContacts,
+                                                       const char *threadID,
+                                                       ElementPtr metaData
                                                        )
     {
-      return internal::IConversationThreadFactory::singleton().createConversationThread(internal::Account::convert(account), identityContacts);
+      return internal::IConversationThreadFactory::singleton().createConversationThread(internal::Account::convert(account), identityContacts, addContacts, threadID, metaData);
     }
 
     //-----------------------------------------------------------------------

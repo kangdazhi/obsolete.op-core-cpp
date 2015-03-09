@@ -33,6 +33,7 @@
 
 #include <openpeer/core/types.h>
 
+
 namespace openpeer
 {
   namespace core
@@ -47,6 +48,19 @@ namespace openpeer
 
     interaction ISystemMessage
     {
+      struct Definitions
+      {
+        struct Names
+        {
+          static const char *systemMessageRoot()                                 {return "system";}
+        };
+
+        struct ValueKeywords
+        {
+          static const char *systemMessageType()                                 {return "text/json-system-message";}
+        };
+      };
+
       //-----------------------------------------------------------------------
       // PURPOSE: creates an empty system message that can be filled with data
       static ElementPtr createEmptySystemMessage();
@@ -68,21 +82,54 @@ namespace openpeer
 
     struct CallSystemMessage
     {
-      enum CallSystemMessageTypes
+      struct Definitions
       {
-        CallSystemMessageType_None,     // not a call system message
+        struct Names
+        {
+          // { "system": {
+          //   "callStatus" : {
+          //     "$id": "...",
+          //     "status" : "...",  // i.e. "placed", "answered", "hungup"
+          //     "mediaType" : "",
+          //     "callee" : "...",
+          //     "error" : { "$id": 404 }
+          //   }
+          // }
+          static const char *callStatusRoot()                                   {return "callStatus";}
+          static const char *status()                                           {return "status";}
+          static const char *mediaType()                                        {return "mediaType";}
+          static const char *callee()                                           {return "callee";}
+          static const char *error()                                            {return "error";}
+        };
 
-        CallSystemMessageType_Placed,   // call was placed
-        CallSystemMessageType_Answered, // call was answered
-        CallSystemMessageType_Hungup,   // call was hung-up
+        struct ValueKeywords
+        {
+          static const char *placed()                                           {return "placed";}
+          static const char *answered()                                         {return "answered";}
+          static const char *hungup()                                           {return "hungup";}
+
+          static const char *audio()                                            {return "audio";}
+          static const char *video()                                            {return "video";}
+        };
       };
 
-      static const char *toString(CallSystemMessageTypes type);
-      static CallSystemMessageTypes toCallSystemMessageType(const char *type);
+      enum CallSystemMessageStatuses
+      {
+        CallSystemMessageStatus_None,     // not a call system message
+
+        CallSystemMessageStatus_Placed,   // call was placed
+        CallSystemMessageStatus_Answered, // call was answered
+        CallSystemMessageStatus_Hungup,   // call was hung-up
+      };
+
+      static const char *toString(CallSystemMessageStatuses type);
+      static CallSystemMessageStatuses toCallSystemMessageStatus(const char *type);
 
       //-----------------------------------------------------------------------
       // call system message data
-      CallSystemMessageTypes mType;
+      CallSystemMessageStatuses mStatus;
+      String mMediaType;
+      String mCallID;
       IContactPtr mCallee;
       WORD mErrorCode;
 
@@ -90,7 +137,9 @@ namespace openpeer
       // PURPOSE: constructor for new call system messages
       CallSystemMessage();
       CallSystemMessage(
-                        CallSystemMessageTypes type,
+                        CallSystemMessageStatuses type,
+                        const char *mediaType,
+                        const char *callID,
                         IContactPtr callee,
                         WORD errorCode = 0
                         );

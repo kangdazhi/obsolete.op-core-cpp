@@ -34,6 +34,7 @@
 		007B84F01862AE1300BB1284 /* core_ConversationThreadHost_PeerLocation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 007B84EF1862AE1300BB1284 /* core_ConversationThreadHost_PeerLocation.cpp */; };
 		0088E8F81982956A00A7C6B7 /* core_PushMessaging_PushQuery.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0088E8F71982956A00A7C6B7 /* core_PushMessaging_PushQuery.cpp */; };
 		0088E8FA1982CD6D00A7C6B7 /* core_PushMessaging_RegisterQuery.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0088E8F91982CD6D00A7C6B7 /* core_PushMessaging_RegisterQuery.cpp */; };
+		00AC219D1A40C60200719162 /* core_ConversationThreadType.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00AC219C1A40C60200719162 /* core_ConversationThreadType.cpp */; };
 		00AE218F18D3ECA100F8CDB9 /* core_Account_ContactSubscription.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00AE218D18D3ECA100F8CDB9 /* core_Account_ContactSubscription.cpp */; };
 		00AE219018D3ECA100F8CDB9 /* core_Account_LocationSubscription.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00AE218E18D3ECA100F8CDB9 /* core_Account_LocationSubscription.cpp */; };
 		00D223A11936863A0053AF47 /* core_PushMessaging.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00D223A01936863A0053AF47 /* core_PushMessaging.cpp */; };
@@ -130,6 +131,7 @@
 		007B84F11862AE2600BB1284 /* core_ConversationThreadHost_PeerLocation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_ConversationThreadHost_PeerLocation.h; sourceTree = "<group>"; };
 		0088E8F71982956A00A7C6B7 /* core_PushMessaging_PushQuery.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_PushMessaging_PushQuery.cpp; sourceTree = "<group>"; };
 		0088E8F91982CD6D00A7C6B7 /* core_PushMessaging_RegisterQuery.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_PushMessaging_RegisterQuery.cpp; sourceTree = "<group>"; };
+		00AC219C1A40C60200719162 /* core_ConversationThreadType.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_ConversationThreadType.cpp; sourceTree = "<group>"; };
 		00AE218D18D3ECA100F8CDB9 /* core_Account_ContactSubscription.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Account_ContactSubscription.cpp; sourceTree = "<group>"; };
 		00AE218E18D3ECA100F8CDB9 /* core_Account_LocationSubscription.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = core_Account_LocationSubscription.cpp; sourceTree = "<group>"; };
 		00AE219118D3ECB600F8CDB9 /* core_Account_ContactSubscription.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_Account_ContactSubscription.h; sourceTree = "<group>"; };
@@ -244,6 +246,7 @@
 				0063BF6016CA9B6900E6DB4D /* core_ConversationThreadSlave.cpp */,
 				00E493C61997E4B100335BB5 /* core_Decryptor.cpp */,
 				00E493C31997A75100335BB5 /* core_Encryptor.cpp */,
+				00AC219C1A40C60200719162 /* core_ConversationThreadType.cpp */,
 				0063BF6216CA9B6900E6DB4D /* core_Helper.cpp */,
 				0063BF6416CA9B6900E6DB4D /* core_Identity.cpp */,
 				0063BF6516CA9B6900E6DB4D /* core_IdentityLookup.cpp */,
@@ -395,6 +398,7 @@
 				007B84ED1862AA8100BB1284 /* core_ConversationThreadHost_PeerContact.cpp in Sources */,
 				0063C12416CA9B6A00E6DB4D /* core_Logger.cpp in Sources */,
 				0063C12516CA9B6A00E6DB4D /* core_MediaEngine.cpp in Sources */,
+				00AC219D1A40C60200719162 /* core_ConversationThreadType.cpp in Sources */,
 				0063C12616CA9B6A00E6DB4D /* core_Stack.cpp in Sources */,
 				005F60B61756B7DB00BC3DD6 /* core_Cache.cpp in Sources */,
 			);
@@ -509,7 +513,7 @@
 				SKIP_INSTALL = YES;
 				STRIP_INSTALLED_PRODUCT = NO;
 				SUPPORTED_PLATFORMS = iphoneos;
-				VALID_ARCHS = "armv7 armv7s";
+				VALID_ARCHS = "armv7 armv7s arm64";
 			};
 			name = Debug;
 		};
@@ -529,7 +533,7 @@
 				SKIP_INSTALL = YES;
 				STRIP_INSTALLED_PRODUCT = NO;
 				SUPPORTED_PLATFORMS = iphoneos;
-				VALID_ARCHS = "armv7 armv7s";
+				VALID_ARCHS = "armv7 armv7s arm64";
 			};
 			name = Release;
 		};
