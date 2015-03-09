@@ -331,7 +331,7 @@
 		0063BBD616CA9A1600E6DB4D /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0460;
+				LastUpgradeCheck = 0610;
 				ORGANIZATIONNAME = "SMB Phone Inc.";
 			};
 			buildConfigurationList = 0063BBD916CA9A1600E6DB4D /* Build configuration list for PBXProject "hfcore" */;
@@ -403,7 +403,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -430,22 +429,22 @@
 					"../../../../op-stack-cpp",
 					../../../../easysqlite/easySQLite/easySQLite,
 					../../../../easysqlite/sqlite,
-					"../../../../ortc-lib/libs",
-					"../../../../ortc-lib/libs/op-services-cpp",
-					"../../../../ortc-lib/libs/zsLib",
-					"../../../../ortc-lib/libs/webrtc",
-					"../../../../ortc-lib/libs/webrtc/webrtc",
-					"../../../../ortc-lib/libs/webrtc/webrtc/common_video/interface/",
-					"../../../../ortc-lib/libs/webrtc/webrtc/common_video/vplib/main/interface",
-					"../../../../ortc-lib/libs/webrtc/webrtc/modules/interface",
-					"../../../../ortc-lib/libs/webrtc/webrtc/modules/video_capture/include",
-					"../../../../ortc-lib/libs/webrtc/webrtc/modules/video_coding/codecs/interface/",
-					"../../../../ortc-lib/libs/webrtc/webrtc/modules/video_render/main/source/iPhone",
-					"../../../../ortc-lib/libs/webrtc/webrtc/modules/video_render/main/interface",
-					"../../../../ortc-lib/libs/webrtc/webrtc/system_wrappers/interface",
-					"../../../../ortc-lib/libs/webrtc/webrtc/video_engine/include",
-					"../../../../ortc-lib/libs/webrtc/webrtc/video_engine/main/interface",
-					"../../../../ortc-lib/libs/webrtc/webrtc/voice_engine/include",
+					../../../..,
+					"../../../../op-services-cpp",
+					../../../../zsLib,
+					../../../../webrtc,
+					../../../../webrtc/webrtc,
+					../../../../webrtc/webrtc/common_video/interface/,
+					../../../../webrtc/webrtc/common_video/vplib/main/interface,
+					../../../../webrtc/webrtc/modules/interface,
+					../../../../webrtc/webrtc/modules/video_capture/include,
+					../../../../webrtc/webrtc/modules/video_coding/codecs/interface/,
+					../../../../webrtc/webrtc/modules/video_render/main/source/iPhone,
+					../../../../webrtc/webrtc/modules/video_render/main/interface,
+					../../../../webrtc/webrtc/system_wrappers/interface,
+					../../../../webrtc/webrtc/video_engine/include,
+					../../../../webrtc/webrtc/video_engine/main/interface,
+					../../../../webrtc/webrtc/voice_engine/include,
 				);
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				MACOSX_DEPLOYMENT_TARGET = 10.8;
@@ -458,7 +457,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -484,22 +482,22 @@
 					"../../../../op-stack-cpp",
 					../../../../easysqlite/easySQLite/easySQLite,
 					../../../../easysqlite/sqlite,
-					"../../../../ortc-lib/libs",
-					"../../../../ortc-lib/libs/op-services-cpp",
-					"../../../../ortc-lib/libs/zsLib",
-					"../../../../ortc-lib/libs/webrtc",
-					"../../../../ortc-lib/libs/webrtc/webrtc",
-					"../../../../ortc-lib/libs/webrtc/webrtc/common_video/interface/",
-					"../../../../ortc-lib/libs/webrtc/webrtc/common_video/vplib/main/interface",
-					"../../../../ortc-lib/libs/webrtc/webrtc/modules/interface",
-					"../../../../ortc-lib/libs/webrtc/webrtc/modules/video_capture/include",
-					"../../../../ortc-lib/libs/webrtc/webrtc/modules/video_coding/codecs/interface/",
-					"../../../../ortc-lib/libs/webrtc/webrtc/modules/video_render/main/source/iPhone",
-					"../../../../ortc-lib/libs/webrtc/webrtc/modules/video_render/main/interface",
-					"../../../../ortc-lib/libs/webrtc/webrtc/system_wrappers/interface",
-					"../../../../ortc-lib/libs/webrtc/webrtc/video_engine/include",
-					"../../../../ortc-lib/libs/webrtc/webrtc/video_engine/main/interface",
-					"../../../../ortc-lib/libs/webrtc/webrtc/voice_engine/include",
+					../../../..,
+					"../../../../op-services-cpp",
+					../../../../zsLib,
+					../../../../webrtc,
+					../../../../webrtc/webrtc,
+					../../../../webrtc/webrtc/common_video/interface/,
+					../../../../webrtc/webrtc/common_video/vplib/main/interface,
+					../../../../webrtc/webrtc/modules/interface,
+					../../../../webrtc/webrtc/modules/video_capture/include,
+					../../../../webrtc/webrtc/modules/video_coding/codecs/interface/,
+					../../../../webrtc/webrtc/modules/video_render/main/source/iPhone,
+					../../../../webrtc/webrtc/modules/video_render/main/interface,
+					../../../../webrtc/webrtc/system_wrappers/interface,
+					../../../../webrtc/webrtc/video_engine/include,
+					../../../../webrtc/webrtc/video_engine/main/interface,
+					../../../../webrtc/webrtc/voice_engine/include,
 				);
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				MACOSX_DEPLOYMENT_TARGET = 10.8;
@@ -510,6 +508,7 @@
 		0063BBE316CA9A1600E6DB4D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
 				EXECUTABLE_PREFIX = lib;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -523,6 +522,7 @@
 		0063BBE416CA9A1600E6DB4D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
 				EXECUTABLE_PREFIX = lib;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
