@@ -1371,12 +1371,6 @@
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = "hfcoreTest_ios/hfcoreTest_ios-Info.plist";
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"/Users/robin/Documents/Hookflash/Repos/op/push-database/opios/libs/op/libs/ortc-lib/libs/zsLib/projects/xcode/zsLib_ios/build/Debug-iphoneos",
-					"$(USER_LIBRARY_DIR)/Developer/Xcode/DerivedData/op-core-ajwxloilemhqatcvicykflcnmfqc/Build/Products/Debug",
-					"$(USER_LIBRARY_DIR)/Developer/Xcode/DerivedData/op-core-ajwxloilemhqatcvicykflcnmfqc/Build/Products/Debug-iphoneos",
-				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};
@@ -1395,12 +1389,6 @@
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = "hfcoreTest_ios/hfcoreTest_ios-Info.plist";
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"/Users/robin/Documents/Hookflash/Repos/op/push-database/opios/libs/op/libs/ortc-lib/libs/zsLib/projects/xcode/zsLib_ios/build/Debug-iphoneos",
-					"$(USER_LIBRARY_DIR)/Developer/Xcode/DerivedData/op-core-ajwxloilemhqatcvicykflcnmfqc/Build/Products/Debug",
-					"$(USER_LIBRARY_DIR)/Developer/Xcode/DerivedData/op-core-ajwxloilemhqatcvicykflcnmfqc/Build/Products/Debug-iphoneos",
-				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};
@@ -1421,11 +1409,6 @@
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = "hfcoreMediaTest_ios/hfcoreMediaTest_ios-Info.plist";
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(USER_LIBRARY_DIR)/Developer/Xcode/DerivedData/op-core-ajwxloilemhqatcvicykflcnmfqc/Build/Products/Debug-iphoneos",
-					"/Users/robin/Documents/Hookflash/Repos/op/push-database/opios/libs/op/libs/ortc-lib/libs/cryptopp/projects/xcode/cryptopp_ios/build/Debug-iphoneos",
-				);
 				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_NAME = hfcoreMediaTest_ios;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1448,11 +1431,6 @@
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = "hfcoreMediaTest_ios/hfcoreMediaTest_ios-Info.plist";
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(USER_LIBRARY_DIR)/Developer/Xcode/DerivedData/op-core-ajwxloilemhqatcvicykflcnmfqc/Build/Products/Debug-iphoneos",
-					"/Users/robin/Documents/Hookflash/Repos/op/push-database/opios/libs/op/libs/ortc-lib/libs/cryptopp/projects/xcode/cryptopp_ios/build/Debug-iphoneos",
-				);
 				PRODUCT_NAME = hfcoreMediaTest_ios;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALID_ARCHS = "armv7 armv7s";
