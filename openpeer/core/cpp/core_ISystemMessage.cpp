@@ -214,7 +214,7 @@ namespace openpeer
 
       ElementPtr existingCallStatusEl = dataEl->findFirstChildElement(Definitions::Names::callStatusRoot());
 
-      ElementPtr callStatuEl = IMessageHelper::createElementWithID(Definitions::Names::callStatusRoot(), mCallID);
+      ElementPtr callStatuEl = IMessageHelper::createElementWithTextID(Definitions::Names::callStatusRoot(), mCallID);
 
       callStatuEl->adoptAsLastChild(UseMessageHelper::createElementWithTextAndJSONEncode(Definitions::Names::mediaType(), mMediaType));
       callStatuEl->adoptAsLastChild(UseMessageHelper::createElementWithText(Definitions::Names::status(), toString(mStatus)));

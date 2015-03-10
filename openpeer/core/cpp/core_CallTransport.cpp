@@ -506,7 +506,7 @@ namespace openpeer
       #pragma mark
 
       //-----------------------------------------------------------------------
-      int CallTransport::sendRTPPacket(PUID socketID, const void *data, int len)
+      size_t CallTransport::sendRTPPacket(PUID socketID, const void *data, size_t len)
       {
         UseCallPtr call;
         PUID locationID = 0;
@@ -1048,7 +1048,7 @@ namespace openpeer
           return 0;
         }
 
-        return outer->sendRTPPacket(mID, data, len);
+        return (int)outer->sendRTPPacket(mID, data, len);
       }
 
       //-----------------------------------------------------------------------
@@ -1065,7 +1065,7 @@ namespace openpeer
           return 0;
         }
 
-        return outer->sendRTPPacket(mID, data, len);
+        return (int)outer->sendRTPPacket(mID, data, len);
       }
 
       //-----------------------------------------------------------------------

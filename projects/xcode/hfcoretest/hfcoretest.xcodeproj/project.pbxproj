@@ -7,9 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0039C4861AAD441000A8E9D0 /* libudns.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0039C4511AAD3A1400A8E9D0 /* libudns.a */; };
-		0039C4871AAD441800A8E9D0 /* libidnkit.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0039C45C1AAD3A1500A8E9D0 /* libidnkit.a */; };
-		0063CF5616CAF01A00E6DB4D /* testing.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063CDB816CAF01900E6DB4D /* testing.cpp */; };
 		0063CF5716CAF01A00E6DB4D /* desktop_FakeGUI.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063CDBB16CAF01900E6DB4D /* desktop_FakeGUI.cpp */; };
 		0063CF5816CAF01A00E6DB4D /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0063CDBD16CAF01900E6DB4D /* main.cpp */; };
 		0063D03416CAF1C200E6DB4D /* libcurl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 0063D03316CAF1C200E6DB4D /* libcurl.dylib */; };
@@ -22,12 +19,14 @@
 		0063D5BE16CB32A500E6DB4D /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0063D5BD16CB32A500E6DB4D /* AudioToolbox.framework */; };
 		0063D5C016CB32AE00E6DB4D /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0063D5BF16CB32AD00E6DB4D /* CoreVideo.framework */; };
 		0063D5C216CB32B500E6DB4D /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0063D5C116CB32B500E6DB4D /* OpenGL.framework */; };
-		009286D01AAD47820036394A /* libresolv.9.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 009286CF1AAD47820036394A /* libresolv.9.dylib */; };
-		009286E41AAD4B210036394A /* libhfservices.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0039C43F1AAD3A1400A8E9D0 /* libhfservices.a */; };
-		009286E51AAD4BC80036394A /* libzsLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0092868D1AAD46410036394A /* libzsLib.a */; };
-		009286E61AAD4BD10036394A /* libcryptopp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 009286751AAD46400036394A /* libcryptopp.a */; };
-		00CF4CCE1A15C97E00573A34 /* libeasysqlite.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00CF4CCB1A15C94E00573A34 /* libeasysqlite.a */; };
-		00CF4CCF1A15C9A200573A34 /* libortclib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 004B8DA6189C2BF300D4F6A8 /* libortclib.a */; };
+		007930261AAE622400222754 /* libzsLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C9A7BA1AAE616E004E7A27 /* libzsLib.a */; };
+		007930271AAE622D00222754 /* libudns.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00E035D71AAE6123000FBE7D /* libudns.a */; };
+		007930281AAE623400222754 /* libidnkit.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C9A7FF1AAE61A2004E7A27 /* libidnkit.a */; };
+		007930291AAE623F00222754 /* libcryptopp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C9A7BF1AAE616E004E7A27 /* libcryptopp.a */; };
+		0079302A1AAE624800222754 /* libeasysqlite.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C9A8051AAE61AF004E7A27 /* libeasysqlite.a */; };
+		0079302B1AAE624F00222754 /* libortclib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 004B8DA6189C2BF300D4F6A8 /* libortclib.a */; };
+		0079302C1AAE625600222754 /* libhfservices.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C9A7AB1AAE616E004E7A27 /* libhfservices.a */; };
+		0079302F1AAE630F00222754 /* testing.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0079302D1AAE630F00222754 /* testing.cpp */; };
 		E23C2EC1192E11FF00706ADA /* TestMediaEngine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E210969316D4CECA002147D1 /* TestMediaEngine.cpp */; };
 		E29C91FA1A77D873005B53AC /* libred.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E29C91F91A77D873005B53AC /* libred.a */; };
 		E29C91FC1A77D883005B53AC /* librtc_base_approved.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E29C91FB1A77D882005B53AC /* librtc_base_approved.a */; };
@@ -86,48 +85,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		0039C43E1AAD3A1400A8E9D0 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 0063D35216CB296600E6DB4D /* hfservices.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 0095D8B116CA83CB005F53D3;
-			remoteInfo = hfservices;
-		};
-		0039C4501AAD3A1400A8E9D0 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 0063D34616CB294B00E6DB4D /* udns.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 0066820516C9D91300259F81;
-			remoteInfo = udns;
-		};
-		0039C45B1AAD3A1500A8E9D0 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 00CF4BEB1A15BEAB00573A34 /* idnkit.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 00CF44301A15505B00573A34;
-			remoteInfo = idnkit;
-		};
-		0039C47E1AAD43FE00A8E9D0 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 0063D35216CB296600E6DB4D /* hfservices.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 0095D8B016CA83CB005F53D3;
-			remoteInfo = hfservices;
-		};
-		0039C4801AAD43FE00A8E9D0 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 00CF4BEB1A15BEAB00573A34 /* idnkit.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 00CF442F1A15505B00573A34;
-			remoteInfo = idnkit;
-		};
-		0039C4821AAD43FE00A8E9D0 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 0063D34616CB294B00E6DB4D /* udns.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 0066820416C9D91300259F81;
-			remoteInfo = udns;
-		};
 		004B8DA5189C2BF300D4F6A8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 004A55921839D67D00AEF378 /* ortclib.xcodeproj */;
@@ -163,54 +120,97 @@
 			remoteGlobalIDString = 0095DEB916CA8C2F005F53D3;
 			remoteInfo = hfstack;
 		};
-		009286741AAD46400036394A /* PBXContainerItemProxy */ = {
+		00C74C481AAE61EF002C137E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 0063D34C16CB296000E6DB4D /* cryptopp.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 006682A016C9DC3D00259F81;
-			remoteInfo = cryptopp;
+			containerPortal = 00C9A8001AAE61AF004E7A27 /* easysqlite.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 004EDE691A1106ED008976F7;
+			remoteInfo = easysqlite;
 		};
-		0092868C1AAD46410036394A /* PBXContainerItemProxy */ = {
+		00C74C4A1AAE61EF002C137E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00C9A7FA1AAE61A2004E7A27 /* idnkit.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 00CF442F1A15505B00573A34;
+			remoteInfo = idnkit;
+		};
+		00C9A7AA1AAE616E004E7A27 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0063D35216CB296600E6DB4D /* hfservices.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0095D8B116CA83CB005F53D3;
+			remoteInfo = hfservices;
+		};
+		00C9A7B91AAE616E004E7A27 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 0063D34016CB293C00E6DB4D /* zsLib.xcodeproj */;
 			proxyType = 2;
 			remoteGlobalIDString = 006680AE16C9CE4300259F81;
 			remoteInfo = zsLib;
 		};
-		009286E01AAD4AE40036394A /* PBXContainerItemProxy */ = {
+		00C9A7BE1AAE616E004E7A27 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 0063D34C16CB296000E6DB4D /* cryptopp.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 0066829F16C9DC3D00259F81;
+			proxyType = 2;
+			remoteGlobalIDString = 006682A016C9DC3D00259F81;
 			remoteInfo = cryptopp;
 		};
-		009286E21AAD4AE40036394A /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 0063D34016CB293C00E6DB4D /* zsLib.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 006680AD16C9CE4300259F81;
-			remoteInfo = zsLib;
-		};
-		00CF4C021A15C45300573A34 /* PBXContainerItemProxy */ = {
+		00C9A7F01AAE6182004E7A27 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 004A55921839D67D00AEF378 /* ortclib.xcodeproj */;
 			proxyType = 1;
 			remoteGlobalIDString = 008F56031821367E009863AA;
 			remoteInfo = ortclib;
 		};
-		00CF4CCA1A15C94E00573A34 /* PBXContainerItemProxy */ = {
+		00C9A7F21AAE6182004E7A27 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 00CF4CC61A15C94E00573A34 /* easysqlite.xcodeproj */;
+			containerPortal = 0063D35216CB296600E6DB4D /* hfservices.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 0095D8B016CA83CB005F53D3;
+			remoteInfo = hfservices;
+		};
+		00C9A7F41AAE6182004E7A27 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0063D34C16CB296000E6DB4D /* cryptopp.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 0066829F16C9DC3D00259F81;
+			remoteInfo = cryptopp;
+		};
+		00C9A7F61AAE6182004E7A27 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0063D34616CB294B00E6DB4D /* udns.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 0066820416C9D91300259F81;
+			remoteInfo = udns;
+		};
+		00C9A7F81AAE6182004E7A27 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0063D34016CB293C00E6DB4D /* zsLib.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 006680AD16C9CE4300259F81;
+			remoteInfo = zsLib;
+		};
+		00C9A7FE1AAE61A2004E7A27 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00C9A7FA1AAE61A2004E7A27 /* idnkit.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 00CF44301A15505B00573A34;
+			remoteInfo = idnkit;
+		};
+		00C9A8041AAE61AF004E7A27 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00C9A8001AAE61AF004E7A27 /* easysqlite.xcodeproj */;
 			proxyType = 2;
 			remoteGlobalIDString = 004EDE6A1A1106ED008976F7;
 			remoteInfo = easysqlite;
 		};
-		00CF4CCC1A15C96A00573A34 /* PBXContainerItemProxy */ = {
+		00E035D61AAE6123000FBE7D /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 00CF4CC61A15C94E00573A34 /* easysqlite.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 004EDE691A1106ED008976F7;
-			remoteInfo = easysqlite;
+			containerPortal = 0063D34616CB294B00E6DB4D /* udns.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0066820516C9D91300259F81;
+			remoteInfo = udns;
+		};
 		E29C91F51A77D5AF005B53AC /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = E2FED0371A72828400795C40 /* all_osx.xcodeproj */;
@@ -235,10 +235,8 @@
 /* Begin PBXFileReference section */
 		004A55921839D67D00AEF378 /* ortclib.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = ortclib.xcodeproj; path = "../../../../ortc-lib/projects/xcode/ortclib/ortclib.xcodeproj"; sourceTree = "<group>"; };
 		0063CD6D16CAEFE400E6DB4D /* hfcoreTest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = hfcoreTest; sourceTree = BUILT_PRODUCTS_DIR; };
-		0063CDB816CAF01900E6DB4D /* testing.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = testing.cpp; sourceTree = "<group>"; };
-		0063CDB916CAF01900E6DB4D /* testing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; lineEnding = 0; path = testing.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objcpp; };
 		0063CDBA16CAF01900E6DB4D /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
-		0063CDBB16CAF01900E6DB4D /* desktop_FakeGUI.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = desktop_FakeGUI.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
+		0063CDBB16CAF01900E6DB4D /* desktop_FakeGUI.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = desktop_FakeGUI.cpp; sourceTree = "<group>"; };
 		0063CDBC16CAF01900E6DB4D /* desktop_FakeGUI.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = desktop_FakeGUI.h; sourceTree = "<group>"; };
 		0063CDBD16CAF01900E6DB4D /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		0063D03316CAF1C200E6DB4D /* libcurl.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcurl.dylib; path = usr/lib/libcurl.dylib; sourceTree = SDKROOT; };
@@ -255,9 +253,12 @@
 		0063D5BD16CB32A500E6DB4D /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		0063D5BF16CB32AD00E6DB4D /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
 		0063D5C116CB32B500E6DB4D /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
-		009286CF1AAD47820036394A /* libresolv.9.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libresolv.9.dylib; path = usr/lib/libresolv.9.dylib; sourceTree = SDKROOT; };
-		00CF4BEB1A15BEAB00573A34 /* idnkit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = idnkit.xcodeproj; path = ../../../../idnkit/projects/xcode/idnkit.xcodeproj; sourceTree = "<group>"; };
-		00CF4CC61A15C94E00573A34 /* easysqlite.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = easysqlite.xcodeproj; path = ../../../../easysqlite/projects/xcode/easysqlite.xcodeproj; sourceTree = "<group>"; };
+		0079302D1AAE630F00222754 /* testing.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = testing.cpp; sourceTree = "<group>"; };
+		0079302E1AAE630F00222754 /* testing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = testing.h; sourceTree = "<group>"; };
+		007930301AAE643A00222754 /* all_osx.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = all_osx.xcodeproj; path = ../../../../webrtc/all_osx.xcodeproj; sourceTree = "<group>"; };
+		00C82C261832025C005B87E0 /* boost.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = boost.framework; path = "../../../../ortc-lib/libs/boost/osx/framework/boost.framework"; sourceTree = "<group>"; };
+		00C9A7FA1AAE61A2004E7A27 /* idnkit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = idnkit.xcodeproj; path = "/Users/robin/Documents/Hookflash/Repos/op/reorg/op-client-sdk/libs/op-core-cpp/projects/xcode/../../../idnkit/projects/xcode/idnkit.xcodeproj"; sourceTree = "<absolute>"; };
+		00C9A8001AAE61AF004E7A27 /* easysqlite.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = easysqlite.xcodeproj; path = "/Users/robin/Documents/Hookflash/Repos/op/reorg/op-client-sdk/libs/op-core-cpp/projects/xcode/../../../easysqlite/projects/xcode/easysqlite.xcodeproj"; sourceTree = "<absolute>"; };
 		E210969316D4CECA002147D1 /* TestMediaEngine.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TestMediaEngine.cpp; sourceTree = "<group>"; };
 		E210969416D4CECA002147D1 /* TestMediaEngine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TestMediaEngine.h; sourceTree = "<group>"; };
 		E29C91F91A77D873005B53AC /* libred.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libred.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -314,7 +315,7 @@
 		E2E22F241939311C00664265 /* libwebrtc_vp8.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libwebrtc_vp8.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2E22F251939311C00664265 /* libyuv.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libyuv.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2E22F531939324500664265 /* librbe_components.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = librbe_components.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E2FED0371A72828400795C40 /* all_osx.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = all_osx.xcodeproj; path = "../../../../webrtc/all_osx.xcodeproj"; sourceTree = "<group>"; };
+		E2FED0371A72828400795C40 /* all_osx.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = all_osx.xcodeproj; path = "../../../../ortc-lib/libs/webrtc/all_osx.xcodeproj"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -322,12 +323,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				009286D01AAD47820036394A /* libresolv.9.dylib in Frameworks */,
-				009286E61AAD4BD10036394A /* libcryptopp.a in Frameworks */,
-				009286E51AAD4BC80036394A /* libzsLib.a in Frameworks */,
-				009286E41AAD4B210036394A /* libhfservices.a in Frameworks */,
-				0039C4871AAD441800A8E9D0 /* libidnkit.a in Frameworks */,
-				0039C4861AAD441000A8E9D0 /* libudns.a in Frameworks */,
+				0079302C1AAE625600222754 /* libhfservices.a in Frameworks */,
+				0079302B1AAE624F00222754 /* libortclib.a in Frameworks */,
+				0079302A1AAE624800222754 /* libeasysqlite.a in Frameworks */,
+				007930291AAE623F00222754 /* libcryptopp.a in Frameworks */,
+				007930281AAE623400222754 /* libidnkit.a in Frameworks */,
+				007930271AAE622D00222754 /* libudns.a in Frameworks */,
+				007930261AAE622400222754 /* libzsLib.a in Frameworks */,
 				E2E22F541939324500664265 /* librbe_components.a in Frameworks */,
 				E2E22F261939311C00664265 /* libaudio_coding_module.a in Frameworks */,
 				E2E22F271939311C00664265 /* libaudio_conference_mixer.a in Frameworks */,
@@ -379,12 +381,6 @@
 				E29C92061A77D90B005B53AC /* libneteq.a in Frameworks */,
 				E2E22F511939311C00664265 /* libwebrtc_vp8.a in Frameworks */,
 				E2E22F521939311C00664265 /* libyuv.a in Frameworks */,
-				0063D37516CB2BB600E6DB4D /* libhfcore.a in Frameworks */,
-				0063D37416CB2B3400E6DB4D /* libhfstack.a in Frameworks */,
-				00CF4CCE1A15C97E00573A34 /* libeasysqlite.a in Frameworks */,
-				00CF4CCF1A15C9A200573A34 /* libortclib.a in Frameworks */,
-				0063D5BE16CB32A500E6DB4D /* AudioToolbox.framework in Frameworks */,
-				0063D5BA16CB329000E6DB4D /* AppKit.framework in Frameworks */,
 				0063D03416CAF1C200E6DB4D /* libcurl.dylib in Frameworks */,
 				0063D37516CB2BB600E6DB4D /* libhfcore.a in Frameworks */,
 				0063D37416CB2B3400E6DB4D /* libhfstack.a in Frameworks */,
@@ -404,30 +400,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		0039C4391AAD3A1400A8E9D0 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				0039C43F1AAD3A1400A8E9D0 /* libhfservices.a */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		0039C4481AAD3A1400A8E9D0 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				0039C4511AAD3A1400A8E9D0 /* libudns.a */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		0039C4561AAD3A1500A8E9D0 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				0039C45C1AAD3A1500A8E9D0 /* libidnkit.a */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
 		004B8DA2189C2BF300D4F6A8 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -475,9 +447,9 @@
 		0063CDB716CAF01900E6DB4D /* test */ = {
 			isa = PBXGroup;
 			children = (
+				0079302D1AAE630F00222754 /* testing.cpp */,
+				0079302E1AAE630F00222754 /* testing.h */,
 				0063CDBA16CAF01900E6DB4D /* config.h */,
-				0063CDB816CAF01900E6DB4D /* testing.cpp */,
-				0063CDB916CAF01900E6DB4D /* testing.h */,
 				0063CDBB16CAF01900E6DB4D /* desktop_FakeGUI.cpp */,
 				0063CDBC16CAF01900E6DB4D /* desktop_FakeGUI.h */,
 				0063CDBD16CAF01900E6DB4D /* main.cpp */,
@@ -490,13 +462,14 @@
 		0063CFFD16CAF10500E6DB4D /* Projects */ = {
 			isa = PBXGroup;
 			children = (
+				007930301AAE643A00222754 /* all_osx.xcodeproj */,
 				0063D35E16CB297600E6DB4D /* hfcore.xcodeproj */,
 				0063D35816CB296D00E6DB4D /* hfstack.xcodeproj */,
-				00CF4CC61A15C94E00573A34 /* easysqlite.xcodeproj */,
+				00C9A8001AAE61AF004E7A27 /* easysqlite.xcodeproj */,
 				004A55921839D67D00AEF378 /* ortclib.xcodeproj */,
 				0063D35216CB296600E6DB4D /* hfservices.xcodeproj */,
 				0063D34C16CB296000E6DB4D /* cryptopp.xcodeproj */,
-				00CF4BEB1A15BEAB00573A34 /* idnkit.xcodeproj */,
+				00C9A7FA1AAE61A2004E7A27 /* idnkit.xcodeproj */,
 				0063D34616CB294B00E6DB4D /* udns.xcodeproj */,
 				0063D34016CB293C00E6DB4D /* zsLib.xcodeproj */,
 				E2FED01E1A7281A000795C40 /* webrtc */,
@@ -514,7 +487,6 @@
 		0063CFFF16CAF11B00E6DB4D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				009286CF1AAD47820036394A /* libresolv.9.dylib */,
 				E29C92281A77DA5C005B53AC /* libmetrics_default.a */,
 				E29C92241A77DA1D005B53AC /* libaudio_decoder_interface.a */,
 				E29C92221A77D9CD005B53AC /* libfield_trial_default.a */,
@@ -570,6 +542,7 @@
 				E2E22F241939311C00664265 /* libwebrtc_vp8.a */,
 				E2E22F251939311C00664265 /* libyuv.a */,
 				0063D03316CAF1C200E6DB4D /* libcurl.dylib */,
+				00C82C261832025C005B87E0 /* boost.framework */,
 				0063D5C116CB32B500E6DB4D /* OpenGL.framework */,
 				0063D5BF16CB32AD00E6DB4D /* CoreVideo.framework */,
 				0063D5BD16CB32A500E6DB4D /* AudioToolbox.framework */,
@@ -597,26 +570,61 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		009286711AAD46400036394A /* Products */ = {
+		007930311AAE643A00222754 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				009286751AAD46400036394A /* libcryptopp.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		009286821AAD46410036394A /* Products */ = {
+		00C9A7A71AAE616E004E7A27 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				0092868D1AAD46410036394A /* libzsLib.a */,
+				00C9A7AB1AAE616E004E7A27 /* libhfservices.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		00CF4CC71A15C94E00573A34 /* Products */ = {
+		00C9A7B61AAE616E004E7A27 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				00CF4CCB1A15C94E00573A34 /* libeasysqlite.a */,
+				00C9A7BA1AAE616E004E7A27 /* libzsLib.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		00C9A7BB1AAE616E004E7A27 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				00C9A7BF1AAE616E004E7A27 /* libcryptopp.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		00C9A7FB1AAE61A2004E7A27 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				00C9A7FF1AAE61A2004E7A27 /* libidnkit.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		00C9A8011AAE61AF004E7A27 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				00C9A8051AAE61AF004E7A27 /* libeasysqlite.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		00E035D21AAE6123000FBE7D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				00E035D71AAE6123000FBE7D /* libudns.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		E2FED01E1A7281A000795C40 /* webrtc */ = {
 			isa = PBXGroup;
 			children = (
@@ -646,16 +654,16 @@
 			buildRules = (
 			);
 			dependencies = (
-				009286E11AAD4AE40036394A /* PBXTargetDependency */,
-				009286E31AAD4AE40036394A /* PBXTargetDependency */,
-				0039C47F1AAD43FE00A8E9D0 /* PBXTargetDependency */,
-				0039C4811AAD43FE00A8E9D0 /* PBXTargetDependency */,
-				0039C4831AAD43FE00A8E9D0 /* PBXTargetDependency */,
+				00C74C491AAE61EF002C137E /* PBXTargetDependency */,
+				00C74C4B1AAE61EF002C137E /* PBXTargetDependency */,
+				00C9A7F11AAE6182004E7A27 /* PBXTargetDependency */,
+				00C9A7F31AAE6182004E7A27 /* PBXTargetDependency */,
+				00C9A7F51AAE6182004E7A27 /* PBXTargetDependency */,
+				00C9A7F71AAE6182004E7A27 /* PBXTargetDependency */,
+				00C9A7F91AAE6182004E7A27 /* PBXTargetDependency */,
 				E29C91F61A77D5AF005B53AC /* PBXTargetDependency */,
 				0063D36716CB29C600E6DB4D /* PBXTargetDependency */,
 				0063D36D16CB29C600E6DB4D /* PBXTargetDependency */,
-				00CF4CCD1A15C96A00573A34 /* PBXTargetDependency */,
-				00CF4C031A15C45300573A34 /* PBXTargetDependency */,
 			);
 			name = hfcoreTest;
 			productName = hfcoreTest;
@@ -668,8 +676,8 @@
 		0063CD6516CAEFE400E6DB4D /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0460;
-				ORGANIZATIONNAME = "Hookflash Inc.";
+				LastUpgradeCheck = 0610;
+				ORGANIZATIONNAME = "SMB Phone Inc.";
 			};
 			buildConfigurationList = 0063CD6816CAEFE400E6DB4D /* Build configuration list for PBXProject "hfcoretest" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -687,19 +695,23 @@
 					ProjectRef = E2FED0371A72828400795C40 /* all_osx.xcodeproj */;
 				},
 				{
-					ProductGroup = 009286711AAD46400036394A /* Products */;
+					ProductGroup = 007930311AAE643A00222754 /* Products */;
+					ProjectRef = 007930301AAE643A00222754 /* all_osx.xcodeproj */;
+				},
+				{
+					ProductGroup = 00C9A7BB1AAE616E004E7A27 /* Products */;
 					ProjectRef = 0063D34C16CB296000E6DB4D /* cryptopp.xcodeproj */;
 				},
 				{
-					ProductGroup = 00CF4CC71A15C94E00573A34 /* Products */;
-					ProjectRef = 00CF4CC61A15C94E00573A34 /* easysqlite.xcodeproj */;
+					ProductGroup = 00C9A8011AAE61AF004E7A27 /* Products */;
+					ProjectRef = 00C9A8001AAE61AF004E7A27 /* easysqlite.xcodeproj */;
 				},
 				{
 					ProductGroup = 0063D35F16CB297600E6DB4D /* Products */;
 					ProjectRef = 0063D35E16CB297600E6DB4D /* hfcore.xcodeproj */;
 				},
 				{
-					ProductGroup = 0039C4391AAD3A1400A8E9D0 /* Products */;
+					ProductGroup = 00C9A7A71AAE616E004E7A27 /* Products */;
 					ProjectRef = 0063D35216CB296600E6DB4D /* hfservices.xcodeproj */;
 				},
 				{
@@ -707,19 +719,19 @@
 					ProjectRef = 0063D35816CB296D00E6DB4D /* hfstack.xcodeproj */;
 				},
 				{
-					ProductGroup = 0039C4561AAD3A1500A8E9D0 /* Products */;
-					ProjectRef = 00CF4BEB1A15BEAB00573A34 /* idnkit.xcodeproj */;
+					ProductGroup = 00C9A7FB1AAE61A2004E7A27 /* Products */;
+					ProjectRef = 00C9A7FA1AAE61A2004E7A27 /* idnkit.xcodeproj */;
 				},
 				{
 					ProductGroup = 004B8DA2189C2BF300D4F6A8 /* Products */;
 					ProjectRef = 004A55921839D67D00AEF378 /* ortclib.xcodeproj */;
 				},
 				{
-					ProductGroup = 0039C4481AAD3A1400A8E9D0 /* Products */;
+					ProductGroup = 00E035D21AAE6123000FBE7D /* Products */;
 					ProjectRef = 0063D34616CB294B00E6DB4D /* udns.xcodeproj */;
 				},
 				{
-					ProductGroup = 009286821AAD46410036394A /* Products */;
+					ProductGroup = 00C9A7B61AAE616E004E7A27 /* Products */;
 					ProjectRef = 0063D34016CB293C00E6DB4D /* zsLib.xcodeproj */;
 				},
 			);
@@ -731,27 +743,6 @@
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
-		0039C43F1AAD3A1400A8E9D0 /* libhfservices.a */ = {
-			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = libhfservices.a;
-			remoteRef = 0039C43E1AAD3A1400A8E9D0 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		0039C4511AAD3A1400A8E9D0 /* libudns.a */ = {
-			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = libudns.a;
-			remoteRef = 0039C4501AAD3A1400A8E9D0 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		0039C45C1AAD3A1500A8E9D0 /* libidnkit.a */ = {
-			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = libidnkit.a;
-			remoteRef = 0039C45B1AAD3A1500A8E9D0 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
 		004B8DA6189C2BF300D4F6A8 /* libortclib.a */ = {
 			isa = PBXReferenceProxy;
 			fileType = archive.ar;
@@ -773,25 +764,46 @@
 			remoteRef = 0063D36216CB297600E6DB4D /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		009286751AAD46400036394A /* libcryptopp.a */ = {
+		00C9A7AB1AAE616E004E7A27 /* libhfservices.a */ = {
 			isa = PBXReferenceProxy;
 			fileType = archive.ar;
-			path = libcryptopp.a;
-			remoteRef = 009286741AAD46400036394A /* PBXContainerItemProxy */;
+			path = libhfservices.a;
+			remoteRef = 00C9A7AA1AAE616E004E7A27 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		0092868D1AAD46410036394A /* libzsLib.a */ = {
+		00C9A7BA1AAE616E004E7A27 /* libzsLib.a */ = {
 			isa = PBXReferenceProxy;
 			fileType = archive.ar;
 			path = libzsLib.a;
-			remoteRef = 0092868C1AAD46410036394A /* PBXContainerItemProxy */;
+			remoteRef = 00C9A7B91AAE616E004E7A27 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		00CF4CCB1A15C94E00573A34 /* libeasysqlite.a */ = {
+		00C9A7BF1AAE616E004E7A27 /* libcryptopp.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libcryptopp.a;
+			remoteRef = 00C9A7BE1AAE616E004E7A27 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		00C9A7FF1AAE61A2004E7A27 /* libidnkit.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libidnkit.a;
+			remoteRef = 00C9A7FE1AAE61A2004E7A27 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		00C9A8051AAE61AF004E7A27 /* libeasysqlite.a */ = {
 			isa = PBXReferenceProxy;
 			fileType = archive.ar;
 			path = libeasysqlite.a;
-			remoteRef = 00CF4CCA1A15C94E00573A34 /* PBXContainerItemProxy */;
+			remoteRef = 00C9A8041AAE61AF004E7A27 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		00E035D71AAE6123000FBE7D /* libudns.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libudns.a;
+			remoteRef = 00E035D61AAE6123000FBE7D /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 /* End PBXReferenceProxy section */
@@ -802,8 +814,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				E23C2EC1192E11FF00706ADA /* TestMediaEngine.cpp in Sources */,
-				0063CF5616CAF01A00E6DB4D /* testing.cpp in Sources */,
 				0063CF5716CAF01A00E6DB4D /* desktop_FakeGUI.cpp in Sources */,
+				0079302F1AAE630F00222754 /* testing.cpp in Sources */,
 				0063CF5816CAF01A00E6DB4D /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -811,21 +823,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		0039C47F1AAD43FE00A8E9D0 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = hfservices;
-			targetProxy = 0039C47E1AAD43FE00A8E9D0 /* PBXContainerItemProxy */;
-		};
-		0039C4811AAD43FE00A8E9D0 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = idnkit;
-			targetProxy = 0039C4801AAD43FE00A8E9D0 /* PBXContainerItemProxy */;
-		};
-		0039C4831AAD43FE00A8E9D0 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = udns;
-			targetProxy = 0039C4821AAD43FE00A8E9D0 /* PBXContainerItemProxy */;
-		};
 		0063D36716CB29C600E6DB4D /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = hfcore;
@@ -836,25 +833,40 @@
 			name = hfstack;
 			targetProxy = 0063D36C16CB29C600E6DB4D /* PBXContainerItemProxy */;
 		};
-		009286E11AAD4AE40036394A /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = cryptopp;
-			targetProxy = 009286E01AAD4AE40036394A /* PBXContainerItemProxy */;
-		};
-		009286E31AAD4AE40036394A /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = zsLib;
-			targetProxy = 009286E21AAD4AE40036394A /* PBXContainerItemProxy */;
-		};
-		00CF4C031A15C45300573A34 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = ortclib;
-			targetProxy = 00CF4C021A15C45300573A34 /* PBXContainerItemProxy */;
-		};
-		00CF4CCD1A15C96A00573A34 /* PBXTargetDependency */ = {
+		00C74C491AAE61EF002C137E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = easysqlite;
-			targetProxy = 00CF4CCC1A15C96A00573A34 /* PBXContainerItemProxy */;
+			targetProxy = 00C74C481AAE61EF002C137E /* PBXContainerItemProxy */;
+		};
+		00C74C4B1AAE61EF002C137E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = idnkit;
+			targetProxy = 00C74C4A1AAE61EF002C137E /* PBXContainerItemProxy */;
+		};
+		00C9A7F11AAE6182004E7A27 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = ortclib;
+			targetProxy = 00C9A7F01AAE6182004E7A27 /* PBXContainerItemProxy */;
+		};
+		00C9A7F31AAE6182004E7A27 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = hfservices;
+			targetProxy = 00C9A7F21AAE6182004E7A27 /* PBXContainerItemProxy */;
+		};
+		00C9A7F51AAE6182004E7A27 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = cryptopp;
+			targetProxy = 00C9A7F41AAE6182004E7A27 /* PBXContainerItemProxy */;
+		};
+		00C9A7F71AAE6182004E7A27 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = udns;
+			targetProxy = 00C9A7F61AAE6182004E7A27 /* PBXContainerItemProxy */;
+		};
+		00C9A7F91AAE6182004E7A27 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = zsLib;
+			targetProxy = 00C9A7F81AAE6182004E7A27 /* PBXContainerItemProxy */;
 		};
 		E29C91F61A77D5AF005B53AC /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -868,7 +880,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -887,6 +898,7 @@
 					"$(inherited)",
 					CRYPTOPP_DISABLE_ASM,
 				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
@@ -894,8 +906,6 @@
 				HEADER_SEARCH_PATHS = (
 					../../..,
 					"../../../../op-stack-cpp",
-					../../../../easysqlite/easySQLite/easySQLite,
-					../../../../easysqlite/sqlite,
 					../../../..,
 					../../../../zsLib,
 					"../../../../op-services-cpp",
@@ -913,7 +923,6 @@
 					../../../../webRTC/webrtc,
 					../../../../webRTC/webrtc/video_engine/include,
 					../../../../webRTC/webrtc/video_engine/main/interface,
-					"$(inherited)",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.8;
 				ONLY_ACTIVE_ARCH = YES;
@@ -925,7 +934,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -950,8 +958,6 @@
 				HEADER_SEARCH_PATHS = (
 					../../..,
 					"../../../../op-stack-cpp",
-					../../../../easysqlite/easySQLite/easySQLite,
-					../../../../easysqlite/sqlite,
 					../../../..,
 					../../../../zsLib,
 					"../../../../op-services-cpp",
@@ -969,7 +975,6 @@
 					../../../../webRTC/webrtc,
 					../../../../webRTC/webrtc/video_engine/include,
 					../../../../webRTC/webrtc/video_engine/main/interface,
-					"$(inherited)",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.8;
 				SDKROOT = macosx;
@@ -979,13 +984,10 @@
 		0063CD7716CAEFE400E6DB4D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
-				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"DEBUG=1",
 				);
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -995,8 +997,6 @@
 		0063CD7816CAEFE400E6DB4D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
-				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"NDEBUG=1",

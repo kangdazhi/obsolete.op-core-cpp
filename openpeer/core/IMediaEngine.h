@@ -69,28 +69,22 @@ namespace openpeer
 
       struct RtpRtcpStatistics
       {
-        unsigned short fractionLost;
-        unsigned int cumulativeLost;
-        unsigned int extendedMax;
-        unsigned int jitter;
-        int rttMs;
-        int bytesSent;
-        int packetsSent;
-        int bytesReceived;
-        int packetsReceived;
+        unsigned short fractionLost {};
+        unsigned int cumulativeLost {};
+        unsigned int extendedMax {};
+        unsigned int jitter {};
+        int rttMs {};
+        size_t bytesSent {};
+        int packetsSent {};
+        size_t bytesReceived {};
+        int packetsReceived {};
       };
       
       struct CaptureCapability
       {
-        int width;
-        int height;
-        int maxFPS;
-        
-        CaptureCapability() {
-          width = 0;
-          height = 0;
-          maxFPS = 0;
-        }
+        int width {};
+        int height {};
+        int maxFPS {};
       };
       
       ZS_DECLARE_TYPEDEF_PTR(std::list<CaptureCapability>, CaptureCapabilityList)

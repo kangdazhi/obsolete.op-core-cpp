@@ -298,7 +298,7 @@ namespace openpeer
         #pragma mark CallTransport => friend TransportSocket
         #pragma mark
 
-        int sendRTPPacket(PUID socketID, const void *data, int len);
+        size_t sendRTPPacket(PUID socketID, const void *data, size_t len);
 
       protected:
         Log::Params log(const char *message) const;
