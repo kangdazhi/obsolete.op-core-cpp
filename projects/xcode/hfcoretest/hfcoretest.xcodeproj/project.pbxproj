@@ -240,7 +240,6 @@
 		0063D5C116CB32B500E6DB4D /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		0079302D1AAE630F00222754 /* testing.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = testing.cpp; sourceTree = "<group>"; };
 		0079302E1AAE630F00222754 /* testing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = testing.h; sourceTree = "<group>"; };
-		00C82C261832025C005B87E0 /* boost.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = boost.framework; path = "../../../../ortc-lib/libs/boost/osx/framework/boost.framework"; sourceTree = "<group>"; };
 		E210969316D4CECA002147D1 /* TestMediaEngine.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TestMediaEngine.cpp; sourceTree = "<group>"; };
 		E210969416D4CECA002147D1 /* TestMediaEngine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TestMediaEngine.h; sourceTree = "<group>"; };
 		E29C91F91A77D873005B53AC /* libred.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libred.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -518,7 +517,6 @@
 				E2E22F241939311C00664265 /* libwebrtc_vp8.a */,
 				E2E22F251939311C00664265 /* libyuv.a */,
 				0063D03316CAF1C200E6DB4D /* libcurl.dylib */,
-				00C82C261832025C005B87E0 /* boost.framework */,
 				0063D5C116CB32B500E6DB4D /* OpenGL.framework */,
 				0063D5BF16CB32AD00E6DB4D /* CoreVideo.framework */,
 				0063D5BD16CB32A500E6DB4D /* AudioToolbox.framework */,
